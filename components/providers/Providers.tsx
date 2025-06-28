@@ -1,6 +1,6 @@
 "use client"
 
-import { SessionProvider } from "next-auth/react"
+import { ClerkProvider } from "@clerk/nextjs"
 import { HeroUIProvider } from "@heroui/react"
 import { Toaster } from "react-hot-toast"
 
@@ -10,11 +10,11 @@ interface ProvidersProps {
 
 export default function Providers({ children }: ProvidersProps) {
   return (
-    <HeroUIProvider>
-      <SessionProvider>
+    <ClerkProvider>
+      <HeroUIProvider>
         {children}
         <Toaster position="top-right" />
-      </SessionProvider>
-    </HeroUIProvider>
+      </HeroUIProvider>
+    </ClerkProvider>
   )
 }

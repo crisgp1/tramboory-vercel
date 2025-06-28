@@ -1,0 +1,425 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Button,
+  Input,
+  Select,
+  SelectItem,
+  Switch,
+  Spinner,
+  Divider
+} from '@heroui/react';
+import {
+  Cog6ToothIcon,
+  CurrencyDollarIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  CheckCircleIcon
+} from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
+
+interface SystemConfig {
+  _id?: string;
+  restDay: number;
+  restDayFee: number;
+  businessHours: {
+    start: string;
+    end: string;
+  };
+  advanceBookingDays: number;
+  maxConcurrentEvents: number;
+  defaultEventDuration: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+const daysOfWeek = [
+  { key: 0, label: 'Domingo' },
+  { key: 1, label: 'Lunes' },
+  { key: 2, label: 'Martes' },
+  { key: 3, label: 'Miércoles' },
+  { key: 4, label: 'Jueves' },
+  { key: 5, label: 'Viernes' },
+  { key: 6, label: 'Sábado' }
+];
+
+const timeSlots = Array.from({ length: 24 }, (_, i) => {
+  const hour = i.toString().padStart(2, '0');
+  return { key: `${hour}:00`, label: `${hour}:00` };
+});
+
+export default function SystemConfigManager() {
+  const [config, setConfig] = useState<SystemConfig>({
+    restDay: 1, // Lunes por defecto
+    restDayFee: 500,
+    businessHours: {
+      start: '09:00',
+      end: '18:00'
+    },
+    advanceBookingDays: 7,
+    maxConcurrentEvents: 3,
+    defaultEventDuration: 4,
+    isActive: true
+  });
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    fetchSystemConfig();
+  }, []);
+
+  const fetchSystemConfig = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/system-config');
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        setConfig(data.data);
+      } else {
+        // Si no hay configuración, usar valores por defecto
+        console.log('No system config found, using defaults');
+      }
+    } catch (error) {
+      console.error('Error fetching system config:', error);
+      toast.error('Error al cargar la configuración del sistema');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfigChange = (field: string, value: any) => {
+    setConfig(prev => {
+      if (field.includes('.')) {
+        const [parent, child] = field.split('.');
+        return {
+          ...prev,
+          [parent]: {
+            ...(prev as any)[parent],
+            [child]: value
+          }
+        };
+      }
+      return {
+        ...prev,
+        [field]: value
+      };
+    });
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    
+    try {
+      const response = await fetch('/api/admin/system-config', {
+        method: config._id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(config),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success('Configuración guardada exitosamente');
+        setConfig(data.data);
+        setHasChanges(false);
+      } else {
+        toast.error(data.error || 'Error al guardar la configuración');
+      }
+    } catch (error) {
+      console.error('Error saving system config:', error);
+      toast.error('Error al guardar la configuración');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col justify-center items-center py-12">
+        <Spinner size="lg" className="text-gray-900" />
+        <p className="text-gray-500 mt-4">Cargando configuración del sistema...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+            <Cog6ToothIcon className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Configuración del Sistema
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Ajusta los parámetros generales del sistema
+            </p>
+          </div>
+        </div>
+        <Button
+          startContent={<CheckCircleIcon className="w-4 h-4" />}
+          onPress={handleSave}
+          isLoading={saving}
+          isDisabled={!hasChanges}
+          className="bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-300"
+          size="lg"
+        >
+          {saving ? 'Guardando...' : 'Guardar Cambios'}
+        </Button>
+      </div>
+
+      {/* Configuration Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Business Hours & Days */}
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <CalendarDaysIcon className="w-5 h-5 text-gray-600" />
+              <h3 className="text-lg font-semibold">Horarios y Días</h3>
+            </div>
+          </CardHeader>
+          <Divider />
+          <CardBody className="pt-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Día de descanso</label>
+              <Select
+                selectedKeys={new Set([config.restDay.toString()])}
+                onSelectionChange={(keys) => {
+                  const selected = Array.from(keys)[0] as string;
+                  handleConfigChange('restDay', parseInt(selected));
+                }}
+                variant="bordered"
+                classNames={{
+                  trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900",
+                  value: "text-gray-900"
+                }}
+              >
+                {daysOfWeek.map((day) => (
+                  <SelectItem key={day.key.toString()}>
+                    {day.label}
+                  </SelectItem>
+                ))}
+              </Select>
+            </div>
+
+            <Input
+              label="Cargo por día de descanso"
+              type="number"
+              step="0.01"
+              value={config.restDayFee.toString()}
+              onValueChange={(value) => handleConfigChange('restDayFee', parseFloat(value) || 0)}
+              variant="bordered"
+              startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
+              description={`Cargo adicional: ${formatCurrency(config.restDayFee)}`}
+              classNames={{
+                input: "text-gray-900",
+                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
+              }}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Hora de inicio</label>
+                <Select
+                  selectedKeys={new Set([config.businessHours.start])}
+                  onSelectionChange={(keys) => {
+                    const selected = Array.from(keys)[0] as string;
+                    handleConfigChange('businessHours.start', selected);
+                  }}
+                  variant="bordered"
+                  classNames={{
+                    trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900",
+                    value: "text-gray-900"
+                  }}
+                >
+                  {timeSlots.map((time) => (
+                    <SelectItem key={time.key}>
+                      {time.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Hora de cierre</label>
+                <Select
+                  selectedKeys={new Set([config.businessHours.end])}
+                  onSelectionChange={(keys) => {
+                    const selected = Array.from(keys)[0] as string;
+                    handleConfigChange('businessHours.end', selected);
+                  }}
+                  variant="bordered"
+                  classNames={{
+                    trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900",
+                    value: "text-gray-900"
+                  }}
+                >
+                  {timeSlots.map((time) => (
+                    <SelectItem key={time.key}>
+                      {time.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Booking Settings */}
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <ClockIcon className="w-5 h-5 text-gray-600" />
+              <h3 className="text-lg font-semibold">Configuración de Reservas</h3>
+            </div>
+          </CardHeader>
+          <Divider />
+          <CardBody className="pt-4 space-y-4">
+            <Input
+              label="Días de anticipación mínima"
+              type="number"
+              min="1"
+              value={config.advanceBookingDays.toString()}
+              onValueChange={(value) => handleConfigChange('advanceBookingDays', parseInt(value) || 1)}
+              variant="bordered"
+              description={`Mínimo ${config.advanceBookingDays} días de anticipación`}
+              classNames={{
+                input: "text-gray-900",
+                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
+              }}
+            />
+
+            <Input
+              label="Máximo de eventos simultáneos"
+              type="number"
+              min="1"
+              value={config.maxConcurrentEvents.toString()}
+              onValueChange={(value) => handleConfigChange('maxConcurrentEvents', parseInt(value) || 1)}
+              variant="bordered"
+              description={`Máximo ${config.maxConcurrentEvents} eventos al mismo tiempo`}
+              classNames={{
+                input: "text-gray-900",
+                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
+              }}
+            />
+
+            <Input
+              label="Duración predeterminada del evento (horas)"
+              type="number"
+              min="1"
+              max="12"
+              value={config.defaultEventDuration.toString()}
+              onValueChange={(value) => handleConfigChange('defaultEventDuration', parseInt(value) || 4)}
+              variant="bordered"
+              description={`Duración estándar: ${config.defaultEventDuration} horas`}
+              classNames={{
+                input: "text-gray-900",
+                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
+              }}
+            />
+
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-300">
+              <Switch
+                isSelected={config.isActive}
+                onValueChange={(value) => handleConfigChange('isActive', value)}
+                color="success"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-700">Sistema activo</span>
+                <p className="text-xs text-gray-500">Permite nuevas reservas cuando está activo</p>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Summary Card */}
+      <Card className="border border-gray-200 shadow-sm bg-gray-50">
+        <CardHeader className="pb-3">
+          <h3 className="text-lg font-semibold">Resumen de Configuración</h3>
+        </CardHeader>
+        <Divider />
+        <CardBody className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
+              <div className="text-2xl font-semibold text-orange-600 mb-1">
+                {daysOfWeek.find(d => d.key === config.restDay)?.label}
+              </div>
+              <div className="text-sm text-gray-600">Día de descanso</div>
+              <div className="text-xs text-gray-500 mt-1">
+                +{formatCurrency(config.restDayFee)}
+              </div>
+            </div>
+
+            <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
+              <div className="text-2xl font-semibold text-blue-600 mb-1">
+                {config.businessHours.start} - {config.businessHours.end}
+              </div>
+              <div className="text-sm text-gray-600">Horario de atención</div>
+            </div>
+
+            <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
+              <div className="text-2xl font-semibold text-green-600 mb-1">
+                {config.advanceBookingDays}
+              </div>
+              <div className="text-sm text-gray-600">Días de anticipación</div>
+            </div>
+
+            <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
+              <div className="text-2xl font-semibold text-purple-600 mb-1">
+                {config.maxConcurrentEvents}
+              </div>
+              <div className="text-sm text-gray-600">Eventos simultáneos</div>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Changes Indicator */}
+      {hasChanges && (
+        <Card className="border-2 border-orange-200 bg-orange-50">
+          <CardBody className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                <span className="text-orange-800 font-medium">
+                  Tienes cambios sin guardar
+                </span>
+              </div>
+              <Button
+                variant="flat"
+                size="sm"
+                onPress={handleSave}
+                isLoading={saving}
+                className="bg-orange-100 text-orange-800 hover:bg-orange-200"
+              >
+                Guardar ahora
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+    </div>
+  );
+}

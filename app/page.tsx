@@ -1,13 +1,13 @@
-import { auth } from "@/lib/auth"
+import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
-import AuthContainer from "@/components/auth/AuthContainer"
+import { HomePage } from "@/components/home/HomePage"
 
 export default async function Home() {
-  const session = await auth()
+  const { userId } = await auth()
 
-  if (session) {
+  if (userId) {
     redirect("/dashboard")
   }
 
-  return <AuthContainer />
+  return <HomePage />
 }

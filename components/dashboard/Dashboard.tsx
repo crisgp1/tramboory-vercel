@@ -1,39 +1,306 @@
 "use client"
 
-import { useSession, signOut } from "next-auth/react"
-import { Card, CardBody, CardHeader, Button, Avatar } from "@heroui/react"
-import { ArrowRightOnRectangleIcon, UserIcon } from "@heroicons/react/24/outline"
+import { useState } from "react"
+import { useUser, useClerk } from "@clerk/nextjs"
+import { 
+  Button, 
+  Avatar, 
+  Dropdown, 
+  DropdownTrigger, 
+  DropdownMenu, 
+  DropdownItem,
+  Card,
+  CardBody,
+  Badge,
+  Chip
+} from "@heroui/react"
+import {
+  ArrowRightOnRectangleIcon,
+  UserIcon,
+  Bars3Icon,
+  XMarkIcon,
+  ChartBarIcon,
+  CalendarDaysIcon,
+  CurrencyDollarIcon,
+  Cog6ToothIcon,
+  ArchiveBoxIcon,
+  BellIcon,
+  MagnifyingGlassIcon,
+  EllipsisVerticalIcon
+} from "@heroicons/react/24/outline"
+import {
+  ChartBarIcon as ChartBarSolidIcon,
+  CalendarDaysIcon as CalendarSolidIcon,
+  CurrencyDollarIcon as CurrencySolidIcon,
+  Cog6ToothIcon as CogSolidIcon,
+  ArchiveBoxIcon as ArchiveSolidIcon
+} from "@heroicons/react/24/solid"
+import { useRole } from "@/hooks/useRole"
 import toast from "react-hot-toast"
+import ReservationManager from "@/components/reservations/ReservationManager"
+import ConfigurationManager from "@/components/admin/ConfigurationManager"
+
+type MenuItem = {
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  iconSolid: React.ComponentType<{ className?: string }>
+  description: string
+}
+
+const menuItems: MenuItem[] = [
+  { 
+    id: "analytics", 
+    label: "Analytics", 
+    icon: ChartBarIcon, 
+    iconSolid: ChartBarSolidIcon,
+    description: "Métricas y reportes del negocio"
+  },
+  { 
+    id: "reservas", 
+    label: "Reservas", 
+    icon: CalendarDaysIcon, 
+    iconSolid: CalendarSolidIcon,
+    description: "Gestión de reservas y eventos"
+  },
+  { 
+    id: "finanzas", 
+    label: "Finanzas", 
+    icon: CurrencyDollarIcon, 
+    iconSolid: CurrencySolidIcon,
+    description: "Ingresos, gastos y facturación"
+  },
+  { 
+    id: "configuracion", 
+    label: "Configuración", 
+    icon: Cog6ToothIcon, 
+    iconSolid: CogSolidIcon,
+    description: "Ajustes del sistema y paquetes"
+  },
+  { 
+    id: "inventario", 
+    label: "Inventario", 
+    icon: ArchiveBoxIcon, 
+    iconSolid: ArchiveSolidIcon,
+    description: "Control de materiales y equipos"
+  }
+]
 
 export default function Dashboard() {
-  const { data: session, status } = useSession()
+  const { user, isLoaded } = useUser()
+  const { signOut } = useClerk()
+  const { role } = useRole()
+  const [activeMenuItem, setActiveMenuItem] = useState("analytics")
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleSignOut = async () => {
     try {
-      await signOut({ callbackUrl: "/" })
+      await signOut()
       toast.success("Sesión cerrada exitosamente")
     } catch (error) {
       toast.error("Error al cerrar sesión")
     }
   }
 
-  if (status === "loading") {
+  const renderContent = () => {
+    const activeItem = menuItems.find(item => item.id === activeMenuItem)
+
+    // Si es la sección de reservas, mostrar el componente específico
+    if (activeMenuItem === 'reservas') {
+      return <ReservationManager />
+    }
+
+    // Si es la sección de configuración, mostrar el componente específico
+    if (activeMenuItem === 'configuracion') {
+      return <ConfigurationManager />
+    }
+
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Cargando...</p>
+      <div className="space-y-6">
+        {/* Header Section */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              {activeItem?.label}
+            </h1>
+            <p className="text-sm text-gray-600 mt-1">
+              {activeItem?.description}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              isIconOnly
+              variant="light"
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            >
+              <MagnifyingGlassIcon className="w-5 h-5" />
+            </Button>
+            <Button
+              isIconOnly
+              variant="light"
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            >
+              <EllipsisVerticalIcon className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Total Reservas", value: "156", change: "+12%", trend: "up" },
+            { label: "Ingresos del Mes", value: "$45,230", change: "+8%", trend: "up" },
+            { label: "Eventos Completados", value: "89", change: "+15%", trend: "up" },
+            { label: "Tasa de Ocupación", value: "78%", change: "-2%", trend: "down" }
+          ].map((stat, index) => (
+            <Card key={index} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                    <p className="text-2xl font-semibold text-gray-900 mt-1">{stat.value}</p>
+                  </div>
+                  <div className="text-right">
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={stat.trend === "up" ? "success" : "danger"}
+                      className="text-xs"
+                    >
+                      {stat.change}
+                    </Chip>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+
+        {/* Main Content Area */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Primary Content */}
+          <div className="lg:col-span-2">
+            <Card className="border border-gray-200 shadow-sm">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
+                  <Button variant="light" size="sm" className="text-gray-600">
+                    Ver todo
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  {[
+                    { type: "reservation", title: "Nueva reserva creada", subtitle: "María González - 15 Feb", time: "Hace 2 horas" },
+                    { type: "payment", title: "Pago recibido", subtitle: "$2,500 MXN", time: "Hace 4 horas" },
+                    { type: "event", title: "Evento completado", subtitle: "Fiesta de Sofía", time: "Hace 6 horas" },
+                    { type: "config", title: "Paquete actualizado", subtitle: "Paquete Premium", time: "Hace 1 día" }
+                  ].map((activity, index) => (
+                    <div key={index} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{activity.title}</p>
+                        <p className="text-xs text-gray-600 truncate">{activity.subtitle}</p>
+                      </div>
+                      <div className="text-xs text-gray-500">{activity.time}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <Card className="border border-gray-200 shadow-sm">
+              <CardBody className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
+                <div className="space-y-3">
+                  <Button 
+                    className="w-full justify-start bg-blue-50 text-blue-700 hover:bg-blue-100 border-0"
+                    variant="flat"
+                    startContent={<CalendarDaysIcon className="w-4 h-4" />}
+                  >
+                    Nueva Reserva
+                  </Button>
+                  <Button 
+                    className="w-full justify-start bg-green-50 text-green-700 hover:bg-green-100 border-0"
+                    variant="flat"
+                    startContent={<CurrencyDollarIcon className="w-4 h-4" />}
+                  >
+                    Registrar Pago
+                  </Button>
+                  <Button 
+                    className="w-full justify-start bg-purple-50 text-purple-700 hover:bg-purple-100 border-0"
+                    variant="flat"
+                    startContent={<ChartBarIcon className="w-4 h-4" />}
+                  >
+                    Ver Reportes
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Upcoming Events */}
+            <Card className="border border-gray-200 shadow-sm">
+              <CardBody className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Próximos Eventos</h3>
+                <div className="space-y-3">
+                  {[
+                    { name: "Fiesta de Ana", date: "Hoy 3:00 PM", status: "confirmed" },
+                    { name: "Cumpleaños de Luis", date: "Mañana 11:00 AM", status: "pending" },
+                    { name: "Evento Corporativo", date: "15 Feb 2:00 PM", status: "confirmed" }
+                  ].map((event, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{event.name}</p>
+                        <p className="text-xs text-gray-600">{event.date}</p>
+                      </div>
+                      <Badge 
+                        color={event.status === "confirmed" ? "success" : "warning"}
+                        variant="flat"
+                        size="sm"
+                      >
+                        {event.status === "confirmed" ? "Confirmado" : "Pendiente"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          </div>
         </div>
       </div>
     )
   }
 
-  if (!session) {
+  if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardBody className="text-center">
-            <p>No tienes una sesión activa</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-900 border-t-transparent absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+          </div>
+          <p className="text-gray-600 mt-4 text-sm">Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Card className="max-w-md w-full mx-4 border border-gray-200 shadow-lg">
+          <CardBody className="p-8 text-center">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UserIcon className="w-6 h-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sesión requerida</h3>
+            <p className="text-gray-600">No tienes una sesión activa</p>
           </CardBody>
         </Card>
       </div>
@@ -41,108 +308,159 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Tramboory Dashboard
-              </h1>
+            <div className="flex items-center gap-4">
+              <Button
+                isIconOnly
+                variant="light"
+                className="lg:hidden text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                onPress={() => setSidebarOpen(!sidebarOpen)}
+              >
+                <Bars3Icon className="w-5 h-5" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-semibold text-sm">T</span>
+                </div>
+                <h1 className="text-lg font-semibold text-gray-900 hidden sm:block">
+                  Tramboory
+                </h1>
+              </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <Avatar
-                  icon={<UserIcon className="w-6 h-6" />}
-                  size="sm"
-                  className="bg-primary text-white"
-                />
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {session.user?.name}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {session.user?.email}
-                  </p>
-                </div>
-              </div>
-              
+            <div className="flex items-center gap-3">
               <Button
-                color="danger"
+                isIconOnly
                 variant="light"
-                size="sm"
-                onPress={handleSignOut}
-                startContent={<ArrowRightOnRectangleIcon className="w-4 h-4" />}
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               >
-                Cerrar Sesión
+                <BellIcon className="w-5 h-5" />
               </Button>
+              
+              {/* User Menu */}
+              <Dropdown>
+                <DropdownTrigger>
+                  <Avatar
+                    src={user.imageUrl}
+                    icon={!user.imageUrl ? <UserIcon className="w-4 h-4" /> : undefined}
+                    size="sm"
+                    className="cursor-pointer"
+                  />
+                </DropdownTrigger>
+                <DropdownMenu>
+                  <DropdownItem key="profile" className="h-14 gap-2">
+                    <p className="font-medium">{user.fullName}</p>
+                    <p className="text-small text-default-500">{user.primaryEmailAddress?.emailAddress}</p>
+                  </DropdownItem>
+                  <DropdownItem 
+                    key="logout" 
+                    color="danger"
+                    startContent={<ArrowRightOnRectangleIcon className="w-4 h-4" />}
+                    onPress={handleSignOut}
+                  >
+                    Cerrar Sesión
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Welcome Card */}
-          <Card className="col-span-full">
-            <CardHeader>
-              <h2 className="text-2xl font-bold">
-                ¡Bienvenido, {session.user?.name}!
-              </h2>
-            </CardHeader>
-            <CardBody>
-              <p className="text-gray-600 dark:text-gray-400">
-                Has iniciado sesión exitosamente en Tramboory. Desde aquí puedes gestionar tu cuenta y acceder a todas las funcionalidades.
-              </p>
-            </CardBody>
-          </Card>
-
-          {/* Stats Cards */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Perfil</h3>
-            </CardHeader>
-            <CardBody>
-              <div className="space-y-2">
-                <p className="text-sm">
-                  <span className="font-medium">Nombre:</span> {session.user?.name}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Email:</span> {session.user?.email}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">ID:</span> {session.user?.id}
-                </p>
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Actividad</h3>
-            </CardHeader>
-            <CardBody>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Última conexión: Ahora
-              </p>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Configuración</h3>
-            </CardHeader>
-            <CardBody>
-              <Button size="sm" variant="bordered" className="w-full">
-                Editar Perfil
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className={`
+          fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-out
+          lg:translate-x-0 lg:static lg:inset-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          <div className="flex flex-col h-full">
+            {/* Sidebar Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
+              <h2 className="text-lg font-semibold text-gray-900">Navegación</h2>
+              <Button
+                isIconOnly
+                variant="light"
+                size="sm"
+                className="text-gray-600 hover:text-gray-900"
+                onPress={() => setSidebarOpen(false)}
+              >
+                <XMarkIcon className="w-4 h-4" />
               </Button>
-            </CardBody>
-          </Card>
-        </div>
-      </main>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 p-4 space-y-1">
+              {menuItems.map((item) => {
+                const Icon = item.icon
+                const IconSolid = item.iconSolid
+                const isActive = activeMenuItem === item.id
+                
+                return (
+                  <Button
+                    key={item.id}
+                    variant="light"
+                    className={`w-full justify-start h-11 font-medium transition-all duration-200 ${
+                      isActive 
+                        ? "bg-gray-900 text-white hover:bg-gray-800" 
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
+                    startContent={
+                      isActive ? 
+                        <IconSolid className="w-5 h-5" /> : 
+                        <Icon className="w-5 h-5" />
+                    }
+                    onPress={() => {
+                      setActiveMenuItem(item.id)
+                      setSidebarOpen(false)
+                    }}
+                  >
+                    <span className="text-left flex-1">{item.label}</span>
+                  </Button>
+                )
+              })}
+            </nav>
+
+            {/* User Info */}
+            <div className="p-4 border-t border-gray-200">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                <Avatar
+                  src={user.imageUrl}
+                  icon={!user.imageUrl ? <UserIcon className="w-4 h-4" /> : undefined}
+                  size="sm"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user.fullName}
+                  </p>
+                  <p className="text-xs text-gray-600 truncate">
+                    {role}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Overlay for mobile */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-20 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 lg:ml-0">
+          <div className="p-4 sm:p-6 lg:p-8">
+            {renderContent()}
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tramboory",
-  description: "Sistema de gestión y autenticación",
+  title: "Tramboory - Salón de Fiestas Infantiles en Zapopan",
+  description: "El mejor salón de fiestas infantiles en Zapopan. Experiencias mágicas diseñadas para crear recuerdos inolvidables en el cumpleaños de tus pequeños.",
 };
 
 export default function RootLayout({

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { useSignIn } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -30,12 +30,13 @@ interface LoginFormProps {
   onSwitchToForgotPassword: () => void
 }
 
-export default function LoginForm({ 
-  onSwitchToRegister, 
-  onSwitchToForgotPassword 
+export default function LoginForm({
+  onSwitchToRegister,
+  onSwitchToForgotPassword
 }: LoginFormProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const { isLoaded, signIn, setActive } = useSignIn()
   const router = useRouter()
 
   const {
@@ -49,23 +50,25 @@ export default function LoginForm({
   const toggleVisibility = () => setIsVisible(!isVisible)
 
   const onSubmit = async (data: LoginFormData) => {
+    if (!isLoaded) return
+
     setIsLoading(true)
     
     try {
-      const result = await signIn("credentials", {
-        email: data.email,
+      const result = await signIn.create({
+        identifier: data.email,
         password: data.password,
-        redirect: false,
       })
 
-      if (result?.error) {
-        toast.error("Credenciales inválidas")
-      } else {
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId })
         toast.success("¡Bienvenido!")
         router.push("/dashboard")
+      } else {
+        toast.error("Error al iniciar sesión")
       }
-    } catch (error) {
-      toast.error("Error al iniciar sesión")
+    } catch (err: any) {
+      toast.error(err.errors?.[0]?.message || "Credenciales inválidas")
     } finally {
       setIsLoading(false)
     }

@@ -15,6 +15,7 @@
     "@heroui/react": "^2.7.11",
     "@heroui/theme": "^2.4.17",
     "@hookform/resolvers": "^5.1.1",
+    "@internationalized/date": "^3.8.2",
     "@knocklabs/node": "^1.10.3",
     "@types/bcryptjs": "^2.4.6",
     "@vercel/analytics": "^1.5.0",
@@ -38,6 +39,8 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.58.1",
     "react-hot-toast": "^2.5.2",
+    "react-icons": "^5.5.0",
+    "svix": "^1.68.0",
     "zod": "^3.25.67",
     "zustand": "^5.0.5"
   },
