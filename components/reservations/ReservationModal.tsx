@@ -137,28 +137,27 @@ export default function ReservationModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <Modal 
-          isOpen={isOpen} 
+        <Modal
+          isOpen={isOpen}
           onClose={onClose}
-          size="5xl"
+          size="2xl"
           scrollBehavior="inside"
           backdrop="blur"
           classNames={{
             backdrop: "bg-black/60 backdrop-blur-md",
-            base: "bg-transparent shadow-none",
             wrapper: "z-[1001] items-center justify-center p-4",
             body: "p-0",
             header: "p-0",
             footer: "p-0"
           }}
         >
-          <ModalContent className="bg-transparent shadow-none max-h-[95vh]">
+          <ModalContent className="max-h-[95vh] bg-white rounded-3xl shadow-2xl overflow-hidden">
             <motion.div
               variants={modalVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="bg-white rounded-3xl shadow-2xl overflow-hidden"
+              className="w-full h-full"
             >
               {/* Header with Hero Section */}
               <motion.div 

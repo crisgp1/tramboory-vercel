@@ -406,16 +406,17 @@ export default function PackageManager() {
       </Card>
 
       {/* Create/Edit Modal */}
-      <Modal 
-        isOpen={isOpen} 
+      <Modal
+        isOpen={isOpen}
         onClose={onClose}
-        size="3xl"
+        size="2xl"
         scrollBehavior="inside"
         isDismissable={!submitting}
         backdrop="opaque"
         classNames={{
           backdrop: "bg-black/60 backdrop-blur-sm",
           base: "bg-white shadow-2xl border-0",
+          wrapper: "z-[1001] items-center justify-center p-4",
           header: "border-b border-gray-200 bg-white",
           body: "py-6",
           footer: "border-t border-gray-200 bg-gray-50"
@@ -424,176 +425,193 @@ export default function PackageManager() {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                    <CubeIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {editingPackage ? 'Editar Paquete' : 'Nuevo Paquete'}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {editingPackage ? 'Modifica los datos del paquete' : 'Completa la información del nuevo paquete'}
-                    </p>
-                  </div>
-                </div>
+              <ModalHeader className="px-6 py-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {editingPackage ? 'Editar paquete' : 'Nuevo paquete'}
+                </h3>
               </ModalHeader>
 
-              <ModalBody className="px-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
+              <ModalBody>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre del paquete *
+                    </label>
                     <Input
-                      label="Nombre del paquete"
                       placeholder="Ej: Paquete Básico"
                       value={formData.name}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-                      isRequired
-                      variant="bordered"
+                      variant="flat"
                       classNames={{
                         input: "text-gray-900",
-                        inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
                       }}
                     />
                   </div>
                   
-                  <Input
-                    label="Duración (horas)"
-                    placeholder="Ej: 4"
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={formData.duration}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, duration: value }))}
-                    isRequired
-                    variant="bordered"
-                    startContent={<ClockIcon className="w-4 h-4 text-gray-400" />}
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                    }}
-                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Duración (horas) *
+                      </label>
+                      <Input
+                        placeholder="4"
+                        type="number"
+                        min="1"
+                        max="24"
+                        value={formData.duration}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, duration: value }))}
+                        variant="flat"
+                        endContent={<span className="text-gray-400 text-sm">hrs</span>}
+                        classNames={{
+                          input: "text-gray-900",
+                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Máximo de invitados *
+                      </label>
+                      <Input
+                        placeholder="20"
+                        type="number"
+                        min="1"
+                        value={formData.maxGuests}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, maxGuests: value }))}
+                        variant="flat"
+                        classNames={{
+                          input: "text-gray-900",
+                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        }}
+                      />
+                    </div>
+                  </div>
                   
-                  <Input
-                    label="Máximo de invitados"
-                    placeholder="Ej: 20"
-                    type="number"
-                    min="1"
-                    value={formData.maxGuests}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, maxGuests: value }))}
-                    isRequired
-                    variant="bordered"
-                    startContent={<UsersIcon className="w-4 h-4 text-gray-400" />}
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                    }}
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Precios *
+                    </label>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Lunes - Jueves</label>
+                        <Input
+                          placeholder="2500"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.weekday}
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, weekday: value }))}
+                          variant="flat"
+                          startContent={<span className="text-gray-400">$</span>}
+                          classNames={{
+                            input: "text-gray-900",
+                            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                          }}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Viernes - Domingo</label>
+                        <Input
+                          placeholder="3000"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.weekend}
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, weekend: value }))}
+                          variant="flat"
+                          startContent={<span className="text-gray-400">$</span>}
+                          classNames={{
+                            input: "text-gray-900",
+                            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                          }}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Días festivos</label>
+                        <Input
+                          placeholder="3500"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.holiday}
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, holiday: value }))}
+                          variant="flat"
+                          startContent={<span className="text-gray-400">$</span>}
+                          classNames={{
+                            input: "text-gray-900",
+                            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                   
-                  <Input
-                    label="Precio entre semana"
-                    placeholder="Ej: 2500"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.weekday}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, weekday: value }))}
-                    isRequired
-                    variant="bordered"
-                    startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                    }}
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Descripción
+                    </label>
+                    <Textarea
+                      placeholder="Describe qué incluye este paquete..."
+                      value={formData.description}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                      minRows={2}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
+                  </div>
                   
-                  <Input
-                    label="Precio fin de semana"
-                    placeholder="Ej: 3000"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.weekend}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, weekend: value }))}
-                    isRequired
-                    variant="bordered"
-                    startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                    }}
-                  />
-                  
-                  <Input
-                    label="Precio día festivo"
-                    placeholder="Ej: 3500"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.holiday}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, holiday: value }))}
-                    isRequired
-                    variant="bordered"
-                    startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                    }}
-                  />
-                  
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-300">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Características incluidas
+                    </label>
+                    <Textarea
+                      placeholder="Decoración básica, mesa de dulces, animación (separadas por comas)"
+                      value={formData.features}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, features: value }))}
+                      minRows={2}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3">
                     <Switch
                       isSelected={formData.isActive}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, isActive: value }))}
-                      color="success"
+                      size="sm"
                     />
-                    <span className="text-sm font-medium text-gray-700">Paquete activo</span>
+                    <span className="text-sm text-gray-700">Paquete activo</span>
                   </div>
                 </div>
-                
-                <Textarea
-                  label="Descripción"
-                  placeholder="Describe qué incluye este paquete..."
-                  value={formData.description}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-                  minRows={3}
-                  variant="bordered"
-                  classNames={{
-                    input: "text-gray-900",
-                    inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                  }}
-                />
-                
-                <Textarea
-                  label="Características incluidas"
-                  placeholder="Ej: Decoración básica, Mesa de dulces, Animación, etc. (separadas por comas)"
-                  value={formData.features}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, features: value }))}
-                  minRows={2}
-                  variant="bordered"
-                  description="Separa cada característica con una coma"
-                  classNames={{
-                    input: "text-gray-900",
-                    inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                  }}
-                />
               </ModalBody>
 
-              <ModalFooter className="px-6 py-4">
+              <ModalFooter className="px-6 py-3">
                 <Button
                   variant="light"
                   onPress={onClose}
                   isDisabled={submitting}
-                  className="text-gray-600 hover:bg-gray-100"
+                  size="sm"
+                  className="text-gray-600"
                 >
                   Cancelar
                 </Button>
                 <Button
                   onPress={handleSubmit}
                   isLoading={submitting}
-                  className="bg-gray-900 text-white hover:bg-gray-800"
+                  size="sm"
+                  className="bg-gray-900 text-white"
                 >
-                  {submitting ? 'Guardando...' : (editingPackage ? 'Actualizar' : 'Crear Paquete')}
+                  {submitting ? 'Guardando...' : (editingPackage ? 'Actualizar' : 'Crear')}
                 </Button>
               </ModalFooter>
             </>

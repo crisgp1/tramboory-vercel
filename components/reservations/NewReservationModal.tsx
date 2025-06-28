@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Modal,
   ModalContent,
@@ -13,27 +12,10 @@ import {
   Select,
   SelectItem,
   DateInput,
-  Textarea,
-  Card,
-  CardBody,
-  Progress,
-  Avatar,
-  Chip
+  Textarea
 } from '@heroui/react';
 import {
-  UserIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  CakeIcon,
-  CalendarIcon,
-  ClockIcon,
-  CurrencyDollarIcon,
-  CheckIcon,
-  ArrowRightIcon,
-  ArrowLeftIcon,
-  SparklesIcon,
-  HeartIcon,
-  StarIcon
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { CalendarDate } from '@internationalized/date';
 import toast from 'react-hot-toast';
@@ -63,39 +45,17 @@ const timeSlots = [
 interface PackageOption {
   _id: string;
   name: string;
-  number: string;
+  number?: string;
   description?: string;
   maxGuests: number;
   pricing: {
-    mondayToThursday: number;
-    fridayToSunday: number;
+    weekday: number;
+    weekend: number;
+    holiday: number;
   };
   isActive: boolean;
 }
 
-const stepConfig = [
-  { 
-    title: 'Información del Cliente', 
-    subtitle: 'Datos de contacto del responsable', 
-    icon: UserIcon,
-    color: 'from-blue-500 to-cyan-500',
-    bgColor: 'from-blue-50 to-cyan-50'
-  },
-  { 
-    title: 'Información del Festejado/a', 
-    subtitle: 'Datos del niño/a que celebra', 
-    icon: CakeIcon,
-    color: 'from-pink-500 to-rose-500',
-    bgColor: 'from-pink-50 to-rose-50'
-  },
-  { 
-    title: 'Detalles del Evento', 
-    subtitle: 'Fecha, hora y paquete seleccionado', 
-    icon: CalendarIcon,
-    color: 'from-green-500 to-emerald-500',
-    bgColor: 'from-green-50 to-emerald-50'
-  }
-];
 
 export default function NewReservationModal({
   isOpen,
@@ -239,549 +199,314 @@ export default function NewReservationModal({
     }
   };
 
-  const currentStepConfig = stepConfig[step - 1];
-
-  const renderStepIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
-      <div className="flex items-center space-x-2">
-        {[1, 2, 3].map((stepNumber) => (
-          <div key={stepNumber} className="flex items-center">
-            <motion.div 
-              className={`
-                relative w-12 h-12 rounded-full flex items-center justify-center font-medium text-sm transition-all duration-300
-                ${step >= stepNumber 
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-                  : 'bg-gray-200 text-gray-500'
-                }
-              `}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {step > stepNumber ? (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <CheckIcon className="w-6 h-6" />
-                </motion.div>
-              ) : (
-                stepNumber
-              )}
-              
-              {step === stepNumber && (
-                <motion.div
-                  className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-600"
-                  initial={{ scale: 1 }}
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  style={{ zIndex: -1 }}
-                />
-              )}
-            </motion.div>
-            {stepNumber < 3 && (
-              <motion.div 
-                className={`
-                  w-16 h-1 mx-3 rounded-full transition-all duration-300
-                  ${step > stepNumber 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600' 
-                    : 'bg-gray-200'
-                  }
-                `}
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: step > stepNumber ? 1 : 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderStep1 = () => {
-    const StepIcon = currentStepConfig.icon;
-    return (
-      <motion.div 
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -50 }}
-        className="space-y-6"
-      >
-        <div className="text-center mb-8">
-          <motion.div 
-            className={`w-20 h-20 bg-gradient-to-br ${currentStepConfig.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg`}
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <StepIcon className="w-10 h-10 text-white" />
-          </motion.div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">{currentStepConfig.title}</h3>
-          <p className="text-gray-600">{currentStepConfig.subtitle}</p>
-        </div>
-        
-        <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Input
-              label="Nombre completo"
-              placeholder="Ej: María González"
-              value={formData.customerName}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, customerName: value }))}
-              isRequired
-              variant="bordered"
-              size="lg"
-              startContent={<UserIcon className="w-5 h-5 text-gray-400" />}
-              classNames={{
-                input: "text-gray-900 text-base",
-                inputWrapper: "h-14 border-2 border-gray-200 hover:border-blue-400 focus-within:border-blue-500 bg-white transition-all duration-200"
-              }}
-            />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Input
-              label="Correo electrónico"
-              placeholder="Ej: maria@email.com"
-              type="email"
-              value={formData.customerEmail}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, customerEmail: value }))}
-              isRequired
-              variant="bordered"
-              size="lg"
-              startContent={<EnvelopeIcon className="w-5 h-5 text-gray-400" />}
-              classNames={{
-                input: "text-gray-900 text-base",
-                inputWrapper: "h-14 border-2 border-gray-200 hover:border-blue-400 focus-within:border-blue-500 bg-white transition-all duration-200"
-              }}
-            />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Input
-              label="Teléfono"
-              placeholder="Ej: 55 1234 5678"
-              value={formData.customerPhone}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, customerPhone: value }))}
-              isRequired
-              variant="bordered"
-              size="lg"
-              startContent={<PhoneIcon className="w-5 h-5 text-gray-400" />}
-              classNames={{
-                input: "text-gray-900 text-base",
-                inputWrapper: "h-14 border-2 border-gray-200 hover:border-blue-400 focus-within:border-blue-500 bg-white transition-all duration-200"
-              }}
-            />
-          </motion.div>
-        </div>
-      </motion.div>
-    );
-  };
-
-  const renderStep2 = () => {
-    const StepIcon = currentStepConfig.icon;
-    return (
-      <motion.div 
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -50 }}
-        className="space-y-6"
-      >
-        <div className="text-center mb-8">
-          <motion.div 
-            className={`w-20 h-20 bg-gradient-to-br ${currentStepConfig.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg`}
-            whileHover={{ scale: 1.05, rotate: -5 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <StepIcon className="w-10 h-10 text-white" />
-          </motion.div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">{currentStepConfig.title}</h3>
-          <p className="text-gray-600">{currentStepConfig.subtitle}</p>
-        </div>
-        
-        <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Input
-              label="Nombre del niño/a"
-              placeholder="Ej: Sofía"
-              value={formData.childName}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, childName: value }))}
-              isRequired
-              variant="bordered"
-              size="lg"
-              startContent={<HeartIcon className="w-5 h-5 text-pink-400" />}
-              classNames={{
-                input: "text-gray-900 text-base",
-                inputWrapper: "h-14 border-2 border-gray-200 hover:border-pink-400 focus-within:border-pink-500 bg-white transition-all duration-200"
-              }}
-            />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Select
-              label="Edad del festejado/a"
-              placeholder="Selecciona la edad"
-              selectedKeys={formData.childAge ? [formData.childAge] : []}
-              onSelectionChange={(keys) => {
-                const selected = Array.from(keys)[0] as string;
-                setFormData(prev => ({ ...prev, childAge: selected }));
-              }}
-              isRequired
-              variant="bordered"
-              size="lg"
-              startContent={<StarIcon className="w-5 h-5 text-yellow-400" />}
-              classNames={{
-                trigger: "h-14 border-2 border-gray-200 hover:border-pink-400 focus-within:border-pink-500 bg-white transition-all duration-200",
-                value: "text-gray-900 text-base"
-              }}
-            >
-              {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                <SelectItem key={age.toString()}>
-                  {age} {age === 1 ? 'año' : 'años'}
-                </SelectItem>
-              ))}
-            </Select>
-          </motion.div>
-
-          {formData.childName && formData.childAge && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={`p-6 rounded-2xl bg-gradient-to-br ${currentStepConfig.bgColor} border border-pink-200`}
-            >
-              <div className="flex items-center gap-4">
-                <Avatar
-                  name={formData.childName}
-                  className="w-12 h-12 bg-gradient-to-br from-pink-400 to-rose-500 text-white"
-                />
-                <div>
-                  <p className="font-semibold text-gray-900">{formData.childName}</p>
-                  <p className="text-sm text-gray-600">{formData.childAge} {formData.childAge === '1' ? 'año' : 'años'}</p>
-                </div>
-                <div className="ml-auto">
-                  <Chip color="secondary" variant="flat" size="sm">
-                    ¡Festejado/a!
-                  </Chip>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-    );
-  };
-
-  const renderStep3 = () => {
-    const StepIcon = currentStepConfig.icon;
-    return (
-      <motion.div 
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -50 }}
-        className="space-y-6"
-      >
-        <div className="text-center mb-8">
-          <motion.div 
-            className={`w-20 h-20 bg-gradient-to-br ${currentStepConfig.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg`}
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <StepIcon className="w-10 h-10 text-white" />
-          </motion.div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">{currentStepConfig.title}</h3>
-          <p className="text-gray-600">{currentStepConfig.subtitle}</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <DateInput
-              label="Fecha del evento"
-              value={formData.eventDate}
-              onChange={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
-              isRequired
-              variant="bordered"
-              size="lg"
-              minValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
-              classNames={{
-                input: "text-gray-900 text-base",
-                inputWrapper: "h-14 border-2 border-gray-200 hover:border-green-400 focus-within:border-green-500 bg-white transition-all duration-200"
-              }}
-            />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Select
-              label="Hora del evento"
-              placeholder="Selecciona la hora"
-              selectedKeys={formData.eventTime ? [formData.eventTime] : []}
-              onSelectionChange={(keys) => {
-                const selected = Array.from(keys)[0] as string;
-                setFormData(prev => ({ ...prev, eventTime: selected }));
-              }}
-              isRequired
-              variant="bordered"
-              size="lg"
-              startContent={<ClockIcon className="w-5 h-5 text-green-400" />}
-              classNames={{
-                trigger: "h-14 border-2 border-gray-200 hover:border-green-400 focus-within:border-green-500 bg-white transition-all duration-200",
-                value: "text-gray-900 text-base"
-              }}
-            >
-              {timeSlots.map((time) => (
-                <SelectItem key={time}>
-                  {time}
-                </SelectItem>
-              ))}
-            </Select>
-          </motion.div>
-        </div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Select
-            label="Paquete de celebración"
-            placeholder={loadingPackages ? "Cargando paquetes..." : "Selecciona un paquete"}
-            selectedKeys={formData.packageId ? [formData.packageId] : []}
-            onSelectionChange={(keys) => {
-              const selected = Array.from(keys)[0] as string;
-              setFormData(prev => ({ ...prev, packageId: selected }));
-            }}
-            isRequired
-            variant="bordered"
-            size="lg"
-            isDisabled={loadingPackages}
-            startContent={<SparklesIcon className="w-5 h-5 text-purple-400" />}
-            classNames={{
-              trigger: "h-14 border-2 border-gray-200 hover:border-green-400 focus-within:border-green-500 bg-white transition-all duration-200",
-              value: "text-gray-900 text-base"
-            }}
-          >
-            {packages.map((pkg) => (
-              <SelectItem key={pkg._id} textValue={`${pkg.number} - ${pkg.name}`}>
-                <div className="flex flex-col py-2">
-                  <span className="font-semibold text-gray-900">{pkg.number} - {pkg.name}</span>
-                  <span className="text-sm text-green-600 font-medium">
-                    L-J: ${pkg.pricing.mondayToThursday.toLocaleString()} |
-                    V-D: ${pkg.pricing.fridayToSunday.toLocaleString()} MXN
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    Hasta {pkg.maxGuests} invitados{pkg.description ? ` - ${pkg.description}` : ''}
-                  </span>
-                </div>
-              </SelectItem>
-            ))}
-          </Select>
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Textarea
-            label="Comentarios especiales (opcional)"
-            placeholder="Alguna solicitud especial, alergias, o comentarios adicionales..."
-            value={formData.specialComments}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, specialComments: value }))}
-            minRows={3}
-            variant="bordered"
-            classNames={{
-              input: "text-gray-900 text-base",
-              inputWrapper: "border-2 border-gray-200 hover:border-green-400 focus-within:border-green-500 bg-white transition-all duration-200"
-            }}
-          />
-        </motion.div>
-      </motion.div>
-    );
-  };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
+    <Modal
+      isOpen={isOpen}
       onClose={handleClose}
-      size="4xl"
+      size="2xl"
       scrollBehavior="inside"
       isDismissable={!loading}
-      backdrop="blur"
+      backdrop="opaque"
       classNames={{
-        backdrop: "bg-black/60 backdrop-blur-md",
-        base: "bg-white shadow-2xl border-0 max-h-[95vh]",
+        backdrop: "bg-gray-900/20",
+        base: "bg-white border border-gray-200",
         wrapper: "z-[1001] items-center justify-center p-4",
-        body: "p-0",
-        header: "p-0",
-        footer: "p-0"
+        header: "border-b border-gray-100",
+        body: "p-6",
+        footer: "border-t border-gray-100 bg-gray-50/50"
       }}
     >
-      <ModalContent className="bg-white rounded-3xl overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          {/* Header */}
-          <ModalHeader className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-8 text-white">
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="relative z-10 flex items-center justify-between w-full">
-              <div className="flex items-center gap-4">
-                <motion.div
-                  whileHover={{ scale: 1.05, rotate: 5 }}
-                  className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"
-                >
-                  <CalendarIcon className="w-8 h-8 text-white" />
-                </motion.div>
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">Nueva Reserva</h2>
-                  <p className="text-white/80">Crea una nueva celebración paso a paso</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-white/80 mb-2">Paso {step} de 3</div>
-                <Progress 
-                  value={(step / 3) * 100} 
-                  className="w-32"
-                  color="default"
-                  size="sm"
-                  classNames={{
-                    track: "bg-white/20",
-                    indicator: "bg-white"
-                  }}
-                />
+      <ModalContent>
+        <ModalHeader className="px-6 py-4">
+          <div className="flex items-center justify-between w-full">
+            <h3 className="text-lg font-medium text-gray-900">Nueva reserva</h3>
+            <div className="text-sm text-gray-500">Paso {step} de 3</div>
+          </div>
+        </ModalHeader>
+
+        <ModalBody>
+          <div className="space-y-6">
+            {/* Step Indicator */}
+            <div className="flex items-center justify-center">
+              <div className="flex items-center space-x-2">
+                {[1, 2, 3].map((stepNumber) => (
+                  <div key={stepNumber} className="flex items-center">
+                    <div className={`
+                      w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                      ${step >= stepNumber
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-gray-200 text-gray-500'
+                      }
+                    `}>
+                      {step > stepNumber ? (
+                        <CheckIcon className="w-4 h-4" />
+                      ) : (
+                        stepNumber
+                      )}
+                    </div>
+                    {stepNumber < 3 && (
+                      <div className={`
+                        w-12 h-0.5 mx-2
+                        ${step > stepNumber ? 'bg-gray-900' : 'bg-gray-200'}
+                      `} />
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-          </ModalHeader>
 
-          {/* Body */}
-          <ModalBody className="p-8 bg-white">
-            <div className="max-w-2xl mx-auto">
-              {renderStepIndicator()}
-              
-              <Card className={`border-0 shadow-lg bg-gradient-to-br ${currentStepConfig.bgColor}`}>
-                <CardBody className="p-8">
-                  <AnimatePresence mode="wait">
-                    {step === 1 && renderStep1()}
-                    {step === 2 && renderStep2()}
-                    {step === 3 && renderStep3()}
-                  </AnimatePresence>
-                </CardBody>
-              </Card>
-            </div>
-          </ModalBody>
-
-          {/* Footer */}
-          <ModalFooter className="p-8 bg-gray-50 border-t border-gray-100">
-            <div className="flex justify-between w-full">
-              <div>
-                {step > 1 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button
+            {/* Step Content */}
+            <div className="space-y-4">
+              {step === 1 && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-900">Información del cliente</h4>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre completo *
+                    </label>
+                    <Input
+                      placeholder="Ej: María González López"
+                      value={formData.customerName}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, customerName: value }))}
                       variant="flat"
-                      onPress={() => setStep(step - 1)}
-                      isDisabled={loading}
-                      className="bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium"
-                      size="lg"
-                      startContent={<ArrowLeftIcon className="w-4 h-4" />}
-                    >
-                      Anterior
-                    </Button>
-                  </motion.div>
-                )}
-              </div>
-              
-              <div className="flex gap-4">
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button
-                    variant="light"
-                    onPress={handleClose}
-                    isDisabled={loading}
-                    className="text-gray-600 hover:bg-gray-200 font-medium"
-                    size="lg"
-                  >
-                    Cancelar
-                  </Button>
-                </motion.div>
-                
-                {step < 3 ? (
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button
-                      onPress={() => {
-                        if (step === 1 && !validateStep1()) {
-                          toast.error('Completa todos los campos del cliente');
-                          return;
-                        }
-                        if (step === 2 && !validateStep2()) {
-                          toast.error('Completa la información del festejado/a');
-                          return;
-                        }
-                        setStep(step + 1);
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
                       }}
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 font-medium shadow-lg"
-                      size="lg"
-                      endContent={<ArrowRightIcon className="w-4 h-4" />}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Correo electrónico *
+                    </label>
+                    <Input
+                      placeholder="maria@ejemplo.com"
+                      type="email"
+                      value={formData.customerEmail}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, customerEmail: value }))}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Teléfono *
+                    </label>
+                    <Input
+                      placeholder="55 1234 5678"
+                      value={formData.customerPhone}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, customerPhone: value }))}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-900">Información del festejado</h4>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre del niño/a *
+                    </label>
+                    <Input
+                      placeholder="Ej: Sofía"
+                      value={formData.childName}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, childName: value }))}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Edad del festejado/a *
+                    </label>
+                    <Select
+                      placeholder="Selecciona la edad"
+                      selectedKeys={formData.childAge ? [formData.childAge] : []}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] as string;
+                        setFormData(prev => ({ ...prev, childAge: selected }));
+                      }}
+                      variant="flat"
+                      classNames={{
+                        trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                        value: "text-gray-900"
+                      }}
                     >
-                      Siguiente
-                    </Button>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button
-                      onPress={handleSubmit}
-                      isLoading={loading}
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 font-medium shadow-lg"
-                      size="lg"
-                      startContent={!loading ? <CheckIcon className="w-4 h-4" /> : undefined}
+                      {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
+                        <SelectItem key={age.toString()}>
+                          {age} {age === 1 ? 'año' : 'años'}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {step === 3 && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-900">Detalles del evento</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Fecha del evento *
+                      </label>
+                      <DateInput
+                        value={formData.eventDate}
+                        onChange={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
+                        variant="flat"
+                        minValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
+                        classNames={{
+                          input: "text-gray-900",
+                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Hora del evento *
+                      </label>
+                      <Select
+                        placeholder="Selecciona la hora"
+                        selectedKeys={formData.eventTime ? [formData.eventTime] : []}
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0] as string;
+                          setFormData(prev => ({ ...prev, eventTime: selected }));
+                        }}
+                        variant="flat"
+                        classNames={{
+                          trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                          value: "text-gray-900"
+                        }}
+                      >
+                        {timeSlots.map((time) => (
+                          <SelectItem key={time}>{time}</SelectItem>
+                        ))}
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Paquete de celebración *
+                    </label>
+                    <Select
+                      placeholder={loadingPackages ? "Cargando paquetes..." : "Selecciona un paquete"}
+                      selectedKeys={formData.packageId ? [formData.packageId] : []}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] as string;
+                        setFormData(prev => ({ ...prev, packageId: selected }));
+                      }}
+                      variant="flat"
+                      isDisabled={loadingPackages}
+                      classNames={{
+                        trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                        value: "text-gray-900"
+                      }}
                     >
-                      {loading ? 'Creando reserva...' : 'Crear Reserva'}
-                    </Button>
-                  </motion.div>
-                )}
-              </div>
+                      {packages.map((pkg) => (
+                        <SelectItem key={pkg._id} textValue={`${pkg.number || ''} - ${pkg.name}`}>
+                          <div className="flex flex-col py-1">
+                            <span className="font-medium text-gray-900">{pkg.number ? `${pkg.number} - ` : ''}{pkg.name}</span>
+                            <span className="text-sm text-gray-600">
+                              Entre semana: ${pkg.pricing?.weekday?.toLocaleString() || '0'} | Fin de semana: ${pkg.pricing?.weekend?.toLocaleString() || '0'}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Comentarios especiales
+                    </label>
+                    <Textarea
+                      placeholder="Solicitudes especiales, alergias, decoración específica, etc. (opcional)"
+                      value={formData.specialComments}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, specialComments: value }))}
+                      minRows={2}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          </ModalFooter>
-        </motion.div>
+          </div>
+        </ModalBody>
+
+        <ModalFooter className="px-6 py-3">
+          <div className="flex justify-between w-full">
+            <div>
+              {step > 1 && (
+                <Button
+                  variant="light"
+                  onPress={() => setStep(step - 1)}
+                  isDisabled={loading}
+                  size="sm"
+                  className="text-gray-600"
+                >
+                  Anterior
+                </Button>
+              )}
+            </div>
+            
+            <div className="flex gap-3">
+              <Button
+                variant="light"
+                onPress={handleClose}
+                isDisabled={loading}
+                size="sm"
+                className="text-gray-600"
+              >
+                Cancelar
+              </Button>
+              
+              {step < 3 ? (
+                <Button
+                  onPress={() => {
+                    if (step === 1 && !validateStep1()) {
+                      toast.error('Completa todos los campos del cliente');
+                      return;
+                    }
+                    if (step === 2 && !validateStep2()) {
+                      toast.error('Completa la información del festejado/a');
+                      return;
+                    }
+                    setStep(step + 1);
+                  }}
+                  size="sm"
+                  className="bg-gray-900 text-white"
+                >
+                  Siguiente
+                </Button>
+              ) : (
+                <Button
+                  onPress={handleSubmit}
+                  isLoading={loading}
+                  size="sm"
+                  className="bg-gray-900 text-white"
+                >
+                  {loading ? 'Creando...' : 'Crear reserva'}
+                </Button>
+              )}
+            </div>
+          </div>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

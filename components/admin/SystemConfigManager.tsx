@@ -82,7 +82,23 @@ export default function SystemConfigManager() {
       const data = await response.json();
       
       if (data.success && data.data) {
-        setConfig(data.data);
+        // Ensure all properties are properly structured with defaults
+        const configData = {
+          restDay: data.data.restDay ?? 1,
+          restDayFee: data.data.restDayFee ?? 500,
+          businessHours: {
+            start: data.data.businessHours?.start || '09:00',
+            end: data.data.businessHours?.end || '18:00'
+          },
+          advanceBookingDays: data.data.advanceBookingDays ?? 7,
+          maxConcurrentEvents: data.data.maxConcurrentEvents ?? 3,
+          defaultEventDuration: data.data.defaultEventDuration ?? 4,
+          isActive: data.data.isActive ?? true,
+          _id: data.data._id,
+          createdAt: data.data.createdAt,
+          updatedAt: data.data.updatedAt
+        };
+        setConfig(configData);
       } else {
         // Si no hay configuración, usar valores por defecto
         console.log('No system config found, using defaults');
@@ -102,7 +118,7 @@ export default function SystemConfigManager() {
         return {
           ...prev,
           [parent]: {
-            ...(prev as any)[parent],
+            ...(prev as any)[parent] || {},
             [child]: value
           }
         };
@@ -178,13 +194,13 @@ export default function SystemConfigManager() {
           </div>
         </div>
         <Button
-          startContent={<CheckCircleIcon className="w-4 h-4" />}
           onPress={handleSave}
           isLoading={saving}
           isDisabled={!hasChanges}
-          className="bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-300"
+          className="bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-300 flex items-center gap-2"
           size="lg"
         >
+          {!saving && <CheckCircleIcon className="w-4 h-4" />}
           {saving ? 'Guardando...' : 'Guardar Cambios'}
         </Button>
       </div>
@@ -204,15 +220,19 @@ export default function SystemConfigManager() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Día de descanso</label>
               <Select
-                selectedKeys={new Set([config.restDay.toString()])}
+                placeholder="Selecciona el día de descanso"
+                selectedKeys={new Set([(config.restDay || 1).toString()])}
                 onSelectionChange={(keys) => {
                   const selected = Array.from(keys)[0] as string;
                   handleConfigChange('restDay', parseInt(selected));
                 }}
                 variant="bordered"
                 classNames={{
-                  trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900",
-                  value: "text-gray-900"
+                  trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 min-h-[40px]",
+                  value: "text-gray-900",
+                  listboxWrapper: "bg-white",
+                  popoverContent: "bg-white border border-gray-200 shadow-lg",
+                  selectorIcon: "text-gray-400"
                 }}
               >
                 {daysOfWeek.map((day) => (
@@ -223,34 +243,45 @@ export default function SystemConfigManager() {
               </Select>
             </div>
 
-            <Input
-              label="Cargo por día de descanso"
-              type="number"
-              step="0.01"
-              value={config.restDayFee.toString()}
-              onValueChange={(value) => handleConfigChange('restDayFee', parseFloat(value) || 0)}
-              variant="bordered"
-              startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-              description={`Cargo adicional: ${formatCurrency(config.restDayFee)}`}
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-              }}
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Cargo por día de descanso</label>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
+                  <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
+                </div>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={(config.restDayFee || 500).toString()}
+                  onValueChange={(value) => handleConfigChange('restDayFee', parseFloat(value) || 0)}
+                  variant="bordered"
+                  placeholder="500.00"
+                  classNames={{
+                    input: "text-gray-900 pl-8",
+                    inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
+                  }}
+                />
+              </div>
+              <p className="text-xs text-gray-500">Cargo adicional: {formatCurrency(config.restDayFee || 500)}</p>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Hora de inicio</label>
                 <Select
-                  selectedKeys={new Set([config.businessHours.start])}
+                  placeholder="Selecciona hora de inicio"
+                  selectedKeys={new Set([config.businessHours?.start || '09:00'])}
                   onSelectionChange={(keys) => {
                     const selected = Array.from(keys)[0] as string;
                     handleConfigChange('businessHours.start', selected);
                   }}
                   variant="bordered"
                   classNames={{
-                    trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900",
-                    value: "text-gray-900"
+                    trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 min-h-[40px]",
+                    value: "text-gray-900",
+                    listboxWrapper: "bg-white",
+                    popoverContent: "bg-white border border-gray-200 shadow-lg",
+                    selectorIcon: "text-gray-400"
                   }}
                 >
                   {timeSlots.map((time) => (
@@ -264,15 +295,19 @@ export default function SystemConfigManager() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Hora de cierre</label>
                 <Select
-                  selectedKeys={new Set([config.businessHours.end])}
+                  placeholder="Selecciona hora de cierre"
+                  selectedKeys={new Set([config.businessHours?.end || '18:00'])}
                   onSelectionChange={(keys) => {
                     const selected = Array.from(keys)[0] as string;
                     handleConfigChange('businessHours.end', selected);
                   }}
                   variant="bordered"
                   classNames={{
-                    trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900",
-                    value: "text-gray-900"
+                    trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 min-h-[40px]",
+                    value: "text-gray-900",
+                    listboxWrapper: "bg-white",
+                    popoverContent: "bg-white border border-gray-200 shadow-lg",
+                    selectorIcon: "text-gray-400"
                   }}
                 >
                   {timeSlots.map((time) => (
@@ -296,59 +331,141 @@ export default function SystemConfigManager() {
           </CardHeader>
           <Divider />
           <CardBody className="pt-4 space-y-4">
-            <Input
-              label="Días de anticipación mínima"
-              type="number"
-              min="1"
-              value={config.advanceBookingDays.toString()}
-              onValueChange={(value) => handleConfigChange('advanceBookingDays', parseInt(value) || 1)}
-              variant="bordered"
-              description={`Mínimo ${config.advanceBookingDays} días de anticipación`}
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-              }}
-            />
-
-            <Input
-              label="Máximo de eventos simultáneos"
-              type="number"
-              min="1"
-              value={config.maxConcurrentEvents.toString()}
-              onValueChange={(value) => handleConfigChange('maxConcurrentEvents', parseInt(value) || 1)}
-              variant="bordered"
-              description={`Máximo ${config.maxConcurrentEvents} eventos al mismo tiempo`}
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-              }}
-            />
-
-            <Input
-              label="Duración predeterminada del evento (horas)"
-              type="number"
-              min="1"
-              max="12"
-              value={config.defaultEventDuration.toString()}
-              onValueChange={(value) => handleConfigChange('defaultEventDuration', parseInt(value) || 4)}
-              variant="bordered"
-              description={`Duración estándar: ${config.defaultEventDuration} horas`}
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-              }}
-            />
-
-            <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-300">
-              <Switch
-                isSelected={config.isActive}
-                onValueChange={(value) => handleConfigChange('isActive', value)}
-                color="success"
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Días de anticipación mínima</label>
+              <Input
+                type="number"
+                min="1"
+                value={(config.advanceBookingDays || 7).toString()}
+                onValueChange={(value) => handleConfigChange('advanceBookingDays', parseInt(value) || 1)}
+                variant="bordered"
+                placeholder="7"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
+                }}
               />
-              <div>
-                <span className="text-sm font-medium text-gray-700">Sistema activo</span>
-                <p className="text-xs text-gray-500">Permite nuevas reservas cuando está activo</p>
+              <p className="text-xs text-gray-500">Mínimo {config.advanceBookingDays || 7} días de anticipación</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Máximo de eventos simultáneos</label>
+              <Input
+                type="number"
+                min="1"
+                value={(config.maxConcurrentEvents || 3).toString()}
+                onValueChange={(value) => handleConfigChange('maxConcurrentEvents', parseInt(value) || 1)}
+                variant="bordered"
+                placeholder="3"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
+                }}
+              />
+              <p className="text-xs text-gray-500">Máximo {config.maxConcurrentEvents || 3} eventos al mismo tiempo</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Duración predeterminada del evento (horas)</label>
+              <Input
+                type="number"
+                min="1"
+                max="12"
+                value={(config.defaultEventDuration || 4).toString()}
+                onValueChange={(value) => handleConfigChange('defaultEventDuration', parseInt(value) || 4)}
+                variant="bordered"
+                placeholder="4"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
+                }}
+              />
+              <p className="text-xs text-gray-500">Duración estándar: {config.defaultEventDuration || 4} horas</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Estado del sistema</label>
+              <div 
+                className={`relative p-5 rounded-lg border transition-all duration-300 cursor-pointer group overflow-hidden ${
+                  config.isActive 
+                    ? 'border-emerald-200 bg-white shadow-sm' 
+                    : 'border-slate-300 bg-slate-50'
+                }`}
+                onClick={() => handleConfigChange('isActive', !config.isActive)}
+              >
+                {/* Efecto de borde iluminado progresivo */}
+                {config.isActive && (
+                  <>
+                    <div className="absolute inset-0 rounded-lg border-2 border-emerald-400 opacity-60 animate-pulse"></div>
+                    <div className="absolute inset-0 rounded-lg">
+                      <div className="absolute inset-0 rounded-lg border-2 border-transparent bg-gradient-to-r from-transparent via-emerald-300 to-transparent bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] border-solid"
+                           style={{
+                             backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.4) 50%, transparent 100%)',
+                             backgroundSize: '200% 100%',
+                             animation: 'shimmer 3s ease-in-out infinite',
+                             WebkitMask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
+                             WebkitMaskComposite: 'xor',
+                             maskComposite: 'exclude'
+                           }}>
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                <div className="relative flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* Indicador minimalista nórdico */}
+                    <div className="relative">
+                      <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        config.isActive 
+                          ? 'bg-emerald-500 shadow-sm' 
+                          : 'bg-slate-400'
+                      }`}></div>
+                      {/* Sutil efecto de glow solo cuando está activo */}
+                      {config.isActive && (
+                        <div className="absolute inset-0 w-3 h-3 rounded-full bg-emerald-400 opacity-30 animate-ping"></div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <span className={`text-base font-medium transition-colors duration-300 ${
+                        config.isActive ? 'text-slate-900' : 'text-slate-600'
+                      }`}>
+                        {config.isActive ? 'Sistema Activo' : 'Sistema Inactivo'}
+                      </span>
+                      <p className="text-sm text-slate-500 mt-0.5">
+                        {config.isActive ? 'Permite nuevas reservas' : 'No permite nuevas reservas'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Toggle minimalista nórdico */}
+                  <div className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                    config.isActive 
+                      ? 'bg-emerald-500' 
+                      : 'bg-slate-300'
+                  }`}>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-300 transform ${
+                      config.isActive ? 'translate-x-6' : 'translate-x-0.5'
+                    }`}></div>
+                  </div>
+                </div>
+                
+                {/* Efecto hover muy sutil */}
+                <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-slate-50/50"></div>
               </div>
+              
+              {/* CSS personalizado para la animación shimmer */}
+              <style jsx>{`
+                @keyframes shimmer {
+                  0% {
+                    background-position: -200% 0;
+                  }
+                  100% {
+                    background-position: 200% 0;
+                  }
+                }
+              `}</style>
             </div>
           </CardBody>
         </Card>
@@ -364,31 +481,31 @@ export default function SystemConfigManager() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
               <div className="text-2xl font-semibold text-orange-600 mb-1">
-                {daysOfWeek.find(d => d.key === config.restDay)?.label}
+                {daysOfWeek.find(d => d.key === (config.restDay || 1))?.label}
               </div>
               <div className="text-sm text-gray-600">Día de descanso</div>
               <div className="text-xs text-gray-500 mt-1">
-                +{formatCurrency(config.restDayFee)}
+                +{formatCurrency(config.restDayFee || 500)}
               </div>
             </div>
 
             <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
               <div className="text-2xl font-semibold text-blue-600 mb-1">
-                {config.businessHours.start} - {config.businessHours.end}
+                {config.businessHours?.start || '09:00'} - {config.businessHours?.end || '18:00'}
               </div>
               <div className="text-sm text-gray-600">Horario de atención</div>
             </div>
 
             <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
               <div className="text-2xl font-semibold text-green-600 mb-1">
-                {config.advanceBookingDays}
+                {config.advanceBookingDays || 7}
               </div>
               <div className="text-sm text-gray-600">Días de anticipación</div>
             </div>
 
             <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
               <div className="text-2xl font-semibold text-purple-600 mb-1">
-                {config.maxConcurrentEvents}
+                {config.maxConcurrentEvents || 3}
               </div>
               <div className="text-sm text-gray-600">Eventos simultáneos</div>
             </div>

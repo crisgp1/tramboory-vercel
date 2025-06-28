@@ -4,7 +4,7 @@ export interface IExtraService extends Document {
   name: string;
   description: string;
   price: number;
-  category: 'decoration' | 'entertainment' | 'catering' | 'photography' | 'other';
+  category: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -31,10 +31,8 @@ const ExtraServiceSchema = new Schema<IExtraService>({
   category: {
     type: String,
     required: [true, 'La categoría es requerida'],
-    enum: {
-      values: ['decoration', 'entertainment', 'catering', 'photography', 'other'],
-      message: 'La categoría debe ser: decoration, entertainment, catering, photography u other'
-    }
+    trim: true,
+    maxlength: [50, 'La categoría no puede exceder 50 caracteres']
   },
   isActive: {
     type: Boolean,

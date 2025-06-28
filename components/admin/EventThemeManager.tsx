@@ -134,8 +134,8 @@ export default function EventThemeManager() {
     setFormData({
       name: theme.name,
       description: theme.description || '',
-      packages: [...theme.packages],
-      themes: [...theme.themes],
+      packages: [...(theme.packages || [])],
+      themes: [...(theme.themes || [])],
       isActive: theme.isActive
     });
     onOpen();
@@ -324,7 +324,7 @@ export default function EventThemeManager() {
         <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="text-center p-6">
             <div className="text-2xl font-semibold text-blue-600 mb-2">
-              {eventThemes.reduce((sum, t) => sum + t.packages.length, 0)}
+              {eventThemes.reduce((sum, t) => sum + (t.packages?.length || 0), 0)}
             </div>
             <div className="text-sm text-gray-600">Total de Paquetes</div>
           </CardBody>
@@ -333,7 +333,7 @@ export default function EventThemeManager() {
         <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="text-center p-6">
             <div className="text-2xl font-semibold text-purple-600 mb-2">
-              {eventThemes.reduce((sum, t) => sum + t.themes.length, 0)}
+              {eventThemes.reduce((sum, t) => sum + (t.themes?.length || 0), 0)}
             </div>
             <div className="text-sm text-gray-600">Variaciones de Tema</div>
           </CardBody>
@@ -385,28 +385,28 @@ export default function EventThemeManager() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="flex flex-wrap gap-1">
-                          {theme.packages.slice(0, 2).map((pkg, index) => (
+                          {(theme.packages || []).slice(0, 2).map((pkg, index) => (
                             <Chip key={index} size="sm" variant="flat" className="bg-gray-100 text-gray-700">
                               {pkg.name}
                             </Chip>
                           ))}
-                          {theme.packages.length > 2 && (
+                          {(theme.packages?.length || 0) > 2 && (
                             <Chip size="sm" variant="flat" color="default">
-                              +{theme.packages.length - 2} más
+                              +{(theme.packages?.length || 0) - 2} más
                             </Chip>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
                         <div className="flex flex-wrap gap-1">
-                          {theme.themes.slice(0, 3).map((themeVariation, index) => (
+                          {(theme.themes || []).slice(0, 3).map((themeVariation, index) => (
                             <Chip key={index} size="sm" variant="flat" className="bg-blue-100 text-blue-700">
                               {themeVariation}
                             </Chip>
                           ))}
-                          {theme.themes.length > 3 && (
+                          {(theme.themes?.length || 0) > 3 && (
                             <Chip size="sm" variant="flat" color="default">
-                              +{theme.themes.length - 3} más
+                              +{(theme.themes?.length || 0) - 3} más
                             </Chip>
                           )}
                         </div>
@@ -462,16 +462,17 @@ export default function EventThemeManager() {
       </Card>
 
       {/* Create/Edit Modal */}
-      <Modal 
-        isOpen={isOpen} 
+      <Modal
+        isOpen={isOpen}
         onClose={onClose}
-        size="4xl"
+        size="3xl"
         scrollBehavior="inside"
         isDismissable={!submitting}
         backdrop="opaque"
         classNames={{
           backdrop: "bg-black/60 backdrop-blur-sm",
           base: "bg-white shadow-2xl border-0",
+          wrapper: "z-[1001] items-center justify-center p-4",
           header: "border-b border-gray-200 bg-white",
           body: "py-6",
           footer: "border-t border-gray-200 bg-gray-50"
@@ -480,141 +481,136 @@ export default function EventThemeManager() {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                    <BuildingStorefrontIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {editingTheme ? 'Editar Tema de Evento' : 'Nuevo Tema de Evento'}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {editingTheme ? 'Modifica los datos del tema' : 'Completa la información del nuevo tema'}
-                    </p>
-                  </div>
-                </div>
+              <ModalHeader className="px-6 py-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {editingTheme ? 'Editar tema' : 'Nuevo tema'}
+                </h3>
               </ModalHeader>
 
-              <ModalBody className="px-6">
+              <ModalBody>
                 <div className="space-y-6">
-                  {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="Nombre del tema"
-                      placeholder="Ej: Princesas Disney"
-                      value={formData.name}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-                      isRequired
-                      variant="bordered"
-                      classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                      }}
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre del tema *
+                      </label>
+                      <Input
+                        placeholder="Ej: Princesas, Superhéroes"
+                        value={formData.name}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+                        variant="flat"
+                        classNames={{
+                          input: "text-gray-900",
+                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        }}
+                      />
+                    </div>
                     
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-300">
+                    <div className="flex items-center gap-3 pt-6">
                       <Switch
                         isSelected={formData.isActive}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, isActive: value }))}
-                        color="success"
+                        size="sm"
                       />
-                      <span className="text-sm font-medium text-gray-700">Tema activo</span>
+                      <span className="text-sm text-gray-700">Tema activo</span>
                     </div>
                   </div>
                   
-                  <Textarea
-                    label="Descripción"
-                    placeholder="Describe este tema de evento..."
-                    value={formData.description}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-                    minRows={3}
-                    variant="bordered"
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                    }}
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Descripción
+                    </label>
+                    <Textarea
+                      placeholder="Describe el tema y lo que incluye..."
+                      value={formData.description}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                      minRows={2}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
+                  </div>
 
-                  <Divider />
-
-                  {/* Packages Section */}
                   <div className="space-y-4">
-                    <h4 className="text-lg font-semibold text-gray-900">Paquetes de Decoración</h4>
+                    <h4 className="text-sm font-medium text-gray-900">Paquetes de decoración</h4>
                     
-                    {/* Add New Package */}
-                    <Card className="bg-gray-50 border border-gray-200">
-                      <CardBody className="p-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Nombre del paquete</label>
                           <Input
-                            placeholder="Nombre del paquete"
+                            placeholder="Básico"
                             value={newPackage.name}
                             onValueChange={(value) => setNewPackage(prev => ({ ...prev, name: value }))}
-                            variant="bordered"
+                            variant="flat"
                             size="sm"
                             classNames={{
                               input: "text-gray-900",
-                              inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 bg-white"
+                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
                             }}
                           />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Número de piezas</label>
                           <Input
-                            placeholder="Piezas"
+                            placeholder="15"
                             type="number"
                             value={newPackage.pieces}
                             onValueChange={(value) => setNewPackage(prev => ({ ...prev, pieces: value }))}
-                            variant="bordered"
+                            variant="flat"
                             size="sm"
                             classNames={{
                               input: "text-gray-900",
-                              inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 bg-white"
+                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
                             }}
                           />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Precio</label>
                           <Input
-                            placeholder="Precio"
+                            placeholder="500"
                             type="number"
                             step="0.01"
                             value={newPackage.price}
                             onValueChange={(value) => setNewPackage(prev => ({ ...prev, price: value }))}
-                            variant="bordered"
+                            variant="flat"
                             size="sm"
-                            startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
+                            startContent={<span className="text-gray-400">$</span>}
                             classNames={{
                               input: "text-gray-900",
-                              inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 bg-white"
+                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
                             }}
                           />
+                        </div>
+                        <div className="flex items-end">
                           <Button
                             onPress={addPackage}
-                            startContent={<PlusIcon className="w-4 h-4" />}
                             size="sm"
-                            className="bg-gray-900 text-white hover:bg-gray-800"
+                            className="bg-gray-900 text-white w-full"
                           >
                             Agregar
                           </Button>
                         </div>
-                      </CardBody>
-                    </Card>
+                      </div>
+                    </div>
 
-                    {/* Packages List */}
                     {formData.packages.length > 0 && (
                       <div className="space-y-2">
                         {formData.packages.map((pkg, index) => (
                           <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
                             <div className="flex items-center gap-3">
-                              <span className="font-medium text-gray-900">{pkg.name}</span>
-                              <Chip size="sm" variant="flat" className="bg-gray-100 text-gray-700">
-                                {pkg.pieces} piezas
-                              </Chip>
-                              <Chip size="sm" variant="flat" className="bg-blue-100 text-blue-700">
-                                {formatCurrency(pkg.price)}
-                              </Chip>
+                              <span className="text-sm font-medium text-gray-900">{pkg.name}</span>
+                              <span className="text-xs text-gray-500">{pkg.pieces} piezas</span>
+                              <span className="text-xs text-gray-500">{formatCurrency(pkg.price)}</span>
                             </div>
                             <Button
                               isIconOnly
                               variant="light"
-                              color="danger"
                               size="sm"
                               onPress={() => removePackage(index)}
+                              className="text-gray-400 hover:text-red-500"
                             >
                               <XMarkIcon className="w-4 h-4" />
                             </Button>
@@ -624,52 +620,48 @@ export default function EventThemeManager() {
                     )}
                   </div>
 
-                  <Divider />
-
-                  {/* Themes Section */}
                   <div className="space-y-4">
-                    <h4 className="text-lg font-semibold text-gray-900">Variaciones de Tema</h4>
+                    <h4 className="text-sm font-medium text-gray-900">Variaciones del tema</h4>
                     
-                    {/* Add New Theme */}
-                    <Card className="bg-gray-50 border border-gray-200">
-                      <CardBody className="p-4">
-                        <div className="flex gap-3">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-500 mb-1">Nombre de la variación</label>
                           <Input
-                            placeholder="Ej: Frozen, Bella y la Bestia, Cenicienta..."
+                            placeholder="Ej: Rosa, Azul, Dorado"
                             value={newTheme}
                             onValueChange={setNewTheme}
-                            variant="bordered"
+                            variant="flat"
                             size="sm"
-                            startContent={<SparklesIcon className="w-4 h-4 text-gray-400" />}
                             classNames={{
                               input: "text-gray-900",
-                              inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 bg-white"
+                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
                             }}
                           />
+                        </div>
+                        <div className="flex items-end">
                           <Button
                             onPress={addTheme}
-                            startContent={<PlusIcon className="w-4 h-4" />}
                             size="sm"
-                            className="bg-gray-900 text-white hover:bg-gray-800"
+                            className="bg-gray-900 text-white"
                           >
                             Agregar
                           </Button>
                         </div>
-                      </CardBody>
-                    </Card>
+                      </div>
+                    </div>
 
-                    {/* Themes List */}
                     {formData.themes.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {formData.themes.map((theme, index) => (
-                          <div key={index} className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-lg">
-                            <span className="text-sm font-medium text-gray-900">{theme}</span>
+                          <div key={index} className="flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-full">
+                            <span className="text-sm text-gray-900">{theme}</span>
                             <Button
                               isIconOnly
                               variant="light"
-                              color="danger"
                               size="sm"
                               onPress={() => removeTheme(index)}
+                              className="text-gray-400 hover:text-red-500 w-4 h-4 min-w-4"
                             >
                               <XMarkIcon className="w-3 h-3" />
                             </Button>
@@ -681,21 +673,23 @@ export default function EventThemeManager() {
                 </div>
               </ModalBody>
 
-              <ModalFooter className="px-6 py-4">
+              <ModalFooter className="px-6 py-3">
                 <Button
                   variant="light"
                   onPress={onClose}
                   isDisabled={submitting}
-                  className="text-gray-600 hover:bg-gray-100"
+                  size="sm"
+                  className="text-gray-600"
                 >
                   Cancelar
                 </Button>
                 <Button
                   onPress={handleSubmit}
                   isLoading={submitting}
-                  className="bg-gray-900 text-white hover:bg-gray-800"
+                  size="sm"
+                  className="bg-gray-900 text-white"
                 >
-                  {submitting ? 'Guardando...' : (editingTheme ? 'Actualizar' : 'Crear Tema')}
+                  {submitting ? 'Guardando...' : (editingTheme ? 'Actualizar' : 'Crear')}
                 </Button>
               </ModalFooter>
             </>

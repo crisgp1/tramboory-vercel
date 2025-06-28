@@ -418,16 +418,17 @@ export default function FoodOptionsManager() {
       </Card>
 
       {/* Create/Edit Modal */}
-      <Modal 
-        isOpen={isOpen} 
+      <Modal
+        isOpen={isOpen}
         onClose={onClose}
-        size="3xl"
+        size="2xl"
         scrollBehavior="inside"
         isDismissable={!submitting}
         backdrop="opaque"
         classNames={{
           backdrop: "bg-black/60 backdrop-blur-sm",
           base: "bg-white shadow-2xl border-0",
+          wrapper: "z-[1001] items-center justify-center p-4",
           header: "border-b border-gray-200 bg-white",
           body: "py-6",
           footer: "border-t border-gray-200 bg-gray-50"
@@ -436,142 +437,139 @@ export default function FoodOptionsManager() {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                    <CakeIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {editingFood ? 'Editar Opción de Comida' : 'Nueva Opción de Comida'}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {editingFood ? 'Modifica los datos de la opción' : 'Completa la información de la nueva opción'}
-                    </p>
-                  </div>
-                </div>
+              <ModalHeader className="px-6 py-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {editingFood ? 'Editar opción de comida' : 'Nueva opción de comida'}
+                </h3>
               </ModalHeader>
 
-              <ModalBody className="px-6">
+              <ModalBody>
                 <div className="space-y-6">
-                  {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="Nombre de la opción"
-                      placeholder="Ej: Menú Infantil"
-                      value={formData.name}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-                      isRequired
-                      variant="bordered"
-                      classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                      }}
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre de la opción *
+                      </label>
+                      <Input
+                        placeholder="Ej: Menú infantil, Buffet, Cena formal"
+                        value={formData.name}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+                        variant="flat"
+                        classNames={{
+                          input: "text-gray-900",
+                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        }}
+                      />
+                    </div>
                     
-                    <Input
-                      label="Precio base"
-                      placeholder="Ej: 150"
-                      type="number"
-                      step="0.01"
-                      value={formData.basePrice}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, basePrice: value }))}
-                      isRequired
-                      variant="bordered"
-                      startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-                      classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                      }}
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Precio base *
+                      </label>
+                      <Input
+                        placeholder="150"
+                        type="number"
+                        step="0.01"
+                        value={formData.basePrice}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, basePrice: value }))}
+                        variant="flat"
+                        startContent={<span className="text-gray-400">$</span>}
+                        classNames={{
+                          input: "text-gray-900",
+                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        }}
+                      />
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-300">
+                  <div className="flex items-center gap-3">
                     <Switch
                       isSelected={formData.isActive}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, isActive: value }))}
-                      color="success"
+                      size="sm"
                     />
-                    <span className="text-sm font-medium text-gray-700">Opción activa</span>
+                    <span className="text-sm text-gray-700">Opción activa</span>
                   </div>
                   
-                  <Textarea
-                    label="Descripción"
-                    placeholder="Describe qué incluye esta opción de comida..."
-                    value={formData.description}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-                    minRows={3}
-                    variant="bordered"
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                    }}
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Descripción
+                    </label>
+                    <Textarea
+                      placeholder="Describe qué incluye esta opción de comida..."
+                      value={formData.description}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                      minRows={2}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
+                  </div>
 
-                  <Divider />
-
-                  {/* Extras Section */}
                   <div className="space-y-4">
-                    <h4 className="text-lg font-semibold text-gray-900">Extras Disponibles</h4>
+                    <h4 className="text-sm font-medium text-gray-900">Extras disponibles</h4>
                     
-                    {/* Add New Extra */}
-                    <Card className="bg-gray-50 border border-gray-200">
-                      <CardBody className="p-4">
-                        <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-500 mb-1">Nombre del extra</label>
                           <Input
-                            placeholder="Nombre del extra"
+                            placeholder="Ej: Postre adicional, Bebida premium"
                             value={newExtra.name}
                             onValueChange={(value) => setNewExtra(prev => ({ ...prev, name: value }))}
-                            variant="bordered"
+                            variant="flat"
                             size="sm"
                             classNames={{
                               input: "text-gray-900",
-                              inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 bg-white"
+                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
                             }}
                           />
+                        </div>
+                        <div className="w-32">
+                          <label className="block text-xs text-gray-500 mb-1">Precio</label>
                           <Input
-                            placeholder="Precio"
+                            placeholder="50"
                             type="number"
                             step="0.01"
                             value={newExtra.price}
                             onValueChange={(value) => setNewExtra(prev => ({ ...prev, price: value }))}
-                            variant="bordered"
+                            variant="flat"
                             size="sm"
-                            startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
+                            startContent={<span className="text-gray-400">$</span>}
                             classNames={{
                               input: "text-gray-900",
-                              inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 bg-white"
+                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
                             }}
                           />
+                        </div>
+                        <div className="flex items-end">
                           <Button
                             onPress={addExtra}
-                            startContent={<PlusIcon className="w-4 h-4" />}
                             size="sm"
-                            className="bg-gray-900 text-white hover:bg-gray-800"
+                            className="bg-gray-900 text-white"
                           >
                             Agregar
                           </Button>
                         </div>
-                      </CardBody>
-                    </Card>
+                      </div>
+                    </div>
 
-                    {/* Extras List */}
                     {formData.extras.length > 0 && (
                       <div className="space-y-2">
                         {formData.extras.map((extra, index) => (
                           <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
                             <div className="flex items-center gap-3">
-                              <span className="font-medium text-gray-900">{extra.name}</span>
-                              <Chip size="sm" variant="flat" className="bg-gray-100 text-gray-700">
-                                {formatCurrency(extra.price)}
-                              </Chip>
+                              <span className="text-sm font-medium text-gray-900">{extra.name}</span>
+                              <span className="text-xs text-gray-500">{formatCurrency(extra.price)}</span>
                             </div>
                             <Button
                               isIconOnly
                               variant="light"
-                              color="danger"
                               size="sm"
                               onPress={() => removeExtra(index)}
+                              className="text-gray-400 hover:text-red-500"
                             >
                               <XMarkIcon className="w-4 h-4" />
                             </Button>
@@ -583,21 +581,23 @@ export default function FoodOptionsManager() {
                 </div>
               </ModalBody>
 
-              <ModalFooter className="px-6 py-4">
+              <ModalFooter className="px-6 py-3">
                 <Button
                   variant="light"
                   onPress={onClose}
                   isDisabled={submitting}
-                  className="text-gray-600 hover:bg-gray-100"
+                  size="sm"
+                  className="text-gray-600"
                 >
                   Cancelar
                 </Button>
                 <Button
                   onPress={handleSubmit}
                   isLoading={submitting}
-                  className="bg-gray-900 text-white hover:bg-gray-800"
+                  size="sm"
+                  className="bg-gray-900 text-white"
                 >
-                  {submitting ? 'Guardando...' : (editingFood ? 'Actualizar' : 'Crear Opción')}
+                  {submitting ? 'Guardando...' : (editingFood ? 'Actualizar' : 'Crear')}
                 </Button>
               </ModalFooter>
             </>

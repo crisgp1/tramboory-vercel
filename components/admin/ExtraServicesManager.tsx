@@ -408,8 +408,8 @@ export default function ExtraServicesManager() {
       </Card>
 
       {/* Create/Edit Modal */}
-      <Modal 
-        isOpen={isOpen} 
+      <Modal
+        isOpen={isOpen}
         onClose={onClose}
         size="2xl"
         scrollBehavior="inside"
@@ -418,6 +418,7 @@ export default function ExtraServicesManager() {
         classNames={{
           backdrop: "bg-black/60 backdrop-blur-sm",
           base: "bg-white shadow-2xl border-0",
+          wrapper: "z-[1001] items-center justify-center p-4",
           header: "border-b border-gray-200 bg-white",
           body: "py-6",
           footer: "border-t border-gray-200 bg-gray-50"
@@ -426,107 +427,113 @@ export default function ExtraServicesManager() {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                    <SparklesIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {editingService ? 'Editar Servicio Extra' : 'Nuevo Servicio Extra'}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {editingService ? 'Modifica los datos del servicio' : 'Completa la información del nuevo servicio'}
-                    </p>
-                  </div>
-                </div>
+              <ModalHeader className="px-6 py-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {editingService ? 'Editar servicio' : 'Nuevo servicio'}
+                </h3>
               </ModalHeader>
 
-              <ModalBody className="px-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Nombre del servicio"
-                    placeholder="Ej: Fotografía profesional"
-                    value={formData.name}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-                    isRequired
-                    variant="bordered"
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                    }}
-                  />
-                  
-                  <Input
-                    label="Precio"
-                    placeholder="Ej: 500"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, price: value }))}
-                    isRequired
-                    variant="bordered"
-                    startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                    }}
-                  />
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Categoría</label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                    >
-                      {categories.map((category) => (
-                        <option key={category.key} value={category.key}>
-                          {category.label}
-                        </option>
-                      ))}
-                    </select>
+              <ModalBody>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre del servicio *
+                    </label>
+                    <Input
+                      placeholder="Ej: Fotografía profesional, DJ, Animador"
+                      value={formData.name}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
                   </div>
                   
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-300">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Precio *
+                      </label>
+                      <Input
+                        placeholder="500"
+                        type="number"
+                        step="0.01"
+                        value={formData.price}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, price: value }))}
+                        variant="flat"
+                        startContent={<span className="text-gray-400">$</span>}
+                        classNames={{
+                          input: "text-gray-900",
+                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Categoría *
+                      </label>
+                      <select
+                        value={formData.category}
+                        onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full px-3 py-2 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-900 focus:bg-white text-gray-900"
+                      >
+                        {categories.map((category) => (
+                          <option key={category.key} value={category.key}>
+                            {category.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Descripción
+                    </label>
+                    <Textarea
+                      placeholder="Describe qué incluye este servicio..."
+                      value={formData.description}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                      minRows={2}
+                      variant="flat"
+                      classNames={{
+                        input: "text-gray-900",
+                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3">
                     <Switch
                       isSelected={formData.isActive}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, isActive: value }))}
-                      color="success"
+                      size="sm"
                     />
-                    <span className="text-sm font-medium text-gray-700">Servicio activo</span>
+                    <span className="text-sm text-gray-700">Servicio activo</span>
                   </div>
                 </div>
-                
-                <Textarea
-                  label="Descripción"
-                  placeholder="Describe qué incluye este servicio..."
-                  value={formData.description}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-                  minRows={3}
-                  variant="bordered"
-                  classNames={{
-                    input: "text-gray-900",
-                    inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                  }}
-                />
               </ModalBody>
 
-              <ModalFooter className="px-6 py-4">
+              <ModalFooter className="px-6 py-3">
                 <Button
                   variant="light"
                   onPress={onClose}
                   isDisabled={submitting}
-                  className="text-gray-600 hover:bg-gray-100"
+                  size="sm"
+                  className="text-gray-600"
                 >
                   Cancelar
                 </Button>
                 <Button
                   onPress={handleSubmit}
                   isLoading={submitting}
-                  className="bg-gray-900 text-white hover:bg-gray-800"
+                  size="sm"
+                  className="bg-gray-900 text-white"
                 >
-                  {submitting ? 'Guardando...' : (editingService ? 'Actualizar' : 'Crear Servicio')}
+                  {submitting ? 'Guardando...' : (editingService ? 'Actualizar' : 'Crear')}
                 </Button>
               </ModalFooter>
             </>

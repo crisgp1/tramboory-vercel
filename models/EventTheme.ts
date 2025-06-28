@@ -2,17 +2,13 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IEventTheme extends Document {
   name: string;
-  description: string;
+  description?: string;
   packages: {
     name: string;
+    pieces: number;
     price: number;
-    features: string[];
   }[];
-  variations: {
-    name: string;
-    additionalCost: number;
-    description: string;
-  }[];
+  themes: string[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -27,7 +23,6 @@ const EventThemeSchema = new Schema<IEventTheme>({
   },
   description: {
     type: String,
-    required: [true, 'La descripción es requerida'],
     trim: true,
     maxlength: [500, 'La descripción no puede exceder 500 caracteres']
   },
@@ -37,32 +32,20 @@ const EventThemeSchema = new Schema<IEventTheme>({
       required: [true, 'El nombre del paquete es requerido'],
       trim: true
     },
+    pieces: {
+      type: Number,
+      required: [true, 'El número de piezas es requerido'],
+      min: [1, 'Debe tener al menos 1 pieza']
+    },
     price: {
       type: Number,
       required: [true, 'El precio del paquete es requerido'],
       min: [0, 'El precio no puede ser negativo']
-    },
-    features: [{
-      type: String,
-      trim: true
-    }]
-  }],
-  variations: [{
-    name: {
-      type: String,
-      required: [true, 'El nombre de la variación es requerido'],
-      trim: true
-    },
-    additionalCost: {
-      type: Number,
-      required: [true, 'El costo adicional es requerido'],
-      min: [0, 'El costo no puede ser negativo']
-    },
-    description: {
-      type: String,
-      trim: true,
-      maxlength: [200, 'La descripción no puede exceder 200 caracteres']
     }
+  }],
+  themes: [{
+    type: String,
+    trim: true
   }],
   isActive: {
     type: Boolean,
