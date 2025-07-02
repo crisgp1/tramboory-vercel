@@ -4,12 +4,12 @@ import EventTheme from '@/models/EventTheme';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     const body = await request.json();
-    const { id } = params;
+    const { id } = await context.params;
     
     const eventTheme = await EventTheme.findByIdAndUpdate(
       id,
@@ -39,11 +39,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await context.params;
     
     const eventTheme = await EventTheme.findByIdAndDelete(id);
     
