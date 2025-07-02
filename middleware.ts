@@ -1,12 +1,96 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
+import { clerkClient } from "@clerk/nextjs/server"
+import { NextResponse } from "next/server"
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
+  "/reservaciones(.*)",
+  "/bienvenida",
 ])
+
+const isDashboardRoute = createRouteMatcher([
+  "/dashboard(.*)",
+])
+
+const isReservacionesRoute = createRouteMatcher([
+  "/reservaciones(.*)",
+])
+
+// Roles que pueden acceder al dashboard
+const DASHBOARD_ALLOWED_ROLES = ["admin", "gerente", "proveedor", "vendedor"]
+
+// Roles que solo pueden acceder a rutas de cliente
+const CLIENT_ONLY_ROLES = ["customer"]
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
-    await auth.protect()
+    try {
+      const { userId, sessionClaims } = await auth.protect()
+      let role = (sessionClaims?.publicMetadata as any)?.role as string || "customer"
+      const url = new URL(req.url)
+      
+      // Si no hay publicMetadata en sessionClaims, obtener directamente de Clerk
+      if (!sessionClaims?.publicMetadata && userId) {
+        try {
+          const clerk = await clerkClient()
+          const user = await clerk.users.getUser(userId)
+          role = (user.publicMetadata?.role as string) || "customer"
+          console.log("🔄 Rol obtenido directamente de Clerk:", role)
+        } catch (error) {
+          console.error("❌ Error obteniendo rol de Clerk:", error)
+          role = "customer" // fallback
+        }
+      }
+      
+      // Logging detallado para debugging
+      console.log("🔍 Middleware Debug:", {
+        url: req.url,
+        pathname: url.pathname,
+        userId,
+        role,
+        sessionClaims: sessionClaims,
+        publicMetadata: sessionClaims?.publicMetadata,
+        roleSource: sessionClaims?.publicMetadata ? "sessionClaims" : "clerkClient",
+        isDashboard: isDashboardRoute(req),
+        isReservaciones: isReservacionesRoute(req)
+      })
+      
+      // Verificar acceso al dashboard
+      if (isDashboardRoute(req)) {
+        console.log("🔍 Dashboard Access Check:", {
+          role,
+          url: req.url,
+          isAllowed: DASHBOARD_ALLOWED_ROLES.includes(role)
+        })
+        
+        // Solo roles específicos pueden acceder al dashboard
+        if (!DASHBOARD_ALLOWED_ROLES.includes(role)) {
+          console.log(`🚫 Redirecting ${role} from dashboard to reservaciones`)
+          return NextResponse.redirect(new URL("/reservaciones", req.url))
+        }
+        
+        console.log("✅ Dashboard access granted for role:", role)
+      }
+      
+      // Verificar restricciones para clientes
+      if (CLIENT_ONLY_ROLES.includes(role)) {
+        // Los clientes solo pueden acceder a rutas específicas
+        const allowedClientPaths = ["/reservaciones", "/bienvenida"]
+        const isAllowedPath = allowedClientPaths.some(path =>
+          url.pathname.startsWith(path)
+        )
+        
+        if (!isAllowedPath && url.pathname !== "/") {
+          console.log(`🚫 Redirecting customer from ${url.pathname} to reservaciones`)
+          return NextResponse.redirect(new URL("/reservaciones", req.url))
+        }
+      }
+      
+    } catch (error) {
+      console.error("❌ Middleware error:", error)
+      // En caso de error, redirigir a la página principal
+      return NextResponse.redirect(new URL("/", req.url))
+    }
   }
 })
 

@@ -44,7 +44,9 @@ export default function AuthContainer() {
             }}
             routing="hash"
             signUpUrl="#/signup"
-            afterSignInUrl="/dashboard"
+            afterSignInUrl="/reservaciones"
+            redirectUrl="/reservaciones"
+            forceRedirectUrl="/reservaciones"
           />
         )}
 
@@ -63,7 +65,9 @@ export default function AuthContainer() {
             }}
             routing="hash"
             signInUrl="#/signin"
-            afterSignUpUrl="/dashboard"
+            afterSignUpUrl="/bienvenida"
+            redirectUrl="/bienvenida"
+            forceRedirectUrl="/bienvenida"
           />
         )}
       </div>

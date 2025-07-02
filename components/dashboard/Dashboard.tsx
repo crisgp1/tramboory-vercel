@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { useUser, useClerk } from "@clerk/nextjs"
 import { 
   Button, 
@@ -26,7 +26,7 @@ import {
   ArchiveBoxIcon,
   BellIcon,
   MagnifyingGlassIcon,
-  EllipsisVerticalIcon
+  Cog8ToothIcon
 } from "@heroicons/react/24/outline"
 import {
   ChartBarIcon as ChartBarSolidIcon,
@@ -39,6 +39,7 @@ import { useRole } from "@/hooks/useRole"
 import toast from "react-hot-toast"
 import ReservationManager from "@/components/reservations/ReservationManager"
 import ConfigurationManager from "@/components/admin/ConfigurationManager"
+import FinanceManager from "@/components/finances/FinanceManager"
 
 type MenuItem = {
   id: string
@@ -89,9 +90,39 @@ const menuItems: MenuItem[] = [
 export default function Dashboard() {
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
-  const { role } = useRole()
+  const { role, isAdmin, isGerente } = useRole()
   const [activeMenuItem, setActiveMenuItem] = useState("analytics")
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Filtrar elementos del menú según el rol
+  const filteredMenuItems = menuItems.filter(item => {
+    switch (item.id) {
+      case "configuracion":
+        // Solo admin puede acceder a configuración
+        return isAdmin
+      case "inventario":
+        // Admin, gerente y proveedor pueden acceder a inventario
+        return isAdmin || isGerente || role === "proveedor"
+      case "finanzas":
+        // Admin y gerente pueden acceder a finanzas
+        return isAdmin || isGerente
+      case "analytics":
+        // Admin y gerente pueden ver analytics
+        return isAdmin || isGerente
+      case "reservas":
+        // Todos los roles pueden ver reservas
+        return true
+      default:
+        return true
+    }
+  })
+
+  // Si no hay elementos disponibles, redirigir el primer elemento permitido
+  React.useEffect(() => {
+    if (filteredMenuItems.length > 0 && !filteredMenuItems.find(item => item.id === activeMenuItem)) {
+      setActiveMenuItem(filteredMenuItems[0].id)
+    }
+  }, [filteredMenuItems, activeMenuItem])
 
   const handleSignOut = async () => {
     try {
@@ -108,6 +139,11 @@ export default function Dashboard() {
     // Si es la sección de reservas, mostrar el componente específico
     if (activeMenuItem === 'reservas') {
       return <ReservationManager />
+    }
+
+    // Si es la sección de finanzas, mostrar el componente específico
+    if (activeMenuItem === 'finanzas') {
+      return <FinanceManager />
     }
 
     // Si es la sección de configuración, mostrar el componente específico
@@ -140,7 +176,7 @@ export default function Dashboard() {
               variant="light"
               className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
             >
-              <EllipsisVerticalIcon className="w-5 h-5" />
+              <Cog8ToothIcon className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -395,7 +431,7 @@ export default function Dashboard() {
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-1">
-              {menuItems.map((item) => {
+              {filteredMenuItems.map((item) => {
                 const Icon = item.icon
                 const IconSolid = item.iconSolid
                 const isActive = activeMenuItem === item.id

@@ -44,6 +44,7 @@ export default function ReservationManager() {
     applyFilters();
   }, [reservations, searchTerm, filterStatus, startDate, endDate]);
 
+
   const fetchReservations = async () => {
     try {
       setLoading(true);
@@ -176,27 +177,22 @@ export default function ReservationManager() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-8">
+      {/* Header minimalista */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-            <CalendarDaysIcon className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Gestión de Reservas
-            </h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Administra todas las reservas del sistema
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl font-medium text-gray-900">
+            Reservas
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            {reservations.length} reservas en total
+          </p>
         </div>
         <Button
           startContent={<PlusIcon className="w-4 h-4" />}
           onPress={handleCreateReservation}
-          className="bg-gray-900 text-white hover:bg-gray-800"
-          size="lg"
+          className="bg-gray-900 text-white hover:bg-gray-800 text-sm"
+          size="md"
         >
           Nueva Reserva
         </Button>
@@ -215,66 +211,64 @@ export default function ReservationManager() {
         onClearFilters={handleClearFilters}
       />
 
-      {/* Estadísticas rápidas */}
+      {/* Estadísticas minimalistas */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-gray-900 mb-1">
+        <Card className="border border-gray-200 shadow-none">
+          <CardBody className="p-4">
+            <div className="text-lg font-medium text-gray-900">
               {reservations.length}
             </div>
-            <div className="text-sm text-gray-600">Total de Reservas</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wide">Total</div>
           </CardBody>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-orange-600 mb-1">
+        <Card className="border border-gray-200 shadow-none">
+          <CardBody className="p-4">
+            <div className="text-lg font-medium text-gray-900">
               {reservations.filter(r => r.status === 'pending').length}
             </div>
-            <div className="text-sm text-gray-600">Pendientes</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wide">Pendientes</div>
           </CardBody>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-green-600 mb-1">
+        <Card className="border border-gray-200 shadow-none">
+          <CardBody className="p-4">
+            <div className="text-lg font-medium text-gray-900">
               {reservations.filter(r => r.status === 'confirmed').length}
             </div>
-            <div className="text-sm text-gray-600">Confirmadas</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wide">Confirmadas</div>
           </CardBody>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-blue-600 mb-1">
+        <Card className="border border-gray-200 shadow-none">
+          <CardBody className="p-4">
+            <div className="text-lg font-medium text-gray-900">
               {reservations.filter(r => r.status === 'completed').length}
             </div>
-            <div className="text-sm text-gray-600">Completadas</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wide">Completadas</div>
           </CardBody>
         </Card>
       </div>
 
-      {/* Tabla de reservas */}
-      <Card className="border border-gray-200 shadow-sm">
-        <CardBody className="p-0">
+      {/* Contenido principal */}
+      <div className="bg-white border border-gray-200 rounded-lg">
+        <div className="p-6">
           {loading ? (
-            <div className="flex flex-col justify-center items-center py-12">
-              <Spinner size="lg" className="text-gray-900" />
-              <p className="text-gray-500 mt-4">Cargando reservas...</p>
+            <div className="flex flex-col justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
+              <p className="text-gray-600 text-sm">Cargando reservas...</p>
             </div>
           ) : (
-            <div className="overflow-hidden">
-              <ReservationTable
-                reservations={filteredReservations}
-                loading={loading}
-                onView={handleView}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </div>
+            <ReservationTable
+              reservations={filteredReservations}
+              loading={loading}
+              onView={handleView}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           )}
-        </CardBody>
-      </Card>
+        </div>
+      </div>
 
       {/* Modal de detalles */}
       <ReservationModal

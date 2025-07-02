@@ -33,7 +33,7 @@ import {
   CubeIcon,
   PencilIcon,
   TrashIcon,
-  EllipsisVerticalIcon,
+  EyeIcon,
   UsersIcon,
   CurrencyDollarIcon,
   ClockIcon
@@ -365,36 +365,35 @@ export default function PackageManager() {
                         </Chip>
                       </TableCell>
                       <TableCell>
-                        <Dropdown>
-                          <DropdownTrigger>
-                            <Button
-                              isIconOnly
-                              variant="light"
-                              size="sm"
-                              className="text-gray-600 hover:text-gray-900"
-                            >
-                              <EllipsisVerticalIcon className="w-4 h-4" />
-                            </Button>
-                          </DropdownTrigger>
-                          <DropdownMenu>
-                            <DropdownItem
-                              key="edit"
-                              startContent={<PencilIcon className="w-4 h-4" />}
-                              onPress={() => handleEdit(pkg)}
-                            >
-                              Editar
-                            </DropdownItem>
-                            <DropdownItem
-                              key="delete"
-                              className="text-danger"
-                              color="danger"
-                              startContent={<TrashIcon className="w-4 h-4" />}
-                              onPress={() => handleDelete(pkg._id)}
-                            >
-                              Eliminar
-                            </DropdownItem>
-                          </DropdownMenu>
-                        </Dropdown>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onPress={() => {/* TODO: Implementar vista detallada */}}
+                          >
+                            <EyeIcon className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                            onPress={() => handleEdit(pkg)}
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onPress={() => handleDelete(pkg._id)}
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

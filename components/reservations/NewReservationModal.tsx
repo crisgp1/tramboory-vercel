@@ -11,14 +11,19 @@ import {
   Input,
   Select,
   SelectItem,
-  DateInput,
   Textarea
 } from '@heroui/react';
 import {
   CheckIcon
 } from '@heroicons/react/24/outline';
-import { CalendarDate } from '@internationalized/date';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import { es } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import "react-datepicker/dist/react-datepicker.css";
+import "./calendar-styles.css";
+
+// Register Spanish locale
+registerLocale('es', es);
 
 interface NewReservationModalProps {
   isOpen: boolean;
@@ -32,9 +37,14 @@ interface FormData {
   customerPhone: string;
   childName: string;
   childAge: string;
-  eventDate: CalendarDate | null;
+  eventDate: Date | null;
   eventTime: string;
   packageId: string;
+  foodOptionId: string;
+  selectedFoodExtras: string[];
+  eventThemeId: string;
+  selectedThemePackage: string;
+  selectedExtraServices: string[];
   specialComments: string;
 }
 
@@ -56,6 +66,46 @@ interface PackageOption {
   isActive: boolean;
 }
 
+interface FoodOption {
+  _id: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  category: 'main' | 'appetizer' | 'dessert' | 'beverage';
+  extras: {
+    name: string;
+    price: number;
+    isRequired: boolean;
+  }[];
+  isActive: boolean;
+}
+
+interface EventTheme {
+  _id: string;
+  name: string;
+  description?: string;
+  packages: {
+    name: string;
+    pieces: number;
+    price: number;
+  }[];
+  themes: string[];
+  isActive: boolean;
+}
+
+interface ExtraService {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  isActive: boolean;
+}
+
+interface AvailabilityData {
+  [key: string]: 'available' | 'limited' | 'unavailable';
+}
+
 
 export default function NewReservationModal({
   isOpen,
@@ -71,6 +121,11 @@ export default function NewReservationModal({
     eventDate: null,
     eventTime: '',
     packageId: '',
+    foodOptionId: '',
+    selectedFoodExtras: [],
+    eventThemeId: '',
+    selectedThemePackage: '',
+    selectedExtraServices: [],
     specialComments: ''
   });
   
@@ -78,6 +133,11 @@ export default function NewReservationModal({
   const [step, setStep] = useState(1);
   const [packages, setPackages] = useState<PackageOption[]>([]);
   const [loadingPackages, setLoadingPackages] = useState(true);
+  const [availability, setAvailability] = useState<AvailabilityData>({});
+  const [foodOptions, setFoodOptions] = useState<FoodOption[]>([]);
+  const [eventThemes, setEventThemes] = useState<EventTheme[]>([]);
+  const [extraServices, setExtraServices] = useState<ExtraService[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
 
   const resetForm = () => {
     setFormData({
@@ -89,6 +149,11 @@ export default function NewReservationModal({
       eventDate: null,
       eventTime: '',
       packageId: '',
+      foodOptionId: '',
+      selectedFoodExtras: [],
+      eventThemeId: '',
+      selectedThemePackage: '',
+      selectedExtraServices: [],
       specialComments: ''
     });
     setStep(1);
@@ -98,14 +163,20 @@ export default function NewReservationModal({
   React.useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('/api/admin/packages');
-        const data = await response.json();
-        if (data.success) {
-          const activePackages = data.data.filter((pkg: PackageOption) => pkg.isActive);
-          setPackages(activePackages);
-        } else {
-          toast.error('Error al cargar los paquetes');
+        // First try the PackageConfig endpoint (which should be the correct one)
+        let response = await fetch('/api/admin/packages');
+        let data = await response.json();
+        
+        // If that fails, the packages might be stored in a different collection
+        // Let's check if we need to create a proper endpoint
+        if (!data.success) {
+          console.warn('PackageConfig endpoint not found, packages might need to be migrated');
+          toast.error('Error al cargar los paquetes - contacta al administrador');
+          return;
         }
+        
+        const activePackages = data.data.filter((pkg: PackageOption) => pkg.isActive);
+        setPackages(activePackages);
       } catch (error) {
         console.error('Error loading packages:', error);
         toast.error('Error al cargar los paquetes');
@@ -114,8 +185,63 @@ export default function NewReservationModal({
       }
     };
 
+    const fetchAdditionalOptions = async () => {
+      try {
+        setLoadingOptions(true);
+        
+        // Fetch food options
+        const foodResponse = await fetch('/api/admin/food-options');
+        const foodData = await foodResponse.json();
+        if (foodData.success) {
+          setFoodOptions(foodData.data.filter((option: FoodOption) => option.isActive));
+        }
+
+        // Fetch event themes
+        const themeResponse = await fetch('/api/admin/event-themes');
+        const themeData = await themeResponse.json();
+        if (themeData.success) {
+          setEventThemes(themeData.data.filter((theme: EventTheme) => theme.isActive));
+        }
+
+        // Fetch extra services
+        const extraResponse = await fetch('/api/admin/extra-services');
+        const extraData = await extraResponse.json();
+        if (extraData.success) {
+          setExtraServices(extraData.data.filter((service: ExtraService) => service.isActive));
+        }
+      } catch (error) {
+        console.error('Error loading additional options:', error);
+        toast.error('Error al cargar las opciones adicionales');
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    const fetchAvailability = async () => {
+      // Mock availability data - in real app, this would come from API
+      const mockAvailability: AvailabilityData = {};
+      const today = new Date();
+      
+      for (let i = 0; i < 90; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const dateKey = date.toISOString().split('T')[0];
+        
+        // Mock logic: weekends are limited, some random dates unavailable
+        if (date.getDay() === 0 || date.getDay() === 6) {
+          mockAvailability[dateKey] = Math.random() > 0.3 ? 'limited' : 'unavailable';
+        } else {
+          mockAvailability[dateKey] = Math.random() > 0.1 ? 'available' : 'unavailable';
+        }
+      }
+      
+      setAvailability(mockAvailability);
+    };
+
     if (isOpen) {
       fetchPackages();
+      fetchAdditionalOptions();
+      fetchAvailability();
     }
   }, [isOpen]);
 
@@ -138,8 +264,13 @@ export default function NewReservationModal({
     return formData.eventDate && formData.eventTime && formData.packageId;
   };
 
+  const validateStep4 = () => {
+    // Food option is required, theme and extras are optional
+    return formData.foodOptionId;
+  };
+
   const handleSubmit = async () => {
-    if (!validateStep1() || !validateStep2() || !validateStep3()) {
+    if (!validateStep1() || !validateStep2() || !validateStep3() || !validateStep4()) {
       toast.error('Por favor completa todos los campos requeridos');
       return;
     }
@@ -149,11 +280,7 @@ export default function NewReservationModal({
     try {
       const reservationData = {
         packageId: formData.packageId,
-        eventDate: formData.eventDate ? new Date(
-          formData.eventDate.year,
-          formData.eventDate.month - 1,
-          formData.eventDate.day
-        ).toISOString() : '',
+        eventDate: formData.eventDate ? formData.eventDate.toISOString() : '',
         eventTime: formData.eventTime,
         customer: {
           name: formData.customerName.trim(),
@@ -165,12 +292,11 @@ export default function NewReservationModal({
           age: parseInt(formData.childAge)
         },
         specialComments: formData.specialComments.trim() || undefined,
-        foodOptionId: undefined,
-        foodExtras: [],
-        extraServices: [],
-        eventThemeId: undefined,
-        selectedThemePackage: undefined,
-        selectedTheme: undefined
+        foodOptionId: formData.foodOptionId || undefined,
+        foodExtras: formData.selectedFoodExtras,
+        extraServices: formData.selectedExtraServices,
+        eventThemeId: formData.eventThemeId || undefined,
+        selectedThemePackage: formData.selectedThemePackage || undefined
       };
 
       const response = await fetch('/api/reservations', {
@@ -199,6 +325,35 @@ export default function NewReservationModal({
     }
   };
 
+  // Custom day class names for availability
+  const getDayClassName = (date: Date) => {
+    const dateKey = date.toISOString().split('T')[0];
+    const dayAvailability = availability[dateKey];
+    
+    const baseClasses = "react-datepicker__day";
+    
+    switch (dayAvailability) {
+      case 'unavailable':
+        return `${baseClasses} react-datepicker__day--unavailable`;
+      case 'limited':
+        return `${baseClasses} react-datepicker__day--limited`;
+      case 'available':
+        return `${baseClasses} react-datepicker__day--available`;
+      default:
+        return baseClasses;
+    }
+  };
+
+  // Filter out past dates and unavailable dates
+  const isDateDisabled = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (date < today) return true;
+    
+    const dateKey = date.toISOString().split('T')[0];
+    return availability[dateKey] === 'unavailable';
+  };
 
   return (
     <Modal
@@ -221,7 +376,7 @@ export default function NewReservationModal({
         <ModalHeader className="px-6 py-4">
           <div className="flex items-center justify-between w-full">
             <h3 className="text-lg font-medium text-gray-900">Nueva reserva</h3>
-            <div className="text-sm text-gray-500">Paso {step} de 3</div>
+            <div className="text-sm text-gray-500">Paso {step} de 4</div>
           </div>
         </ModalHeader>
 
@@ -230,7 +385,7 @@ export default function NewReservationModal({
             {/* Step Indicator */}
             <div className="flex items-center justify-center">
               <div className="flex items-center space-x-2">
-                {[1, 2, 3].map((stepNumber) => (
+                {[1, 2, 3, 4].map((stepNumber) => (
                   <div key={stepNumber} className="flex items-center">
                     <div className={`
                       w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
@@ -245,7 +400,7 @@ export default function NewReservationModal({
                         stepNumber
                       )}
                     </div>
-                    {stepNumber < 3 && (
+                    {stepNumber < 4 && (
                       <div className={`
                         w-12 h-0.5 mx-2
                         ${step > stepNumber ? 'bg-gray-900' : 'bg-gray-200'}
@@ -270,6 +425,7 @@ export default function NewReservationModal({
                       value={formData.customerName}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, customerName: value }))}
                       variant="flat"
+                      aria-label="Nombre completo del cliente"
                       classNames={{
                         input: "text-gray-900",
                         inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
@@ -286,6 +442,7 @@ export default function NewReservationModal({
                       value={formData.customerEmail}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, customerEmail: value }))}
                       variant="flat"
+                      aria-label="Correo electrónico del cliente"
                       classNames={{
                         input: "text-gray-900",
                         inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
@@ -301,6 +458,7 @@ export default function NewReservationModal({
                       value={formData.customerPhone}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, customerPhone: value }))}
                       variant="flat"
+                      aria-label="Teléfono del cliente"
                       classNames={{
                         input: "text-gray-900",
                         inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
@@ -322,6 +480,7 @@ export default function NewReservationModal({
                       value={formData.childName}
                       onValueChange={(value) => setFormData(prev => ({ ...prev, childName: value }))}
                       variant="flat"
+                      aria-label="Nombre del niño o niña festejado"
                       classNames={{
                         input: "text-gray-900",
                         inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
@@ -340,9 +499,12 @@ export default function NewReservationModal({
                         setFormData(prev => ({ ...prev, childAge: selected }));
                       }}
                       variant="flat"
+                      aria-label="Edad del festejado"
                       classNames={{
                         trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                        value: "text-gray-900"
+                        value: "text-gray-900",
+                        listboxWrapper: "bg-white",
+                        popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
                       }}
                     >
                       {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
@@ -363,16 +525,35 @@ export default function NewReservationModal({
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Fecha del evento *
                       </label>
-                      <DateInput
-                        value={formData.eventDate}
-                        onChange={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
-                        variant="flat"
-                        minValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
-                        classNames={{
-                          input: "text-gray-900",
-                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                        }}
-                      />
+                      <div className="relative">
+                        <DatePicker
+                          selected={formData.eventDate}
+                          onChange={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
+                          locale="es"
+                          dateFormat="dd/MM/yyyy"
+                          minDate={new Date()}
+                          filterDate={(date) => !isDateDisabled(date)}
+                          dayClassName={getDayClassName}
+                          placeholderText="Selecciona una fecha"
+                          className="w-full px-3 py-2 bg-gray-50 border-0 rounded-lg text-gray-900 hover:bg-gray-100 focus:bg-white focus:ring-1 focus:ring-gray-900 focus:outline-none"
+                          calendarClassName="custom-calendar"
+                          aria-label="Fecha del evento"
+                        />
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500 flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          <span>Disponible</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                          <span>Limitado</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                          <span>No disponible</span>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -386,9 +567,12 @@ export default function NewReservationModal({
                           setFormData(prev => ({ ...prev, eventTime: selected }));
                         }}
                         variant="flat"
+                        aria-label="Hora del evento"
                         classNames={{
                           trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                          value: "text-gray-900"
+                          value: "text-gray-900",
+                          listboxWrapper: "bg-white",
+                          popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
                         }}
                       >
                         {timeSlots.map((time) => (
@@ -410,9 +594,12 @@ export default function NewReservationModal({
                       }}
                       variant="flat"
                       isDisabled={loadingPackages}
+                      aria-label="Paquete de celebración"
                       classNames={{
                         trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                        value: "text-gray-900"
+                        value: "text-gray-900",
+                        listboxWrapper: "bg-white",
+                        popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
                       }}
                     >
                       {packages.map((pkg) => (
@@ -427,6 +614,203 @@ export default function NewReservationModal({
                       ))}
                     </Select>
                   </div>
+                </div>
+              )}
+
+              {step === 4 && (
+                <div className="space-y-6">
+                  <h4 className="text-sm font-medium text-gray-900">Opciones adicionales</h4>
+                  
+                  {/* Food Options */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Opción de alimento *
+                    </label>
+                    <Select
+                      placeholder={loadingOptions ? "Cargando opciones..." : "Selecciona una opción de alimento"}
+                      selectedKeys={formData.foodOptionId ? [formData.foodOptionId] : []}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] as string;
+                        setFormData(prev => ({ ...prev, foodOptionId: selected, selectedFoodExtras: [] }));
+                      }}
+                      variant="flat"
+                      isDisabled={loadingOptions}
+                      aria-label="Opción de alimento"
+                      classNames={{
+                        trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                        value: "text-gray-900",
+                        listboxWrapper: "bg-white",
+                        popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                      }}
+                    >
+                      {foodOptions.map((option) => (
+                        <SelectItem key={option._id} textValue={option.name}>
+                          <div className="flex flex-col py-1">
+                            <span className="font-medium text-gray-900">{option.name}</span>
+                            <span className="text-sm text-gray-600">{option.description}</span>
+                            <span className="text-sm text-gray-800 font-medium">${option.basePrice.toLocaleString()}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+
+                  {/* Food Extras */}
+                  {formData.foodOptionId && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Extras de alimento
+                      </label>
+                      <div className="space-y-2">
+                        {foodOptions
+                          .find(option => option._id === formData.foodOptionId)
+                          ?.extras.map((extra, index) => (
+                            <label key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                              <input
+                                type="checkbox"
+                                checked={formData.selectedFoodExtras.includes(`${extra.name}-${extra.price}`)}
+                                onChange={(e) => {
+                                  const extraKey = `${extra.name}-${extra.price}`;
+                                  if (e.target.checked) {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      selectedFoodExtras: [...prev.selectedFoodExtras, extraKey]
+                                    }));
+                                  } else {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      selectedFoodExtras: prev.selectedFoodExtras.filter(item => item !== extraKey)
+                                    }));
+                                  }
+                                }}
+                                className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                              />
+                              <div className="flex-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {extra.name} {extra.isRequired && <span className="text-red-500">*</span>}
+                                  </span>
+                                  <span className="text-sm text-gray-600">+${extra.price.toLocaleString()}</span>
+                                </div>
+                              </div>
+                            </label>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Event Themes */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tema del evento
+                    </label>
+                    <Select
+                      placeholder={loadingOptions ? "Cargando temas..." : "Selecciona un tema (opcional)"}
+                      selectedKeys={formData.eventThemeId ? [formData.eventThemeId] : []}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] as string;
+                        setFormData(prev => ({ ...prev, eventThemeId: selected, selectedThemePackage: '' }));
+                      }}
+                      variant="flat"
+                      isDisabled={loadingOptions}
+                      aria-label="Tema del evento"
+                      classNames={{
+                        trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                        value: "text-gray-900",
+                        listboxWrapper: "bg-white",
+                        popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                      }}
+                    >
+                      {eventThemes.map((theme) => (
+                        <SelectItem key={theme._id} textValue={theme.name}>
+                          <div className="flex flex-col py-1">
+                            <span className="font-medium text-gray-900">{theme.name}</span>
+                            {theme.description && (
+                              <span className="text-sm text-gray-600">{theme.description}</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+
+                  {/* Theme Packages */}
+                  {formData.eventThemeId && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Paquete del tema
+                      </label>
+                      <Select
+                        placeholder="Selecciona un paquete del tema"
+                        selectedKeys={formData.selectedThemePackage ? [formData.selectedThemePackage] : []}
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0] as string;
+                          setFormData(prev => ({ ...prev, selectedThemePackage: selected }));
+                        }}
+                        variant="flat"
+                        aria-label="Paquete del tema"
+                        classNames={{
+                          trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                          value: "text-gray-900",
+                          listboxWrapper: "bg-white",
+                          popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                        }}
+                      >
+                        {(eventThemes
+                          .find(theme => theme._id === formData.eventThemeId)
+                          ?.packages || []).map((pkg, index) => (
+                            <SelectItem key={`${pkg.name}-${pkg.price}`} textValue={pkg.name}>
+                              <div className="flex flex-col py-1">
+                                <span className="font-medium text-gray-900">{pkg.name}</span>
+                                <span className="text-sm text-gray-600">{pkg.pieces} piezas - ${pkg.price.toLocaleString()}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Extra Services */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Servicios extra
+                    </label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {extraServices.map((service) => (
+                        <label key={service._id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                          <input
+                            type="checkbox"
+                            checked={formData.selectedExtraServices.includes(service._id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedExtraServices: [...prev.selectedExtraServices, service._id]
+                                }));
+                              } else {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedExtraServices: prev.selectedExtraServices.filter(id => id !== service._id)
+                                }));
+                              }
+                            }}
+                            className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                          />
+                          <div className="flex-1">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <span className="text-sm font-medium text-gray-900">{service.name}</span>
+                                <p className="text-xs text-gray-600">{service.description}</p>
+                              </div>
+                              <span className="text-sm text-gray-600">+${service.price.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Special Comments */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Comentarios especiales
@@ -437,6 +821,7 @@ export default function NewReservationModal({
                       onValueChange={(value) => setFormData(prev => ({ ...prev, specialComments: value }))}
                       minRows={2}
                       variant="flat"
+                      aria-label="Comentarios especiales"
                       classNames={{
                         input: "text-gray-900",
                         inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
@@ -476,7 +861,7 @@ export default function NewReservationModal({
                 Cancelar
               </Button>
               
-              {step < 3 ? (
+              {step < 4 ? (
                 <Button
                   onPress={() => {
                     if (step === 1 && !validateStep1()) {
@@ -485,6 +870,10 @@ export default function NewReservationModal({
                     }
                     if (step === 2 && !validateStep2()) {
                       toast.error('Completa la información del festejado/a');
+                      return;
+                    }
+                    if (step === 3 && !validateStep3()) {
+                      toast.error('Completa los detalles del evento');
                       return;
                     }
                     setStep(step + 1);

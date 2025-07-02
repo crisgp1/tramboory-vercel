@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRole } from '@/hooks/useRole';
 import {
   Card,
   CardBody,
@@ -69,7 +70,28 @@ const configTabs = [
 ];
 
 export default function ConfigurationManager() {
+  const { isAdmin, isLoaded } = useRole();
   const [activeTab, setActiveTab] = useState('packages');
+
+  // Solo permitir acceso a administradores
+  if (!isLoaded) {
+    return <div className="p-6">Cargando...</div>;
+  }
+
+  if (!isAdmin) {
+    return (
+      <Card className="max-w-md mx-auto mt-8">
+        <CardBody className="text-center p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Acceso Restringido
+          </h3>
+          <p className="text-gray-600">
+            No tienes permisos para acceder a esta sección.
+          </p>
+        </CardBody>
+      </Card>
+    );
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {

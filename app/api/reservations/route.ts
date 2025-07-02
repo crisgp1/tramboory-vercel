@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Reservation from '@/models/Reservation';
-import PackageConfig from '@/models/PackageConfig';
+import Package from '@/models/Package';
 import SystemConfig from '@/models/SystemConfig';
 import FoodOption from '@/models/FoodOption';
 import ExtraService from '@/models/ExtraService';
@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const customerEmail = searchParams.get('customerEmail');
     
     let query: any = {};
     
@@ -28,6 +29,10 @@ export async function GET(request: NextRequest) {
         $gte: new Date(startDate),
         $lte: new Date(endDate)
       };
+    }
+    
+    if (customerEmail) {
+      query['customer.email'] = customerEmail;
     }
     
     const reservations = await Reservation.find(query)
@@ -77,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Obtener configuración del paquete
-    const packageConfig = await PackageConfig.findById(packageId);
+    const packageConfig = await Package.findById(packageId);
     if (!packageConfig) {
       return NextResponse.json(
         { success: false, error: 'Paquete no encontrado' },
@@ -102,9 +107,11 @@ export async function POST(request: NextRequest) {
     // Calcular precio del paquete según el día
     let packagePrice;
     if (dayOfWeek >= 1 && dayOfWeek <= 4) { // Lunes a Jueves
-      packagePrice = packageConfig.pricing.mondayToThursday;
-    } else { // Viernes a Domingo
-      packagePrice = packageConfig.pricing.fridayToSunday;
+      packagePrice = packageConfig.pricing.weekday;
+    } else if (dayOfWeek === 5 || dayOfWeek === 6) { // Viernes y Sábado
+      packagePrice = packageConfig.pricing.weekend;
+    } else { // Domingo (considerar como día festivo)
+      packagePrice = packageConfig.pricing.holiday;
     }
     
     // Calcular precios
@@ -114,18 +121,40 @@ export async function POST(request: NextRequest) {
     if (foodOptionId) {
       const foodOption = await FoodOption.findById(foodOptionId);
       if (foodOption) {
-        foodPrice = foodOption.basePrice;
+        foodPrice = foodOption.basePrice || 0;
+        
+        // Procesar extras de comida - convertir strings a objetos
+        const processedFoodExtras: Array<{name: string, price: number}> = [];
+        if (foodExtras && Array.isArray(foodExtras)) {
+          for (const extraKey of foodExtras) {
+            if (typeof extraKey === 'string') {
+              // Formato esperado: "nombre-precio"
+              const parts = extraKey.split('-');
+              if (parts.length >= 2) {
+                const price = parseFloat(parts[parts.length - 1]);
+                const name = parts.slice(0, -1).join('-');
+                if (!isNaN(price)) {
+                  processedFoodExtras.push({ name, price });
+                  foodPrice += price;
+                }
+              }
+            } else if (extraKey && typeof extraKey === 'object' && extraKey.name && extraKey.price) {
+              // Si ya viene como objeto
+              processedFoodExtras.push({
+                name: extraKey.name,
+                price: parseFloat(extraKey.price) || 0
+              });
+              foodPrice += parseFloat(extraKey.price) || 0;
+            }
+          }
+        }
+        
         foodOptionData = {
           configId: foodOption._id,
           name: foodOption.name,
-          basePrice: foodOption.basePrice,
-          selectedExtras: foodExtras || []
+          basePrice: foodOption.basePrice || 0,
+          selectedExtras: processedFoodExtras
         };
-        
-        // Agregar precio de extras de comida
-        if (foodExtras && foodExtras.length > 0) {
-          foodPrice += foodExtras.reduce((sum: number, extra: any) => sum + extra.price, 0);
-        }
       }
     }
     
@@ -133,16 +162,18 @@ export async function POST(request: NextRequest) {
     let extrasPrice = 0;
     const extraServicesData = [];
     
-    if (extraServices && extraServices.length > 0) {
-      for (const extraService of extraServices) {
-        const service = await ExtraService.findById(extraService.configId);
+    if (extraServices && Array.isArray(extraServices) && extraServices.length > 0) {
+      for (const serviceId of extraServices) {
+        // Los servicios extras vienen como array de IDs
+        const service = await ExtraService.findById(serviceId);
         if (service) {
-          const quantity = extraService.quantity || 1;
-          extrasPrice += service.price * quantity;
+          const quantity = 1; // Por defecto cantidad 1
+          const servicePrice = parseFloat(service.price.toString()) || 0;
+          extrasPrice += servicePrice * quantity;
           extraServicesData.push({
             configId: service._id,
             name: service.name,
-            price: service.price,
+            price: servicePrice,
             quantity
           });
         }
@@ -156,29 +187,62 @@ export async function POST(request: NextRequest) {
     if (eventThemeId && selectedThemePackage) {
       const eventTheme = await EventTheme.findById(eventThemeId);
       if (eventTheme) {
-        const themePackage = eventTheme.packages.find(
-          (pkg: any) => pkg.name === selectedThemePackage.name
-        );
+        let themePackage = null;
+        
+        // selectedThemePackage puede venir como string "nombre-precio" o como objeto
+        if (typeof selectedThemePackage === 'string') {
+          // Buscar por nombre en el string
+          const packageName = selectedThemePackage.split('-')[0];
+          themePackage = eventTheme.packages.find(
+            (pkg: any) => pkg.name === packageName
+          );
+        } else if (selectedThemePackage && selectedThemePackage.name) {
+          // Si viene como objeto
+          themePackage = eventTheme.packages.find(
+            (pkg: any) => pkg.name === selectedThemePackage.name
+          );
+        }
+        
         if (themePackage) {
-          themePrice = themePackage.price;
+          themePrice = parseFloat(themePackage.price.toString()) || 0;
           eventThemeData = {
             configId: eventTheme._id,
             name: eventTheme.name,
             selectedPackage: {
               name: themePackage.name,
-              pieces: themePackage.pieces,
-              price: themePackage.price
+              pieces: themePackage.pieces || 0,
+              price: themePrice
             },
-            selectedTheme: selectedTheme || ''
+            selectedTheme: selectedTheme || eventTheme.themes[0] || ''
           };
         }
       }
     }
     
-    // Calcular totales
-    const restDayFee = isRestDay ? systemConfig.restDayFee : 0;
-    const subtotal = packagePrice + foodPrice + extrasPrice + themePrice;
+    // Calcular totales - asegurar que todos los valores sean números válidos
+    const restDayFee = isRestDay ? (parseFloat(systemConfig.restDayFee.toString()) || 0) : 0;
+    const subtotal = (parseFloat(packagePrice.toString()) || 0) +
+                    (parseFloat(foodPrice.toString()) || 0) +
+                    (parseFloat(extrasPrice.toString()) || 0) +
+                    (parseFloat(themePrice.toString()) || 0);
     const total = subtotal + restDayFee;
+    
+    // Validar que los totales no sean NaN
+    if (isNaN(subtotal) || isNaN(total)) {
+      console.error('Error en cálculos:', {
+        packagePrice,
+        foodPrice,
+        extrasPrice,
+        themePrice,
+        restDayFee,
+        subtotal,
+        total
+      });
+      return NextResponse.json(
+        { success: false, error: 'Error en los cálculos de precio' },
+        { status: 400 }
+      );
+    }
     
     // Crear la reserva
     const newReservation = new Reservation({
@@ -199,13 +263,13 @@ export async function POST(request: NextRequest) {
       child,
       specialComments,
       pricing: {
-        packagePrice,
-        foodPrice,
-        extrasPrice,
-        themePrice,
-        restDayFee,
-        subtotal,
-        total
+        packagePrice: parseFloat(packagePrice.toString()) || 0,
+        foodPrice: parseFloat(foodPrice.toString()) || 0,
+        extrasPrice: parseFloat(extrasPrice.toString()) || 0,
+        themePrice: parseFloat(themePrice.toString()) || 0,
+        restDayFee: parseFloat(restDayFee.toString()) || 0,
+        subtotal: parseFloat(subtotal.toString()) || 0,
+        total: parseFloat(total.toString()) || 0
       }
     });
     

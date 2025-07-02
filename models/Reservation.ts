@@ -85,7 +85,7 @@ const ReservationSchema = new Schema<IReservation>({
   package: {
     configId: {
       type: Schema.Types.ObjectId,
-      ref: 'PackageConfig',
+      ref: 'Package',
       required: true
     },
     name: {
