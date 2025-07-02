@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 // Interface para el documento de Supplier
 export interface ISupplier extends Document {
   supplierId: string;
+  code: string;
   name: string;
   description?: string;
   contactInfo: {
@@ -15,6 +16,7 @@ export interface ISupplier extends Document {
     creditDays: number;
     paymentMethod: 'cash' | 'credit' | 'transfer' | 'check';
     currency: string;
+    discountTerms?: string;
   };
   deliveryInfo: {
     leadTimeDays: number;
@@ -41,6 +43,14 @@ const SupplierSchema = new Schema<ISupplier>({
     type: String,
     required: true,
     unique: true,
+    index: true
+  },
+  code: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    maxlength: 50,
     index: true
   },
   name: {
@@ -94,6 +104,10 @@ const SupplierSchema = new Schema<ISupplier>({
       required: true,
       default: 'MXN',
       uppercase: true
+    },
+    discountTerms: {
+      type: String,
+      trim: true
     }
   },
   deliveryInfo: {

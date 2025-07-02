@@ -130,6 +130,25 @@ export const VALIDATION_CONFIG = {
   MAX_PRICE: 999999.99
 } as const;
 
+// Exportar COMMON_UNITS para el converter
+export const COMMON_UNITS = {
+  VOLUME: {
+    ML: { code: 'ml', name: 'Mililitros', category: 'volume' as const },
+    L: { code: 'l', name: 'Litros', category: 'volume' as const },
+    GAL: { code: 'gal', name: 'Galones', category: 'volume' as const }
+  },
+  WEIGHT: {
+    G: { code: 'g', name: 'Gramos', category: 'weight' as const },
+    KG: { code: 'kg', name: 'Kilogramos', category: 'weight' as const },
+    LB: { code: 'lb', name: 'Libras', category: 'weight' as const }
+  },
+  PIECE: {
+    UNIT: { code: 'unit', name: 'Unidad', category: 'piece' as const },
+    BOX: { code: 'box', name: 'Caja', category: 'piece' as const },
+    PACK: { code: 'pack', name: 'Paquete', category: 'piece' as const }
+  }
+} as const;
+
 // Configuración de índices para MongoDB
 export const MONGODB_INDEXES = {
   PRODUCTS: [

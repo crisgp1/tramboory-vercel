@@ -228,12 +228,12 @@ InventoryAlertSchema.pre('validate', function(next) {
 InventoryAlertSchema.pre('save', function(next) {
   // Auto-generar título si no está definido
   if (!this.title) {
-    this.title = this.generateTitle();
+    this.title = (this as any).generateTitle();
   }
 
   // Auto-generar mensaje si no está definido
   if (!this.message) {
-    this.message = this.generateMessage();
+    this.message = (this as any).generateMessage();
   }
 
   next();

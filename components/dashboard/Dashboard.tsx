@@ -40,6 +40,7 @@ import toast from "react-hot-toast"
 import ReservationManager from "@/components/reservations/ReservationManager"
 import ConfigurationManager from "@/components/admin/ConfigurationManager"
 import FinanceManager from "@/components/finances/FinanceManager"
+import InventoryManager from "@/components/inventory/InventoryManager"
 
 type MenuItem = {
   id: string
@@ -151,6 +152,11 @@ export default function Dashboard() {
       return <ConfigurationManager />
     }
 
+    // Si es la sección de inventario, mostrar el componente específico
+    if (activeMenuItem === 'inventario') {
+      return <InventoryManager />
+    }
+
     return (
       <div className="space-y-6">
         {/* Header Section */}
@@ -255,24 +261,37 @@ export default function Dashboard() {
               <CardBody className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
                 <div className="space-y-3">
-                  <Button 
+                  <Button
                     className="w-full justify-start bg-blue-50 text-blue-700 hover:bg-blue-100 border-0"
                     variant="flat"
                     startContent={<CalendarDaysIcon className="w-4 h-4" />}
+                    onPress={() => setActiveMenuItem('reservas')}
                   >
                     Nueva Reserva
                   </Button>
-                  <Button 
+                  <Button
                     className="w-full justify-start bg-green-50 text-green-700 hover:bg-green-100 border-0"
                     variant="flat"
                     startContent={<CurrencyDollarIcon className="w-4 h-4" />}
+                    onPress={() => setActiveMenuItem('finanzas')}
                   >
                     Registrar Pago
                   </Button>
-                  <Button 
+                  {(isAdmin || isGerente || role === "proveedor") && (
+                    <Button
+                      className="w-full justify-start bg-orange-50 text-orange-700 hover:bg-orange-100 border-0"
+                      variant="flat"
+                      startContent={<ArchiveBoxIcon className="w-4 h-4" />}
+                      onPress={() => setActiveMenuItem('inventario')}
+                    >
+                      Gestionar Inventario
+                    </Button>
+                  )}
+                  <Button
                     className="w-full justify-start bg-purple-50 text-purple-700 hover:bg-purple-100 border-0"
                     variant="flat"
                     startContent={<ChartBarIcon className="w-4 h-4" />}
+                    onPress={() => setActiveMenuItem('analytics')}
                   >
                     Ver Reportes
                   </Button>
