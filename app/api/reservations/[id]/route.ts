@@ -74,10 +74,11 @@ async function generateFinanceFromReservation(reservation: any) {
 // GET - Obtener reserva por ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const params = await context.params;
     
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
@@ -112,10 +113,11 @@ export async function GET(
 // PATCH - Actualizar reserva (principalmente para cambiar estado)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const params = await context.params;
     
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
@@ -175,10 +177,11 @@ export async function PATCH(
 // DELETE - Eliminar reserva
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const params = await context.params;
     
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(

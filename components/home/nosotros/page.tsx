@@ -2,10 +2,7 @@ import { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ParticlesBackground } from '@/components/decorative/ParticlesBackground'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
+import { Card, CardHeader, CardBody, Button, Chip } from '@heroui/react'
 
 export const metadata: Metadata = {
   title: 'Nosotros - Tramboory',
@@ -159,9 +156,9 @@ export default function NosotrosPage() {
           </div>
           
           <div>
-            <Badge className="mb-4 bg-tramboory-yellow-500 text-tramboory-purple-900 hover:bg-tramboory-yellow-600">
+            <Chip className="mb-4 bg-tramboory-yellow-500 text-tramboory-purple-900">
               Nuestra Historia
-            </Badge>
+            </Chip>
             <h2 className="text-3xl font-funhouse font-bold mb-6 text-tramboory-yellow-300">
               La magia detrás de Tramboory
             </h2>
@@ -186,28 +183,28 @@ export default function NosotrosPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card className="bg-gradient-to-br from-tramboory-purple-800/50 to-tramboory-purple-900/50 backdrop-blur-sm border-tramboory-purple-300/20 text-white overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-2xl font-funhouse text-tramboory-yellow-300">
+              <h3 className="text-2xl font-funhouse text-tramboory-yellow-300">
                 Nuestra Misión
-              </CardTitle>
+              </h3>
             </CardHeader>
-            <CardContent>
+            <CardBody>
               <p className="text-white/80">
                 Crear experiencias mágicas y memorables para los niños y sus familias, ofreciendo un entorno seguro, divertido y estimulante donde puedan celebrar momentos especiales con creatividad y excelencia en cada detalle.
               </p>
-            </CardContent>
+            </CardBody>
           </Card>
           
           <Card className="bg-gradient-to-br from-tramboory-purple-800/50 to-tramboory-purple-900/50 backdrop-blur-sm border-tramboory-purple-300/20 text-white overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-2xl font-funhouse text-tramboory-yellow-300">
+              <h3 className="text-2xl font-funhouse text-tramboory-yellow-300">
                 Nuestra Visión
-              </CardTitle>
+              </h3>
             </CardHeader>
-            <CardContent>
+            <CardBody>
               <p className="text-white/80">
                 Ser reconocidos como el referente en celebraciones infantiles, expandiendo nuestra presencia y concepto innovador, manteniendo siempre nuestro compromiso con la calidad, la creatividad y la felicidad de cada niño que nos visita.
               </p>
-            </CardContent>
+            </CardBody>
           </Card>
         </div>
       </section>
@@ -229,16 +226,13 @@ export default function NosotrosPage() {
               key={index}
               className="bg-white/10 backdrop-blur-sm border-tramboory-purple-300/20 text-white overflow-hidden hover:transform hover:-translate-y-2 transition-all duration-300"
             >
-              <CardContent className="p-6">
-                <div className={cn(
-                  "w-16 h-16 rounded-full mb-4 flex items-center justify-center text-2xl",
-                  "bg-gradient-to-br", value.color
-                )}>
+              <CardBody className="p-6">
+                <div className={`w-16 h-16 rounded-full mb-4 flex items-center justify-center text-2xl bg-gradient-to-br ${value.color}`}>
                   {value.icon}
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-tramboory-yellow-300">{value.title}</h3>
                 <p className="text-white/80">{value.description}</p>
-              </CardContent>
+              </CardBody>
             </Card>
           ))}
         </div>

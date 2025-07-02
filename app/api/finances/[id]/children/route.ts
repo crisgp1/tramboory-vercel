@@ -7,10 +7,11 @@ import mongoose from 'mongoose';
 // GET - Obtener children de una finanza
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const params = await context.params;
     
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
@@ -64,10 +65,11 @@ export async function GET(
 // POST - Crear un child para una finanza
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const params = await context.params;
     
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(

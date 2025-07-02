@@ -41,7 +41,7 @@ const UpdateSupplierSchema = z.object({
 // GET /api/inventory/suppliers/[id] - Obtener proveedor específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -54,6 +54,7 @@ export async function GET(
     }
 
     await dbConnect();
+    const params = await context.params;
 
     const supplier = await Supplier.findById(params.id).lean();
 
@@ -75,7 +76,7 @@ export async function GET(
 // PUT /api/inventory/suppliers/[id] - Actualizar proveedor
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -88,6 +89,7 @@ export async function PUT(
     }
 
     await dbConnect();
+    const params = await context.params;
 
     const body = await request.json();
     
@@ -150,7 +152,7 @@ export async function PUT(
 // DELETE /api/inventory/suppliers/[id] - Eliminar proveedor (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -163,6 +165,7 @@ export async function DELETE(
     }
 
     await dbConnect();
+    const params = await context.params;
 
     // Verificar que el proveedor existe
     const supplier = await Supplier.findById(params.id);

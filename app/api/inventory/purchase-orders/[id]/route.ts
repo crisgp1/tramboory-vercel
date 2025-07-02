@@ -54,7 +54,7 @@ const StatusChangeSchema = z.object({
 // GET /api/inventory/purchase-orders/[id] - Obtener orden de compra específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -67,6 +67,7 @@ export async function GET(
     }
 
     await dbConnect();
+    const params = await context.params;
 
     const order = await PurchaseOrder.findById(params.id).lean();
     
@@ -88,7 +89,7 @@ export async function GET(
 // PUT /api/inventory/purchase-orders/[id] - Actualizar orden de compra
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -101,6 +102,7 @@ export async function PUT(
     }
 
     await dbConnect();
+    const params = await context.params;
 
     const body = await request.json();
     
@@ -204,7 +206,7 @@ export async function PUT(
 // DELETE /api/inventory/purchase-orders/[id] - Eliminar orden de compra
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -217,6 +219,7 @@ export async function DELETE(
     }
 
     await dbConnect();
+    const params = await context.params;
 
     const order = await PurchaseOrder.findById(params.id);
     if (!order) {

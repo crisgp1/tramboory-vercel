@@ -9,7 +9,7 @@ const updateRoleSchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
   try {
     const { userId: currentUserId } = await auth()
@@ -38,6 +38,7 @@ export async function PUT(
     }
 
     // Actualizar el rol del usuario
+    const params = await context.params;
     await clerk.users.updateUserMetadata(params.userId, {
       publicMetadata: {
         role: newRole
@@ -71,7 +72,7 @@ export async function PUT(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
   try {
     const { userId: currentUserId } = await auth()
@@ -88,6 +89,7 @@ export async function GET(
     const currentUser = await clerk.users.getUser(currentUserId)
     const currentUserRole = (currentUser.publicMetadata?.role as UserRole) || "customer"
     
+    const params = await context.params;
     if (currentUserId !== params.userId && !["admin", "gerente"].includes(currentUserRole)) {
       return NextResponse.json(
         { error: "No tienes permisos para ver este rol" },

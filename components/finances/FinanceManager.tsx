@@ -335,9 +335,9 @@ export default function FinanceManager() {
         onTagsChange={setSelectedTags}
         availableTags={availableTags}
         startDate={startDate}
-        onStartDateChange={setStartDate}
+        onStartDateChange={(date) => setStartDate(date || undefined)}
         endDate={endDate}
-        onEndDateChange={setEndDate}
+        onEndDateChange={(date) => setEndDate(date || undefined)}
         minAmount={minAmount}
         onMinAmountChange={setMinAmount}
         maxAmount={maxAmount}

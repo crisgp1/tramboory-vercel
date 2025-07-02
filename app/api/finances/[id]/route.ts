@@ -7,12 +7,12 @@ import mongoose from 'mongoose';
 // GET - Obtener una transacción financiera específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    const { id } = params;
+    const { id } = await context.params;
     
     // Validar ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -45,12 +45,12 @@ export async function GET(
 // PUT - Actualizar una transacción financiera
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
     
     // Validar ObjectId
@@ -196,12 +196,12 @@ export async function PUT(
 // DELETE - Eliminar una transacción financiera
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    const { id } = params;
+    const { id } = await context.params;
     
     // Validar ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {

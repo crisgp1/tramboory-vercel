@@ -22,7 +22,7 @@ async function getTopProducts(locationId?: string, limit: number = 5) {
       ];
     }
 
-    const pipeline = [
+    const pipeline: any[] = [
       { $match: matchStage },
       {
         $group: {
@@ -82,7 +82,7 @@ async function getCategoryBreakdown(locationId?: string) {
       matchStage.locationId = locationId;
     }
 
-    const pipeline = [
+    const pipeline: any[] = [
       { $match: matchStage },
       {
         $lookup: {

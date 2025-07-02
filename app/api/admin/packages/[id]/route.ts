@@ -6,10 +6,11 @@ import mongoose from 'mongoose';
 // GET - Obtener paquete por ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const params = await context.params;
     
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
@@ -40,10 +41,11 @@ export async function GET(
 // PUT - Actualizar paquete
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const params = await context.params;
     
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
@@ -102,10 +104,11 @@ export async function PUT(
 // DELETE - Eliminar paquete
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
+    const params = await context.params;
     
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(

@@ -54,7 +54,7 @@ const UpdateProductSchema = z.object({
 // GET /api/inventory/products/[id] - Obtener producto específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -67,6 +67,7 @@ export async function GET(
     }
 
     await dbConnect();
+    const params = await context.params;
 
     const product = await Product.findById(params.id)
       .populate('suppliers', 'name contactInfo')
@@ -90,7 +91,7 @@ export async function GET(
 // PUT /api/inventory/products/[id] - Actualizar producto
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -103,6 +104,7 @@ export async function PUT(
     }
 
     await dbConnect();
+    const params = await context.params;
 
     const body = await request.json();
     
@@ -179,7 +181,7 @@ export async function PUT(
 // DELETE /api/inventory/products/[id] - Eliminar producto (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -192,6 +194,7 @@ export async function DELETE(
     }
 
     await dbConnect();
+    const params = await context.params;
 
     // Verificar que el producto existe
     const product = await Product.findById(params.id);
