@@ -191,8 +191,13 @@ function BatchModal({ isOpen, onClose, batch, mode, onSuccess }: BatchModalProps
       isOpen={isOpen}
       onClose={onClose}
       size="3xl"
+      scrollBehavior="inside"
       backdrop="opaque"
-      placement="center"
+      classNames={{
+        backdrop: "bg-gray-900/20",
+        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
+        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto"
+      }}
     >
       <ModalContent>
         <ModalHeader className="flex items-center gap-3">
@@ -214,21 +219,29 @@ function BatchModal({ isOpen, onClose, batch, mode, onSuccess }: BatchModalProps
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Número de Lote"
-                placeholder="Ej: LOT-2024-001"
+                placeholder="Número de Lote *"
                 value={formData.batchNumber || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, batchNumber: e.target.value }))}
                 isDisabled={isReadOnly}
-                isRequired
+                variant="flat"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                }}
               />
               
               <Select
-                label="Producto"
-                placeholder="Selecciona un producto"
+                placeholder="Selecciona un producto *"
                 selectedKeys={formData.productId ? [formData.productId] : []}
                 onSelectionChange={(keys) => handleProductChange(Array.from(keys)[0] as string)}
                 isDisabled={isReadOnly}
-                isRequired
+                variant="flat"
+                classNames={{
+                  trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                  value: "text-gray-900",
+                  listboxWrapper: "bg-white",
+                  popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                }}
               >
                 {products.map((product) => (
                   <SelectItem key={product._id}>
@@ -241,29 +254,44 @@ function BatchModal({ isOpen, onClose, batch, mode, onSuccess }: BatchModalProps
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input
                 type="number"
-                label="Cantidad"
+                placeholder="Cantidad *"
                 value={formData.quantity?.toString() || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
                 isDisabled={isReadOnly}
-                isRequired
                 min="0"
                 step="0.01"
                 endContent={formData.unit}
+                variant="flat"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                }}
               />
               
               <Input
-                label="Ubicación"
+                placeholder="Ubicación *"
                 value={formData.location || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                 isDisabled={isReadOnly}
-                isRequired
+                variant="flat"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                }}
               />
               
               <Select
-                label="Estado"
+                placeholder="Selecciona estado"
                 selectedKeys={formData.status ? [formData.status] : []}
                 onSelectionChange={(keys) => setFormData(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
                 isDisabled={isReadOnly}
+                variant="flat"
+                classNames={{
+                  trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                  value: "text-gray-900",
+                  listboxWrapper: "bg-white",
+                  popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                }}
               >
                 <SelectItem key="active">Activo</SelectItem>
                 <SelectItem key="quarantine">Cuarentena</SelectItem>
@@ -274,34 +302,56 @@ function BatchModal({ isOpen, onClose, batch, mode, onSuccess }: BatchModalProps
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <DateInput
-                label="Fecha de Fabricación"
-                value={formData.manufacturingDate ? parseDate(formData.manufacturingDate.split('T')[0]) : null}
-                onChange={(date) => setFormData(prev => ({
-                  ...prev,
-                  manufacturingDate: date?.toString()
-                }))}
-                isDisabled={isReadOnly}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de Fabricación
+                </label>
+                <DateInput
+                  value={formData.manufacturingDate ? parseDate(formData.manufacturingDate.split('T')[0]) : null}
+                  onChange={(date) => setFormData(prev => ({
+                    ...prev,
+                    manufacturingDate: date?.toString()
+                  }))}
+                  isDisabled={isReadOnly}
+                  variant="flat"
+                  classNames={{
+                    input: "text-gray-900",
+                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                  }}
+                />
+              </div>
               
-              <DateInput
-                label="Fecha de Vencimiento"
-                value={formData.expirationDate ? parseDate(formData.expirationDate.split('T')[0]) : null}
-                onChange={(date) => setFormData(prev => ({
-                  ...prev,
-                  expirationDate: date?.toString()
-                }))}
-                isDisabled={isReadOnly}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de Vencimiento
+                </label>
+                <DateInput
+                  value={formData.expirationDate ? parseDate(formData.expirationDate.split('T')[0]) : null}
+                  onChange={(date) => setFormData(prev => ({
+                    ...prev,
+                    expirationDate: date?.toString()
+                  }))}
+                  isDisabled={isReadOnly}
+                  variant="flat"
+                  classNames={{
+                    input: "text-gray-900",
+                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                  }}
+                />
+              </div>
             </div>
             
             <Textarea
-              label="Notas"
               placeholder="Notas adicionales del lote..."
               value={formData.notes || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               isDisabled={isReadOnly}
               maxRows={3}
+              variant="flat"
+              classNames={{
+                input: "text-gray-900",
+                inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+              }}
             />
           </div>
         </ModalBody>
@@ -485,6 +535,13 @@ export default function BatchManager() {
               selectedKeys={[statusFilter]}
               onSelectionChange={(keys) => setStatusFilter(Array.from(keys)[0] as string)}
               className="w-full md:w-48"
+              variant="flat"
+              classNames={{
+                trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                value: "text-gray-900",
+                listboxWrapper: "bg-white",
+                popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+              }}
             >
               <SelectItem key="all">Todos los estados</SelectItem>
               <SelectItem key="active">Activo</SelectItem>
@@ -499,6 +556,13 @@ export default function BatchManager() {
               selectedKeys={[expirationFilter]}
               onSelectionChange={(keys) => setExpirationFilter(Array.from(keys)[0] as string)}
               className="w-full md:w-48"
+              variant="flat"
+              classNames={{
+                trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                value: "text-gray-900",
+                listboxWrapper: "bg-white",
+                popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+              }}
             >
               <SelectItem key="all">Todos</SelectItem>
               <SelectItem key="expired">Vencidos</SelectItem>
@@ -599,7 +663,11 @@ export default function BatchManager() {
                             <EllipsisVerticalIcon className="w-4 h-4" />
                           </Button>
                         </DropdownTrigger>
-                        <DropdownMenu>
+                        <DropdownMenu
+                          classNames={{
+                            base: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                          }}
+                        >
                           <DropdownItem
                             key="view"
                             startContent={<EyeIcon className="w-4 h-4" />}

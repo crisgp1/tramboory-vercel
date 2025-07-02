@@ -44,7 +44,7 @@ import {
   DocumentArrowDownIcon
 } from "@heroicons/react/24/outline"
 import { useRole } from "@/hooks/useRole"
-// import PurchaseOrderModal from "./PurchaseOrderModal"
+import PurchaseOrderModal from "./PurchaseOrderModal"
 import toast from "react-hot-toast"
 
 interface PurchaseOrderItem {
@@ -202,12 +202,13 @@ export default function PurchaseOrderManager() {
     if (!selectedOrder) return
 
     try {
-      const response = await fetch(`/api/inventory/purchase-orders/${selectedOrder._id}/${actionType}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/inventory/purchase-orders/${selectedOrder._id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: actionType,
           ...(actionType === 'cancel' && { reason: 'Cancelado desde la interfaz' })
         })
       })
@@ -557,34 +558,16 @@ export default function PurchaseOrderManager() {
       </Card>
 
       {/* Modal de orden */}
-      {isOrderModalOpen && (
-        <Modal
-          isOpen={isOrderModalOpen}
-          onClose={onOrderModalClose}
-          size="5xl"
-          backdrop="opaque"
-          placement="center"
-        >
-          <ModalContent>
-            <ModalHeader>
-              <h3 className="text-lg font-semibold">
-                {modalMode === 'create' ? 'Nueva Orden de Compra' :
-                 modalMode === 'edit' ? 'Editar Orden' : 'Ver Orden'}
-              </h3>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-gray-600">
-                Modal de orden de compra - Implementación pendiente
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="light" onPress={onOrderModalClose}>
-                Cerrar
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <PurchaseOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={onOrderModalClose}
+        mode={modalMode}
+        order={selectedOrder}
+        onSuccess={() => {
+          fetchOrders()
+          onOrderModalClose()
+        }}
+      />
 
       {/* Modal de confirmación de eliminación */}
       <Modal

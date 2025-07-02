@@ -318,14 +318,15 @@ export default function StockTransferModal({
       isOpen={isOpen}
       onClose={onClose}
       size="5xl"
+      scrollBehavior="inside"
       backdrop="opaque"
       placement="center"
       classNames={{
         backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200",
-        wrapper: "z-[1001] items-center justify-center p-4",
+        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
+        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto",
         header: "border-b border-gray-100 flex-shrink-0",
-        body: "p-6 max-h-[80vh] overflow-y-auto",
+        body: "p-0 overflow-y-auto max-h-[calc(90vh-140px)]",
         footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
       }}
     >
@@ -358,11 +359,8 @@ export default function StockTransferModal({
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ubicación de Origen *
-                    </label>
                     <Select
-                      placeholder="Selecciona origen"
+                      placeholder="Ubicación de Origen *"
                       selectedKeys={formData.fromLocation ? [formData.fromLocation] : []}
                       onSelectionChange={(keys) => setFormData(prev => ({
                         ...prev,
@@ -393,11 +391,8 @@ export default function StockTransferModal({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ubicación de Destino *
-                    </label>
                     <Select
-                      placeholder="Selecciona destino"
+                      placeholder="Ubicación de Destino *"
                       selectedKeys={formData.toLocation ? [formData.toLocation] : []}
                       onSelectionChange={(keys) => setFormData(prev => ({
                         ...prev,
@@ -594,11 +589,8 @@ export default function StockTransferModal({
               <CardBody className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estado
-                    </label>
                     <Select
-                      placeholder="Selecciona estado"
+                      placeholder="Estado"
                       selectedKeys={[formData.status]}
                       onSelectionChange={(keys) => setFormData(prev => ({
                         ...prev,
@@ -625,9 +617,6 @@ export default function StockTransferModal({
                 
                 <div className="mt-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Notas
-                    </label>
                     <Textarea
                       placeholder="Notas adicionales para la transferencia..."
                       value={formData.notes || ''}

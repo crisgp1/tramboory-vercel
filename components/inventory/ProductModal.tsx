@@ -338,10 +338,10 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
       placement="center"
       classNames={{
         backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200 max-h-[95vh] my-2",
-        wrapper: "z-[1001] items-center justify-center p-2 sm:p-4 overflow-y-auto",
+        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
+        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto",
         header: "border-b border-gray-100 flex-shrink-0",
-        body: "p-0 overflow-y-auto max-h-[calc(95vh-140px)]",
+        body: "p-0 overflow-y-auto max-h-[calc(90vh-140px)]",
         footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
       }}
     >
@@ -405,11 +405,8 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
                 {/* Grid interno responsivo */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre del Producto *
-                    </label>
                     <Input
-                      placeholder="Ej: Cerveza Corona 355ml"
+                      placeholder="Nombre del Producto *"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       startContent={<CubeIcon className="w-4 h-4 text-gray-400" />}
@@ -424,11 +421,8 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
                   
                   <div className="flex flex-col sm:flex-row gap-2">
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        SKU *
-                      </label>
                       <Input
-                        placeholder="Código único del producto"
+                        placeholder="SKU *"
                         value={formData.sku}
                         onChange={(e) => handleInputChange('sku', e.target.value)}
                         startContent={<TagIcon className="w-4 h-4 text-gray-400" />}
@@ -456,11 +450,8 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Categoría *
-                    </label>
                     <Select
-                      placeholder="Selecciona una categoría"
+                      placeholder="Categoría *"
                       selectedKeys={formData.category ? [formData.category] : []}
                       onSelectionChange={(keys) => handleInputChange('category', Array.from(keys)[0])}
                       variant="flat"
@@ -481,9 +472,6 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción
-                    </label>
                     <Textarea
                       placeholder="Descripción detallada del producto..."
                       value={formData.description}
@@ -523,11 +511,8 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Unidad Base *
-                    </label>
                     <Select
-                      placeholder="Selecciona la unidad base"
+                      placeholder="Unidad Base *"
                       selectedKeys={formData.units.base.code ? [formData.units.base.code] : []}
                       onSelectionChange={(keys) => handleBaseUnitChange(Array.from(keys)[0] as string)}
                       variant="flat"
@@ -571,12 +556,9 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Stock Mínimo *
-                    </label>
                     <Input
                       type="number"
-                      placeholder="0"
+                      placeholder="Stock Mínimo *"
                       value={formData.stockLevels.minimum.toString()}
                       onChange={(e) => handleNestedInputChange('stockLevels', 'minimum', parseFloat(e.target.value) || 0)}
                       endContent={
@@ -596,12 +578,9 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Punto de Reorden *
-                    </label>
                     <Input
                       type="number"
-                      placeholder="0"
+                      placeholder="Punto de Reorden *"
                       value={formData.stockLevels.reorderPoint.toString()}
                       onChange={(e) => handleNestedInputChange('stockLevels', 'reorderPoint', parseFloat(e.target.value) || 0)}
                       endContent={

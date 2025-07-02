@@ -169,8 +169,13 @@ function PricingTierModal({
       isOpen={isOpen}
       onClose={onClose}
       size="2xl"
+      scrollBehavior="inside"
       backdrop="opaque"
-      placement="center"
+      classNames={{
+        backdrop: "bg-gray-900/20",
+        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
+        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto"
+      }}
     >
       <ModalContent>
         <ModalHeader className="flex items-center gap-3">
@@ -185,54 +190,76 @@ function PricingTierModal({
         <ModalBody>
           <div className="space-y-4">
             <Input
-              label="Nombre del Nivel"
-              placeholder="Ej: Mayorista, Distribuidor"
+              placeholder="Nombre del Nivel *"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              isRequired
+              variant="flat"
+              classNames={{
+                input: "text-gray-900",
+                inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+              }}
             />
             
             <Input
-              label="Descripción"
               placeholder="Descripción opcional del nivel"
               value={formData.description || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              variant="flat"
+              classNames={{
+                input: "text-gray-900",
+                inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+              }}
             />
             
             <div className="grid grid-cols-2 gap-4">
               <Input
                 type="number"
-                label="Cantidad Mínima"
+                placeholder="Cantidad Mínima *"
                 value={formData.minQuantity.toString()}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  minQuantity: parseInt(e.target.value) || 1 
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  minQuantity: parseInt(e.target.value) || 1
                 }))}
                 min="1"
-                isRequired
+                variant="flat"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                }}
               />
               
               <Input
                 type="number"
-                label="Cantidad Máxima"
-                placeholder="Opcional (sin límite)"
+                placeholder="Cantidad Máxima (opcional)"
                 value={formData.maxQuantity?.toString() || ''}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  maxQuantity: e.target.value ? parseInt(e.target.value) : undefined 
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  maxQuantity: e.target.value ? parseInt(e.target.value) : undefined
                 }))}
                 min={formData.minQuantity + 1}
+                variant="flat"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                }}
               />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <Select
-                label="Tipo de Descuento"
+                placeholder="Tipo de Descuento"
                 selectedKeys={[formData.discountType]}
-                onSelectionChange={(keys) => setFormData(prev => ({ 
-                  ...prev, 
-                  discountType: Array.from(keys)[0] as 'percentage' | 'fixed_amount' 
+                onSelectionChange={(keys) => setFormData(prev => ({
+                  ...prev,
+                  discountType: Array.from(keys)[0] as 'percentage' | 'fixed_amount'
                 }))}
+                variant="flat"
+                classNames={{
+                  trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                  value: "text-gray-900",
+                  listboxWrapper: "bg-white",
+                  popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                }}
               >
                 <SelectItem key="percentage">Porcentaje (%)</SelectItem>
                 <SelectItem key="fixed_amount">Monto Fijo ($)</SelectItem>
@@ -240,30 +267,41 @@ function PricingTierModal({
               
               <Input
                 type="number"
-                label="Valor del Descuento"
+                placeholder="Valor del Descuento *"
                 value={formData.discountValue.toString()}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  discountValue: parseFloat(e.target.value) || 0 
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  discountValue: parseFloat(e.target.value) || 0
                 }))}
                 min="0.01"
                 step="0.01"
                 endContent={formData.discountType === 'percentage' ? '%' : '$'}
-                isRequired
+                variant="flat"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                }}
               />
             </div>
             
-            <Input
-              type="number"
-              label="Prioridad"
-              description="Orden de aplicación (menor número = mayor prioridad)"
-              value={formData.priority.toString()}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                priority: parseInt(e.target.value) || 1 
-              }))}
-              min="1"
-            />
+            <div>
+              <Input
+                type="number"
+                placeholder="Prioridad"
+                value={formData.priority.toString()}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  priority: parseInt(e.target.value) || 1
+                }))}
+                min="1"
+                variant="flat"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                }}
+              />
+              <p className="text-xs text-gray-500 mt-1">Orden de aplicación (menor número = mayor prioridad)</p>
+            </div>
           </div>
         </ModalBody>
         
@@ -457,11 +495,17 @@ export default function PricingTierManager() {
         <CardBody className="p-4">
           <div className="flex items-center gap-4">
             <Select
-              label="Seleccionar Producto"
               placeholder="Elige un producto para configurar precios"
               selectedKeys={selectedProduct ? [selectedProduct] : []}
               onSelectionChange={(keys) => setSelectedProduct(Array.from(keys)[0] as string)}
               className="flex-1"
+              variant="flat"
+              classNames={{
+                trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                value: "text-gray-900",
+                listboxWrapper: "bg-white",
+                popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+              }}
             >
               {products.map((product) => (
                 <SelectItem key={product._id}>
@@ -585,7 +629,11 @@ export default function PricingTierManager() {
                                 <EllipsisVerticalIcon className="w-4 h-4" />
                               </Button>
                             </DropdownTrigger>
-                            <DropdownMenu>
+                            <DropdownMenu
+                              classNames={{
+                                base: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                              }}
+                            >
                               <DropdownItem
                                 key="edit"
                                 startContent={<PencilIcon className="w-4 h-4" />}

@@ -239,10 +239,10 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
       placement="center"
       classNames={{
         backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200 max-h-[95vh] my-2",
-        wrapper: "z-[1001] items-center justify-center p-2 sm:p-4 overflow-y-auto",
+        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
+        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto",
         header: "border-b border-gray-100 flex-shrink-0",
-        body: "p-0 overflow-y-auto max-h-[calc(95vh-140px)]",
+        body: "p-0 overflow-y-auto max-h-[calc(90vh-140px)]",
         footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
       }}
     >
@@ -307,11 +307,8 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre del Proveedor *
-                    </label>
                     <Input
-                      placeholder="Ej: Distribuidora ABC S.A. de C.V."
+                      placeholder="Nombre del Proveedor *"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       startContent={<BuildingOffice2Icon className="w-4 h-4 text-gray-400" />}
@@ -325,11 +322,8 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Código del Proveedor *
-                    </label>
                     <Input
-                      placeholder="Ej: PROV001"
+                      placeholder="Código del Proveedor *"
                       value={formData.code}
                       onChange={(e) => handleInputChange('code', e.target.value)}
                       startContent={<BuildingOffice2Icon className="w-4 h-4 text-gray-400" />}
@@ -355,9 +349,6 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción
-                    </label>
                     <Textarea
                       placeholder="Descripción del proveedor..."
                       value={formData.description || ''}

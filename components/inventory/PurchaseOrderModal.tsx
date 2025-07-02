@@ -344,14 +344,15 @@ export default function PurchaseOrderModal({
       isOpen={isOpen}
       onClose={onClose}
       size="5xl"
+      scrollBehavior="inside"
       backdrop="opaque"
       placement="center"
       classNames={{
         backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200",
-        wrapper: "z-[1001] items-center justify-center p-4",
+        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
+        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto",
         header: "border-b border-gray-100 flex-shrink-0",
-        body: "p-6 max-h-[80vh] overflow-y-auto",
+        body: "p-0 overflow-y-auto max-h-[calc(90vh-140px)]",
         footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
       }}
     >
@@ -381,11 +382,8 @@ export default function PurchaseOrderModal({
                 <h4 className="text-sm font-medium text-gray-900 mb-3">Información del Proveedor</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Proveedor *
-                    </label>
                     <Select
-                      placeholder="Selecciona un proveedor"
+                      placeholder="Proveedor *"
                       selectedKeys={formData.supplierId ? [formData.supplierId] : []}
                       onSelectionChange={(keys) => handleSupplierChange(Array.from(keys)[0] as string)}
                       isDisabled={isReadOnly}
@@ -406,11 +404,8 @@ export default function PurchaseOrderModal({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ubicación de Entrega *
-                    </label>
                     <Input
-                      placeholder="Ej: Almacén Principal"
+                      placeholder="Ubicación de Entrega *"
                       value={formData.deliveryLocation}
                       onChange={(e) => setFormData(prev => ({ ...prev, deliveryLocation: e.target.value }))}
                       isDisabled={isReadOnly}
@@ -425,11 +420,8 @@ export default function PurchaseOrderModal({
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Método de Pago
-                    </label>
                     <Select
-                      placeholder="Selecciona método"
+                      placeholder="Método de Pago"
                       selectedKeys={[formData.paymentTerms.method]}
                       onSelectionChange={(keys) => setFormData(prev => ({
                         ...prev,
@@ -452,12 +444,9 @@ export default function PurchaseOrderModal({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Días de Crédito
-                    </label>
                     <Input
                       type="number"
-                      placeholder="0"
+                      placeholder="Días de Crédito"
                       value={formData.paymentTerms.creditDays.toString()}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
@@ -473,11 +462,7 @@ export default function PurchaseOrderModal({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Fecha de Entrega Esperada
-                    </label>
                     <DateInput
-                      placeholder="Selecciona fecha"
                       value={formData.expectedDeliveryDate ? parseDate(formData.expectedDeliveryDate.split('T')[0]) : null}
                       onChange={(date) => setFormData(prev => ({
                         ...prev,
@@ -513,106 +498,110 @@ export default function PurchaseOrderModal({
                 </div>
                 
                 {formData.items.length > 0 ? (
-                  <Table aria-label="Items de la orden">
-                    <TableHeader>
-                      <TableColumn>PRODUCTO</TableColumn>
-                      <TableColumn>CANTIDAD</TableColumn>
-                      <TableColumn>PRECIO UNIT.</TableColumn>
-                      <TableColumn>TOTAL</TableColumn>
-                      {!isReadOnly ? <TableColumn>ACCIONES</TableColumn> : null}
-                    </TableHeader>
-                    <TableBody>
-                      {formData.items.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            {isReadOnly ? (
-                              <div>
-                                <p className="font-medium">{item.productName}</p>
-                                <p className="text-sm text-gray-500">{item.unit}</p>
-                              </div>
-                            ) : (
-                              <Select
-                                placeholder="Selecciona producto"
-                                selectedKeys={item.productId ? [item.productId] : []}
-                                onSelectionChange={(keys) => updateItem(index, 'productId', Array.from(keys)[0])}
-                                className="min-w-[200px]"
-                                variant="flat"
-                                classNames={{
-                                  trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                                  value: "text-gray-900",
-                                  listboxWrapper: "bg-white",
-                                  popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-                                }}
-                              >
-                                {filteredProducts.map((product) => (
-                                  <SelectItem key={product._id}>
-                                    {product.name} ({product.sku})
-                                  </SelectItem>
-                                ))}
-                              </Select>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">PRODUCTO</th>
+                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">CANTIDAD</th>
+                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">PRECIO UNIT.</th>
+                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">TOTAL</th>
+                          {!isReadOnly && <th className="text-left py-3 px-2 text-sm font-medium text-gray-700">ACCIONES</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {formData.items.map((item, index) => (
+                          <tr key={index} className="border-b border-gray-100">
+                            <td className="py-3 px-2">
+                              {isReadOnly ? (
+                                <div>
+                                  <p className="font-medium">{item.productName}</p>
+                                  <p className="text-sm text-gray-500">{item.unit}</p>
+                                </div>
+                              ) : (
+                                <Select
+                                  placeholder="Selecciona producto"
+                                  selectedKeys={item.productId ? [item.productId] : []}
+                                  onSelectionChange={(keys) => updateItem(index, 'productId', Array.from(keys)[0])}
+                                  className="min-w-[200px]"
+                                  variant="flat"
+                                  classNames={{
+                                    trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                                    value: "text-gray-900",
+                                    listboxWrapper: "bg-white",
+                                    popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                                  }}
+                                >
+                                  {filteredProducts.map((product) => (
+                                    <SelectItem key={product._id}>
+                                      {product.name} ({product.sku})
+                                    </SelectItem>
+                                  ))}
+                                </Select>
+                              )}
+                            </td>
+                            <td className="py-3 px-2">
+                              {isReadOnly ? (
+                                <span>{item.quantity} {item.unit}</span>
+                              ) : (
+                                <Input
+                                  type="number"
+                                  placeholder="0"
+                                  value={item.quantity.toString()}
+                                  onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                  className="w-20"
+                                  min="0.01"
+                                  step="0.01"
+                                  variant="flat"
+                                  classNames={{
+                                    input: "text-gray-900",
+                                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                                  }}
+                                />
+                              )}
+                            </td>
+                            <td className="py-3 px-2">
+                              {isReadOnly ? (
+                                formatCurrency(item.unitPrice)
+                              ) : (
+                                <Input
+                                  type="number"
+                                  placeholder="0.00"
+                                  value={item.unitPrice.toString()}
+                                  onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                  className="w-24"
+                                  min="0"
+                                  step="0.01"
+                                  startContent="$"
+                                  variant="flat"
+                                  classNames={{
+                                    input: "text-gray-900",
+                                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                                  }}
+                                />
+                              )}
+                            </td>
+                            <td className="py-3 px-2">
+                              <span className="font-medium">{formatCurrency(item.totalPrice)}</span>
+                            </td>
+                            {!isReadOnly && (
+                              <td className="py-3 px-2">
+                                <Button
+                                  isIconOnly
+                                  size="sm"
+                                  variant="light"
+                                  color="danger"
+                                  onPress={() => removeItem(index)}
+                                >
+                                  <TrashIcon className="w-4 h-4" />
+                                </Button>
+                              </td>
                             )}
-                          </TableCell>
-                          <TableCell>
-                            {isReadOnly ? (
-                              <span>{item.quantity} {item.unit}</span>
-                            ) : (
-                              <Input
-                                type="number"
-                                placeholder="0"
-                                value={item.quantity.toString()}
-                                onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                className="w-20"
-                                min="0.01"
-                                step="0.01"
-                                variant="flat"
-                                classNames={{
-                                  input: "text-gray-900",
-                                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                                }}
-                              />
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {isReadOnly ? (
-                              formatCurrency(item.unitPrice)
-                            ) : (
-                              <Input
-                                type="number"
-                                placeholder="0.00"
-                                value={item.unitPrice.toString()}
-                                onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                className="w-24"
-                                min="0"
-                                step="0.01"
-                                startContent="$"
-                                variant="flat"
-                                classNames={{
-                                  input: "text-gray-900",
-                                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                                }}
-                              />
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-medium">{formatCurrency(item.totalPrice)}</span>
-                          </TableCell>
-                          {!isReadOnly ? (
-                            <TableCell>
-                              <Button
-                                isIconOnly
-                                size="sm"
-                                variant="light"
-                                color="danger"
-                                onPress={() => removeItem(index)}
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </Button>
-                            </TableCell>
-                          ) : null}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <p>No hay productos agregados</p>
@@ -661,9 +650,6 @@ export default function PurchaseOrderModal({
             <Card className="border border-gray-200">
               <CardBody className="p-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notas
-                  </label>
                   <Textarea
                     placeholder="Notas adicionales para la orden..."
                     value={formData.notes || ''}

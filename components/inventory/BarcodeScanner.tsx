@@ -241,15 +241,12 @@ export default function BarcodeScanner({
       isOpen={isOpen}
       onClose={onClose}
       size="3xl"
+      scrollBehavior="inside"
       backdrop="opaque"
-      placement="center"
       classNames={{
-        backdrop: "bg-gray-900/50",
-        base: "bg-white border border-gray-200",
-        wrapper: "z-[1001] items-center justify-center p-4",
-        header: "border-b border-gray-100 flex-shrink-0",
-        body: "p-6 max-h-[80vh] overflow-y-auto",
-        footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
+        backdrop: "bg-gray-900/20",
+        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
+        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto"
       }}
     >
       <ModalContent>
@@ -360,6 +357,11 @@ export default function BarcodeScanner({
                     onKeyPress={(e) => e.key === 'Enter' && handleManualLookup()}
                     startContent={<QrCodeIcon className="w-4 h-4 text-gray-400" />}
                     isDisabled={loading}
+                    variant="flat"
+                    classNames={{
+                      input: "text-gray-900",
+                      inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                    }}
                   />
                   <Button
                     color="primary"

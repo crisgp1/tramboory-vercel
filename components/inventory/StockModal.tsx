@@ -191,10 +191,10 @@ export default function StockModal({ isOpen, onClose, stockItem, onSuccess }: St
       placement="center"
       classNames={{
         backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200 max-h-[95vh] my-2",
-        wrapper: "z-[1001] items-center justify-center p-2 sm:p-4 overflow-y-auto",
+        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
+        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto",
         header: "border-b border-gray-100 flex-shrink-0",
-        body: "p-0 overflow-y-auto max-h-[calc(95vh-140px)]",
+        body: "p-0 overflow-y-auto max-h-[calc(90vh-140px)]",
         footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
       }}
     >
@@ -265,11 +265,8 @@ export default function StockModal({ isOpen, onClose, stockItem, onSuccess }: St
                 <div className="space-y-4">
                   {/* Tipo de movimiento */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Movimiento *
-                    </label>
                     <Select
-                      placeholder="Selecciona el tipo de movimiento"
+                      placeholder="Tipo de Movimiento *"
                       selectedKeys={[movementType]}
                       onSelectionChange={(keys) => setMovementType(Array.from(keys)[0] as string)}
                       variant="flat"
@@ -307,12 +304,9 @@ export default function StockModal({ isOpen, onClose, stockItem, onSuccess }: St
                   {/* Cantidad y Razón en grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Cantidad *
-                      </label>
                       <Input
                         type="number"
-                        placeholder="0"
+                        placeholder="Cantidad *"
                         value={quantity}
                         onChange={(e) => setQuantity(e.target.value)}
                         startContent={<HashtagIcon className="w-4 h-4 text-gray-400" />}
@@ -330,11 +324,8 @@ export default function StockModal({ isOpen, onClose, stockItem, onSuccess }: St
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Razón del Movimiento *
-                      </label>
                       <Select
-                        placeholder="Selecciona la razón"
+                        placeholder="Razón del Movimiento *"
                         selectedKeys={reason ? [reason] : []}
                         onSelectionChange={(keys) => setReason(Array.from(keys)[0] as string)}
                         variant="flat"
@@ -356,11 +347,8 @@ export default function StockModal({ isOpen, onClose, stockItem, onSuccess }: St
 
                   {/* Notas adicionales */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Notas Adicionales
-                    </label>
                     <Textarea
-                      placeholder="Información adicional sobre el movimiento..."
+                      placeholder="Notas adicionales sobre el movimiento..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       minRows={2}
