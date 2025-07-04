@@ -103,7 +103,8 @@ export default function StockModal({ isOpen, onClose, stockItem, onSuccess }: St
         handleClose()
       } else {
         const error = await response.json()
-        toast.error(error.message || "Error al registrar el movimiento")
+        console.error('Error response:', error)
+        toast.error(error.error || error.message || "Error al registrar el movimiento")
       }
     } catch (error) {
       console.error('Error:', error)

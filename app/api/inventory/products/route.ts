@@ -200,9 +200,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar que el código de barras no exista (si se proporciona)
-    if (productData.barcode) {
-      const existingBarcode = await Product.findOne({ barcode: productData.barcode });
+    // Verificar que el código de barras no exista (si se proporciona y no está vacío)
+    if (productData.barcode && productData.barcode.trim() !== '') {
+      const existingBarcode = await Product.findOne({ barcode: productData.barcode.trim() });
       if (existingBarcode) {
         return NextResponse.json(
           { error: 'Ya existe un producto con este código de barras' },
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
       description: productData.description,
       category: productData.category,
       sku: productData.sku,
-      barcode: productData.barcode,
+      barcode: productData.barcode && productData.barcode.trim() !== '' ? productData.barcode.trim() : undefined,
       baseUnit: productData.units.base.code,
       units: productData.units,
       pricing: productData.pricing || {
@@ -246,6 +246,9 @@ export async function POST(request: NextRequest) {
     });
 
     await product.save();
+
+    // NO crear registros de inventario automáticamente
+    console.log(`✅ Producto ${product.name} creado sin registros de inventario automáticos`);
 
     // Poblar datos para respuesta
     await product.populate('suppliers', 'name contactInfo');

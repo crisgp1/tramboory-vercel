@@ -316,25 +316,26 @@ export default function PurchaseOrderManager() {
   ]
 
   return (
-    <div className="space-y-6">
-      {/* Header y controles */}
-      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-        <div className="flex-1 max-w-md">
+    <div className="w-full max-w-full overflow-x-hidden space-y-4">
+      {/* Header y controles - Ultra Responsive */}
+      <div className="w-full grid grid-cols-1 gap-2">
+        <div className="w-full">
           <Input
             placeholder="Buscar órdenes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
+            startContent={<MagnifyingGlassIcon className="w-3 h-3 flex-shrink-0 text-gray-400" />}
             className="w-full"
+            size="sm"
           />
         </div>
         
-        <div className="flex flex-wrap gap-2">
+        <div className="w-full grid grid-cols-2 gap-2">
           <Select
-            placeholder="Estado"
+            label="Estado"
             selectedKeys={statusFilter !== 'all' ? [statusFilter] : []}
             onSelectionChange={(keys) => setStatusFilter(Array.from(keys)[0] as string || 'all')}
-            className="min-w-[120px]"
+            className="w-full"
             size="sm"
           >
             <SelectItem key="all">Todos</SelectItem>
@@ -349,17 +350,19 @@ export default function PurchaseOrderManager() {
           {(isAdmin || isGerente) && (
             <Button
               color="primary"
-              startContent={<PlusIcon className="w-4 h-4" />}
+              startContent={<PlusIcon className="w-3 h-3 flex-shrink-0" />}
               onPress={handleCreateOrder}
+              size="sm"
+              className="w-full"
             >
-              Nueva Orden
+              <span className="text-xs truncate">Nueva Orden</span>
             </Button>
           )}
         </div>
       </div>
 
-      {/* Tabla de órdenes */}
-      <Card className="border border-gray-200">
+      {/* Vista Desktop - Tabla de órdenes */}
+      <Card className="w-full border border-gray-200 shadow-sm hidden lg:block">
         <CardBody className="p-0">
           <Table
             aria-label="Tabla de órdenes de compra"
@@ -556,6 +559,194 @@ export default function PurchaseOrderManager() {
           )}
         </CardBody>
       </Card>
+
+      {/* Vista Mobile - Cards */}
+      <div className="w-full lg:hidden">
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Spinner label="Cargando órdenes..." />
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-12">
+            <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No se encontraron órdenes de compra</p>
+          </div>
+        ) : (
+          <div className="w-full space-y-3">
+            {orders.map((item) => (
+              <Card key={item._id} className="w-full border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                <CardBody className="p-3">
+                  {/* Encabezado de la tarjeta */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="min-w-0 flex-1 pr-2">
+                      <p className="font-mono text-xs font-medium truncate">{item.purchaseOrderId}</p>
+                      <p className="font-medium text-gray-900 text-sm truncate">{item.supplierName}</p>
+                      <p className="text-xs text-gray-500 truncate">{item.deliveryLocation}</p>
+                    </div>
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={getStatusColor(item.status) as any}
+                    >
+                      {getStatusLabel(item.status)}
+                    </Chip>
+                  </div>
+                  
+                  {/* Información principal */}
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="p-1.5 bg-gray-50 rounded text-xs">
+                      <p className="text-xs text-gray-500 truncate">TOTAL</p>
+                      <p className="font-semibold truncate">{formatCurrency(item.total)}</p>
+                      <p className="text-xs text-gray-500 truncate">+ {formatCurrency(item.tax)} IVA</p>
+                    </div>
+                    <div className="p-1.5 bg-gray-50 rounded text-xs">
+                      <p className="text-xs text-gray-500 truncate">ITEMS</p>
+                      <p className="font-medium truncate">{item.items.length} productos</p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {item.items.reduce((sum, i) => sum + i.quantity, 0)} unidades
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Fechas */}
+                  <div className="p-1.5 bg-gray-50 rounded text-xs mb-3">
+                    <div className="grid grid-cols-2 gap-1">
+                      <div>
+                        <p className="text-xs text-gray-500 truncate">CREADA</p>
+                        <p className="truncate">{formatDate(item.createdAt)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 truncate">ENTREGA</p>
+                        <p className="truncate">{item.expectedDeliveryDate ? formatDate(item.expectedDeliveryDate) : 'Sin fecha'}</p>
+                      </div>
+                    </div>
+                    {item.actualDeliveryDate && (
+                      <div className="mt-1 text-green-600 flex items-center gap-1">
+                        <CheckIcon className="w-3 h-3 flex-shrink-0" />
+                        <span className="text-xs truncate">Entregada: {formatDate(item.actualDeliveryDate)}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Acciones */}
+                  <div className="grid grid-cols-2 gap-1">
+                    <Button
+                      size="sm"
+                      variant="light"
+                      onPress={() => handleViewOrder(item)}
+                      startContent={<EyeIcon className="w-3 h-3 flex-shrink-0" />}
+                      className="col-span-1"
+                    >
+                      <span className="text-xs truncate">Ver</span>
+                    </Button>
+                    
+                    <Dropdown>
+                      <DropdownTrigger>
+                        <Button
+                          size="sm"
+                          variant="light"
+                          className="col-span-1 w-full"
+                        >
+                          <span className="text-xs truncate">Acciones</span>
+                        </Button>
+                      </DropdownTrigger>
+                      <DropdownMenu aria-label="Acciones de orden">
+                        {canPerformAction(item, 'edit') ? (
+                          <DropdownItem
+                            key="edit"
+                            startContent={<PencilIcon className="w-4 h-4" />}
+                            onPress={() => handleEditOrder(item)}
+                          >
+                            Editar
+                          </DropdownItem>
+                        ) : null}
+                        
+                        {canPerformAction(item, 'approve') ? (
+                          <DropdownItem
+                            key="approve"
+                            startContent={<CheckIcon className="w-4 h-4" />}
+                            onPress={() => handleOrderAction(item, 'approve')}
+                            className="text-green-600"
+                          >
+                            Aprobar
+                          </DropdownItem>
+                        ) : null}
+                        
+                        {canPerformAction(item, 'order') ? (
+                          <DropdownItem
+                            key="order"
+                            startContent={<TruckIcon className="w-4 h-4" />}
+                            onPress={() => handleOrderAction(item, 'order')}
+                            className="text-blue-600"
+                          >
+                            Enviar
+                          </DropdownItem>
+                        ) : null}
+                        
+                        {canPerformAction(item, 'receive') ? (
+                          <DropdownItem
+                            key="receive"
+                            startContent={<DocumentTextIcon className="w-4 h-4" />}
+                            onPress={() => handleOrderAction(item, 'receive')}
+                            className="text-purple-600"
+                          >
+                            Recibir
+                          </DropdownItem>
+                        ) : null}
+                        
+                        <DropdownItem
+                          key="export-pdf"
+                          startContent={<DocumentArrowDownIcon className="w-4 h-4" />}
+                          onPress={() => exportOrder(item._id, 'pdf')}
+                        >
+                          Exportar PDF
+                        </DropdownItem>
+                        
+                        {canPerformAction(item, 'cancel') ? (
+                          <DropdownItem
+                            key="cancel"
+                            startContent={<XMarkIcon className="w-4 h-4" />}
+                            onPress={() => handleOrderAction(item, 'cancel')}
+                            className="text-danger"
+                          >
+                            Cancelar
+                          </DropdownItem>
+                        ) : null}
+                        
+                        {item.status === 'DRAFT' && (isAdmin || isGerente) ? (
+                          <DropdownItem
+                            key="delete"
+                            startContent={<TrashIcon className="w-4 h-4" />}
+                            onPress={() => handleDeleteOrder(item)}
+                            className="text-danger"
+                          >
+                            Eliminar
+                          </DropdownItem>
+                        ) : null}
+                      </DropdownMenu>
+                    </Dropdown>
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        )}
+        
+        {/* Paginación Mobile */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-4">
+            <Pagination
+              total={totalPages}
+              page={currentPage}
+              onChange={setCurrentPage}
+              showControls
+              showShadow
+              color="primary"
+              size="sm"
+            />
+          </div>
+        )}
+      </div>
 
       {/* Modal de orden */}
       <PurchaseOrderModal

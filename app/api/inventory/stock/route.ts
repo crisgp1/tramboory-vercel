@@ -63,6 +63,8 @@ export async function GET(request: NextRequest) {
     const queryParams = {
       productId: searchParams.get('productId') || undefined,
       locationId: searchParams.get('locationId') || undefined,
+      search: searchParams.get('search') || undefined,
+      category: searchParams.get('category') || undefined,
       lowStock: searchParams.get('lowStock') === 'true',
       expiringSoon: searchParams.get('expiringSoon') === 'true',
       expiryDays: parseInt(searchParams.get('expiryDays') || '7'),

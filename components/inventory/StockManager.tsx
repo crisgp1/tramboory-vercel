@@ -42,7 +42,21 @@ import {
 } from "@heroicons/react/24/outline"
 import { useRole } from "@/hooks/useRole"
 import StockModal from "./StockModal"
+import InitiateMovementModal from "./InitiateMovementModal"
 import InventoryFilters from "./InventoryFilters"
+
+interface Product {
+  _id: string
+  name: string
+  sku: string
+  category: string
+  units: {
+    base: {
+      code: string
+      name: string
+    }
+  }
+}
 
 interface StockItem {
   _id: string
@@ -78,6 +92,7 @@ interface StockItem {
 export default function StockManager() {
   const { role, isAdmin, isGerente } = useRole()
   const [stockItems, setStockItems] = useState<StockItem[]>([])
+  const [productsWithoutInventory, setProductsWithoutInventory] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedLocation, setSelectedLocation] = useState("all")
@@ -85,10 +100,12 @@ export default function StockManager() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [selectedStock, setSelectedStock] = useState<StockItem | null>(null)
+  const [selectedProductForInitiation, setSelectedProductForInitiation] = useState<Product | null>(null)
   
   const { isOpen: isStockModalOpen, onOpen: onStockModalOpen, onClose: onStockModalClose } = useDisclosure()
   const { isOpen: isFiltersOpen, onOpen: onFiltersOpen, onClose: onFiltersClose } = useDisclosure()
   const { isOpen: isDetailModalOpen, onOpen: onDetailModalOpen, onClose: onDetailModalClose } = useDisclosure()
+  const { isOpen: isInitiateModalOpen, onOpen: onInitiateModalOpen, onClose: onInitiateModalClose } = useDisclosure()
 
   const itemsPerPage = 10
 
@@ -103,21 +120,30 @@ export default function StockManager() {
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
         ...(searchTerm && { search: searchTerm }),
-        ...(selectedLocation !== 'all' && { location: selectedLocation }),
+        ...(selectedLocation !== 'all' && { locationId: selectedLocation }),
         ...(selectedCategory !== 'all' && { category: selectedCategory })
       })
 
-      const response = await fetch(`/api/inventory/stock?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        console.log('Stock data received:', data) // Debug log
-        setStockItems(data.inventories || data.items || [])
-        setTotalPages(data.totalPages || Math.ceil((data.total || 0) / itemsPerPage))
+      // Obtener inventario existente
+      const stockResponse = await fetch(`/api/inventory/stock?${params}`)
+      
+      // NUEVA: Obtener productos sin registros de inventario
+      const productsResponse = await fetch(`/api/inventory/products/without-inventory`)
+      
+      if (stockResponse.ok && productsResponse.ok) {
+        const stockData = await stockResponse.json()
+        const productsData = await productsResponse.json()
+        
+        setStockItems(stockData.inventories || [])
+        setProductsWithoutInventory(productsData.products || [])
+        setTotalPages(stockData.totalPages || Math.ceil((stockData.total || 0) / itemsPerPage))
       } else {
-        console.error('Error fetching stock:', response.status, response.statusText)
+        console.error('Error fetching data:', 
+          stockResponse.ok ? '' : `Stock: ${stockResponse.status}`,
+          productsResponse.ok ? '' : `Products: ${productsResponse.status}`)
       }
     } catch (error) {
-      console.error('Error fetching stock items:', error)
+      console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
     }
@@ -126,6 +152,11 @@ export default function StockManager() {
   const handleStockAction = (action: string, stockItem: StockItem) => {
     setSelectedStock(stockItem)
     onStockModalOpen()
+  }
+
+  const handleInitiateMovement = (product: Product) => {
+    setSelectedProductForInitiation(product)
+    onInitiateModalOpen()
   }
 
   const handleViewDetails = (stockItem: StockItem) => {
@@ -257,6 +288,50 @@ export default function StockManager() {
           </span>
         </div>
       </div>
+
+      {/* Productos sin inventario - Antes de la tabla principal */}
+      {productsWithoutInventory.length > 0 && (
+        <Card className="border border-orange-200 bg-orange-50 mb-6">
+          <CardBody className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <CubeIcon className="w-5 h-5 text-orange-600" />
+              <h4 className="font-medium text-orange-900">Productos sin Movimientos de Inventario</h4>
+              <Chip size="sm" variant="flat" color="warning">
+                {productsWithoutInventory.length} productos
+              </Chip>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {productsWithoutInventory.map((product) => (
+                <Card key={product._id} className="border border-orange-200 bg-white">
+                  <CardBody className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex-1">
+                        <h5 className="font-medium text-gray-900 truncate">{product.name}</h5>
+                        <p className="text-sm text-gray-500">{product.category}</p>
+                        <Chip size="sm" variant="flat" color="primary" className="mt-1">
+                          {product.sku}
+                        </Chip>
+                      </div>
+                    </div>
+                    
+                    <Button
+                      color="warning"
+                      variant="solid"
+                      size="sm"
+                      className="w-full"
+                      startContent={<PlusIcon className="w-4 h-4" />}
+                      onPress={() => handleInitiateMovement(product)}
+                    >
+                      Iniciar Movimientos
+                    </Button>
+                  </CardBody>
+                </Card>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Vista responsiva - Desktop: Tabla, Mobile: Cards */}
       <Card className="border border-gray-200 shadow-sm">
@@ -763,6 +838,19 @@ export default function StockManager() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Modal para iniciar movimiento */}
+      {selectedProductForInitiation && (
+        <InitiateMovementModal
+          isOpen={isInitiateModalOpen}
+          onClose={onInitiateModalClose}
+          product={selectedProductForInitiation}
+          onSuccess={() => {
+            fetchStockItems()
+            setSelectedProductForInitiation(null)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
     const result = await InventoryService.adjustStock(adjustmentParams);
 
     if (!result.success) {
+      console.error('Stock adjustment failed:', result.error);
       return NextResponse.json(
         { error: result.error || 'Failed to adjust stock' },
         { status: 400 }

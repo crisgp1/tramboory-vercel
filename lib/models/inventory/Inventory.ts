@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { IBatch, IInventoryTotals } from '@/types/inventory';
+import { IBatch, IInventoryTotals } from '../../../types/inventory/index';
 
 // Interface para el documento de Inventory
 export interface IInventory extends Document {
@@ -19,8 +19,7 @@ export interface IInventory extends Document {
 const BatchSchema = new Schema({
   batchId: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   quantity: {
     type: Number,
@@ -150,7 +149,6 @@ const InventorySchema = new Schema<IInventory>({
 
 // Índices compuestos
 InventorySchema.index({ productId: 1, locationId: 1 }, { unique: true });
-InventorySchema.index({ 'batches.batchId': 1 });
 InventorySchema.index({ 'batches.expiryDate': 1, 'batches.status': 1 });
 InventorySchema.index({ 'batches.status': 1, lastUpdated: -1 });
 InventorySchema.index({ locationId: 1, lastUpdated: -1 });
@@ -201,7 +199,8 @@ InventorySchema.methods.addBatch = function(batchData: Omit<IBatch, 'batchId'> &
 
   this.batches.push(batchData as IBatch);
   this.recalculateTotals();
-  return this.save();
+  // No hacer save() automáticamente para evitar ParallelSaveError
+  return this;
 };
 
 InventorySchema.methods.updateBatch = function(batchId: string, updates: Partial<IBatch>) {
@@ -212,7 +211,8 @@ InventorySchema.methods.updateBatch = function(batchId: string, updates: Partial
 
   Object.assign(batch, updates);
   this.recalculateTotals();
-  return this.save();
+  // No hacer save() automáticamente para evitar ParallelSaveError
+  return this;
 };
 
 InventorySchema.methods.removeBatch = function(batchId: string) {
@@ -224,7 +224,8 @@ InventorySchema.methods.removeBatch = function(batchId: string) {
   }
 
   this.recalculateTotals();
-  return this.save();
+  // No hacer save() automáticamente para evitar ParallelSaveError
+  return this;
 };
 
 InventorySchema.methods.reserveQuantity = function(quantity: number, batchId?: string) {
@@ -282,7 +283,8 @@ InventorySchema.methods.reserveQuantity = function(quantity: number, batchId?: s
   }
 
   this.recalculateTotals();
-  return this.save();
+  // No hacer save() automáticamente para evitar ParallelSaveError
+  return this;
 };
 
 InventorySchema.methods.releaseReservation = function(quantity: number, batchId?: string) {
@@ -350,7 +352,8 @@ InventorySchema.methods.releaseReservation = function(quantity: number, batchId?
   }
 
   this.recalculateTotals();
-  return this.save();
+  // No hacer save() automáticamente para evitar ParallelSaveError
+  return this;
 };
 
 InventorySchema.methods.consumeQuantity = function(quantity: number, method: 'FIFO' | 'LIFO' = 'FIFO') {
@@ -389,7 +392,8 @@ InventorySchema.methods.consumeQuantity = function(quantity: number, method: 'FI
   }
 
   this.recalculateTotals();
-  return { consumedBatches, inventory: this.save() };
+  // No hacer save() automáticamente para evitar ParallelSaveError
+  return { consumedBatches, inventory: this };
 };
 
 InventorySchema.methods.markExpiredBatches = function() {
@@ -405,7 +409,8 @@ InventorySchema.methods.markExpiredBatches = function() {
 
   if (hasChanges) {
     this.recalculateTotals();
-    return this.save();
+    // No hacer save() automáticamente para evitar ParallelSaveError
+    return Promise.resolve(this);
   }
 
   return Promise.resolve(this);

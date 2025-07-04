@@ -142,35 +142,53 @@ export default function InventoryReports() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       {/* Controles de reporte */}
       <Card className="border border-gray-200">
         <CardBody className="p-6">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end justify-between">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-              <Select
-                label="Tipo de Reporte"
-                selectedKeys={[reportType]}
-                onSelectionChange={(keys) => setReportType(Array.from(keys)[0] as string)}
-              >
-                {reportTypes.map((type) => (
-                  <SelectItem key={type.key}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </Select>
+              <div className="space-y-1">
+                <label className="text-sm text-gray-700 font-medium">Tipo de Reporte</label>
+                <Select
+                  selectedKeys={[reportType]}
+                  onSelectionChange={(keys) => setReportType(Array.from(keys)[0] as string)}
+                  variant="bordered"
+                  classNames={{
+                    trigger: "border-gray-200 hover:border-gray-300 focus-within:border-gray-900 transition-colors",
+                    value: "text-sm text-gray-900",
+                    listboxWrapper: "bg-white",
+                    popoverContent: "bg-white border border-gray-200 shadow-sm"
+                  }}
+                >
+                  {reportTypes.map((type) => (
+                    <SelectItem key={type.key}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
 
-              <Select
-                label="Período"
-                selectedKeys={[dateRange]}
-                onSelectionChange={(keys) => setDateRange(Array.from(keys)[0] as string)}
-              >
-                {dateRanges.map((range) => (
-                  <SelectItem key={range.key}>
-                    {range.label}
-                  </SelectItem>
-                ))}
-              </Select>
+              <div className="space-y-1">
+                <label className="text-sm text-gray-700 font-medium">Período</label>
+                <Select
+                  selectedKeys={[dateRange]}
+                  onSelectionChange={(keys) => setDateRange(Array.from(keys)[0] as string)}
+                  variant="bordered"
+                  classNames={{
+                    trigger: "border-gray-200 hover:border-gray-300 focus-within:border-gray-900 transition-colors",
+                    value: "text-sm text-gray-900",
+                    listboxWrapper: "bg-white",
+                    popoverContent: "bg-white border border-gray-200 shadow-sm"
+                  }}
+                >
+                  {dateRanges.map((range) => (
+                    <SelectItem key={range.key}>
+                      {range.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
             </div>
 
             <div className="flex gap-2">

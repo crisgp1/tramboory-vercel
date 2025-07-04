@@ -27,7 +27,8 @@ import {
   PlusIcon,
   PencilIcon,
   EyeIcon,
-  TrashIcon
+  TrashIcon,
+  CubeIcon
 } from "@heroicons/react/24/outline"
 import { useRole } from "@/hooks/useRole"
 import ProductModal from "./ProductModal"
@@ -180,34 +181,37 @@ export default function ProductManager() {
   ]
 
   return (
-    <div className="space-y-6">
-      {/* Header y controles */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex-1 max-w-md">
+    <div className="w-full max-w-full overflow-x-hidden space-y-4">
+      {/* Header y controles - Ultra Responsive */}
+      <div className="w-full grid grid-cols-1 sm:flex sm:flex-row gap-2 sm:items-center justify-between">
+        <div className="w-full sm:max-w-xs">
           <Input
             placeholder="Buscar productos..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
+            startContent={<MagnifyingGlassIcon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 text-gray-400" />}
             className="w-full"
+            size="sm"
           />
         </div>
         
-        <div className="flex gap-2">
+        <div className="w-full sm:w-auto">
           {(isAdmin || isGerente) && (
             <Button
               color="primary"
-              startContent={<PlusIcon className="w-4 h-4" />}
+              startContent={<PlusIcon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />}
               onPress={handleCreateProduct}
+              className="w-full sm:w-auto"
+              size="sm"
             >
-              Nuevo Producto
+              <span className="text-xs sm:text-sm">Nuevo Producto</span>
             </Button>
           )}
         </div>
       </div>
 
-      {/* Tabla de productos */}
-      <Card className="border border-gray-200">
+      {/* Vista Desktop - Tabla de productos */}
+      <Card className="w-full border border-gray-200 shadow-sm hidden lg:block">
         <CardBody className="p-0">
           <Table
             aria-label="Tabla de productos"
@@ -324,9 +328,9 @@ export default function ProductManager() {
             </TableBody>
           </Table>
           
-          {/* Paginación */}
+          {/* Paginación Desktop */}
           {totalPages > 1 && (
-            <div className="flex justify-center p-4">
+            <div className="flex justify-center p-4 border-t border-gray-100">
               <Pagination
                 total={totalPages}
                 page={currentPage}
@@ -340,12 +344,140 @@ export default function ProductManager() {
         </CardBody>
       </Card>
 
+      {/* Vista Mobile - Cards */}
+      <div className="w-full lg:hidden">
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Spinner label="Cargando productos..." />
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <CubeIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No se encontraron productos</p>
+          </div>
+        ) : (
+          <div className="w-full space-y-3">
+            {products.map((item) => (
+              <Card key={item._id} className="w-full border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                <CardBody className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="min-w-0 flex-1 pr-2">
+                      <p className="font-medium text-gray-900 text-sm truncate">{item.name}</p>
+                      {item.description && (
+                        <p className="text-xs text-gray-500 truncate">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={item.isActive ? 'success' : 'danger'}
+                    >
+                      {item.isActive ? 'Activo' : 'Inactivo'}
+                    </Chip>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="p-1.5 bg-gray-50 rounded text-xs">
+                      <p className="text-xs text-gray-500 truncate">SKU</p>
+                      <p className="font-mono font-medium text-xs truncate">{item.sku}</p>
+                    </div>
+                    <div className="p-1.5 bg-gray-50 rounded text-xs">
+                      <p className="text-xs text-gray-500 truncate">Categoría</p>
+                      <Chip
+                        size="sm"
+                        variant="flat"
+                        color={getCategoryColor(item.category) as any}
+                      >
+                        {item.category}
+                      </Chip>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="p-1.5 bg-gray-50 rounded text-xs">
+                      <p className="text-xs text-gray-500 truncate">Unidad Base</p>
+                      <p className="truncate">{item.units.base.name} ({item.units.base.code})</p>
+                    </div>
+                    <div className="p-1.5 bg-gray-50 rounded text-xs">
+                      <p className="text-xs text-gray-500 truncate">Stock Mínimo</p>
+                      <p className="truncate">{item.stockLevels.minimum} {item.stockLevels.unit}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="p-1.5 bg-gray-50 rounded text-xs mb-3">
+                    <p className="text-xs text-gray-500 truncate">Proveedores</p>
+                    <p className="truncate">
+                      {item.suppliers.length} proveedor(es)
+                      {item.suppliers.length > 0 && `, preferido: ${item.suppliers.find(s => s.isPreferred)?.supplierName || 'N/A'}`}
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-1">
+                    <Button
+                      size="sm"
+                      variant="light"
+                      onPress={() => handleViewProduct(item)}
+                      className="col-span-1"
+                      startContent={<EyeIcon className="w-3 h-3 flex-shrink-0" />}
+                    >
+                      <span className="text-xs truncate">Ver</span>
+                    </Button>
+                    
+                    {(isAdmin || isGerente) && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="primary"
+                          onPress={() => handleEditProduct(item)}
+                          className="col-span-1"
+                          startContent={<PencilIcon className="w-3 h-3 flex-shrink-0" />}
+                        >
+                          <span className="text-xs truncate">Editar</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="danger"
+                          onPress={() => handleDeleteProduct(item)}
+                          className="col-span-1"
+                          isIconOnly
+                        >
+                          <TrashIcon className="w-3 h-3 flex-shrink-0" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        )}
+        
+        {/* Paginación Mobile */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-4">
+            <Pagination
+              total={totalPages}
+              page={currentPage}
+              onChange={setCurrentPage}
+              showControls
+              showShadow
+              color="primary"
+              size="sm"
+            />
+          </div>
+        )}
+      </div>
+
       {/* Modal de producto */}
       {isProductModalOpen && (
         <ProductModal
           isOpen={isProductModalOpen}
           onClose={onProductModalClose}
-          product={selectedProduct}
+          product={selectedProduct as any}
           mode={modalMode}
           onSuccess={fetchProducts}
         />

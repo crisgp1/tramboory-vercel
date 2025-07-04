@@ -1,5 +1,5 @@
 import { UNIT_CONVERSIONS, COMMON_UNITS } from '@/lib/utils/inventory/constants';
-import { IUnits, IAlternativeUnit } from '@/types/inventory';
+import { IUnits, IAlternativeUnit } from '@/types/inventory/index';
 
 // Interface para resultado de conversión
 export interface ConversionResult {
@@ -35,18 +35,20 @@ export class UnitConverterService {
     value: number,
     fromUnit: string,
     toUnit: string,
-    productUnits?: IUnits
+    productUnits?: IUnits,
+    allowNegative: boolean = false
   ): ConversionResult {
     try {
       // Validar entrada
-      if (!this.isValidValue(value)) {
+      if (!this.isValidValue(value, allowNegative)) {
+        console.error(`❌ UnitConverter: Valor inválido - value: ${value}, type: ${typeof value}`);
         return {
           success: false,
           convertedValue: 0,
           fromUnit,
           toUnit,
           conversionFactor: 0,
-          error: 'Valor inválido para conversión'
+          error: `Valor inválido para conversión: ${value} (tipo: ${typeof value})`
         };
       }
 
@@ -65,6 +67,7 @@ export class UnitConverterService {
       const conversionFactor = this.getConversionFactor(fromUnit, toUnit, productUnits);
       
       if (conversionFactor === null) {
+        console.error(`❌ UnitConverter: No se encontró conversión - fromUnit: ${fromUnit}, toUnit: ${toUnit}, productUnits:`, productUnits);
         return {
           success: false,
           convertedValue: 0,
@@ -159,8 +162,8 @@ export class UnitConverterService {
 
     // Si ambas son alternativas, usar sus factores de conversión
     if (fromUnit !== productUnits.base.code && toUnit !== productUnits.base.code) {
-      const fromAlt = productUnits.alternatives.find(alt => alt.code === fromUnit) as IAlternativeUnit;
-      const toAlt = productUnits.alternatives.find(alt => alt.code === toUnit) as IAlternativeUnit;
+      const fromAlt = productUnits.alternatives.find((alt: IAlternativeUnit) => alt.code === fromUnit) as IAlternativeUnit;
+      const toAlt = productUnits.alternatives.find((alt: IAlternativeUnit) => alt.code === toUnit) as IAlternativeUnit;
       
       if (fromAlt && toAlt) {
         // Convertir a unidad base y luego a unidad destino
@@ -170,12 +173,12 @@ export class UnitConverterService {
 
     // Si una es base y otra alternativa
     if (fromUnit === productUnits.base.code) {
-      const toAlt = productUnits.alternatives.find(alt => alt.code === toUnit) as IAlternativeUnit;
+      const toAlt = productUnits.alternatives.find((alt: IAlternativeUnit) => alt.code === toUnit) as IAlternativeUnit;
       return toAlt ? 1 / toAlt.conversionFactor : null;
     }
 
     if (toUnit === productUnits.base.code) {
-      const fromAlt = productUnits.alternatives.find(alt => alt.code === fromUnit) as IAlternativeUnit;
+      const fromAlt = productUnits.alternatives.find((alt: IAlternativeUnit) => alt.code === fromUnit) as IAlternativeUnit;
       return fromAlt ? fromAlt.conversionFactor : null;
     }
 
@@ -309,7 +312,7 @@ export class UnitConverterService {
     const errors: string[] = [];
 
     // Verificar que no haya códigos duplicados
-    const allCodes = [productUnits.base.code, ...productUnits.alternatives.map(alt => alt.code)];
+    const allCodes = [productUnits.base.code, ...productUnits.alternatives.map((alt: IAlternativeUnit) => alt.code)];
     const uniqueCodes = new Set(allCodes);
     
     if (uniqueCodes.size !== allCodes.length) {
@@ -408,8 +411,29 @@ export class UnitConverterService {
   /**
    * Utilidades privadas
    */
-  private static isValidValue(value: number): boolean {
-    return !isNaN(value) && isFinite(value) && value >= 0;
+  private static isValidValue(value: number, allowNegative: boolean = false): boolean {
+    // Verificar que sea un número válido
+    if (typeof value !== 'number') {
+      console.error(`❌ UnitConverter: Valor no es número - value: ${value}, type: ${typeof value}`);
+      return false;
+    }
+    
+    if (isNaN(value)) {
+      console.error(`❌ UnitConverter: Valor es NaN - value: ${value}`);
+      return false;
+    }
+    
+    if (!isFinite(value)) {
+      console.error(`❌ UnitConverter: Valor no es finito - value: ${value}`);
+      return false;
+    }
+    
+    if (value < 0 && !allowNegative) {
+      console.error(`❌ UnitConverter: Valor es negativo - value: ${value}`);
+      return false;
+    }
+    
+    return true;
   }
 
   private static roundToDecimals(num: number, decimals: number): number {

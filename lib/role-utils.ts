@@ -8,7 +8,8 @@ export class RoleManager {
    */
   static async updateUserRole(userId: string, newRole: UserRole): Promise<boolean> {
     try {
-      const response = await fetch(`/api/users/${userId}/role`, {
+      const encodedUserId = encodeURIComponent(userId);
+      const response = await fetch(`/api/users/${encodedUserId}/role`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -35,7 +36,8 @@ export class RoleManager {
    */
   static async getUserRole(userId: string): Promise<UserRole | null> {
     try {
-      const response = await fetch(`/api/users/${userId}/role`)
+      const encodedUserId = encodeURIComponent(userId);
+      const response = await fetch(`/api/users/${encodedUserId}/role`)
       
       if (response.ok) {
         const data = await response.json()

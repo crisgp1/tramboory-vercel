@@ -66,6 +66,8 @@ export interface StockConsumptionParams {
 export interface InventoryQueryParams {
   productId?: string;
   locationId?: string;
+  search?: string;
+  category?: string;
   lowStock?: boolean;
   expiringSoon?: boolean;
   expiryDays?: number;
@@ -117,8 +119,9 @@ export class InventoryService {
         }
 
         // Convertir cantidad a unidad base
+        const isNegativeQuantity = params.quantity < 0;
         const conversionResult = UnitConverterService.convert(
-          params.quantity,
+          Math.abs(params.quantity), // Usar valor absoluto para la conversión
           params.unit,
           product.units.base.code,
           product.units
@@ -128,7 +131,7 @@ export class InventoryService {
           throw new Error(`Error en conversión de unidades: ${conversionResult.error}`);
         }
 
-        const baseQuantity = conversionResult.convertedValue;
+        const baseQuantity = isNegativeQuantity ? -conversionResult.convertedValue : conversionResult.convertedValue;
 
         // Buscar o crear registro de inventario
         let inventory = await Inventory.findOne({
@@ -166,24 +169,50 @@ export class InventoryService {
           const batchId = params.batchId || generateBatchId();
           const cost = params.cost || 0;
 
-          await inventory.addBatch({
+          // Agregar el lote directamente sin usar el método que hace save()
+          inventory.batches.push({
             batchId,
             quantity: absoluteQuantity,
-            unit: product.baseUnit,
+            unit: product.units.base.code,
             costPerUnit: cost,
             expiryDate: params.expiryDate,
             receivedDate: new Date(),
             status: 'available'
-          });
-        }
+          } as any);
 
+          // Recalcular totales manualmente
+          inventory.recalculateTotals();
+        }
         // Procesar salida (FIFO)
-        if (movementType === MovementType.SALIDA) {
-          await inventory.consumeQuantity(absoluteQuantity, 'FIFO');
+        else if (movementType === MovementType.SALIDA) {
+          let remainingToConsume = absoluteQuantity;
+          const availableBatches = inventory.batches
+            .filter((b: any) => b.status === 'available' && b.quantity > 0)
+            .sort((a: any, b: any) => a.receivedDate.getTime() - b.receivedDate.getTime());
+
+          for (const batch of availableBatches) {
+            if (remainingToConsume <= 0) break;
+
+            const toConsume = Math.min(batch.quantity, remainingToConsume);
+            batch.quantity -= toConsume;
+            remainingToConsume -= toConsume;
+
+            if (batch.quantity <= 0) {
+              inventory.batches = inventory.batches.filter((b: any) => b.batchId !== batch.batchId);
+            }
+          }
+
+          if (remainingToConsume > 0) {
+            throw new Error(`Stock insuficiente. Faltante: ${remainingToConsume}`);
+          }
+
+          // Recalcular totales manualmente
+          inventory.recalculateTotals();
         }
 
-        // Actualizar timestamps
+        // Actualizar timestamps y guardar una sola vez
         inventory.lastUpdatedBy = params.userId;
+        inventory.lastUpdated = new Date();
         await inventory.save({ session });
 
         // Crear movimiento
@@ -214,6 +243,10 @@ export class InventoryService {
         await this.checkAndCreateAlerts(params.productId, params.locationId, session);
 
         result = { inventory, movement };
+      }, {
+        readPreference: 'primary',
+        readConcern: { level: 'local' },
+        writeConcern: { w: 'majority' }
       });
 
       return { success: true, ...result };
@@ -243,40 +276,140 @@ export class InventoryService {
       const movements: any[] = [];
 
       await session.withTransaction(async () => {
-        // Salida de ubicación origen
-        const outResult = await this.adjustStock({
+        // Validar producto existe
+        const product = await Product.findById(params.productId).session(session);
+        if (!product) {
+          throw new Error('Producto no encontrado');
+        }
+
+        // Convertir cantidad a unidad base
+        const conversionResult = UnitConverterService.convert(
+          params.quantity,
+          params.unit,
+          product.units.base.code,
+          product.units
+        );
+
+        if (!conversionResult.success) {
+          throw new Error(`Error en conversión de unidades: ${conversionResult.error}`);
+        }
+
+        const baseQuantity = conversionResult.convertedValue;
+
+        // Procesar salida de ubicación origen
+        let fromInventory = await Inventory.findOne({
           productId: params.productId,
-          locationId: params.fromLocationId,
-          quantity: -params.quantity,
-          unit: params.unit,
+          locationId: params.fromLocationId
+        }).session(session);
+
+        if (!fromInventory) {
+          throw new Error('Inventario de origen no encontrado');
+        }
+
+        // Validar stock suficiente
+        if (fromInventory.totals.available < baseQuantity) {
+          throw new Error(`Stock insuficiente en origen. Disponible: ${fromInventory.totals.available}, Solicitado: ${baseQuantity}`);
+        }
+
+        // Consumir stock de origen (FIFO)
+        let remainingToConsume = baseQuantity;
+        const availableBatches = fromInventory.batches
+          .filter((b: any) => b.status === 'available' && b.quantity > 0)
+          .sort((a: any, b: any) => a.receivedDate.getTime() - b.receivedDate.getTime());
+
+        const consumedBatches: any[] = [];
+
+        for (const batch of availableBatches) {
+          if (remainingToConsume <= 0) break;
+
+          const toConsume = Math.min(batch.quantity, remainingToConsume);
+          batch.quantity -= toConsume;
+          remainingToConsume -= toConsume;
+
+          consumedBatches.push({
+            batchId: batch.batchId,
+            quantity: toConsume,
+            costPerUnit: batch.costPerUnit,
+            expiryDate: batch.expiryDate
+          });
+
+          if (batch.quantity <= 0) {
+            fromInventory.batches = fromInventory.batches.filter((b: any) => b.batchId !== batch.batchId);
+          }
+        }
+
+        fromInventory.recalculateTotals();
+        fromInventory.lastUpdatedBy = params.userId;
+        fromInventory.lastUpdated = new Date();
+        await fromInventory.save({ session });
+
+        // Procesar entrada a ubicación destino
+        let toInventory = await Inventory.findOne({
+          productId: params.productId,
+          locationId: params.toLocationId
+        }).session(session);
+
+        if (!toInventory) {
+          toInventory = new Inventory({
+            productId: params.productId,
+            locationId: params.toLocationId,
+            locationName: params.toLocationId,
+            batches: [],
+            totals: {
+              available: 0,
+              reserved: 0,
+              quarantine: 0,
+              unit: product.units.base.code
+            },
+            lastUpdatedBy: params.userId
+          });
+        }
+
+        // Agregar lotes transferidos
+        for (const consumedBatch of consumedBatches) {
+          toInventory.batches.push({
+            batchId: consumedBatch.batchId,
+            quantity: consumedBatch.quantity,
+            unit: product.units.base.code,
+            costPerUnit: consumedBatch.costPerUnit,
+            expiryDate: consumedBatch.expiryDate,
+            receivedDate: new Date(),
+            status: 'available'
+          } as any);
+        }
+
+        toInventory.recalculateTotals();
+        toInventory.lastUpdatedBy = params.userId;
+        toInventory.lastUpdated = new Date();
+        await toInventory.save({ session });
+
+        // Crear movimientos
+        const outMovementId = generateInventoryId('MOVEMENT');
+        const outMovement = new InventoryMovement({
+          movementId: outMovementId,
+          type: MovementType.TRANSFERENCIA,
+          productId: params.productId,
+          fromLocation: params.fromLocationId,
+          toLocation: params.toLocationId,
+          quantity: baseQuantity,
+          unit: product.units.base.code,
+          batchId: params.batchId,
           reason: `Transferencia a ${params.toLocationId}`,
-          userId: params.userId,
-          batchId: params.batchId,
+          performedBy: params.userId,
+          performedByName: params.userId,
           notes: params.notes
         });
 
-        if (!outResult.success) {
-          throw new Error(outResult.error || 'Error en transferencia de salida');
-        }
+        await outMovement.save({ session });
+        movements.push(outMovement);
 
-        // Entrada a ubicación destino
-        const inResult = await this.adjustStock({
-          productId: params.productId,
-          locationId: params.toLocationId,
-          quantity: params.quantity,
-          unit: params.unit,
-          reason: `Transferencia desde ${params.fromLocationId}`,
-          userId: params.userId,
-          batchId: params.batchId,
-          notes: params.notes
-        });
-
-        if (!inResult.success) {
-          throw new Error(inResult.error || 'Error en transferencia de entrada');
-        }
-
-        if (outResult.movement) movements.push(outResult.movement);
-        if (inResult.movement) movements.push(inResult.movement);
+        // Verificar alertas para ambas ubicaciones
+        await this.checkAndCreateAlerts(params.productId, params.fromLocationId, session);
+        await this.checkAndCreateAlerts(params.productId, params.toLocationId, session);
+      }, {
+        readPreference: 'primary',
+        readConcern: { level: 'local' },
+        writeConcern: { w: 'majority' }
       });
 
       return { success: true, movements };
@@ -472,6 +605,8 @@ export class InventoryService {
       const {
         productId,
         locationId,
+        search,
+        category,
         lowStock,
         expiringSoon,
         expiryDays = 7,
@@ -503,15 +638,72 @@ export class InventoryService {
       const sortOptions: any = {};
       sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-      const [inventories, total] = await Promise.all([
-        Inventory.find(filters)
-          .sort(sortOptions)
-          .skip(skip)
-          .limit(limit)
-          .populate('productId', 'name category stockLevels')
-          .lean(),
-        Inventory.countDocuments(filters)
+      // Construir pipeline de agregación para manejar búsqueda y filtros de producto
+      const pipeline: any[] = [
+        {
+          $lookup: {
+            from: 'products',
+            localField: 'productId',
+            foreignField: '_id',
+            as: 'productId'
+          }
+        },
+        {
+          $unwind: '$productId'
+        }
+      ];
+
+      // Agregar filtros de búsqueda y categoría
+      const matchStage: any = {};
+      
+      if (productId) matchStage.productId = new mongoose.Types.ObjectId(productId);
+      if (locationId) matchStage.locationId = locationId;
+      
+      if (search) {
+        matchStage.$or = [
+          { 'productId.name': { $regex: search, $options: 'i' } },
+          { 'productId.sku': { $regex: search, $options: 'i' } },
+          { 'productId.barcode': { $regex: search, $options: 'i' } }
+        ];
+      }
+      
+      if (category) {
+        matchStage['productId.category'] = category;
+      }
+
+      if (expiringSoon) {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + expiryDays);
+        
+        matchStage['batches.expiryDate'] = {
+          $lte: expiryDate,
+          $gte: new Date()
+        };
+      }
+
+      if (Object.keys(matchStage).length > 0) {
+        pipeline.push({ $match: matchStage });
+      }
+
+      // Agregar ordenamiento
+      const sortStage: any = {};
+      sortStage[sortBy] = sortOrder === 'asc' ? 1 : -1;
+      pipeline.push({ $sort: sortStage });
+
+      // Ejecutar agregación con paginación
+      const [inventories, totalResult] = await Promise.all([
+        Inventory.aggregate([
+          ...pipeline,
+          { $skip: skip },
+          { $limit: limit }
+        ]),
+        Inventory.aggregate([
+          ...pipeline,
+          { $count: 'total' }
+        ])
       ]);
+
+      const total = totalResult.length > 0 ? totalResult[0].total : 0;
 
       // Filtrar stock bajo después del populate si es necesario
       let filteredInventories = inventories;

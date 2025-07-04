@@ -1,5 +1,53 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { IUnits, ISupplierReference, IStockLevels, IExpiryInfo, IPricingTier, ProductCategory } from '@/types/inventory';
+import { PRODUCT_CATEGORIES } from '@/types/inventory';
+
+// Interfaces locales para el modelo Product
+interface IUnit {
+  code: string;
+  name: string;
+  category: 'volume' | 'weight' | 'piece' | 'length';
+}
+
+interface IAlternativeUnit extends IUnit {
+  conversionFactor: number;
+  conversionType: 'fixed_volume' | 'contains' | 'weight';
+  containedUnit?: string;
+}
+
+interface IUnits {
+  base: IUnit;
+  alternatives: IAlternativeUnit[];
+}
+
+interface IPricingTier {
+  minQuantity: number;
+  maxQuantity: number;
+  unit: string;
+  pricePerUnit: number;
+  type: 'retail' | 'wholesale' | 'bulk';
+}
+
+interface ISupplierReference {
+  supplierId: string;
+  supplierName: string;
+  isPreferred: boolean;
+  lastPurchasePrice?: number;
+  leadTimeDays: number;
+}
+
+interface IStockLevels {
+  minimum: number;
+  reorderPoint: number;
+  unit: string;
+}
+
+interface IExpiryInfo {
+  hasExpiry: boolean;
+  shelfLifeDays?: number;
+  warningDays?: number;
+}
+
+type ProductCategory = typeof PRODUCT_CATEGORIES[number];
 
 // Interface para el documento de Product
 export interface IProduct extends Document {
@@ -219,15 +267,15 @@ ProductSchema.index({ category: 1, isActive: 1 });
 ProductSchema.index({ isActive: 1, createdAt: -1 });
 ProductSchema.index({ 'suppliers.supplierId': 1 });
 ProductSchema.index({ isPerishable: 1, isActive: 1 });
-ProductSchema.index({ sku: 1 }, { sparse: true });
-ProductSchema.index({ barcode: 1 }, { sparse: true });
+// Índices para sku y barcode ya están definidos en el schema con unique: true y sparse: true
+// No es necesario definirlos nuevamente aquí
 
 // Validaciones personalizadas
 ProductSchema.pre('validate', function(next) {
   // Validar que el baseUnit esté en las unidades definidas
   const baseUnitCode = this.baseUnit;
-  const hasBaseUnit = this.units.base.code === baseUnitCode || 
-                     this.units.alternatives.some(alt => alt.code === baseUnitCode);
+  const hasBaseUnit = this.units.base.code === baseUnitCode ||
+                     this.units.alternatives.some((alt: IAlternativeUnit) => alt.code === baseUnitCode);
   
   if (!hasBaseUnit) {
     this.invalidate('baseUnit', 'La unidad base debe estar definida en las unidades del producto');
@@ -235,8 +283,8 @@ ProductSchema.pre('validate', function(next) {
 
   // Validar que stockLevels.unit sea válida
   const stockUnit = this.stockLevels.unit;
-  const hasStockUnit = this.units.base.code === stockUnit || 
-                      this.units.alternatives.some(alt => alt.code === stockUnit);
+  const hasStockUnit = this.units.base.code === stockUnit ||
+                      this.units.alternatives.some((alt: IAlternativeUnit) => alt.code === stockUnit);
   
   if (!hasStockUnit) {
     this.invalidate('stockLevels.unit', 'La unidad de stock debe estar definida en las unidades del producto');
