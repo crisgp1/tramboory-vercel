@@ -14,7 +14,7 @@ import {
   Badge,
   Chip
 } from "@heroui/react"
-import {
+import { 
   ArrowRightOnRectangleIcon,
   UserIcon,
   Bars3Icon,
@@ -26,14 +26,16 @@ import {
   ArchiveBoxIcon,
   BellIcon,
   MagnifyingGlassIcon,
-  Cog8ToothIcon
+  Cog8ToothIcon,
+  UsersIcon
 } from "@heroicons/react/24/outline"
 import {
   ChartBarIcon as ChartBarSolidIcon,
   CalendarDaysIcon as CalendarSolidIcon,
   CurrencyDollarIcon as CurrencySolidIcon,
   Cog6ToothIcon as CogSolidIcon,
-  ArchiveBoxIcon as ArchiveSolidIcon
+  ArchiveBoxIcon as ArchiveSolidIcon,
+  UsersIcon as UsersSolidIcon
 } from "@heroicons/react/24/solid"
 import { useRole } from "@/hooks/useRole"
 import toast from "react-hot-toast"
@@ -41,6 +43,7 @@ import ReservationManager from "@/components/reservations/ReservationManager"
 import ConfigurationManager from "@/components/admin/ConfigurationManager"
 import FinanceManager from "@/components/finances/FinanceManager"
 import InventoryManager from "@/components/inventory/InventoryManager"
+import UserManagement from "@/components/dashboard/sections/UserManagement"
 
 type MenuItem = {
   id: string
@@ -85,6 +88,13 @@ const menuItems: MenuItem[] = [
     icon: ArchiveBoxIcon, 
     iconSolid: ArchiveSolidIcon,
     description: "Control de materiales y equipos"
+  },
+  { 
+    id: "usuarios", 
+    label: "Usuarios", 
+    icon: UsersIcon, 
+    iconSolid: UsersSolidIcon,
+    description: "Gestión de usuarios y roles"
   }
 ]
 
@@ -109,6 +119,9 @@ export default function Dashboard() {
         return isAdmin || isGerente
       case "analytics":
         // Admin y gerente pueden ver analytics
+        return isAdmin || isGerente
+      case "usuarios":
+        // Solo admin y gerente pueden gestionar usuarios
         return isAdmin || isGerente
       case "reservas":
         // Todos los roles pueden ver reservas
@@ -155,6 +168,11 @@ export default function Dashboard() {
     // Si es la sección de inventario, mostrar el componente específico
     if (activeMenuItem === 'inventario') {
       return <InventoryManager />
+    }
+    
+    // Si es la sección de usuarios, mostrar el componente específico
+    if (activeMenuItem === 'usuarios') {
+      return <UserManagement />
     }
 
     return (

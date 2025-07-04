@@ -129,6 +129,13 @@ export default function InitiateMovementModal({ isOpen, onClose, product, onSucc
       size="2xl"
       backdrop="opaque"
       placement="center"
+      classNames={{
+        backdrop: "bg-gray-900/20",
+        base: "bg-white border border-gray-200",
+        header: "border-b border-gray-100 flex-shrink-0",
+        body: "p-6",
+        footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
+      }}
     >
       <ModalContent>
         <ModalHeader className="px-6 py-4">
@@ -159,12 +166,20 @@ export default function InitiateMovementModal({ isOpen, onClose, product, onSucc
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ubicación *
+                </label>
                 <Select
-                  placeholder="Ubicación *"
                   selectedKeys={selectedLocation ? [selectedLocation] : []}
                   onSelectionChange={(keys) => setSelectedLocation(Array.from(keys)[0] as string)}
                   variant="flat"
                   startContent={<MapPinIcon className="w-4 h-4 text-gray-400" />}
+                  classNames={{
+                    trigger: "bg-gray-50 border-0 hover:bg-gray-100 text-gray-900",
+                    value: "text-gray-900",
+                    listboxWrapper: "bg-white",
+                    popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+                  }}
                 >
                   {AVAILABLE_LOCATIONS.map((location) => (
                     <SelectItem key={location.id}>
@@ -175,9 +190,11 @@ export default function InitiateMovementModal({ isOpen, onClose, product, onSucc
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cantidad inicial *
+                </label>
                 <Input
                   type="number"
-                  placeholder="Cantidad inicial *"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   startContent={<HashtagIcon className="w-4 h-4 text-gray-400" />}
@@ -187,60 +204,94 @@ export default function InitiateMovementModal({ isOpen, onClose, product, onSucc
                     </span>
                   }
                   variant="flat"
+                  classNames={{
+                    input: "text-gray-900",
+                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                  }}
                 />
               </div>
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Razón del movimiento *
+              </label>
               <Input
-                placeholder="Razón del movimiento *"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 variant="flat"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                }}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ID del Lote (opcional)
+                </label>
                 <Input
-                  placeholder="ID del Lote (opcional)"
                   value={batchId}
                   onChange={(e) => setBatchId(e.target.value)}
                   startContent={<TagIcon className="w-4 h-4 text-gray-400" />}
                   variant="flat"
+                  classNames={{
+                    input: "text-gray-900",
+                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                  }}
                 />
               </div>
               
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Costo por unidad
+                </label>
                 <Input
                   type="number"
-                  placeholder="Costo por unidad"
                   value={costPerUnit}
                   onChange={(e) => setCostPerUnit(e.target.value)}
                   startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
                   variant="flat"
+                  classNames={{
+                    input: "text-gray-900",
+                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                  }}
                 />
               </div>
               
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha de vencimiento
+                </label>
                 <Input
                   type="date"
-                  placeholder="Fecha de vencimiento"
                   value={expiryDate}
                   onChange={(e) => setExpiryDate(e.target.value)}
                   startContent={<CalendarIcon className="w-4 h-4 text-gray-400" />}
                   variant="flat"
+                  classNames={{
+                    input: "text-gray-900",
+                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                  }}
                 />
               </div>
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notas adicionales
+              </label>
               <Textarea
-                placeholder="Notas adicionales..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 minRows={2}
                 variant="flat"
+                classNames={{
+                  input: "text-gray-900",
+                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                }}
               />
             </div>
           </div>

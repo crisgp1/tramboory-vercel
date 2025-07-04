@@ -2,6 +2,27 @@
 
 import { UserRole } from "./roles"
 
+/**
+ * Verifica si un rol es de administrador
+ */
+export function isAdmin(role: UserRole | string): boolean {
+  return role === "admin"
+}
+
+/**
+ * Verifica si un rol es de gerente
+ */
+export function isGerente(role: UserRole | string): boolean {
+  return role === "gerente"
+}
+
+/**
+ * Verifica si un rol es de proveedor
+ */
+export function isProveedor(role: UserRole | string): boolean {
+  return role === "proveedor"
+}
+
 export class RoleManager {
   /**
    * Fuerza la actualización del rol de un usuario

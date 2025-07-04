@@ -6,6 +6,7 @@ const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/reservaciones(.*)",
   "/bienvenida",
+  "/proveedor(.*)", // Añadido para proteger rutas de proveedor
 ])
 
 const isDashboardRoute = createRouteMatcher([
@@ -14,6 +15,10 @@ const isDashboardRoute = createRouteMatcher([
 
 const isReservacionesRoute = createRouteMatcher([
   "/reservaciones(.*)",
+])
+
+const isProveedorRoute = createRouteMatcher([
+  "/proveedor(.*)",
 ])
 
 // Roles que pueden acceder al dashboard
@@ -70,6 +75,23 @@ export default clerkMiddleware(async (auth, req) => {
         }
         
         console.log("✅ Dashboard access granted for role:", role)
+      }
+      
+      // Verificar acceso a sección de proveedor
+      if (isProveedorRoute(req)) {
+        console.log("🔍 Proveedor Route Access Check:", {
+          role,
+          url: req.url,
+          isAllowed: ["admin", "gerente", "proveedor"].includes(role)
+        })
+        
+        // Solo admin, gerente y proveedor pueden acceder
+        if (!["admin", "gerente", "proveedor"].includes(role)) {
+          console.log(`🚫 Redirecting ${role} from proveedor to reservaciones`)
+          return NextResponse.redirect(new URL("/reservaciones", req.url))
+        }
+        
+        console.log("✅ Proveedor access granted for role:", role)
       }
       
       // Verificar restricciones para clientes

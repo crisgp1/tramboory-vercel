@@ -8,19 +8,39 @@ import { PurchaseOrderStatus } from "@/types/inventory";
 import SupplierDashboardClient from "../../components/supplier/SupplierDashboardClient";
 
 // Función para obtener el ID del proveedor basado en el usuario autenticado
-async function getSupplierByUserId(userId: string) {
+async function getSupplierByUserId(userId: string, userRole: string) {
   await dbConnect();
   
-  // Nota: Esta es una simplificación. En un sistema real,
-  // tendría que haber una relación entre usuarios de Clerk y proveedores
-  // Aquí asumimos que el código del proveedor es el mismo que el userId
-  // Para un sistema en producción, se necesitaría una tabla de mapeo
+  console.log("🔍 Proveedor Page Debug - getSupplierByUserId:", {
+    userId,
+    userRole
+  });
+
+  // Si es admin o gerente, intentar encontrar cualquier proveedor activo
+  // para mostrar datos de ejemplo
+  if (userRole === "admin" || userRole === "gerente") {
+    // Primero intentar buscar por código simplificado (para compatibilidad)
+    let supplier = await Supplier.findOne({
+      code: userId.substring(0, 10)
+    });
+    
+    // Si no hay coincidencia, buscar cualquier proveedor activo
+    if (!supplier) {
+      supplier = await Supplier.findOne({ isActive: true });
+      console.log("🔍 Admin/Gerente - Usando proveedor activo de ejemplo:", 
+        supplier ? supplier.name : "Ninguno encontrado");
+    }
+    
+    return supplier;
+  }
   
+  // Para usuarios con rol proveedor, búsqueda normal
   const supplier = await Supplier.findOne({
     // En producción: reemplazar esta lógica con la correcta para mapear usuarios a proveedores
     code: userId.substring(0, 10) // Usando primeros 10 caracteres del userId como ejemplo
   });
   
+  console.log("🔍 Proveedor encontrado:", supplier ? "Sí" : "No");
   return supplier;
 }
 
@@ -160,8 +180,20 @@ export default async function ProveedorDashboard() {
   }
 
   const userRole = await getUserRole(userId);
-  const supplier = await getSupplierByUserId(userId);
+  console.log("🔍 Proveedor Page Debug:", {
+    userId,
+    userRole
+  });
+  
+  const supplier = await getSupplierByUserId(userId, userRole);
 
+  // Agregar logs adicionales para diagnosticar problemas
+  console.log("🔍 Proveedor Page Access Check:", {
+    userId,
+    userRole,
+    supplier: supplier ? "found" : "not found"
+  });
+  
   if (!supplier && userRole === "proveedor") {
     // Si es proveedor pero no tiene proveedor asociado
     return (
@@ -179,22 +211,28 @@ export default async function ProveedorDashboard() {
     );
   }
 
-  // Si es admin o gerente y no tiene proveedor, mostrar dashboard vacío o mensaje especial
-  if (!supplier && (userRole === "admin" || userRole === "gerente")) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Vista de Proveedor (Admin/Gerente)</h1>
-          <p className="text-gray-600 mb-6">
-            No tienes un proveedor asociado, pero puedes ver esta vista como administrador o gerente.
-          </p>
-          <SupplierDashboardClient dashboardData={null} />
+  // Si es admin o gerente, siempre permitir acceso (incluso sin proveedor)
+  if (userRole === "admin" || userRole === "gerente") {
+    console.log("✅ Acceso permitido para admin/gerente a sección proveedor");
+    
+    // Si no hay proveedor disponible, mostrar dashboard especial
+    if (!supplier) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Vista de Proveedor (Admin/Gerente)</h1>
+            <p className="text-gray-600 mb-6">
+              No tienes un proveedor asociado, pero puedes ver esta vista como administrador o gerente.
+            </p>
+            <SupplierDashboardClient dashboardData={null} />
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
-  const dashboardData = await getSupplierDashboardData(supplier.supplierId);
+  // Intentar obtener datos de dashboard si hay un proveedor disponible
+  const dashboardData = supplier ? await getSupplierDashboardData(supplier.supplierId) : null;
   
   if (!dashboardData) {
     return (
