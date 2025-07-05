@@ -84,13 +84,30 @@ export async function GET(
       )
     }
 
-    // Solo permitir ver el propio rol o si es admin/gerente
+    const params = await context.params;
+    
+    // Permitir ver el propio rol siempre
+    if (currentUserId === params.userId) {
+      const clerk = await clerkClient()
+      const user = await clerk.users.getUser(params.userId)
+      const userRole = (user.publicMetadata?.role as UserRole) || "customer"
+      
+      return NextResponse.json(
+        {
+          userId: params.userId,
+          role: userRole,
+          roleInfo: ROLES[userRole]
+        },
+        { status: 200 }
+      )
+    }
+    
+    // Para ver roles de otros usuarios, verificar permisos
     const clerk = await clerkClient()
     const currentUser = await clerk.users.getUser(currentUserId)
     const currentUserRole = (currentUser.publicMetadata?.role as UserRole) || "customer"
     
-    const params = await context.params;
-    if (currentUserId !== params.userId && !["admin", "gerente"].includes(currentUserRole)) {
+    if (!["admin", "gerente"].includes(currentUserRole)) {
       return NextResponse.json(
         { error: "No tienes permisos para ver este rol" },
         { status: 403 }

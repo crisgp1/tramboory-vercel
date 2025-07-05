@@ -1,7 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
-import path from "path";
 
 export const metadata = {
   title: "Portal de Proveedores | Tramboory",
@@ -15,20 +14,16 @@ async function validateSupplierRole() {
     return false;
   }
   
-  // Construir la URL absoluta usando path y la variable de entorno
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
-  const apiPath = path.join("/api/users", userId, "role");
-  const url = baseUrl + apiPath;
-  const response = await fetch(url, {
-    cache: "no-store",
-  });
-  
-  if (!response.ok) {
+  try {
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(userId);
+    const role = (user.publicMetadata?.role as string) || "customer";
+    
+    return role === "proveedor" || role === "admin" || role === "gerente";
+  } catch (error) {
+    console.error("Error validating supplier role:", error);
     return false;
   }
-  
-  const { role } = await response.json();
-  return role === "proveedor" || role === "admin" || role === "gerente";
 }
 
 export default async function SupplierLayout({

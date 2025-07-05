@@ -6,6 +6,7 @@ export interface ISupplier extends Document {
   code: string;
   name: string;
   description?: string;
+  userId?: string; // ID del usuario de Clerk vinculado a este proveedor
   contactInfo: {
     email?: string;
     phone?: string;
@@ -64,6 +65,13 @@ const SupplierSchema = new Schema<ISupplier>({
     type: String,
     trim: true,
     maxlength: 500
+  },
+  userId: {
+    type: String,
+    trim: true,
+    index: true,
+    unique: true,
+    sparse: true // Permite null/undefined y mantiene la unicidad solo para valores no nulos
   },
   contactInfo: {
     email: {

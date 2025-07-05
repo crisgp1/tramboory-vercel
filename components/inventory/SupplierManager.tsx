@@ -28,8 +28,11 @@ import {
   PencilIcon,
   EyeIcon,
   TrashIcon,
-  StarIcon
+  StarIcon,
+  UserIcon,
+  ExclamationTriangleIcon
 } from "@heroicons/react/24/outline"
+import { Avatar } from "@heroui/react"
 import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid"
 import { useRole } from "@/hooks/useRole"
 import SupplierModal from "./SupplierModal"
@@ -37,6 +40,7 @@ import toast from "react-hot-toast"
 
 interface Supplier {
   _id: string
+  userId?: string
   name: string
   code: string
   description?: string
@@ -64,6 +68,10 @@ interface Supplier {
   totalSpent: number
   lastOrderDate?: string
   createdAt: string
+  // Nuevos campos para la integración
+  userImageUrl?: string
+  userFullName?: string
+  isFromDb: boolean  // true = supplier completo, false = solo usuario proveedor
 }
 
 export default function SupplierManager() {
@@ -207,13 +215,25 @@ export default function SupplierManager() {
         
         <div className="flex gap-2">
           {(isAdmin || isGerente) && (
-            <Button
-              color="primary"
-              startContent={<PlusIcon className="w-4 h-4" />}
-              onPress={handleCreateSupplier}
-            >
-              Nuevo Proveedor
-            </Button>
+            <>
+              <Button
+                color="primary"
+                startContent={<PlusIcon className="w-4 h-4" />}
+                onPress={handleCreateSupplier}
+              >
+                Nuevo Proveedor
+              </Button>
+              <Button 
+                color="secondary" 
+                variant="flat"
+                startContent={<UserIcon className="w-4 h-4" />}
+                onPress={() => {
+                  window.open('/admin/suppliers/link', '_blank')
+                }}
+              >
+                Configuración de Surtinet
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -243,11 +263,44 @@ export default function SupplierManager() {
               {(item) => (
                 <TableRow key={item._id}>
                   <TableCell>
-                    <div>
-                      <p className="font-medium text-gray-900">{item.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {item.paymentTerms.creditDays} días de crédito
-                      </p>
+                    <div className="flex items-center gap-3">
+                      {/* Avatar del usuario si está disponible */}
+                      {item.userImageUrl ? (
+                        <Avatar
+                          src={item.userImageUrl}
+                          name={item.userFullName || item.name}
+                          size="sm"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                          <UserIcon className="w-4 h-4 text-gray-500" />
+                        </div>
+                      )}
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900">{item.name}</p>
+                          
+                          {/* Indicador de estado */}
+                          {!item.isFromDb && (
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              color="warning"
+                              startContent={<ExclamationTriangleIcon className="w-3 h-3" />}
+                            >
+                              Incompleto
+                            </Chip>
+                          )}
+                        </div>
+                        
+                        <p className="text-sm text-gray-500">
+                          {item.isFromDb 
+                            ? `${item.paymentTerms.creditDays} días de crédito`
+                            : 'Información pendiente de completar'
+                          }
+                        </p>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -300,18 +353,24 @@ export default function SupplierManager() {
                             variant="light"
                             color="primary"
                             onPress={() => handleEditSupplier(item)}
+                            title={item.isFromDb ? "Editar proveedor" : "Completar información del proveedor"}
                           >
                             <PencilIcon className="w-4 h-4" />
                           </Button>
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                            color="danger"
-                            onPress={() => handleDeleteSupplier(item)}
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                          </Button>
+                          
+                          {/* Solo permitir eliminar proveedores completos de la DB */}
+                          {item.isFromDb && (
+                            <Button
+                              isIconOnly
+                              size="sm"
+                              variant="light"
+                              color="danger"
+                              onPress={() => handleDeleteSupplier(item)}
+                              title="Eliminar proveedor"
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>

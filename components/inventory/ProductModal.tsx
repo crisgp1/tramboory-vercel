@@ -346,45 +346,45 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
       }}
     >
       <ModalContent>
-        <ModalHeader className="px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
+        <ModalHeader className="px-6 py-4">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                 <CubeIcon className="w-5 h-5 text-gray-600" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 truncate">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
                   {mode === 'create' && 'Crear Nuevo Producto'}
                   {mode === 'edit' && 'Editar Producto'}
                   {mode === 'view' && 'Detalles del Producto'}
                 </h3>
                 {product && mode !== 'create' && (
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="text-sm text-gray-600 truncate">{product.name}</span>
-                    <Chip size="sm" variant="flat" color="primary">
-                      {product.sku}
-                    </Chip>
+                  <div className="flex items-center gap-2 mt-1">
                     <Chip
-                      size="sm"
-                      variant="flat"
                       color={product.isActive ? "success" : "danger"}
+                      variant="flat"
+                      size="sm"
+                      className="text-xs"
                     >
                       {product.isActive ? "Activo" : "Inactivo"}
                     </Chip>
+                    <span className="text-sm text-gray-500">
+                      SKU: {product.sku}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2">
               {mode === 'view' && (
-                <Chip
-                  variant="flat"
-                  color="default"
+                <Button
                   size="sm"
-                  startContent={<EyeIcon className="w-3 h-3" />}
+                  variant="flat"
+                  startContent={<EyeIcon className="w-4 h-4" />}
+                  className="bg-gray-50 text-gray-700 hover:bg-gray-100 border-0"
                 >
                   Solo lectura
-                </Chip>
+                </Button>
               )}
             </div>
           </div>
@@ -648,6 +648,7 @@ export default function ProductModal({ isOpen, onClose, product, mode, onSuccess
               
               {!isReadOnly && (
                 <Button
+                  color="primary"
                   onPress={handleSubmit}
                   isLoading={loading}
                   isDisabled={

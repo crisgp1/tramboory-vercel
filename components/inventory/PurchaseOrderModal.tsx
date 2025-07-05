@@ -191,12 +191,12 @@ export default function PurchaseOrderModal({
     })
   }
 
-  const handleSupplierChange = (supplierId: string) => {
-    const supplier = suppliers.find(s => s._id === supplierId)
+  const handleSupplierChange = (selectedSupplierId: string) => {
+    const supplier = suppliers.find(s => s._id === selectedSupplierId)
     if (supplier) {
       setFormData(prev => ({
         ...prev,
-        supplierId,
+        supplierId: supplier.supplierId, // Use the supplier's supplierId field, not _id
         supplierName: supplier.name,
         paymentTerms: {
           method: supplier.paymentTerms.paymentMethod as any,
@@ -295,6 +295,8 @@ export default function PurchaseOrderModal({
 
     setLoading(true)
     try {
+      console.log('Submitting order data:', formData)
+      
       const url = mode === 'create' 
         ? '/api/inventory/purchase-orders'
         : `/api/inventory/purchase-orders/${order?._id}`
@@ -315,7 +317,8 @@ export default function PurchaseOrderModal({
         onClose()
       } else {
         const error = await response.json()
-        toast.error(error.message || 'Error al guardar la orden')
+        console.error('API Error:', error)
+        toast.error(error.error || error.message || 'Error al guardar la orden')
       }
     } catch (error) {
       console.error('Error saving order:', error)
@@ -382,14 +385,18 @@ export default function PurchaseOrderModal({
                 <h4 className="text-sm font-medium text-gray-900 mb-3">Información del Proveedor</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Proveedor <span className="text-red-500">*</span>
+                    </label>
                     <Select
-                      placeholder="Proveedor *"
-                      selectedKeys={formData.supplierId ? [formData.supplierId] : []}
+                      placeholder="Selecciona un proveedor"
+                      selectedKeys={formData.supplierId ? [suppliers.find(s => s.supplierId === formData.supplierId)?._id || ''] : []}
                       onSelectionChange={(keys) => handleSupplierChange(Array.from(keys)[0] as string)}
                       isDisabled={isReadOnly}
-                      variant="flat"
+                      variant="bordered"
+                      size="md"
                       classNames={{
-                        trigger: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`,
+                        trigger: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500'}`,
                         value: "text-gray-900",
                         listboxWrapper: "bg-white",
                         popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
@@ -401,36 +408,50 @@ export default function PurchaseOrderModal({
                         </SelectItem>
                       ))}
                     </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      El proveedor que suministrará los productos de esta orden
+                    </p>
                   </div>
                   
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ubicación de Entrega <span className="text-red-500">*</span>
+                    </label>
                     <Input
-                      placeholder="Ubicación de Entrega *"
+                      placeholder="Ej: Almacén Principal, Bodega Norte..."
                       value={formData.deliveryLocation}
                       onChange={(e) => setFormData(prev => ({ ...prev, deliveryLocation: e.target.value }))}
                       isDisabled={isReadOnly}
-                      variant="flat"
+                      variant="bordered"
+                      size="md"
                       classNames={{
                         input: "text-gray-900",
-                        inputWrapper: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+                        inputWrapper: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500'}`
                       }}
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Dirección o ubicación donde se entregará el pedido
+                    </p>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Método de Pago
+                    </label>
                     <Select
-                      placeholder="Método de Pago"
+                      placeholder="Selecciona método"
                       selectedKeys={[formData.paymentTerms.method]}
                       onSelectionChange={(keys) => setFormData(prev => ({
                         ...prev,
                         paymentTerms: { ...prev.paymentTerms, method: Array.from(keys)[0] as any }
                       }))}
                       isDisabled={isReadOnly}
-                      variant="flat"
+                      variant="bordered"
+                      size="md"
                       classNames={{
-                        trigger: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`,
+                        trigger: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500'}`,
                         value: "text-gray-900",
                         listboxWrapper: "bg-white",
                         popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
@@ -441,40 +462,60 @@ export default function PurchaseOrderModal({
                       <SelectItem key="transfer">Transferencia</SelectItem>
                       <SelectItem key="check">Cheque</SelectItem>
                     </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Forma de pago acordada con el proveedor
+                    </p>
                   </div>
                   
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Días de Crédito
+                    </label>
                     <Input
                       type="number"
-                      placeholder="Días de Crédito"
+                      placeholder="0"
                       value={formData.paymentTerms.creditDays.toString()}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
                         paymentTerms: { ...prev.paymentTerms, creditDays: parseInt(e.target.value) || 0 }
                       }))}
                       isDisabled={isReadOnly}
-                      variant="flat"
+                      variant="bordered"
+                      size="md"
+                      min="0"
+                      max="365"
                       classNames={{
                         input: "text-gray-900",
-                        inputWrapper: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+                        inputWrapper: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500'}`
                       }}
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Días para pagar después de recibir (0 = inmediato)
+                    </p>
                   </div>
                   
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Fecha de Entrega (Opcional)
+                    </label>
                     <DateInput
+                      placeholder="Selecciona fecha"
                       value={formData.expectedDeliveryDate ? parseDate(formData.expectedDeliveryDate.split('T')[0]) : null}
                       onChange={(date) => setFormData(prev => ({
                         ...prev,
                         expectedDeliveryDate: date?.toString()
                       }))}
                       isDisabled={isReadOnly}
-                      variant="flat"
+                      variant="bordered"
+                      size="md"
                       classNames={{
                         input: "text-gray-900",
-                        inputWrapper: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+                        inputWrapper: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500'}`
                       }}
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Fecha deseada para recibir el pedido
+                    </p>
                   </div>
                 </div>
               </CardBody>
@@ -484,7 +525,14 @@ export default function PurchaseOrderModal({
             <Card className="border border-gray-200">
               <CardBody className="p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-medium text-gray-900">Productos</h4>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900">Productos</h4>
+                    {formData.supplierId && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Los precios se basan en el historial con el proveedor seleccionado
+                      </p>
+                    )}
+                  </div>
                   {!isReadOnly && (
                     <Button
                       size="sm"
@@ -520,20 +568,21 @@ export default function PurchaseOrderModal({
                                 </div>
                               ) : (
                                 <Select
-                                  placeholder="Selecciona producto"
+                                  placeholder="Buscar producto..."
                                   selectedKeys={item.productId ? [item.productId] : []}
                                   onSelectionChange={(keys) => updateItem(index, 'productId', Array.from(keys)[0])}
                                   className="min-w-[200px]"
-                                  variant="flat"
+                                  variant="bordered"
+                                  size="sm"
                                   classNames={{
-                                    trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
+                                    trigger: "bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500",
                                     value: "text-gray-900",
                                     listboxWrapper: "bg-white",
                                     popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
                                   }}
                                 >
                                   {filteredProducts.map((product) => (
-                                    <SelectItem key={product._id}>
+                                    <SelectItem key={product._id} textValue={`${product.name} (${product.sku})`}>
                                       {product.name} ({product.sku})
                                     </SelectItem>
                                   ))}
@@ -546,39 +595,49 @@ export default function PurchaseOrderModal({
                               ) : (
                                 <Input
                                   type="number"
-                                  placeholder="0"
+                                  placeholder="1"
                                   value={item.quantity.toString()}
                                   onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                  className="w-20"
+                                  className="w-24"
                                   min="0.01"
                                   step="0.01"
-                                  variant="flat"
+                                  variant="bordered"
+                                  size="sm"
                                   classNames={{
-                                    input: "text-gray-900",
-                                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                                    input: "text-gray-900 text-center",
+                                    inputWrapper: "bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500"
                                   }}
                                 />
                               )}
                             </td>
                             <td className="py-3 px-2">
-                              {isReadOnly ? (
-                                formatCurrency(item.unitPrice)
+                              {isReadOnly || formData.supplierId ? (
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{formatCurrency(item.unitPrice)}</span>
+                                  {formData.supplierId && (
+                                    <span className="text-xs text-gray-500">Precio del proveedor</span>
+                                  )}
+                                </div>
                               ) : (
-                                <Input
-                                  type="number"
-                                  placeholder="0.00"
-                                  value={item.unitPrice.toString()}
-                                  onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                  className="w-24"
-                                  min="0"
-                                  step="0.01"
-                                  startContent="$"
-                                  variant="flat"
-                                  classNames={{
-                                    input: "text-gray-900",
-                                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                                  }}
-                                />
+                                <div className="flex flex-col">
+                                  <Input
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={item.unitPrice.toString()}
+                                    onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                    className="w-28"
+                                    min="0"
+                                    step="0.01"
+                                    startContent="$"
+                                    variant="bordered"
+                                    size="sm"
+                                    classNames={{
+                                      input: "text-gray-900",
+                                      inputWrapper: "bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500"
+                                    }}
+                                  />
+                                  <span className="text-xs text-gray-500 mt-1">Precio estimado</span>
+                                </div>
                               )}
                             </td>
                             <td className="py-3 px-2">
@@ -642,6 +701,13 @@ export default function PurchaseOrderModal({
                     <span className="font-semibold text-gray-900">Total:</span>
                     <span className="font-bold text-blue-600">{formatCurrency(formData.total)}</span>
                   </div>
+                  {formData.supplierId && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                      <p className="text-xs text-blue-700">
+                        💡 Los precios son basados en el historial. El proveedor confirmará los precios finales.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardBody>
             </Card>
@@ -650,18 +716,25 @@ export default function PurchaseOrderModal({
             <Card className="border border-gray-200">
               <CardBody className="p-4">
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Notas e Instrucciones Especiales
+                  </label>
                   <Textarea
-                    placeholder="Notas adicionales para la orden..."
+                    placeholder="Instrucciones de entrega, requisitos especiales, etc..."
                     value={formData.notes || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     isDisabled={isReadOnly}
                     maxRows={3}
-                    variant="flat"
+                    variant="bordered"
+                    size="md"
                     classNames={{
                       input: "text-gray-900",
-                      inputWrapper: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+                      inputWrapper: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500'}`
                     }}
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Información adicional que el proveedor debe conocer sobre esta orden
+                  </p>
                 </div>
               </CardBody>
             </Card>

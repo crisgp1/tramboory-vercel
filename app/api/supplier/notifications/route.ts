@@ -1,126 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateSupplierAccess } from "@/lib/supplier-auth";
+import { auth } from "@clerk/nextjs/server";
 import dbConnect from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-/**
- * GET /api/supplier/notifications
- * 
- * Fetches notifications for the authenticated supplier
- * Supports filtering by type, pagination, and more
- */
+const generateMockNotifications = (supplierId: string) => {
+  const notifications = [
+    {
+      id: new ObjectId().toString(),
+      type: "order",
+      title: "Nueva Orden Recibida",
+      message: "Se ha recibido una nueva orden de compra #PO-2024-001 por $15,450.00. Requiere tu confirmación.",
+      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      isRead: false,
+      priority: "high",
+      data: { orderId: "PO-2024-001", amount: 15450 }
+    },
+    {
+      id: new ObjectId().toString(),
+      type: "payment",
+      title: "Pago Procesado",
+      message: "El pago de la orden #PO-2024-002 ha sido procesado exitosamente. Monto: $8,320.00",
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      isRead: false,
+      priority: "medium",
+      data: { orderId: "PO-2024-002", amount: 8320 }
+    },
+    {
+      id: new ObjectId().toString(),
+      type: "product",
+      title: "Producto Aprobado",
+      message: "Tu producto 'Laptop HP ProBook 450' ha sido aprobado y ya está disponible en el catálogo.",
+      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+      isRead: true,
+      priority: "low",
+      data: { productId: "PROD-001" }
+    }
+  ];
+
+  return notifications;
+};
+
 export async function GET(request: NextRequest) {
   try {
-    await dbConnect();
-    const connection = await dbConnect();
-    if (!connection || !connection.connection || !connection.connection.db) {
-      return NextResponse.json({ error: "Error de conexión a la base de datos" }, { status: 500 });
-    }
+    const { userId } = await auth();
     
-    const db = connection.connection.db;
-    
-    // Validate supplier access
-    const supplier = await validateSupplierAccess(request);
-    if (!supplier) {
-      return NextResponse.json({ error: "No tiene permisos para acceder a esta información" }, { status: 403 });
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse query parameters
+    await dbConnect();
+
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const type = searchParams.get('type');
-    
-    // Build query based on parameters
-    const query: any = {
-      supplierId: supplier._id.toString()
-    };
-    
-    // Add type filter if provided
-    if (type && type !== 'all') {
-      query.type = type;
-    }
-    
-    // Calculate pagination
-    const skip = (page - 1) * limit;
-    
-    // Get total count for pagination
-    const total = await db.collection("supplierNotifications").countDocuments(query);
-    
-    // Get notifications with pagination
-    const notifications = await db.collection("supplierNotifications")
-      .find(query)
-      .sort({ createdAt: -1 }) // Most recent first
-      .skip(skip)
-      .limit(limit)
-      .toArray();
-    
-    return NextResponse.json({
-      notifications,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit)
-    });
-  } catch (error) {
-    console.error("Error fetching supplier notifications:", error);
-    return NextResponse.json({ error: "Error al obtener notificaciones" }, { status: 500 });
-  }
-}
+    const supplierId = searchParams.get("supplierId");
 
-/**
- * POST /api/supplier/notifications
- * 
- * Creates a test notification (for development purposes)
- * In production, this would be called by internal systems
- */
-export async function POST(request: NextRequest) {
-  try {
-    await dbConnect();
-    const connection = await dbConnect();
-    if (!connection || !connection.connection || !connection.connection.db) {
-      return NextResponse.json({ error: "Error de conexión a la base de datos" }, { status: 500 });
-    }
-    
-    const db = connection.connection.db;
-    
-    // Validate supplier access (only for development)
-    const supplier = await validateSupplierAccess(request);
-    if (!supplier) {
-      return NextResponse.json({ error: "No tiene permisos para esta operación" }, { status: 403 });
+    if (!supplierId) {
+      return NextResponse.json({ error: "Supplier ID is required" }, { status: 400 });
     }
 
-    // Get notification data from request
-    const data = await request.json();
-    
-    // Create a test notification
-    const notification = {
-      userId: supplier.userId,
-      supplierId: supplier._id.toString(),
-      type: data.type || "INFORMATION_REQUEST",
-      title: data.title || "Notificación de Prueba",
-      message: data.message || "Esta es una notificación de prueba creada para desarrollo.",
-      metadata: data.metadata || {
-        requiredAction: data.requiredAction || false
-      },
-      isRead: false,
-      createdAt: new Date().toISOString()
-    };
-    
-    // Insert the notification
-    const result = await db.collection("supplierNotifications").insertOne(notification);
-    
-    if (!result.insertedId) {
-      return NextResponse.json({ error: "Error al crear la notificación" }, { status: 500 });
-    }
-    
-    // Return the created notification
-    return NextResponse.json({
-      ...notification,
-      _id: result.insertedId
-    });
+    const notifications = generateMockNotifications(supplierId);
+    return NextResponse.json(notifications);
   } catch (error) {
-    console.error("Error creating supplier notification:", error);
-    return NextResponse.json({ error: "Error al crear la notificación" }, { status: 500 });
+    console.error("Error fetching notifications:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch notifications" },
+      { status: 500 }
+    );
   }
 }

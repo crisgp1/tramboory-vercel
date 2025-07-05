@@ -5,7 +5,7 @@ import Supplier from "@/lib/models/inventory/Supplier";
 import PurchaseOrder from "@/lib/models/inventory/PurchaseOrder";
 import Product from "@/lib/models/inventory/Product";
 import { PurchaseOrderStatus } from "@/types/inventory";
-import SupplierDashboardClient from "../../components/supplier/SupplierDashboardClient";
+import SupplierDashboardUber from "../../components/supplier/SupplierDashboardUber";
 
 // Función para obtener el ID del proveedor basado en el usuario autenticado
 async function getSupplierByUserId(userId: string, userRole: string) {
@@ -19,12 +19,12 @@ async function getSupplierByUserId(userId: string, userRole: string) {
   // Si es admin o gerente, intentar encontrar cualquier proveedor activo
   // para mostrar datos de ejemplo
   if (userRole === "admin" || userRole === "gerente") {
-    // Primero intentar buscar por código simplificado (para compatibilidad)
+    // Primero intentar buscar por userId vinculado
     let supplier = await Supplier.findOne({
-      code: userId.substring(0, 10)
+      userId: userId
     });
     
-    // Si no hay coincidencia, buscar cualquier proveedor activo
+    // Si no hay coincidencia, buscar cualquier proveedor activo para mostrar vista de ejemplo
     if (!supplier) {
       supplier = await Supplier.findOne({ isActive: true });
       console.log("🔍 Admin/Gerente - Usando proveedor activo de ejemplo:", 
@@ -34,13 +34,30 @@ async function getSupplierByUserId(userId: string, userRole: string) {
     return supplier;
   }
   
-  // Para usuarios con rol proveedor, búsqueda normal
+  // Para usuarios con rol proveedor, buscar por userId vinculado
+  console.log("🔍 Searching for supplier with userId:", userId);
+  
+  // Verificar todos los proveedores en la base de datos
+  const allSuppliers = await Supplier.find({});
+  console.log("🔍 Total suppliers in database:", allSuppliers.length);
+  console.log("🔍 All suppliers userIds:", allSuppliers.map(s => ({ name: s.name, userId: s.userId })));
+  
   const supplier = await Supplier.findOne({
-    // En producción: reemplazar esta lógica con la correcta para mapear usuarios a proveedores
-    code: userId.substring(0, 10) // Usando primeros 10 caracteres del userId como ejemplo
+    userId: userId
   });
   
   console.log("🔍 Proveedor encontrado:", supplier ? "Sí" : "No");
+  console.log("🔍 Búsqueda por userId:", userId);
+  
+  if (supplier) {
+    console.log("🔍 Supplier details:", {
+      name: supplier.name,
+      code: supplier.code,
+      userId: supplier.userId,
+      supplierId: supplier.supplierId
+    });
+  }
+  
   return supplier;
 }
 
@@ -147,6 +164,38 @@ async function getSupplierDashboardData(supplierId: string) {
     };
   });
   
+  // Calcular estadísticas adicionales estilo Uber
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  
+  const [thisMonthOrders, lastMonthOrders] = await Promise.all([
+    PurchaseOrder.find({ 
+      supplierId, 
+      createdAt: { $gte: thirtyDaysAgo } 
+    }),
+    PurchaseOrder.find({ 
+      supplierId, 
+      createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo } 
+    })
+  ]);
+  
+  const salesThisMonth = thisMonthOrders.reduce((sum, order) => sum + order.total, 0);
+  const salesLastMonth = lastMonthOrders.reduce((sum, order) => sum + order.total, 0);
+  const growthPercentage = salesLastMonth > 0 
+    ? ((salesThisMonth - salesLastMonth) / salesLastMonth * 100) 
+    : 0;
+  
+  const averageOrderValue = orders.total > 0 
+    ? (salesThisMonth + salesLastMonth) / (thisMonthOrders.length + lastMonthOrders.length) 
+    : 0;
+  
+  const completedOrders = orderStats.find(s => s._id === PurchaseOrderStatus.RECEIVED)?.count || 0;
+  const completionRate = orders.total > 0 
+    ? (completedOrders / orders.total * 100) 
+    : 0;
+  
   return {
     supplier: {
       _id: supplier._id.toString(),
@@ -158,7 +207,15 @@ async function getSupplierDashboardData(supplierId: string) {
     },
     orders,
     products: productStats,
-    recentActivity
+    recentActivity,
+    stats: {
+      salesThisMonth,
+      salesLastMonth,
+      growthPercentage: Number(growthPercentage.toFixed(1)),
+      averageOrderValue,
+      completionRate: Number(completionRate.toFixed(1)),
+      responseTime: "2h" // Placeholder - calcular basado en datos reales
+    }
   };
 }
 
@@ -224,7 +281,7 @@ export default async function ProveedorDashboard() {
             <p className="text-gray-600 mb-6">
               No tienes un proveedor asociado, pero puedes ver esta vista como administrador o gerente.
             </p>
-            <SupplierDashboardClient dashboardData={null} />
+            <SupplierDashboardUber dashboardData={null} />
           </div>
         </div>
       );
@@ -234,7 +291,8 @@ export default async function ProveedorDashboard() {
   // Intentar obtener datos de dashboard si hay un proveedor disponible
   const dashboardData = supplier ? await getSupplierDashboardData(supplier.supplierId) : null;
   
-  if (!dashboardData) {
+  // Si hay un proveedor pero falló la carga de datos, mostrar error
+  if (supplier && !dashboardData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-gray-600">Error al cargar los datos del dashboard</p>
@@ -242,6 +300,9 @@ export default async function ProveedorDashboard() {
     );
   }
   
-  // Serialize and pass the data to the client component
-  return <SupplierDashboardClient dashboardData={dashboardData} />;
+  // Serializar los datos para convertir objetos MongoDB a objetos planos
+  const serializedDashboardData = dashboardData ? JSON.parse(JSON.stringify(dashboardData)) : null;
+  
+  // Pasar los datos al componente (puede ser null si no hay proveedor)
+  return <SupplierDashboardUber dashboardData={serializedDashboardData} />;
 }

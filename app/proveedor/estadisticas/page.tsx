@@ -3,11 +3,11 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import dbConnect from "@/lib/mongodb";
 import Supplier from "@/lib/models/inventory/Supplier";
-import SupplierOrdersUber from "@/components/supplier/SupplierOrdersUber";
+import SupplierStatsDashboard from "@/components/supplier/SupplierStatsDashboard";
 
 export const metadata: Metadata = {
-  title: "Órdenes de Compra | Portal de Proveedores",
-  description: "Gestiona tus órdenes de compra, entregas y pagos",
+  title: "Estadísticas | Portal de Proveedores",
+  description: "Visualiza tu rendimiento, ventas y métricas clave como proveedor",
 };
 
 async function getSupplierByUserId(userId: string, userRole: string) {
@@ -45,7 +45,7 @@ async function getUserRole(userId: string): Promise<string> {
   return role;
 }
 
-export default async function SupplierOrdersPage() {
+export default async function SupplierStatsPage() {
   const { userId } = await auth();
   
   if (!userId) {
@@ -58,7 +58,7 @@ export default async function SupplierOrdersPage() {
   // Si es admin o gerente, permitir acceso incluso sin proveedor
   if (userRole === "admin" || userRole === "gerente") {
     const supplierId = supplier?.supplierId || "default-admin-supplier";
-    return <SupplierOrdersUber supplierId={supplierId} />;
+    return <SupplierStatsDashboard supplierId={supplierId} />;
   }
   
   // Para otros roles, requerir proveedor asociado
@@ -73,5 +73,5 @@ export default async function SupplierOrdersPage() {
     );
   }
 
-  return <SupplierOrdersUber supplierId={supplier.supplierId} />;
+  return <SupplierStatsDashboard supplierId={supplier.supplierId} />;
 }

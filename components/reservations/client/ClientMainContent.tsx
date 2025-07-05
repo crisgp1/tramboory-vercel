@@ -12,6 +12,7 @@ import {
   PlusIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline';
+import SimpleHeader from '@/components/auth/SimpleHeader';
 import { useReservationStore } from '@/stores/reservationStore';
 import ClientReservationCard from './ClientReservationCard';
 import { Reservation } from '@/types/reservation';
@@ -102,6 +103,11 @@ export default function ClientMainContent({ onViewReservation }: ClientMainConte
 
   return (
     <div className="flex-1 bg-gray-50 min-h-screen">
+      {/* Mobile Header - solo visible en pantallas pequeñas */}
+      <div className="lg:hidden">
+        <SimpleHeader title="Mis Reservaciones" />
+      </div>
+      
       <div className="p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">

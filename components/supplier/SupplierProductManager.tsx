@@ -546,6 +546,7 @@ export default function SupplierProductManager() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
+            variant="bordered"
             className="w-full"
           />
         </div>
@@ -789,11 +790,15 @@ export default function SupplierProductManager() {
         onClose={onProductModalClose}
         size="2xl"
         scrollBehavior="inside"
+        backdrop="blur"
+        classNames={{
+          backdrop: "bg-gradient-to-t from-zinc-900 to-zinc-900/10 backdrop-opacity-20"
+        }}
       >
-        <ModalContent>
+        <ModalContent className="bg-white shadow-2xl">
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
+              <ModalHeader className="flex flex-col gap-1 bg-white border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">
                     {modalView === 'details' && "Detalles del Producto"}
@@ -812,7 +817,7 @@ export default function SupplierProductManager() {
                   )}
                 </div>
               </ModalHeader>
-              <ModalBody>
+              <ModalBody className="bg-white">
                 {selectedProduct && (
                   <>
                     {/* Vista de detalles */}
@@ -945,117 +950,193 @@ export default function SupplierProductManager() {
                     {/* Vista de edición */}
                     {modalView === 'edit' && (
                       <div className="space-y-4">
-                        <Input
-                          label="Nombre del Producto"
-                          placeholder="Nombre del producto"
-                          value={selectedProduct.name}
-                          onChange={(e) => setSelectedProduct({...selectedProduct, name: e.target.value})}
-                        />
-                        
-                        <Textarea
-                          label="Descripción"
-                          placeholder="Descripción del producto"
-                          value={selectedProduct.description || ""}
-                          onChange={(e) => setSelectedProduct({...selectedProduct, description: e.target.value})}
-                        />
-                        
-                        <div className="flex gap-4">
+                        <div>
                           <Input
-                            label="SKU"
-                            placeholder="SKU"
-                            value={selectedProduct.sku || ""}
-                            onChange={(e) => setSelectedProduct({...selectedProduct, sku: e.target.value})}
-                            className="flex-1"
+                            label="Nombre del Producto"
+                            placeholder="Ej: Laptop Dell Inspiron 15"
+                            variant="bordered"
+                            isRequired
+                            value={selectedProduct.name}
+                            onChange={(e) => setSelectedProduct({...selectedProduct, name: e.target.value})}
                           />
-                          
-                          <Input
-                            label="Código de Barras"
-                            placeholder="Código de barras"
-                            value={selectedProduct.barcode || ""}
-                            onChange={(e) => setSelectedProduct({...selectedProduct, barcode: e.target.value})}
-                            className="flex-1"
-                          />
-                        </div>
-                        
-                        <div className="flex gap-4">
-                          <Select
-                            label="Categoría"
-                            placeholder="Selecciona la categoría"
-                            selectedKeys={[selectedProduct.category]}
-                            onChange={(keys: any) => {
-                              const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                              setSelectedProduct({...selectedProduct, category: selectedKey.toString()});
-                            }}
-                            className="flex-1"
-                          >
-                            {categories.map((category) => (
-                              <SelectItem key={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </Select>
-                          
-                          <Select
-                            label="Unidad Base"
-                            placeholder="Selecciona la unidad base"
-                            selectedKeys={[selectedProduct.baseUnit]}
-                            onChange={(keys: any) => {
-                              const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                              setSelectedProduct({...selectedProduct, baseUnit: selectedKey.toString()});
-                            }}
-                            className="flex-1"
-                          >
-                            {unitOptions.map((unit) => (
-                              <SelectItem key={unit.value}>
-                                {unit.label}
-                              </SelectItem>
-                            ))}
-                          </Select>
-                        </div>
-                        
-                        <div className="flex gap-4">
-                          <div className="flex-1">
-                            <Switch
-                              isSelected={selectedProduct.isPerishable}
-                              onValueChange={(value) => setSelectedProduct({...selectedProduct, isPerishable: value})}
-                            >
-                              Producto Perecedero
-                            </Switch>
-                          </div>
-                          <div className="flex-1">
-                            <Switch
-                              isSelected={selectedProduct.requiresBatch}
-                              onValueChange={(value) => setSelectedProduct({...selectedProduct, requiresBatch: value})}
-                            >
-                              Requiere Lote
-                            </Switch>
-                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Nombre comercial que aparecerá en catálogos y facturas
+                          </p>
                         </div>
                         
                         <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Etiquetas</h4>
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {selectedProduct.tags && selectedProduct.tags.map((tag) => (
-                              <Chip 
-                                key={tag} 
-                                onClose={() => setSelectedProduct({
-                                  ...selectedProduct, 
-                                  tags: selectedProduct.tags?.filter(t => t !== tag) || []
-                                })}
-                              >
-                                {tag}
-                              </Chip>
-                            ))}
+                          <Textarea
+                            label="Descripción del Producto"
+                            placeholder="Describe las características, especificaciones y beneficios del producto..."
+                            variant="bordered"
+                            value={selectedProduct.description || ""}
+                            onChange={(e) => setSelectedProduct({...selectedProduct, description: e.target.value})}
+                            minRows={3}
+                            maxRows={5}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Información detallada que ayude a los compradores a entender el producto
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Input
+                              label="SKU (Código de Producto)"
+                              placeholder="Ej: DELL-LAP-INS15-001"
+                              variant="bordered"
+                              value={selectedProduct.sku || ""}
+                              onChange={(e) => setSelectedProduct({...selectedProduct, sku: e.target.value})}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Código único de identificación del producto
+                            </p>
                           </div>
+                          
+                          <div>
+                            <Input
+                              label="Código de Barras"
+                              placeholder="Ej: 123456789012"
+                              variant="bordered"
+                              value={selectedProduct.barcode || ""}
+                              onChange={(e) => setSelectedProduct({...selectedProduct, barcode: e.target.value})}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Código de barras para escaneo (EAN, UPC, etc.)
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Select
+                              label="Categoría del Producto"
+                              placeholder="Selecciona una categoría"
+                              variant="bordered"
+                              isRequired
+                              selectedKeys={[selectedProduct.category]}
+                              onChange={(keys: any) => {
+                                const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
+                                setSelectedProduct({...selectedProduct, category: selectedKey.toString()});
+                              }}
+                            >
+                              {categories.map((category) => (
+                                <SelectItem key={category}>
+                                  {category}
+                                </SelectItem>
+                              ))}
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Clasifica el producto para facilitar su búsqueda
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <Select
+                              label="Unidad de Medida Base"
+                              placeholder="Selecciona la unidad"
+                              variant="bordered"
+                              isRequired
+                              selectedKeys={[selectedProduct.baseUnit]}
+                              onChange={(keys: any) => {
+                                const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
+                                setSelectedProduct({...selectedProduct, baseUnit: selectedKey.toString()});
+                              }}
+                            >
+                              {unitOptions.map((unit) => (
+                                <SelectItem key={unit.value}>
+                                  {unit.label}
+                                </SelectItem>
+                              ))}
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Unidad principal de venta (piezas, kilos, litros, etc.)
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Características del Producto</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-3 border border-gray-200 rounded-lg">
+                              <Switch
+                                isSelected={selectedProduct.isPerishable}
+                                onValueChange={(value) => setSelectedProduct({...selectedProduct, isPerishable: value})}
+                              >
+                                <div>
+                                  <span className="font-medium">Producto Perecedero</span>
+                                </div>
+                              </Switch>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Producto con fecha de caducidad o vida útil limitada
+                              </p>
+                            </div>
+                            
+                            <div className="p-3 border border-gray-200 rounded-lg">
+                              <Switch
+                                isSelected={selectedProduct.requiresBatch}
+                                onValueChange={(value) => setSelectedProduct({...selectedProduct, requiresBatch: value})}
+                              >
+                                <div>
+                                  <span className="font-medium">Requiere Control de Lote</span>
+                                </div>
+                              </Switch>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Necesita seguimiento por número de lote o serie
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">Etiquetas del Producto</h4>
+                            <p className="text-xs text-gray-500 mb-3">
+                              Palabras clave que faciliten la búsqueda del producto (ej: "ofertas", "nuevo", "premium")
+                            </p>
+                          </div>
+                          
+                          {selectedProduct.tags && selectedProduct.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {selectedProduct.tags.map((tag) => (
+                                <Chip 
+                                  key={tag} 
+                                  onClose={() => setSelectedProduct({
+                                    ...selectedProduct, 
+                                    tags: selectedProduct.tags?.filter(t => t !== tag) || []
+                                  })}
+                                  variant="flat"
+                                  color="primary"
+                                >
+                                  {tag}
+                                </Chip>
+                              ))}
+                            </div>
+                          )}
+                          
                           <div className="flex gap-2">
                             <Input
-                              placeholder="Nueva etiqueta"
+                              label="Agregar Nueva Etiqueta"
+                              placeholder="Ej: ofertas, premium, nuevo..."
+                              variant="bordered"
                               value={newTag}
                               onChange={(e) => setNewTag(e.target.value)}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  if (newTag.trim() && !selectedProduct.tags?.includes(newTag.trim())) {
+                                    setSelectedProduct({
+                                      ...selectedProduct, 
+                                      tags: [...(selectedProduct.tags || []), newTag.trim()]
+                                    });
+                                    setNewTag("");
+                                  }
+                                }
+                              }}
                               className="flex-1"
                             />
                             <Button 
                               color="primary" 
+                              variant="bordered"
                               onPress={() => {
                                 if (newTag.trim() && !selectedProduct.tags?.includes(newTag.trim())) {
                                   setSelectedProduct({
@@ -1065,6 +1146,7 @@ export default function SupplierProductManager() {
                                   setNewTag("");
                                 }
                               }}
+                              isDisabled={!newTag.trim() || selectedProduct.tags?.includes(newTag.trim())}
                             >
                               Agregar
                             </Button>
@@ -1083,6 +1165,7 @@ export default function SupplierProductManager() {
                               type="number"
                               label="Precio de Costo (MXN)"
                               placeholder="0.00"
+                              variant="bordered"
                               startContent={
                                 <div className="pointer-events-none flex items-center">
                                   <span className="text-default-400 text-small">$</span>
@@ -1102,6 +1185,7 @@ export default function SupplierProductManager() {
                               type="number"
                               label="Precio de Venta (MXN)"
                               placeholder="0.00"
+                              variant="bordered"
                               startContent={
                                 <div className="pointer-events-none flex items-center">
                                   <span className="text-default-400 text-small">$</span>
@@ -1195,6 +1279,7 @@ export default function SupplierProductManager() {
                               type="number"
                               label={`Stock Mínimo (${selectedProduct.stockLevels.unit})`}
                               placeholder="0"
+                              variant="bordered"
                               value={selectedProduct.stockLevels.minimum.toString()}
                               onChange={(e) => setSelectedProduct({
                                 ...selectedProduct,
@@ -1209,6 +1294,7 @@ export default function SupplierProductManager() {
                               type="number"
                               label={`Punto de Reorden (${selectedProduct.stockLevels.unit})`}
                               placeholder="0"
+                              variant="bordered"
                               value={selectedProduct.stockLevels.reorderPoint.toString()}
                               onChange={(e) => setSelectedProduct({
                                 ...selectedProduct,
@@ -1244,7 +1330,7 @@ export default function SupplierProductManager() {
                   </>
                 )}
               </ModalBody>
-              <ModalFooter>
+              <ModalFooter className="bg-white border-t border-gray-200">
                 <Button 
                   color="default" 
                   variant="light" 
@@ -1288,112 +1374,169 @@ export default function SupplierProductManager() {
         onClose={onNewProductModalClose}
         size="3xl"
         scrollBehavior="inside"
+        backdrop="blur"
+        classNames={{
+          backdrop: "bg-gradient-to-t from-zinc-900 to-zinc-900/10 backdrop-opacity-20"
+        }}
       >
-        <ModalContent>
+        <ModalContent className="bg-white shadow-2xl">
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">
+              <ModalHeader className="flex flex-col gap-1 bg-white border-b border-gray-200">
                 <h3 className="text-lg font-semibold">Registrar Nuevo Producto</h3>
                 <p className="text-xs text-gray-500">
                   Los productos nuevos requerirán aprobación de un administrador antes de estar disponibles en el sistema.
                 </p>
               </ModalHeader>
-              <ModalBody>
+              <ModalBody className="bg-white">
                 <Tabs variant="underlined" aria-label="Registro de producto">
                   <Tab key="basic" title="Información Básica">
                     <div className="py-2">
                       <div className="space-y-4">
-                        <Input
-                          isRequired
-                          label="Nombre del Producto"
-                          placeholder="Nombre completo del producto"
-                          value={newProduct.name}
-                          onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                        />
-                        
-                        <Textarea
-                          label="Descripción"
-                          placeholder="Descripción detallada del producto"
-                          value={newProduct.description}
-                          onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                        />
-                        
-                        <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Nombre del Producto <span className="text-red-500">*</span>
+                          </label>
                           <Input
+                            placeholder="Ej: Laptop Dell Inspiron 15 3000 Intel Core i5"
+                            variant="bordered"
+                            value={newProduct.name}
+                            onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
                             isRequired
-                            label="SKU (Código Interno)"
-                            placeholder="SKU único para este producto"
-                            value={newProduct.sku}
-                            onChange={(e) => setNewProduct({...newProduct, sku: e.target.value})}
                           />
-                          
-                          <Input
-                            label="Código de Barras"
-                            placeholder="Código de barras si está disponible"
-                            value={newProduct.barcode}
-                            onChange={(e) => setNewProduct({...newProduct, barcode: e.target.value})}
-                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Nombre completo y descriptivo que aparecerá en catálogos y facturas
+                          </p>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
-                          <Select
-                            isRequired
-                            label="Categoría"
-                            placeholder="Selecciona la categoría"
-                            selectedKeys={newProduct.category ? [newProduct.category] : []}
-                            onChange={(keys: any) => {
-                              const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                              setNewProduct({...newProduct, category: selectedKey.toString()});
-                            }}
-                          >
-                            {categories.map((category) => (
-                              <SelectItem key={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </Select>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Descripción del Producto
+                          </label>
+                          <Textarea
+                            placeholder="Incluye características, especificaciones técnicas, beneficios y cualquier información relevante..."
+                            variant="bordered"
+                            value={newProduct.description}
+                            onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                            minRows={4}
+                            maxRows={6}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Información detallada que ayude a los compradores a entender las características y beneficios del producto
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              SKU (Código de Producto) <span className="text-red-500">*</span>
+                            </label>
+                            <Input
+                              placeholder="Ej: DELL-LAP-INS15-001"
+                              variant="bordered"
+                              value={newProduct.sku}
+                              onChange={(e) => setNewProduct({...newProduct, sku: e.target.value})}
+                              isRequired
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Código único de identificación interno del producto
+                            </p>
+                          </div>
                           
-                          <Select
-                            isRequired
-                            label="Unidad Base"
-                            placeholder="Selecciona la unidad base"
-                            selectedKeys={[newProduct.baseUnit]}
-                            onChange={(keys: any) => {
-                              const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                              setNewProduct({...newProduct, baseUnit: selectedKey.toString()});
-                            }}
-                          >
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Código de Barras (Opcional)
+                            </label>
+                            <Input
+                              placeholder="Ej: 123456789012"
+                              variant="bordered"
+                              value={newProduct.barcode}
+                              onChange={(e) => setNewProduct({...newProduct, barcode: e.target.value})}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Código de barras para escaneo (EAN, UPC, etc.)
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Categoría del Producto <span className="text-red-500">*</span>
+                            </label>
+                            <Select
+                              placeholder="Selecciona una categoría"
+                              variant="bordered"
+                              selectedKeys={newProduct.category ? [newProduct.category] : []}
+                              onChange={(keys: any) => {
+                                const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
+                                setNewProduct({...newProduct, category: selectedKey.toString()});
+                              }}
+                              isRequired
+                            >
+                              {categories.map((category) => (
+                                <SelectItem key={category}>
+                                  {category}
+                                </SelectItem>
+                              ))}
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Clasifica el producto para facilitar su búsqueda y organización
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Unidad de Medida Base <span className="text-red-500">*</span>
+                            </label>
+                            <Select
+                              placeholder="Selecciona la unidad"
+                              variant="bordered"
+                              selectedKeys={[newProduct.baseUnit]}
+                              onChange={(keys: any) => {
+                                const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
+                                setNewProduct({...newProduct, baseUnit: selectedKey.toString()});
+                              }}
+                              isRequired
+                            >
                             {unitOptions.map((unit) => (
                               <SelectItem key={unit.value}>
                                 {unit.label}
                               </SelectItem>
                             ))}
                           </Select>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Unidad principal de venta (piezas, kilos, litros, etc.)
+                          </p>
                         </div>
+                      </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Switch
-                              isSelected={newProduct.isPerishable}
-                              onValueChange={(value) => setNewProduct({...newProduct, isPerishable: value})}
-                            >
-                              Producto Perecedero
-                            </Switch>
-                            <p className="text-xs text-gray-500 ml-7">
-                              Los productos perecederos requieren control de fechas de caducidad
-                            </p>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Switch
-                              isSelected={newProduct.requiresBatch}
-                              onValueChange={(value) => setNewProduct({...newProduct, requiresBatch: value})}
-                            >
-                              Requiere Lote
-                            </Switch>
-                            <p className="text-xs text-gray-500 ml-7">
-                              Los productos con lote requieren seguimiento por número de lote
-                            </p>
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Características del Producto</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-3 border border-gray-200 rounded-lg">
+                              <Switch
+                                isSelected={newProduct.isPerishable}
+                                onValueChange={(value) => setNewProduct({...newProduct, isPerishable: value})}
+                              >
+                                <span className="font-medium">Producto Perecedero</span>
+                              </Switch>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Producto con fecha de caducidad o vida útil limitada
+                              </p>
+                            </div>
+                            
+                            <div className="p-3 border border-gray-200 rounded-lg">
+                              <Switch
+                                isSelected={newProduct.requiresBatch}
+                                onValueChange={(value) => setNewProduct({...newProduct, requiresBatch: value})}
+                              >
+                                <span className="font-medium">Requiere Control de Lote</span>
+                              </Switch>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Necesita seguimiento por número de lote o serie
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1403,52 +1546,93 @@ export default function SupplierProductManager() {
                   <Tab key="pricing" title="Precios e Inventario">
                     <div className="py-2">
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <Input
-                            isRequired
-                            type="number"
-                            label="Precio de Costo (MXN)"
-                            placeholder="0.00"
-                            startContent={
-                              <div className="pointer-events-none flex items-center">
-                                <span className="text-default-400 text-small">$</span>
-                              </div>
-                            }
-                            value={newProduct.costPrice.toString()}
-                            onChange={(e) => setNewProduct({...newProduct, costPrice: parseFloat(e.target.value) || 0})}
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Precio de Costo (MXN) <span className="text-red-500">*</span>
+                            </label>
+                            <Input
+                              type="number"
+                              placeholder="Ej: 1500.00"
+                              variant="bordered"
+                              startContent={
+                                <div className="pointer-events-none flex items-center">
+                                  <span className="text-default-400 text-small">$</span>
+                                </div>
+                              }
+                              value={newProduct.costPrice.toString()}
+                              onChange={(e) => setNewProduct({...newProduct, costPrice: parseFloat(e.target.value) || 0})}
+                              step="0.01"
+                              min="0"
+                              isRequired
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Precio al que compras o produces el producto (para cálculo de margen)
+                            </p>
+                          </div>
                           
-                          <Input
-                            isRequired
-                            type="number"
-                            label="Precio de Venta (MXN)"
-                            placeholder="0.00"
-                            startContent={
-                              <div className="pointer-events-none flex items-center">
-                                <span className="text-default-400 text-small">$</span>
-                              </div>
-                            }
-                            value={newProduct.unitPrice.toString()}
-                            onChange={(e) => setNewProduct({...newProduct, unitPrice: parseFloat(e.target.value) || 0})}
-                          />
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Precio de Venta (MXN) <span className="text-red-500">*</span>
+                            </label>
+                            <Input
+                              type="number"
+                              placeholder="Ej: 2500.00"
+                              variant="bordered"
+                              startContent={
+                                <div className="pointer-events-none flex items-center">
+                                  <span className="text-default-400 text-small">$</span>
+                                </div>
+                              }
+                              value={newProduct.unitPrice.toString()}
+                              onChange={(e) => setNewProduct({...newProduct, unitPrice: parseFloat(e.target.value) || 0})}
+                              step="0.01"
+                              min="0"
+                              isRequired
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Precio al que vendes el producto a tus clientes
+                            </p>
+                          </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
-                          <Input
-                            type="number"
-                            label={`Stock Mínimo (${newProduct.baseUnit})`}
-                            placeholder="0"
-                            value={newProduct.minStock.toString()}
-                            onChange={(e) => setNewProduct({...newProduct, minStock: parseInt(e.target.value) || 0})}
-                          />
-                          
-                          <Input
-                            type="number"
-                            label={`Punto de Reorden (${newProduct.baseUnit})`}
-                            placeholder="0"
-                            value={newProduct.reorderPoint.toString()}
-                            onChange={(e) => setNewProduct({...newProduct, reorderPoint: parseInt(e.target.value) || 0})}
-                          />
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Control de Inventario</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Stock Mínimo ({newProduct.baseUnit})
+                              </label>
+                              <Input
+                                type="number"
+                                placeholder="Ej: 10"
+                                variant="bordered"
+                                value={newProduct.minStock.toString()}
+                                onChange={(e) => setNewProduct({...newProduct, minStock: parseInt(e.target.value) || 0})}
+                                min="0"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Cantidad mínima que debe mantenerse en inventario
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Punto de Reorden ({newProduct.baseUnit})
+                              </label>
+                              <Input
+                                type="number"
+                                placeholder="Ej: 20"
+                                variant="bordered"
+                                value={newProduct.reorderPoint.toString()}
+                                onChange={(e) => setNewProduct({...newProduct, reorderPoint: parseInt(e.target.value) || 0})}
+                                min="0"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                Nivel en el que se debe generar un nuevo pedido
+                              </p>
+                            </div>
+                          </div>
                         </div>
                         
                         <div className="bg-gray-50 p-3 rounded-lg">
@@ -1467,34 +1651,57 @@ export default function SupplierProductManager() {
                   <Tab key="additional" title="Información Adicional">
                     <div className="py-2">
                       <div className="space-y-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Etiquetas</h4>
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {newProduct.tags.map((tag) => (
-                              <Chip 
-                                key={tag} 
-                                onClose={() => handleRemoveTag(tag)}
-                              >
-                                {tag}
-                              </Chip>
-                            ))}
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">Etiquetas del Producto</h4>
+                            <p className="text-xs text-gray-500 mb-3">
+                              Palabras clave que faciliten la búsqueda del producto (ej: "ofertas", "nuevo", "premium", "eco-friendly")
+                            </p>
                           </div>
+                          
+                          {newProduct.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {newProduct.tags.map((tag) => (
+                                <Chip 
+                                  key={tag} 
+                                  onClose={() => handleRemoveTag(tag)}
+                                  variant="flat"
+                                  color="primary"
+                                >
+                                  {tag}
+                                </Chip>
+                              ))}
+                            </div>
+                          )}
+                          
                           <div className="flex gap-2">
-                            <Input
-                              placeholder="Nueva etiqueta"
-                              value={newTag}
-                              onChange={(e) => setNewTag(e.target.value)}
-                              className="flex-1"
-                            />
+                            <div className="flex-1">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Agregar Nueva Etiqueta
+                              </label>
+                              <Input
+                                placeholder="Ej: ofertas, premium, nuevo, eco-friendly..."
+                                variant="bordered"
+                                value={newTag}
+                                onChange={(e) => setNewTag(e.target.value)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleAddTag();
+                                  }
+                                }}
+                              />
+                            </div>
                             <Button 
                               color="primary" 
+                              variant="bordered"
                               onPress={handleAddTag}
+                              isDisabled={!newTag.trim() || newProduct.tags.includes(newTag.trim())}
                             >
                               Agregar
                             </Button>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
-                            Las etiquetas ayudan a categorizar y encontrar el producto más fácilmente
+                            Las etiquetas ayudan a los compradores a encontrar productos relacionados y facilitan la organización del catálogo
                           </p>
                         </div>
                         
@@ -1531,7 +1738,7 @@ export default function SupplierProductManager() {
                   </div>
                 )}
               </ModalBody>
-              <ModalFooter>
+              <ModalFooter className="bg-white border-t border-gray-200">
                 <Button 
                   color="default" 
                   variant="light" 

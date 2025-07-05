@@ -7,6 +7,7 @@ const isProtectedRoute = createRouteMatcher([
   "/reservaciones(.*)",
   "/bienvenida",
   "/proveedor(.*)", // Añadido para proteger rutas de proveedor
+  "/inventario(.*)", // Proteger rutas de inventario
 ])
 
 const isDashboardRoute = createRouteMatcher([
@@ -21,8 +22,12 @@ const isProveedorRoute = createRouteMatcher([
   "/proveedor(.*)",
 ])
 
+const isInventarioRoute = createRouteMatcher([
+  "/inventario(.*)",
+])
+
 // Roles que pueden acceder al dashboard
-const DASHBOARD_ALLOWED_ROLES = ["admin", "gerente", "proveedor", "vendedor"]
+const DASHBOARD_ALLOWED_ROLES = ["admin", "gerente", "vendedor"]
 
 // Roles que solo pueden acceder a rutas de cliente
 const CLIENT_ONLY_ROLES = ["customer"]
@@ -68,6 +73,12 @@ export default clerkMiddleware(async (auth, req) => {
           isAllowed: DASHBOARD_ALLOWED_ROLES.includes(role)
         })
         
+        // Redireccionar proveedores al portal especializado
+        if (role === "proveedor") {
+          console.log("🔄 Redirecting proveedor from dashboard to specialized portal")
+          return NextResponse.redirect(new URL("/proveedor", req.url))
+        }
+        
         // Solo roles específicos pueden acceder al dashboard
         if (!DASHBOARD_ALLOWED_ROLES.includes(role)) {
           console.log(`🚫 Redirecting ${role} from dashboard to reservaciones`)
@@ -92,6 +103,29 @@ export default clerkMiddleware(async (auth, req) => {
         }
         
         console.log("✅ Proveedor access granted for role:", role)
+      }
+      
+      // Verificar acceso al inventario general
+      if (isInventarioRoute(req)) {
+        console.log("🔍 Inventario Access Check:", {
+          role,
+          url: req.url,
+          isAllowed: ["admin", "gerente", "vendedor"].includes(role)
+        })
+        
+        // Proveedores no pueden acceder al inventario general
+        if (role === "proveedor") {
+          console.log("🚫 Redirecting proveedor from inventario to specialized portal")
+          return NextResponse.redirect(new URL("/proveedor", req.url))
+        }
+        
+        // Solo admin, gerente y vendedor pueden acceder
+        if (!["admin", "gerente", "vendedor"].includes(role)) {
+          console.log(`🚫 Redirecting ${role} from inventario`)
+          return NextResponse.redirect(new URL("/reservaciones", req.url))
+        }
+        
+        console.log("✅ Inventario access granted for role:", role)
       }
       
       // Verificar restricciones para clientes

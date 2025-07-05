@@ -13,7 +13,10 @@ import {
   Switch,
   Card,
   CardBody,
-  Chip
+  Chip,
+  Select,
+  SelectItem,
+  Avatar
 } from "@heroui/react"
 import {
   BuildingOffice2Icon,
@@ -36,6 +39,7 @@ interface Supplier {
   name: string
   code: string
   description?: string
+  userId?: string
   contactInfo: {
     email: string
     phone: string
@@ -61,6 +65,15 @@ interface Supplier {
   createdAt?: string
 }
 
+interface ProviderUser {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  fullName: string
+  imageUrl: string
+}
+
 interface SupplierModalProps {
   isOpen: boolean
   onClose: () => void
@@ -74,6 +87,7 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
     name: '',
     code: '',
     description: '',
+    userId: '',
     contactInfo: {
       email: '',
       phone: '',
@@ -95,6 +109,8 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
     isActive: true
   })
   const [loading, setLoading] = useState(false)
+  const [providerUsers, setProviderUsers] = useState<ProviderUser[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
 
   useEffect(() => {
     if (supplier && (mode === 'edit' || mode === 'view')) {
@@ -105,6 +121,7 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
         name: '',
         code: '',
         description: '',
+        userId: '',
         contactInfo: {
           email: '',
           phone: '',
@@ -128,6 +145,28 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
     }
   }, [supplier, mode, isOpen])
 
+  useEffect(() => {
+    if (isOpen && mode !== 'view') {
+      fetchProviderUsers()
+    }
+  }, [isOpen, mode])
+
+  const fetchProviderUsers = async () => {
+    setLoadingUsers(true)
+    try {
+      const response = await fetch('/api/users/providers')
+      if (response.ok) {
+        const data = await response.json()
+        setProviderUsers(data.users || [])
+      }
+    } catch (error) {
+      console.error('Error fetching provider users:', error)
+      toast.error('Error al cargar usuarios proveedores')
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!formData.name || !formData.code || !formData.contactInfo.email) {
       toast.error("Por favor completa todos los campos requeridos")
@@ -141,6 +180,14 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
         : `/api/inventory/suppliers/${supplier?._id}`
       
       const method = mode === 'create' ? 'POST' : 'PUT'
+      
+      console.log('🔄 SupplierModal submit:', {
+        mode,
+        url,
+        method,
+        supplierId: supplier?._id,
+        isUserFormat: supplier?._id?.startsWith('user_')
+      })
 
       const response = await fetch(url, {
         method,
@@ -247,47 +294,45 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
       }}
     >
       <ModalContent>
-        <ModalHeader className="px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
+        <ModalHeader className="px-6 py-4">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                 <BuildingOffice2Icon className="w-5 h-5 text-gray-600" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 truncate">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
                   {mode === 'create' && 'Crear Nuevo Proveedor'}
                   {mode === 'edit' && 'Editar Proveedor'}
                   {mode === 'view' && 'Detalles del Proveedor'}
                 </h3>
                 {supplier && mode !== 'create' && (
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="text-sm text-gray-600 truncate">{supplier.name}</span>
+                  <div className="flex items-center gap-2 mt-1">
                     <Chip
-                      size="sm"
-                      variant="flat"
                       color={supplier.isActive ? "success" : "danger"}
+                      variant="flat"
+                      size="sm"
+                      className="text-xs"
                     >
                       {supplier.isActive ? "Activo" : "Inactivo"}
                     </Chip>
-                    {supplier.totalOrders !== undefined && (
-                      <Chip size="sm" variant="flat" color="default">
-                        {supplier.totalOrders} órdenes
-                      </Chip>
-                    )}
+                    <span className="text-sm text-gray-500">
+                      ID: {supplier._id?.slice(-6).toUpperCase()}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2">
               {mode === 'view' && (
-                <Chip
-                  variant="flat"
-                  color="default"
+                <Button
                   size="sm"
-                  startContent={<EyeIcon className="w-3 h-3" />}
+                  variant="flat"
+                  startContent={<EyeIcon className="w-4 h-4" />}
+                  className="bg-gray-50 text-gray-700 hover:bg-gray-100 border-0"
                 >
                   Solo lectura
-                </Chip>
+                </Button>
               )}
             </div>
           </div>
@@ -361,6 +406,51 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
                         inputWrapper: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
                       }}
                     />
+                  </div>
+
+                  {/* Selección de Usuario Proveedor */}
+                  <div className="sm:col-span-2">
+                    <Select
+                      placeholder="Seleccionar usuario proveedor (opcional)"
+                      selectedKeys={formData.userId ? [formData.userId] : []}
+                      onSelectionChange={(keys) => {
+                        const userId = Array.from(keys)[0] as string
+                        handleInputChange('userId', userId || '')
+                      }}
+                      variant="flat"
+                      isDisabled={isReadOnly || loadingUsers}
+                      startContent={<UserIcon className="w-4 h-4 text-gray-400" />}
+                      classNames={{
+                        trigger: `${isReadOnly ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus:bg-white focus:ring-1 focus:ring-gray-900'}`,
+                        value: "text-gray-900",
+                        popoverContent: "bg-white border border-gray-200"
+                      }}
+                    >
+                      {providerUsers.map((user) => (
+                        <SelectItem
+                          key={user.id}
+                          value={user.id}
+                          startContent={
+                            <Avatar
+                              src={user.imageUrl}
+                              name={user.fullName}
+                              size="sm"
+                              className="w-6 h-6"
+                            />
+                          }
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{user.fullName}</span>
+                            <span className="text-xs text-gray-500">{user.email}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </Select>
+                    {!isReadOnly && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Vincula este proveedor con un usuario existente para darle acceso al portal
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardBody>
@@ -678,13 +768,13 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
           </div>
         </ModalBody>
 
-        <ModalFooter className="px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row gap-3 justify-between items-center w-full">
-            <div className="flex gap-3 order-2 sm:order-1">
+        <ModalFooter className="px-6 py-4">
+          <div className="flex gap-3 justify-between items-center w-full">
+            <div className="flex gap-3">
               {/* Espacio para botones adicionales si es necesario */}
             </div>
             
-            <div className="flex gap-3 order-1 sm:order-2">
+            <div className="flex gap-3">
               <Button
                 variant="light"
                 onPress={onClose}
@@ -696,6 +786,7 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
               
               {!isReadOnly && (
                 <Button
+                  color="primary"
                   onPress={handleSubmit}
                   isLoading={loading}
                   isDisabled={!formData.name || !formData.code || !formData.contactInfo.email}

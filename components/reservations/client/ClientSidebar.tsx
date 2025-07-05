@@ -10,8 +10,10 @@ import {
 } from '@heroui/react';
 import {
   PlusIcon,
-  EyeIcon
+  EyeIcon,
+  HomeIcon
 } from '@heroicons/react/24/outline';
+import LogoutButton from '@/components/auth/LogoutButton';
 
 export default function ClientSidebar() {
   const { user } = useUser();
@@ -64,8 +66,25 @@ export default function ClientSidebar() {
       <Divider className="mx-6" />
 
       {/* Footer */}
-      <div className="mt-auto p-6 text-center">
-        <p className="text-xs text-gray-400">
+      <div className="mt-auto p-6 space-y-4">
+        <div className="space-y-2">
+          <Button
+            onPress={() => router.push('/')}
+            variant="light"
+            className="w-full text-gray-600 hover:text-gray-900 justify-start"
+            size="sm"
+            startContent={<HomeIcon className="w-4 h-4" />}
+          >
+            Inicio
+          </Button>
+          <LogoutButton 
+            variant="light" 
+            color="danger" 
+            size="sm"
+            className="w-full justify-start"
+          />
+        </div>
+        <p className="text-xs text-gray-400 text-center">
           Tramboory © 2025
         </p>
       </div>
