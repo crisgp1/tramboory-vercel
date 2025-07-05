@@ -221,25 +221,25 @@ export default function InventoryManager() {
   ]
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden">
-      <div className="space-y-6 p-4 sm:p-6">
-        {/* Header Section - Improved spacing and hierarchy */}
+    <div className="w-full min-h-screen bg-gray-50">
+      <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
+        {/* Header Section - Mobile-first design */}
         <div className="w-full">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
                 Gestión de Inventario
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 mt-1 leading-relaxed">
                 Control de materiales, equipos y suministros
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between sm:justify-end gap-2">
               <Chip
                 variant="flat"
                 color="primary"
                 size="sm"
-                className="bg-blue-50 text-blue-700"
+                className="bg-blue-50 text-blue-700 text-xs px-2 py-1"
               >
                 {filteredTabs.length} secciones
               </Chip>
@@ -247,18 +247,19 @@ export default function InventoryManager() {
           </div>
         </div>
         
-        {/* Action Buttons - Better responsive design */}
-        <div className="w-full flex flex-col sm:flex-row gap-3">
+        {/* Action Buttons - Mobile-first responsive design */}
+        <div className="w-full flex flex-col xs:flex-row gap-2 sm:gap-3">
           <Dropdown>
             <DropdownTrigger>
               <Button
                 color="primary"
-                size="md"
-                className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white"
+                size="sm"
+                className="w-full xs:w-auto bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm px-4 py-2"
                 startContent={<PlusIcon className="w-4 h-4" />}
                 endContent={<ChevronDownIcon className="w-4 h-4" />}
               >
-                Crear Nuevo
+                <span className="xs:hidden">Crear</span>
+                <span className="hidden xs:inline">Crear Nuevo</span>
               </Button>
             </DropdownTrigger>
             <DropdownMenu 
@@ -285,12 +286,13 @@ export default function InventoryManager() {
             <DropdownTrigger>
               <Button
                 variant="bordered"
-                size="md"
-                className="w-full sm:w-auto bg-white border-gray-300 hover:border-gray-400 text-gray-700"
+                size="sm"
+                className="w-full xs:w-auto bg-white border-gray-300 hover:border-gray-400 text-gray-700 font-medium text-sm px-4 py-2"
                 startContent={<QrCodeIcon className="w-4 h-4" />}
                 endContent={<ChevronDownIcon className="w-4 h-4" />}
               >
-                Escáner QR
+                <span className="xs:hidden">QR</span>
+                <span className="hidden xs:inline">Escáner QR</span>
               </Button>
             </DropdownTrigger>
             <DropdownMenu 
@@ -320,21 +322,21 @@ export default function InventoryManager() {
           <InventoryAlerts />
         </div>
 
-        {/* Stats Grid - Better design and spacing */}
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats Grid - Mobile-first responsive design */}
+        <div className="w-full grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
               <Card key={index} className="border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
-                <CardBody className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                <CardBody className="p-3 sm:p-4">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center ${
                       stat.color === 'blue' ? 'bg-blue-100' :
                       stat.color === 'warning' ? 'bg-orange-100' :
                       stat.color === 'success' ? 'bg-green-100' :
                       stat.color === 'purple' ? 'bg-purple-100' : 'bg-gray-100'
                     }`}>
-                      <Icon className={`w-5 h-5 ${
+                      <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${
                         stat.color === 'blue' ? 'text-blue-600' :
                         stat.color === 'warning' ? 'text-orange-600' :
                         stat.color === 'success' ? 'text-green-600' :
@@ -345,14 +347,14 @@ export default function InventoryManager() {
                       size="sm"
                       variant="flat"
                       color={stat.trend === "up" ? "success" : stat.color === "warning" ? "warning" : "danger"}
-                      className="text-xs font-medium"
+                      className="text-xs font-medium px-2 py-1"
                     >
                       {stat.change}
                     </Chip>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                    <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                    <p className="text-lg sm:text-2xl font-bold text-gray-900 mb-1 leading-tight">{stat.value}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 leading-tight">{stat.label}</p>
                   </div>
                 </CardBody>
               </Card>
@@ -360,7 +362,7 @@ export default function InventoryManager() {
           })}
         </div>
 
-        {/* Main Content Tabs - Better design matching finances/reservas */}
+        {/* Main Content Tabs - Mobile-first responsive design */}
         <Card className="w-full border border-gray-200 shadow-sm bg-white">
           <CardBody className="p-0">
             <div className="w-full">
@@ -370,9 +372,9 @@ export default function InventoryManager() {
                 variant="underlined"
                 classNames={{
                   base: "w-full",
-                  tabList: "gap-0 w-full relative rounded-none p-0 border-b border-gray-200 overflow-x-auto",
+                  tabList: "gap-0 w-full relative rounded-none p-0 border-b border-gray-200 overflow-x-auto scrollbar-hide",
                   cursor: "w-full bg-gray-900",
-                  tab: "max-w-fit px-4 py-4 h-auto text-sm font-medium",
+                  tab: "max-w-fit px-2 sm:px-4 py-3 sm:py-4 h-auto text-xs sm:text-sm font-medium flex-shrink-0",
                   tabContent: "group-data-[selected=true]:text-gray-900 whitespace-nowrap transition-colors duration-200"
                 }}
               >
@@ -382,14 +384,14 @@ export default function InventoryManager() {
                     <Tab
                       key={tab.id}
                       title={
-                        <div className="flex items-center gap-2 px-2">
-                          <Icon className="w-4 h-4 flex-shrink-0" />
-                          <span className="font-medium hidden sm:inline">{tab.label}</span>
-                          <span className="font-medium sm:hidden">{tab.label.split(' ')[0]}</span>
+                        <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2">
+                          <Icon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span className="font-medium text-xs sm:text-sm hidden xs:inline">{tab.label}</span>
+                          <span className="font-medium text-xs xs:hidden">{tab.label.split(' ')[0]}</span>
                         </div>
                       }
                     >
-                      <div className="p-6 min-h-[400px]">
+                      <div className="p-3 sm:p-6 min-h-[300px] sm:min-h-[400px]">
                         {tab.component}
                       </div>
                     </Tab>

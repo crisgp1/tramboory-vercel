@@ -35,6 +35,7 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { useState } from "react";
 import SupplierNotificationCenter from "./SupplierNotificationCenter";
+import SupplierPenaltyDisplay from "./SupplierPenaltyDisplay";
 
 interface SupplierDashboardProps {
   dashboardData?: {
@@ -420,6 +421,12 @@ export default function SupplierDashboardUber({ dashboardData }: SupplierDashboa
 
           {/* Panel de rendimiento */}
           <div>
+            {/* Penalizaciones */}
+            <SupplierPenaltyDisplay 
+              supplierId={dashboardData.supplier._id} 
+              className="mb-4"
+            />
+            
             <Card className="bg-white border-0 shadow-sm">
               <CardBody className="p-6">
                 <h2 className="text-xl font-bold mb-4">Tu Rendimiento</h2>

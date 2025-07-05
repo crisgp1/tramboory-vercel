@@ -36,6 +36,7 @@ import { Avatar } from "@heroui/react"
 import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid"
 import { useRole } from "@/hooks/useRole"
 import SupplierModal from "./SupplierModal"
+import SupplierPenaltyModal from "./SupplierPenaltyModal"
 import toast from "react-hot-toast"
 
 interface Supplier {
@@ -72,6 +73,12 @@ interface Supplier {
   userImageUrl?: string
   userFullName?: string
   isFromDb: boolean  // true = supplier completo, false = solo usuario proveedor
+  // Campos de penalizaciones
+  penaltyData?: {
+    totalPoints: number
+    activePenalties: number
+    lastPenaltyDate?: string
+  }
 }
 
 export default function SupplierManager() {
@@ -86,6 +93,7 @@ export default function SupplierManager() {
   
   const { isOpen: isSupplierModalOpen, onOpen: onSupplierModalOpen, onClose: onSupplierModalClose } = useDisclosure()
   const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure()
+  const { isOpen: isPenaltyModalOpen, onOpen: onPenaltyModalOpen, onClose: onPenaltyModalClose } = useDisclosure()
 
   const itemsPerPage = 10
 
@@ -136,6 +144,11 @@ export default function SupplierManager() {
   const handleDeleteSupplier = (supplier: Supplier) => {
     setSelectedSupplier(supplier)
     onDeleteModalOpen()
+  }
+
+  const handleApplyPenalty = (supplier: Supplier) => {
+    setSelectedSupplier(supplier)
+    onPenaltyModalOpen()
   }
 
   const confirmDelete = async () => {
@@ -281,6 +294,22 @@ export default function SupplierManager() {
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-gray-900">{item.name}</p>
                           
+                          {/* Indicador de penalizaciones */}
+                          {item.penaltyData && item.penaltyData.totalPoints > 0 && (
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              color={
+                                item.penaltyData.totalPoints > 50 ? 'danger' :
+                                item.penaltyData.totalPoints > 30 ? 'warning' :
+                                'default'
+                              }
+                              startContent={<ExclamationTriangleIcon className="w-3 h-3" />}
+                            >
+                              {item.penaltyData.totalPoints} pts
+                            </Chip>
+                          )}
+                          
                           {/* Indicador de estado */}
                           {!item.isFromDb && (
                             <Chip
@@ -358,6 +387,18 @@ export default function SupplierManager() {
                             <PencilIcon className="w-4 h-4" />
                           </Button>
                           
+                          {/* Botón Aplicar Castigo */}
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            color="warning"
+                            onPress={() => handleApplyPenalty(item)}
+                            title="Aplicar castigo"
+                          >
+                            <ExclamationTriangleIcon className="w-4 h-4" />
+                          </Button>
+                          
                           {/* Solo permitir eliminar proveedores completos de la DB */}
                           {item.isFromDb && (
                             <Button
@@ -406,6 +447,17 @@ export default function SupplierManager() {
           onSuccess={fetchSuppliers}
         />
       )}
+
+      {/* Modal de castigo */}
+      <SupplierPenaltyModal
+        isOpen={isPenaltyModalOpen}
+        onClose={onPenaltyModalClose}
+        supplier={selectedSupplier}
+        onSuccess={() => {
+          fetchSuppliers()
+          toast.success('Castigo aplicado correctamente')
+        }}
+      />
 
       {/* Modal de confirmación de eliminación */}
       <Modal

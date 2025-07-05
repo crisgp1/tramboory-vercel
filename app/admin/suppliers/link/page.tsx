@@ -287,7 +287,7 @@ export default function LinkSuppliersPage() {
             width: isMobile ? '100%' : 'auto',
             textAlign: isMobile ? 'center' : 'left'
           }}>
-            {isMobile ? 'Vincular Usuarios' : 'Gestor de Proveedores - Vincular Usuarios'}
+            {isMobile ? 'Vincular Usuarios Surtinet' : 'Gestor de Proveedores - Vincular Usuarios Surtinet'}
           </div>
           
           <button
@@ -551,7 +551,7 @@ export default function LinkSuppliersPage() {
               )
             )}
           </div>
-            )}
+            
           </div>
         </div>
 

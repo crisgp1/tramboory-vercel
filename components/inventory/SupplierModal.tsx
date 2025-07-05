@@ -29,7 +29,8 @@ import {
   StarIcon,
   PencilIcon,
   EyeIcon,
-  PlusIcon
+  PlusIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid'
 import toast from "react-hot-toast"
@@ -63,6 +64,12 @@ interface Supplier {
   totalSpent?: number
   lastOrderDate?: string
   createdAt?: string
+  // Campos de penalizaciones
+  penaltyData?: {
+    totalPoints: number
+    activePenalties: number
+    lastPenaltyDate?: string
+  }
 }
 
 interface ProviderUser {
@@ -739,31 +746,95 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
 
             {/* Estadísticas (solo en modo view) */}
             {mode === 'view' && supplier && (
-              <Card className="border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100">
-                <CardBody className="p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <StarIcon className="w-5 h-5 text-gray-600" />
-                    <h4 className="font-medium text-gray-900">Estadísticas</h4>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="bg-white p-3 rounded-lg border border-gray-200">
-                      <span className="text-gray-600 block text-xs mb-1">Total de Órdenes</span>
-                      <p className="font-bold text-blue-600 text-lg">{supplier.totalOrders || 0}</p>
+              <>
+                <Card className="border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100">
+                  <CardBody className="p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <StarIcon className="w-5 h-5 text-gray-600" />
+                      <h4 className="font-medium text-gray-900">Estadísticas</h4>
                     </div>
-                    <div className="bg-white p-3 rounded-lg border border-gray-200">
-                      <span className="text-gray-600 block text-xs mb-1">Total Gastado</span>
-                      <p className="font-bold text-green-600 text-lg">{formatCurrency(supplier.totalSpent || 0)}</p>
+                    
+                    <div className="space-y-3">
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <span className="text-gray-600 block text-xs mb-1">Total de Órdenes</span>
+                        <p className="font-bold text-blue-600 text-lg">{supplier.totalOrders || 0}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <span className="text-gray-600 block text-xs mb-1">Total Gastado</span>
+                        <p className="font-bold text-green-600 text-lg">{formatCurrency(supplier.totalSpent || 0)}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <span className="text-gray-600 block text-xs mb-1">Última Orden</span>
+                        <p className="font-medium text-gray-900 text-sm">
+                          {supplier.lastOrderDate ? formatDate(supplier.lastOrderDate) : 'Sin órdenes'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="bg-white p-3 rounded-lg border border-gray-200">
-                      <span className="text-gray-600 block text-xs mb-1">Última Orden</span>
-                      <p className="font-medium text-gray-900 text-sm">
-                        {supplier.lastOrderDate ? formatDate(supplier.lastOrderDate) : 'Sin órdenes'}
-                      </p>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
+                  </CardBody>
+                </Card>
+                
+                {/* Información de Penalizaciones */}
+                {supplier.penaltyData && (
+                  <Card className="border border-gray-200">
+                    <CardBody className="p-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <ExclamationTriangleIcon className="w-5 h-5 text-orange-600" />
+                        <h4 className="font-medium text-gray-900">Penalizaciones</h4>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className={`p-3 rounded-lg border ${
+                          supplier.penaltyData.totalPoints > 50 ? 'bg-red-50 border-red-200' :
+                          supplier.penaltyData.totalPoints > 30 ? 'bg-orange-50 border-orange-200' :
+                          supplier.penaltyData.totalPoints > 0 ? 'bg-yellow-50 border-yellow-200' :
+                          'bg-green-50 border-green-200'
+                        }`}>
+                          <span className="text-gray-600 block text-xs mb-1">Puntos Totales</span>
+                          <p className={`font-bold text-lg ${
+                            supplier.penaltyData.totalPoints > 50 ? 'text-red-600' :
+                            supplier.penaltyData.totalPoints > 30 ? 'text-orange-600' :
+                            supplier.penaltyData.totalPoints > 0 ? 'text-yellow-600' :
+                            'text-green-600'
+                          }`}>
+                            {supplier.penaltyData.totalPoints} pts
+                          </p>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                          <span className="text-gray-600 block text-xs mb-1">Penalizaciones Activas</span>
+                          <p className="font-bold text-gray-900">{supplier.penaltyData.activePenalties}</p>
+                        </div>
+                        
+                        {supplier.penaltyData.lastPenaltyDate && (
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                            <span className="text-gray-600 block text-xs mb-1">Última Penalización</span>
+                            <p className="font-medium text-gray-900 text-sm">
+                              {formatDate(supplier.penaltyData.lastPenaltyDate)}
+                            </p>
+                          </div>
+                        )}
+                        
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={
+                            supplier.penaltyData.totalPoints > 50 ? 'danger' :
+                            supplier.penaltyData.totalPoints > 30 ? 'warning' :
+                            supplier.penaltyData.totalPoints > 0 ? 'default' :
+                            'success'
+                          }
+                          className="w-full text-center"
+                        >
+                          {supplier.penaltyData.totalPoints > 50 ? 'Riesgo Alto' :
+                           supplier.penaltyData.totalPoints > 30 ? 'Riesgo Medio' :
+                           supplier.penaltyData.totalPoints > 0 ? 'Riesgo Bajo' :
+                           'Sin Riesgo'}
+                        </Chip>
+                      </div>
+                    </CardBody>
+                  </Card>
+                )}
+              </>
             )}
           </div>
         </ModalBody>

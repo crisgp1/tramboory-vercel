@@ -181,30 +181,35 @@ export default function ProductManager() {
   ]
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden space-y-4">
-      {/* Header y controles - Ultra Responsive */}
-      <div className="w-full grid grid-cols-1 sm:flex sm:flex-row gap-2 sm:items-center justify-between">
-        <div className="w-full sm:max-w-xs">
+    <div className="w-full space-y-3 sm:space-y-4">
+      {/* Header y controles - Mobile-first responsive */}
+      <div className="flex flex-col xs:flex-row gap-2 xs:items-center xs:justify-between">
+        <div className="w-full xs:flex-1 xs:max-w-xs">
           <Input
             placeholder="Buscar productos..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            startContent={<MagnifyingGlassIcon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 text-gray-400" />}
+            startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
             className="w-full"
             size="sm"
+            variant="flat"
+            classNames={{
+              input: "text-gray-900 text-sm",
+              inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900 h-10"
+            }}
           />
         </div>
         
-        <div className="w-full sm:w-auto">
+        <div className="w-full xs:w-auto">
           {(isAdmin || isGerente) && (
             <Button
               color="primary"
-              startContent={<PlusIcon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />}
+              startContent={<PlusIcon className="w-4 h-4" />}
               onPress={handleCreateProduct}
-              className="w-full sm:w-auto"
+              className="w-full xs:w-auto bg-blue-600 hover:bg-blue-700 font-medium"
               size="sm"
             >
-              <span className="text-xs sm:text-sm">Nuevo Producto</span>
+              <span className="text-sm">Nuevo Producto</span>
             </Button>
           )}
         </div>
@@ -344,27 +349,27 @@ export default function ProductManager() {
         </CardBody>
       </Card>
 
-      {/* Vista Mobile - Cards */}
+      {/* Vista Mobile - Cards optimizada */}
       <div className="w-full lg:hidden">
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <Spinner label="Cargando productos..." />
+          <div className="flex justify-center items-center py-8 sm:py-12">
+            <Spinner label="Cargando productos..." size="sm" />
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-12">
-            <CubeIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No se encontraron productos</p>
+          <div className="text-center py-8 sm:py-12">
+            <CubeIcon className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 text-sm sm:text-base">No se encontraron productos</p>
           </div>
         ) : (
-          <div className="w-full space-y-3">
+          <div className="space-y-3">
             {products.map((item) => (
-              <Card key={item._id} className="w-full border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                <CardBody className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="min-w-0 flex-1 pr-2">
-                      <p className="font-medium text-gray-900 text-sm truncate">{item.name}</p>
+              <Card key={item._id} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                <CardBody className="p-3 sm:p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <p className="font-medium text-gray-900 text-sm sm:text-base leading-tight truncate">{item.name}</p>
                       {item.description && (
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs sm:text-sm text-gray-500 leading-tight truncate mt-1">
                           {item.description}
                         </p>
                       )}
@@ -373,56 +378,65 @@ export default function ProductManager() {
                       size="sm"
                       variant="flat"
                       color={item.isActive ? 'success' : 'danger'}
+                      className="text-xs px-2 py-1 flex-shrink-0"
                     >
                       {item.isActive ? 'Activo' : 'Inactivo'}
                     </Chip>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div className="p-1.5 bg-gray-50 rounded text-xs">
-                      <p className="text-xs text-gray-500 truncate">SKU</p>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="p-2 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">SKU</p>
                       <p className="font-mono font-medium text-xs truncate">{item.sku}</p>
                     </div>
-                    <div className="p-1.5 bg-gray-50 rounded text-xs">
-                      <p className="text-xs text-gray-500 truncate">Categoría</p>
+                    <div className="p-2 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Categoría</p>
                       <Chip
                         size="sm"
                         variant="flat"
                         color={getCategoryColor(item.category) as any}
+                        className="text-xs px-2 py-1"
                       >
-                        {item.category}
+                        {item.category.length > 12 ? item.category.slice(0, 12) + '...' : item.category}
                       </Chip>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div className="p-1.5 bg-gray-50 rounded text-xs">
-                      <p className="text-xs text-gray-500 truncate">Unidad Base</p>
-                      <p className="truncate">{item.units.base.name} ({item.units.base.code})</p>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="p-2 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Unidad Base</p>
+                      <p className="text-xs truncate">{item.units.base.name} ({item.units.base.code})</p>
                     </div>
-                    <div className="p-1.5 bg-gray-50 rounded text-xs">
-                      <p className="text-xs text-gray-500 truncate">Stock Mínimo</p>
-                      <p className="truncate">{item.stockLevels.minimum} {item.stockLevels.unit}</p>
+                    <div className="p-2 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">Stock Mínimo</p>
+                      <p className="text-xs truncate">{item.stockLevels.minimum} {item.stockLevels.unit}</p>
                     </div>
                   </div>
                   
-                  <div className="p-1.5 bg-gray-50 rounded text-xs mb-3">
-                    <p className="text-xs text-gray-500 truncate">Proveedores</p>
-                    <p className="truncate">
+                  <div className="p-2 bg-gray-50 rounded-lg mb-3">
+                    <p className="text-xs text-gray-500 mb-1">Proveedores</p>
+                    <p className="text-xs truncate">
                       {item.suppliers.length} proveedor(es)
-                      {item.suppliers.length > 0 && `, preferido: ${item.suppliers.find(s => s.isPreferred)?.supplierName || 'N/A'}`}
+                      {item.suppliers.length > 0 && (
+                        <span className="text-gray-600">
+                          {', preferido: '}
+                          <span className="font-medium">
+                            {item.suppliers.find(s => s.isPreferred)?.supplierName || 'N/A'}
+                          </span>
+                        </span>
+                      )}
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className="flex gap-1">
                     <Button
                       size="sm"
                       variant="light"
                       onPress={() => handleViewProduct(item)}
-                      className="col-span-1"
-                      startContent={<EyeIcon className="w-3 h-3 flex-shrink-0" />}
+                      className="flex-1 text-xs sm:text-sm"
+                      startContent={<EyeIcon className="w-3 h-3 sm:w-4 sm:h-4" />}
                     >
-                      <span className="text-xs truncate">Ver</span>
+                      Ver
                     </Button>
                     
                     {(isAdmin || isGerente) && (
@@ -432,20 +446,21 @@ export default function ProductManager() {
                           variant="light"
                           color="primary"
                           onPress={() => handleEditProduct(item)}
-                          className="col-span-1"
-                          startContent={<PencilIcon className="w-3 h-3 flex-shrink-0" />}
+                          className="flex-1 text-xs sm:text-sm"
+                          startContent={<PencilIcon className="w-3 h-3 sm:w-4 sm:h-4" />}
                         >
-                          <span className="text-xs truncate">Editar</span>
+                          <span className="hidden xs:inline">Editar</span>
+                          <span className="xs:hidden">Edit</span>
                         </Button>
                         <Button
                           size="sm"
                           variant="light"
                           color="danger"
                           onPress={() => handleDeleteProduct(item)}
-                          className="col-span-1"
                           isIconOnly
+                          className="min-w-[2rem] h-8"
                         >
-                          <TrashIcon className="w-3 h-3 flex-shrink-0" />
+                          <TrashIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                       </>
                     )}
@@ -467,6 +482,11 @@ export default function ProductManager() {
               showShadow
               color="primary"
               size="sm"
+              classNames={{
+                wrapper: "gap-0 overflow-visible h-8",
+                item: "w-7 h-7 sm:w-8 sm:h-8 text-xs sm:text-small rounded-none bg-transparent",
+                cursor: "bg-blue-600 shadow-lg from-blue-600 to-blue-600 text-white font-bold"
+              }}
             />
           </div>
         )}

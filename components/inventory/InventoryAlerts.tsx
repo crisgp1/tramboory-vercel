@@ -118,17 +118,17 @@ export default function InventoryAlerts() {
   return (
     <>
       <Card className="border-l-4 border-l-orange-500 bg-orange-50 border border-orange-200">
-        <CardBody className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                <ExclamationTriangleIcon className="w-4 h-4 text-orange-600" />
+        <CardBody className="p-3 sm:p-4">
+          <div className="flex flex-col xs:flex-row xs:items-center gap-3 xs:justify-between">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <ExclamationTriangleIcon className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600" />
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-orange-900">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm sm:text-base font-semibold text-orange-900 leading-tight">
                   Alertas de Inventario ({alerts.length})
                 </h3>
-                <p className="text-xs text-orange-700">
+                <p className="text-xs sm:text-sm text-orange-700 leading-tight">
                   Productos que requieren atención inmediata
                 </p>
               </div>
@@ -136,61 +136,65 @@ export default function InventoryAlerts() {
             <Button
               size="sm"
               variant="light"
-              className="text-orange-700 hover:bg-orange-100"
+              className="text-orange-700 hover:bg-orange-100 w-full xs:w-auto font-medium"
               onPress={() => handleViewAlert(alerts[0])}
             >
               Ver Todas
             </Button>
           </div>
 
-          {/* Lista de alertas críticas */}
-          <div className="mt-4 space-y-2">
+          {/* Lista de alertas críticas - Mobile-first */}
+          <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
             {alerts.slice(0, 3).map((alert) => (
               <div
                 key={alert._id?.toString()}
-                className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-200"
+                className="flex items-start sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white rounded-lg border border-orange-200"
               >
-                <div className="flex items-center gap-3">
-                  <div className="text-orange-600">
+                <div className="text-orange-600 flex-shrink-0 mt-1 sm:mt-0">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5">
                     {getTypeIcon(alert.type)}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      {alert.message}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Chip
-                        size="sm"
-                        variant="flat"
-                        color={getPriorityColor(alert.priority)}
-                        className="text-xs"
-                      >
-                        {getTypeLabel(alert.type)}
-                      </Chip>
-                      <span className="text-xs text-gray-500">
-                        {new Date(alert.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 leading-tight">
+                    {alert.message}
+                  </p>
+                  <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mt-1">
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={getPriorityColor(alert.priority)}
+                      className="text-xs px-2 py-1 self-start"
+                    >
+                      {getTypeLabel(alert.type)}
+                    </Chip>
+                    <span className="text-xs text-gray-500">
+                      {new Date(alert.createdAt).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: '2-digit'
+                      })}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-col xs:flex-row items-center gap-1 flex-shrink-0">
                   <Button
                     isIconOnly
                     size="sm"
                     variant="light"
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-gray-500 hover:text-gray-700 min-w-[2rem] h-8"
                     onPress={() => handleViewAlert(alert)}
                   >
-                    <EyeIcon className="w-4 h-4" />
+                    <EyeIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                   <Button
                     isIconOnly
                     size="sm"
                     variant="light"
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-gray-500 hover:text-gray-700 min-w-[2rem] h-8"
                     onPress={() => handleDismissAlert(alert._id?.toString() || '')}
                   >
-                    <XMarkIcon className="w-4 h-4" />
+                    <XMarkIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
               </div>
@@ -300,8 +304,8 @@ export default function InventoryAlerts() {
                   </CardBody>
                 </Card>
                 
-                {/* Información de la alerta */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Información de la alerta - Responsive grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <ClockIcon className="w-4 h-4 text-gray-500" />
@@ -338,13 +342,13 @@ export default function InventoryAlerts() {
                   </div>
                 </div>
 
-                {/* Información adicional */}
+                {/* Información adicional - Mobile optimized */}
                 {selectedAlert.metadata && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">Información Adicional</label>
                     <Card className="border border-gray-200">
-                      <CardBody className="p-4">
-                        <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono bg-gray-50 p-3 rounded border overflow-x-auto">
+                      <CardBody className="p-3 sm:p-4">
+                        <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono bg-gray-50 p-2 sm:p-3 rounded border overflow-x-auto">
                           {JSON.stringify(selectedAlert.metadata, null, 2)}
                         </pre>
                       </CardBody>
