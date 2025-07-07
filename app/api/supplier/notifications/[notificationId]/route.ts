@@ -3,9 +3,10 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { notificationId: string } }
+  context: { params: Promise<{ notificationId: string }> }
 ) {
   try {
+    const params = await context.params;
     const { userId } = await auth();
     
     if (!userId) {

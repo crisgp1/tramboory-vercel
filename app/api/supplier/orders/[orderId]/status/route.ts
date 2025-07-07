@@ -6,9 +6,10 @@ import { PurchaseOrderStatus } from "@/types/inventory";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  context: { params: Promise<{ orderId: string }> }
 ) {
   try {
+    const params = await context.params;
     const { userId } = await auth();
     
     if (!userId) {

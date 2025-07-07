@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     }
 
     const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + expirationDays[severity])
+    expiresAt.setDate(expiresAt.getDate() + expirationDays[severity as keyof typeof expirationDays])
     penalty.expiresAt = expiresAt
 
     const result = await PenaltyModel.create(penalty)
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
       action: 'PENALTY_APPLIED',
       supplierId,
       supplierName,
-      penaltyId: result._id.toString(),
+      penaltyId: (result._id as any).toString(),
       concept,
       severity,
       points: penaltyValue,

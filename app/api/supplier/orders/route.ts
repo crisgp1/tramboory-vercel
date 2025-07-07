@@ -28,12 +28,12 @@ export async function GET(request: NextRequest) {
 
     // Transform the orders to match the expected format
     const transformedOrders = orders.map(order => ({
-      _id: order._id.toString(),
+      _id: (order._id as any).toString(),
       purchaseOrderId: order.purchaseOrderId,
       status: order.status,
       createdAt: order.createdAt.toISOString(),
       expectedDeliveryDate: order.expectedDeliveryDate?.toISOString(),
-      items: order.items.map(item => ({
+      items: order.items.map((item: any) => ({
         productId: item.productId,
         productName: item.productName || "Producto",
         quantity: item.quantity,

@@ -15,6 +15,10 @@ export async function GET(request: NextRequest) {
 
     const { db } = await connectToDatabase()
     
+    if (!db) {
+      return NextResponse.json({ error: "Error de conexión a la base de datos" }, { status: 500 })
+    }
+    
     // Calcular fechas según el rango
     const now = new Date()
     let startDate = new Date()

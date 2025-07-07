@@ -9,8 +9,9 @@ import { UserRole } from "@/lib/roles"
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   try {
     // Verificar autenticación y roles
     const { userId } = await auth()
@@ -60,8 +61,9 @@ export async function GET(
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   try {
     // Verificar autenticación y roles
     const { userId } = await auth()

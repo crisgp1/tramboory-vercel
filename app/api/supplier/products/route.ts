@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
 
     // Transform the data
     const transformedProducts = products.map(product => {
-      const supplierData = product.suppliers.find(s => s.supplierId === supplierId);
+      const supplierData = product.suppliers.find((s: any) => s.supplierId === supplierId);
       
       return {
         _id: product._id.toString(),

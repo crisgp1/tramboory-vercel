@@ -42,12 +42,12 @@ export async function GET(request: NextRequest) {
 
     // Obtener proveedores ya vinculados
     const linkedSuppliers = await Supplier.find({
-      userId: { $ne: null, $exists: true, $ne: "" }
+      userId: { $exists: true, $ne: null, $nin: ["", null] }
     }).lean();
 
     const response = {
       unlinkedSuppliers: unlinkedSuppliers.map(s => ({
-        id: s._id.toString(),
+        id: (s._id as any).toString(),
         supplierId: s.supplierId,
         name: s.name,
         code: s.code,

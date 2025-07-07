@@ -30,8 +30,9 @@ const PenaltyModel = models.SupplierPenalty || model('SupplierPenalty', Supplier
 // GET - Obtener penalización específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -66,8 +67,9 @@ export async function GET(
 // PUT - Actualizar penalización
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -136,8 +138,9 @@ export async function PUT(
 // DELETE - Eliminar/Revertir penalización
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   try {
     const { userId } = await auth()
     if (!userId) {

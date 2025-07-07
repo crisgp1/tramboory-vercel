@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         role: userRole
       },
       allSuppliers: allSuppliers.map(s => ({
-        id: s._id.toString(),
+        id: (s._id as any).toString(),
         name: s.name,
         code: s.code,
         userId: s.userId,
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         role: (u.publicMetadata?.role as string) || "customer"
       })),
       mySupplier: mySupplier ? {
-        id: mySupplier._id.toString(),
+        id: (mySupplier._id as any).toString(),
         name: mySupplier.name,
         code: mySupplier.code,
         userId: mySupplier.userId,

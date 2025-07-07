@@ -63,7 +63,7 @@ async function getTopProducts(locationId?: string, limit: number = 5) {
     
     return results.map(item => ({
       productName: item.product.name,
-      sku: item.product.sku || item.product._id.toString().slice(-8),
+      sku: item.product.sku || (item.product._id as any).toString().slice(-8),
       totalMovements: item.totalMovements,
       currentStock: item.inventory[0]?.totals?.available || 0,
       value: (item.inventory[0]?.totals?.available || 0) * (item.product.cost || 0)

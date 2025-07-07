@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       
       allSuppliers.push({
         ...dbSupplier,
-        _id: dbSupplier._id.toString(),
+        _id: dbSupplier._id?.toString() || '',
         // Si hay usuario vinculado, actualizar con datos de Clerk
         ...(linkedUser && {
           contactInfo: {
@@ -154,10 +154,10 @@ export async function GET(request: NextRequest) {
     if (search) {
       const searchLower = search.toLowerCase();
       filteredSuppliers = allSuppliers.filter(supplier => 
-        supplier.name.toLowerCase().includes(searchLower) ||
-        supplier.code.toLowerCase().includes(searchLower) ||
+        supplier.name?.toLowerCase().includes(searchLower) ||
+        supplier.code?.toLowerCase().includes(searchLower) ||
         (supplier.description && supplier.description.toLowerCase().includes(searchLower)) ||
-        supplier.contactInfo.email.toLowerCase().includes(searchLower)
+        supplier.contactInfo?.email?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -173,8 +173,8 @@ export async function GET(request: NextRequest) {
       
       // Manejar campos anidados
       if (sortBy === 'email') {
-        aValue = a.contactInfo.email;
-        bValue = b.contactInfo.email;
+        aValue = a.contactInfo?.email || '';
+        bValue = b.contactInfo?.email || '';
       }
       
       if (typeof aValue === 'string' && typeof bValue === 'string') {

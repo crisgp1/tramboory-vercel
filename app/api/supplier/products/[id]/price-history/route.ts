@@ -10,9 +10,10 @@ import { ObjectId } from "mongodb";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     await dbConnect();
     const connection = await dbConnect();
     if (!connection || !connection.connection || !connection.connection.db) {
