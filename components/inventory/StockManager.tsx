@@ -5,12 +5,6 @@ import {
   Card, 
   CardBody, 
   Button, 
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
   Input,
   Select,
   SelectItem,
@@ -21,8 +15,8 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-  Pagination,
-  Spinner
+  Spinner,
+  Pagination
 } from "@heroui/react"
 import {
   MagnifyingGlassIcon,
@@ -44,6 +38,8 @@ import { useRole } from "@/hooks/useRole"
 import StockModal from "./StockModal"
 import InitiateMovementModal from "./InitiateMovementModal"
 import InventoryFilters from "./InventoryFilters"
+import NordicTable from "@/components/ui/NordicTable"
+import ProductsWithoutMovementsModal from "@/components/supplier/ProductsWithoutMovementsModal"
 
 interface Product {
   _id: string
@@ -90,7 +86,7 @@ interface StockItem {
 }
 
 export default function StockManager() {
-  const { role, isAdmin, isGerente } = useRole()
+  const { isAdmin, isGerente } = useRole()
   const [stockItems, setStockItems] = useState<StockItem[]>([])
   const [productsWithoutInventory, setProductsWithoutInventory] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -106,6 +102,7 @@ export default function StockManager() {
   const { isOpen: isFiltersOpen, onOpen: onFiltersOpen, onClose: onFiltersClose } = useDisclosure()
   const { isOpen: isDetailModalOpen, onOpen: onDetailModalOpen, onClose: onDetailModalClose } = useDisclosure()
   const { isOpen: isInitiateModalOpen, onOpen: onInitiateModalOpen, onClose: onInitiateModalClose } = useDisclosure()
+  const { isOpen: isProductsWithoutMovementsModalOpen, onOpen: onProductsWithoutMovementsModalOpen, onClose: onProductsWithoutMovementsModalClose } = useDisclosure()
 
   const itemsPerPage = 10
 
@@ -128,7 +125,7 @@ export default function StockManager() {
       const stockResponse = await fetch(`/api/inventory/stock?${params}`)
       
       // NUEVA: Obtener productos sin registros de inventario
-      const productsResponse = await fetch(`/api/inventory/products/without-inventory`)
+      const productsResponse = await fetch(`/api/inventory/products?withoutMovements=true&limit=1000`)
       
       if (stockResponse.ok && productsResponse.ok) {
         const stockData = await stockResponse.json()
@@ -149,7 +146,7 @@ export default function StockManager() {
     }
   }
 
-  const handleStockAction = (action: string, stockItem: StockItem) => {
+  const handleStockAction = (_action: string, stockItem: StockItem) => {
     setSelectedStock(stockItem)
     onStockModalOpen()
   }
@@ -183,15 +180,123 @@ export default function StockManager() {
   }
 
   const columns = [
-    { key: "product", label: "PRODUCTO" },
-    { key: "sku", label: "SKU" },
-    { key: "location", label: "UBICACIÓN" },
-    { key: "available", label: "DISPONIBLE" },
-    { key: "reserved", label: "RESERVADO" },
-    { key: "status", label: "ESTADO" },
-    { key: "lastMovement", label: "ÚLTIMO MOVIMIENTO" },
-    { key: "actions", label: "ACCIONES" }
+    { key: "product", label: "Producto" },
+    { key: "sku", label: "SKU", width: "w-32" },
+    { key: "location", label: "Ubicación", width: "w-28" },
+    { key: "available", label: "Disponible", width: "w-24", align: "right" as const },
+    { key: "reserved", label: "Reservado", width: "w-24", align: "right" as const },
+    { key: "status", label: "Estado", width: "w-28", align: "center" as const },
+    { key: "lastMovement", label: "Último Movimiento", width: "w-36" }
   ]
+
+  const actions = [
+    {
+      key: "view",
+      label: "Ver detalles",
+      icon: <EyeIcon className="w-4 h-4" />,
+      onClick: handleViewDetails
+    },
+    ...(isAdmin || isGerente ? [
+      {
+        key: "stock_in",
+        label: "Entrada",
+        icon: <ArrowUpIcon className="w-4 h-4" />,
+        color: "primary" as const,
+        onClick: (item: StockItem) => handleStockAction('in', item)
+      },
+      {
+        key: "stock_out",
+        label: "Salida",
+        icon: <ArrowDownIcon className="w-4 h-4" />,
+        color: "warning" as const,
+        onClick: (item: StockItem) => handleStockAction('out', item)
+      },
+      {
+        key: "transfer",
+        label: "Transferir",
+        icon: <ArrowsRightLeftIcon className="w-4 h-4" />,
+        onClick: (item: StockItem) => handleStockAction('transfer', item)
+      }
+    ] : [])
+  ]
+
+  const renderCell = (item: StockItem, columnKey: string) => {
+    switch (columnKey) {
+      case "product": {
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <CubeIcon className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">{item.productId.name}</p>
+              <p className="text-sm text-gray-500">{item.productId.category}</p>
+            </div>
+          </div>
+        )
+      }
+      case "sku": {
+        return (
+          <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+            {item.productId.sku}
+          </span>
+        )
+      }
+      case "location": {
+        return (
+          <div className="flex items-center gap-2">
+            <MapPinIcon className="w-4 h-4 text-gray-400" />
+            <span className="text-sm">{item.locationId}</span>
+          </div>
+        )
+      }
+      case "available": {
+        return (
+          <div className="text-sm text-right">
+            <span className="font-semibold text-green-600">{item.totals.available}</span>
+            <span className="text-gray-500 ml-1">{item.totals.unit}</span>
+          </div>
+        )
+      }
+      case "reserved": {
+        return (
+          <div className="text-sm text-right">
+            <span className="font-semibold text-orange-600">{item.totals.reserved}</span>
+            <span className="text-gray-500 ml-1">{item.totals.unit}</span>
+          </div>
+        )
+      }
+      case "status": {
+        const stockStatus = getStockStatus(item)
+        return (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={stockStatus.color as any}
+            className="font-medium"
+          >
+            {stockStatus.label}
+          </Chip>
+        )
+      }
+      case "lastMovement": {
+        return item.lastMovement ? (
+          <div className="text-sm">
+            <p className="font-medium">{item.lastMovement.type}</p>
+            <p className="text-gray-500 flex items-center gap-1">
+              <ClockIcon className="w-3 h-3" />
+              {formatDate(item.lastMovement.date)}
+            </p>
+          </div>
+        ) : (
+          <span className="text-gray-400">Sin movimientos</span>
+        )
+      }
+      default: {
+        return null
+      }
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -201,7 +306,7 @@ export default function StockManager() {
           <Input
             placeholder="Buscar productos..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
             startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
             className="w-full"
             variant="flat"
@@ -222,6 +327,24 @@ export default function StockManager() {
           >
             Filtros
           </Button>
+          
+          {productsWithoutInventory.length > 0 && (
+            <div className="relative">
+              <Button
+                color="danger"
+                variant="solid"
+                startContent={<CubeIcon className="w-4 h-4" />}
+                onPress={onProductsWithoutMovementsModalOpen}
+                size="sm"
+                className="animate-pulse shadow-lg flex-1 sm:flex-none min-w-[160px]"
+              >
+                <span className="font-semibold">
+                  {productsWithoutInventory.length} Sin Movimientos
+                </span>
+              </Button>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+            </div>
+          )}
           
           {(isAdmin || isGerente) && (
             <Button
@@ -244,7 +367,7 @@ export default function StockManager() {
           <Select
             placeholder="Todas"
             selectedKeys={selectedLocation !== 'all' ? [selectedLocation] : []}
-            onSelectionChange={(keys) => setSelectedLocation(Array.from(keys)[0] as string || 'all')}
+            onSelectionChange={(keys: any) => setSelectedLocation(Array.from(keys)[0] as string || 'all')}
             size="sm"
             className="min-w-[120px]"
             variant="flat"
@@ -265,7 +388,7 @@ export default function StockManager() {
           <Select
             placeholder="Todas"
             selectedKeys={selectedCategory !== 'all' ? [selectedCategory] : []}
-            onSelectionChange={(keys) => setSelectedCategory(Array.from(keys)[0] as string || 'all')}
+            onSelectionChange={(keys: any) => setSelectedCategory(Array.from(keys)[0] as string || 'all')}
             size="sm"
             className="min-w-[120px]"
             variant="flat"
@@ -289,189 +412,28 @@ export default function StockManager() {
         </div>
       </div>
 
-      {/* Productos sin inventario - Antes de la tabla principal */}
-      {productsWithoutInventory.length > 0 && (
-        <Card className="border border-orange-200 bg-orange-50 mb-6">
-          <CardBody className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <CubeIcon className="w-5 h-5 text-orange-600" />
-              <h4 className="font-medium text-orange-900">Productos sin Movimientos de Inventario</h4>
-              <Chip size="sm" variant="flat" color="warning">
-                {productsWithoutInventory.length} productos
-              </Chip>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {productsWithoutInventory.map((product) => (
-                <Card key={product._id} className="border border-orange-200 bg-white">
-                  <CardBody className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex-1">
-                        <h5 className="font-medium text-gray-900 truncate">{product.name}</h5>
-                        <p className="text-sm text-gray-500">{product.category}</p>
-                        <Chip size="sm" variant="flat" color="primary" className="mt-1">
-                          {product.sku}
-                        </Chip>
-                      </div>
-                    </div>
-                    
-                    <Button
-                      color="warning"
-                      variant="solid"
-                      size="sm"
-                      className="w-full"
-                      startContent={<PlusIcon className="w-4 h-4" />}
-                      onPress={() => handleInitiateMovement(product)}
-                    >
-                      Iniciar Movimientos
-                    </Button>
-                  </CardBody>
-                </Card>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      )}
 
-      {/* Vista responsiva - Desktop: Tabla, Mobile: Cards */}
-      <Card className="border border-gray-200 shadow-sm">
-        <CardBody className="p-0">
-          {/* Vista Desktop - Tabla */}
-          <div className="hidden lg:block">
-            <Table
-              aria-label="Tabla de inventario"
-              classNames={{
-                wrapper: "min-h-[400px]",
-                th: "bg-gray-50 text-gray-700 font-medium text-xs uppercase tracking-wide",
-                td: "py-4"
-              }}
-            >
-              <TableHeader columns={columns}>
-                {(column) => (
-                  <TableColumn key={column.key} className="bg-gray-50 text-gray-700 font-medium">
-                    {column.label}
-                  </TableColumn>
-                )}
-              </TableHeader>
-              <TableBody
-                items={stockItems}
-                isLoading={loading}
-                loadingContent={<Spinner label="Cargando inventario..." />}
-                emptyContent="No se encontraron productos en inventario"
-              >
-                {(item) => (
-                  <TableRow key={item._id} className="hover:bg-gray-50 transition-colors">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <CubeIcon className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{item.productId.name}</p>
-                          <p className="text-sm text-gray-500">{item.productId.category}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{item.productId.sku}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <MapPinIcon className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">{item.locationId}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <span className="font-semibold text-green-600">{item.totals.available}</span>
-                        <span className="text-gray-500 ml-1">{item.totals.unit}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <span className="font-semibold text-orange-600">{item.totals.reserved}</span>
-                        <span className="text-gray-500 ml-1">{item.totals.unit}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        size="sm"
-                        variant="flat"
-                        color={getStockStatus(item).color as any}
-                        className="font-medium"
-                      >
-                        {getStockStatus(item).label}
-                      </Chip>
-                    </TableCell>
-                    <TableCell>
-                      {item.lastMovement ? (
-                        <div className="text-sm">
-                          <p className="font-medium">{item.lastMovement.type}</p>
-                          <p className="text-gray-500 flex items-center gap-1">
-                            <ClockIcon className="w-3 h-3" />
-                            {formatDate(item.lastMovement.date)}
-                          </p>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">Sin movimientos</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          isIconOnly
-                          size="sm"
-                          variant="light"
-                          onPress={() => handleViewDetails(item)}
-                          className="hover:bg-gray-100"
-                        >
-                          <EyeIcon className="w-4 h-4" />
-                        </Button>
-                        
-                        {(isAdmin || isGerente) && (
-                          <>
-                            <Button
-                              isIconOnly
-                              size="sm"
-                              variant="light"
-                              color="success"
-                              onPress={() => handleStockAction('in', item)}
-                              className="hover:bg-green-50"
-                            >
-                              <ArrowUpIcon className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              isIconOnly
-                              size="sm"
-                              variant="light"
-                              color="danger"
-                              onPress={() => handleStockAction('out', item)}
-                              className="hover:bg-red-50"
-                            >
-                              <ArrowDownIcon className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              isIconOnly
-                              size="sm"
-                              variant="light"
-                              color="primary"
-                              onPress={() => handleStockAction('transfer', item)}
-                              className="hover:bg-blue-50"
-                            >
-                              <ArrowsRightLeftIcon className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+      {/* Vista Desktop - Tabla Nordic */}
+      <div className="hidden lg:block">
+        <NordicTable
+          columns={columns}
+          data={stockItems}
+          renderCell={renderCell}
+          actions={actions}
+          loading={loading}
+          emptyMessage="No se encontraron productos en inventario"
+          pagination={totalPages > 1 ? {
+            total: totalPages,
+            current: currentPage,
+            onChange: setCurrentPage
+          } : undefined}
+        />
+      </div>
 
-          {/* Vista Mobile - Cards */}
-          <div className="lg:hidden">
+      {/* Vista Mobile - Cards */}
+      <div className="lg:hidden">
+        <Card className="border border-gray-200">
+          <CardBody className="p-0">
             {loading ? (
               <div className="flex justify-center items-center py-12">
                 <Spinner label="Cargando inventario..." />
@@ -581,29 +543,29 @@ export default function StockManager() {
                 ))}
               </div>
             )}
-          </div>
-          
-          {/* Paginación */}
-          {totalPages > 1 && (
-            <div className="flex justify-center p-4 border-t border-gray-100">
-              <Pagination
-                total={totalPages}
-                page={currentPage}
-                onChange={setCurrentPage}
-                showControls
-                showShadow
-                color="primary"
-                size="sm"
-                classNames={{
-                  wrapper: "gap-0 overflow-visible h-8",
-                  item: "w-8 h-8 text-small rounded-none bg-transparent",
-                  cursor: "bg-blue-600 shadow-lg from-blue-600 to-blue-600 text-white font-bold"
-                }}
-              />
-            </div>
-          )}
-        </CardBody>
-      </Card>
+            
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div className="flex justify-center p-4 border-t border-gray-100">
+                <Pagination
+                  total={totalPages}
+                  page={currentPage}
+                  onChange={setCurrentPage}
+                  showControls
+                  showShadow
+                  color="primary"
+                  size="sm"
+                  classNames={{
+                    wrapper: "gap-0 overflow-visible h-8",
+                    item: "w-8 h-8 text-small rounded-none bg-transparent",
+                    cursor: "bg-blue-600 shadow-lg from-blue-600 to-blue-600 text-white font-bold"
+                  }}
+                />
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      </div>
 
       {/* Modal de filtros */}
       <Modal
@@ -851,6 +813,13 @@ export default function StockManager() {
           }}
         />
       )}
+
+      {/* Modal de productos sin movimientos */}
+      <ProductsWithoutMovementsModal
+        isOpen={isProductsWithoutMovementsModalOpen}
+        onClose={onProductsWithoutMovementsModalClose}
+        onSuccess={fetchStockItems}
+      />
     </div>
   )
 }

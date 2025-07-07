@@ -31,6 +31,7 @@ import {
   MagnifyingGlassIcon
 } from "@heroicons/react/24/outline"
 import { useRole } from "@/hooks/useRole"
+import { useInventoryStats } from "@/hooks/useInventoryStats"
 import ProductManager from "./ProductManager"
 import StockManager from "./StockManager"
 import SupplierManager from "./SupplierManager"
@@ -44,44 +45,46 @@ import StockTransferModal from "./StockTransferModal"
 
 export default function InventoryManager() {
   const { role, isAdmin, isGerente } = useRole()
+  const { totalProducts, lowStockItems, totalValue, suppliersCount, loading: statsLoading } = useInventoryStats()
   const [activeTab, setActiveTab] = useState("stock")
+  const [loading, setLoading] = useState(false)
   
   // Estados para modales
   const [isScannerOpen, setIsScannerOpen] = useState(false)
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
   const [scannerMode, setScannerMode] = useState<'lookup' | 'inventory' | 'receiving'>('lookup')
 
-  // Estadísticas de ejemplo (estas vendrían de la API)
+  // Estadísticas reales del inventario
   const stats = [
     { 
       label: "Productos Totales", 
-      value: "245", 
-      change: "+12", 
-      trend: "up",
+      value: statsLoading ? "..." : totalProducts.toString(), 
+      change: "", 
+      trend: "neutral",
       icon: CubeIcon,
       color: "blue"
     },
     { 
       label: "Stock Bajo", 
-      value: "8", 
-      change: "-3", 
-      trend: "down",
+      value: statsLoading ? "..." : lowStockItems.toString(), 
+      change: "", 
+      trend: lowStockItems > 0 ? "warning" : "neutral",
       icon: ExclamationTriangleIcon,
       color: "warning"
     },
     { 
       label: "Valor Inventario", 
-      value: "$125,430", 
-      change: "+5.2%", 
-      trend: "up",
+      value: statsLoading ? "..." : `$${totalValue.toLocaleString('es-CO', { minimumFractionDigits: 0 })}`, 
+      change: "", 
+      trend: "neutral",
       icon: ChartBarIcon,
       color: "success"
     },
     { 
       label: "Proveedores", 
-      value: "15", 
-      change: "+2", 
-      trend: "up",
+      value: statsLoading ? "..." : suppliersCount.toString(), 
+      change: "", 
+      trend: "neutral",
       icon: TruckIcon,
       color: "purple"
     }
@@ -221,186 +224,104 @@ export default function InventoryManager() {
   ]
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
-      <div className="space-y-3 sm:space-y-6 p-3 sm:p-6">
-        {/* Header Section - Mobile-first design */}
-        <div className="w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-            <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                Gestión de Inventario
-              </h1>
-              <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                Control de materiales, equipos y suministros
-              </p>
-            </div>
-            <div className="flex items-center justify-between sm:justify-end gap-2">
-              <Chip
-                variant="flat"
-                color="primary"
-                size="sm"
-                className="bg-blue-50 text-blue-700 text-xs px-2 py-1"
-              >
-                {filteredTabs.length} secciones
-              </Chip>
-            </div>
-          </div>
+    <div className="space-y-8">
+      {/* Header minimalista */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-medium text-gray-900">
+            Inventario
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Control de materiales, equipos y suministros
+          </p>
         </div>
-        
-        {/* Action Buttons - Mobile-first responsive design */}
-        <div className="w-full flex flex-col xs:flex-row gap-2 sm:gap-3">
-          <Dropdown>
-            <DropdownTrigger>
-              <Button
-                color="primary"
-                size="sm"
-                className="w-full xs:w-auto bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm px-4 py-2"
-                startContent={<PlusIcon className="w-4 h-4" />}
-                endContent={<ChevronDownIcon className="w-4 h-4" />}
-              >
-                <span className="xs:hidden">Crear</span>
-                <span className="hidden xs:inline">Crear Nuevo</span>
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu 
-              aria-label="Acciones rápidas"
-              classNames={{
-                base: "bg-white border border-gray-200 shadow-lg rounded-lg",
-                list: "p-2"
-              }}
-            >
-              {actionMenuItems.map(item => (
-                <DropdownItem
-                  key={item.key}
-                  startContent={item.icon}
-                  onPress={item.action}
-                  className="rounded-md hover:bg-gray-50"
-                >
-                  {item.label}
-                </DropdownItem>
-              ))}
-            </DropdownMenu>
-          </Dropdown>
+        <Button
+          startContent={<PlusIcon className="w-4 h-4" />}
+          onPress={() => setActiveTab("products")}
+          className="bg-gray-900 text-white hover:bg-gray-800 text-sm"
+          size="md"
+        >
+          Nuevo Producto
+        </Button>
+      </div>
 
-          <Dropdown>
-            <DropdownTrigger>
-              <Button
-                variant="bordered"
-                size="sm"
-                className="w-full xs:w-auto bg-white border-gray-300 hover:border-gray-400 text-gray-700 font-medium text-sm px-4 py-2"
-                startContent={<QrCodeIcon className="w-4 h-4" />}
-                endContent={<ChevronDownIcon className="w-4 h-4" />}
-              >
-                <span className="xs:hidden">QR</span>
-                <span className="hidden xs:inline">Escáner QR</span>
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu 
-              aria-label="Opciones de escáner"
-              classNames={{
-                base: "bg-white border border-gray-200 shadow-lg rounded-lg",
-                list: "p-2"
-              }}
-            >
-              {scannerMenuItems.map(item => (
-                <DropdownItem
-                  key={item.key}
-                  description={item.description}
-                  startContent={item.icon}
-                  onPress={item.action}
-                  className="rounded-md hover:bg-gray-50"
-                >
-                  {item.label}
-                </DropdownItem>
-              ))}
-            </DropdownMenu>
-          </Dropdown>
-        </div>
-
-        {/* Alertas de Stock Bajo - Better spacing */}
-        <div className="w-full">
-          <InventoryAlerts />
-        </div>
-
-        {/* Stats Grid - Mobile-first responsive design */}
-        <div className="w-full grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon
-            return (
-              <Card key={index} className="border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
-                <CardBody className="p-3 sm:p-4">
-                  <div className="flex items-start justify-between mb-2 sm:mb-3">
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center ${
-                      stat.color === 'blue' ? 'bg-blue-100' :
-                      stat.color === 'warning' ? 'bg-orange-100' :
-                      stat.color === 'success' ? 'bg-green-100' :
-                      stat.color === 'purple' ? 'bg-purple-100' : 'bg-gray-100'
-                    }`}>
-                      <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                        stat.color === 'blue' ? 'text-blue-600' :
-                        stat.color === 'warning' ? 'text-orange-600' :
-                        stat.color === 'success' ? 'text-green-600' :
-                        stat.color === 'purple' ? 'text-purple-600' : 'text-gray-600'
-                      }`} />
+      {/* Estadísticas minimalistas */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon
+          return (
+            <Card key={index} className="border border-gray-200 shadow-none">
+              <CardBody className="p-3 sm:p-4">
+                <div className="flex items-start sm:items-center gap-2 sm:gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    stat.color === 'blue' ? 'bg-blue-100' :
+                    stat.color === 'warning' ? 'bg-orange-100' :
+                    stat.color === 'success' ? 'bg-green-100' :
+                    stat.color === 'purple' ? 'bg-purple-100' : 'bg-gray-100'
+                  }`}>
+                    <Icon className={`w-4 h-4 ${
+                      stat.color === 'blue' ? 'text-blue-600' :
+                      stat.color === 'warning' ? 'text-orange-600' :
+                      stat.color === 'success' ? 'text-green-600' :
+                      stat.color === 'purple' ? 'text-purple-600' : 'text-gray-600'
+                    }`} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-base sm:text-lg font-medium text-gray-900 truncate">
+                      {stat.value}
                     </div>
-                    <Chip
-                      size="sm"
-                      variant="flat"
-                      color={stat.trend === "up" ? "success" : stat.color === "warning" ? "warning" : "danger"}
-                      className="text-xs font-medium px-2 py-1"
-                    >
-                      {stat.change}
-                    </Chip>
+                    <div className="text-xs text-gray-600 uppercase tracking-wide truncate">
+                      {stat.label}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-lg sm:text-2xl font-bold text-gray-900 mb-1 leading-tight">{stat.value}</p>
-                    <p className="text-xs sm:text-sm font-medium text-gray-600 leading-tight">{stat.label}</p>
-                  </div>
-                </CardBody>
-              </Card>
-            )
-          })}
-        </div>
+                </div>
+              </CardBody>
+            </Card>
+          )
+        })}
+      </div>
 
-        {/* Main Content Tabs - Mobile-first responsive design */}
-        <Card className="w-full border border-gray-200 shadow-sm bg-white">
-          <CardBody className="p-0">
-            <div className="w-full">
-              <Tabs
-                selectedKey={activeTab}
-                onSelectionChange={(key) => setActiveTab(key as string)}
-                variant="underlined"
-                classNames={{
-                  base: "w-full",
-                  tabList: "gap-0 w-full relative rounded-none p-0 border-b border-gray-200 overflow-x-auto scrollbar-hide",
-                  cursor: "w-full bg-gray-900",
-                  tab: "max-w-fit px-2 sm:px-4 py-3 sm:py-4 h-auto text-xs sm:text-sm font-medium flex-shrink-0",
-                  tabContent: "group-data-[selected=true]:text-gray-900 whitespace-nowrap transition-colors duration-200"
-                }}
-              >
-                {filteredTabs.map((tab) => {
-                  const Icon = tab.icon
-                  return (
-                    <Tab
-                      key={tab.id}
-                      title={
-                        <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2">
-                          <Icon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                          <span className="font-medium text-xs sm:text-sm hidden xs:inline">{tab.label}</span>
-                          <span className="font-medium text-xs xs:hidden">{tab.label.split(' ')[0]}</span>
-                        </div>
-                      }
-                    >
-                      <div className="p-3 sm:p-6 min-h-[300px] sm:min-h-[400px]">
-                        {tab.component}
-                      </div>
-                    </Tab>
-                  )
-                })}
-              </Tabs>
+      {/* Contenido principal */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="p-4 sm:p-6">
+          {loading ? (
+            <div className="flex flex-col justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
+              <p className="text-gray-600 text-sm">Cargando inventario...</p>
             </div>
-          </CardBody>
-        </Card>
+          ) : (
+            <Tabs
+              selectedKey={activeTab}
+              onSelectionChange={(key) => setActiveTab(key as string)}
+              variant="underlined"
+              classNames={{
+                tabList: "border-b border-gray-200 flex-nowrap overflow-x-auto scrollbar-hide",
+                cursor: "bg-gray-900",
+                tab: "px-3 py-3 min-w-fit whitespace-nowrap",
+                tabContent: "group-data-[selected=true]:text-gray-900"
+              }}
+            >
+              {filteredTabs.map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <Tab
+                    key={tab.id}
+                    title={
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" />
+                        <span className="text-sm">{tab.label}</span>
+                      </div>
+                    }
+                  >
+                    <div className="pt-6">
+                      {tab.component}
+                    </div>
+                  </Tab>
+                )
+              })}
+            </Tabs>
+          )}
+        </div>
       </div>
 
       {/* Modales */}
@@ -422,7 +343,6 @@ export default function InventoryManager() {
         mode="create"
         onSuccess={() => {
           setIsTransferModalOpen(false)
-          // Aquí puedes refrescar los datos si es necesario
         }}
       />
     </div>

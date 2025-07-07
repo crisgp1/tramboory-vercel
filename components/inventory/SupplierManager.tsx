@@ -20,7 +20,11 @@ import {
   ModalFooter,
   useDisclosure,
   Pagination,
-  Spinner
+  Spinner,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem
 } from "@heroui/react"
 import {
   MagnifyingGlassIcon,
@@ -30,7 +34,8 @@ import {
   TrashIcon,
   StarIcon,
   UserIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  EllipsisVerticalIcon
 } from "@heroicons/react/24/outline"
 import { Avatar } from "@heroui/react"
 import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid"
@@ -186,17 +191,17 @@ export default function SupplierManager() {
   const renderStars = (rating: { quality: number; delivery: number; service: number; price: number; overall?: number }) => {
     const overallRating = rating.overall || Math.round(((rating.quality + rating.delivery + rating.service + rating.price) / 4) * 100) / 100
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => (
           <div key={star}>
             {star <= overallRating ? (
-              <StarSolidIcon className="w-4 h-4 text-yellow-400" />
+              <StarSolidIcon className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" />
             ) : (
-              <StarIcon className="w-4 h-4 text-gray-300" />
+              <StarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-gray-300" />
             )}
           </div>
         ))}
-        <span className="text-sm text-gray-600 ml-1">({overallRating})</span>
+        <span className="text-xs sm:text-sm text-gray-600 ml-1">({overallRating})</span>
       </div>
     )
   }
@@ -213,10 +218,32 @@ export default function SupplierManager() {
   ]
 
   return (
-    <div className="space-y-6">
-      {/* Header y controles */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex-1 max-w-md">
+    <div className="space-y-8">
+      {/* Header minimalista */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-medium text-gray-900">
+            Proveedores
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            {suppliers.length} proveedores en total
+          </p>
+        </div>
+        {(isAdmin || isGerente) && (
+          <Button
+            startContent={<PlusIcon className="w-4 h-4" />}
+            onPress={handleCreateSupplier}
+            className="bg-gray-900 text-white hover:bg-gray-800 text-sm"
+            size="md"
+          >
+            Nuevo Proveedor
+          </Button>
+        )}
+      </div>
+
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
           <Input
             placeholder="Buscar proveedores..."
             value={searchTerm}
@@ -225,75 +252,281 @@ export default function SupplierManager() {
             className="w-full"
           />
         </div>
-        
-        <div className="flex gap-2">
-          {(isAdmin || isGerente) && (
-            <>
-              <Button
-                color="primary"
-                startContent={<PlusIcon className="w-4 h-4" />}
-                onPress={handleCreateSupplier}
-              >
-                Nuevo Proveedor
-              </Button>
-              <Button 
-                color="secondary" 
-                variant="flat"
-                startContent={<UserIcon className="w-4 h-4" />}
-                onPress={() => {
-                  window.open('/admin/suppliers/link', '_blank')
-                }}
-              >
-                Configuración de Surtinet
-              </Button>
-            </>
-          )}
-        </div>
+        {(isAdmin || isGerente) && (
+          <Button 
+            variant="bordered"
+            startContent={<UserIcon className="w-4 h-4" />}
+            onPress={() => {
+              window.open('/admin/suppliers/link', '_blank')
+            }}
+            className="text-sm"
+          >
+            Configuración Surtinet
+          </Button>
+        )}
       </div>
 
-      {/* Tabla de proveedores */}
-      <Card className="border border-gray-200">
-        <CardBody className="p-0">
-          <Table
-            aria-label="Tabla de proveedores"
-            classNames={{
-              wrapper: "min-h-[400px]",
-            }}
-          >
-            <TableHeader columns={columns}>
-              {(column) => (
-                <TableColumn key={column.key} className="bg-gray-50 text-gray-700 font-medium">
-                  {column.label}
-                </TableColumn>
-              )}
-            </TableHeader>
-            <TableBody
-              items={suppliers}
-              isLoading={loading}
-              loadingContent={<Spinner label="Cargando proveedores..." />}
-              emptyContent="No se encontraron proveedores"
-            >
-              {(item) => (
-                <TableRow key={item._id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      {/* Avatar del usuario si está disponible */}
-                      {item.userImageUrl ? (
-                        <Avatar
-                          src={item.userImageUrl}
-                          name={item.userFullName || item.name}
-                          size="sm"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                          <UserIcon className="w-4 h-4 text-gray-500" />
-                        </div>
-                      )}
+      {/* Contenido principal */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="p-4 lg:p-6">
+          {loading ? (
+            <div className="flex flex-col justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
+              <p className="text-gray-600 text-sm">Cargando proveedores...</p>
+            </div>
+          ) : (
+            <>
+              {/* Vista de tabla minimalista */}
+              <div className="hidden lg:block w-full overflow-x-auto">
+              <table className="w-full min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+                      Proveedor
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+                      Contacto
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+                      Calificación
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+                      Órdenes
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+                      Total Gastado
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+                      Última Orden
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+                      Estado
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wide w-20">
                       
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900">{item.name}</p>
-                          
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {suppliers.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+                        No se encontraron proveedores
+                      </td>
+                    </tr>
+                  ) : (
+                    suppliers.map((item) => (
+                      <tr key={item._id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3 max-w-xs">
+                            <div className="flex-shrink-0">
+                              {item.userImageUrl ? (
+                                <Avatar
+                                  src={item.userImageUrl}
+                                  name={item.userFullName || item.name}
+                                  size="sm"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                  <UserIcon className="w-4 h-4 text-gray-500" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {item.penaltyData && item.penaltyData.totalPoints > 0 && (
+                                  <Chip
+                                    size="sm"
+                                    variant="flat"
+                                    color={
+                                      item.penaltyData.totalPoints > 50 ? 'danger' :
+                                      item.penaltyData.totalPoints > 30 ? 'warning' :
+                                      'default'
+                                    }
+                                    startContent={<ExclamationTriangleIcon className="w-3 h-3" />}
+                                  >
+                                    {item.penaltyData.totalPoints} pts
+                                  </Chip>
+                                )}
+                                
+                                {!item.isFromDb && (
+                                  <Chip
+                                    size="sm"
+                                    variant="flat"
+                                    color="warning"
+                                    startContent={<ExclamationTriangleIcon className="w-3 h-3" />}
+                                  >
+                                    Incompleto
+                                  </Chip>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500 truncate">
+                                {item.isFromDb 
+                                  ? `${item.paymentTerms.creditDays} días de crédito`
+                                  : 'Información pendiente'
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm max-w-[180px]">
+                            <p className="truncate">{item.contactInfo.email}</p>
+                            <p className="text-gray-500 truncate">{item.contactInfo.phone}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {renderStars(item.rating)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-medium">{item.totalOrders}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-medium">{formatCurrency(item.totalSpent)}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {item.lastOrderDate ? (
+                            <span className="text-sm">{formatDate(item.lastOrderDate)}</span>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Sin órdenes</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color={item.isActive ? 'success' : 'danger'}
+                          >
+                            {item.isActive ? 'Activo' : 'Inactivo'}
+                          </Chip>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end">
+                            <Dropdown 
+                              placement="bottom-end"
+                              classNames={{
+                                base: "before:bg-white",
+                                content: "bg-white border border-gray-200 shadow-lg"
+                              }}
+                            >
+                              <DropdownTrigger>
+                                <Button
+                                  isIconOnly
+                                  size="sm"
+                                  variant="light"
+                                >
+                                  <EllipsisVerticalIcon className="w-4 h-4" />
+                                </Button>
+                              </DropdownTrigger>
+                              <DropdownMenu 
+                                aria-label="Acciones del proveedor"
+                                itemClasses={{
+                                  base: [
+                                    "rounded-md",
+                                    "transition-colors",
+                                    "data-[hover=true]:bg-gray-100",
+                                  ],
+                                }}
+                              >
+                                <DropdownItem
+                                  key="view"
+                                  startContent={<EyeIcon className="w-4 h-4 text-gray-600" />}
+                                  onPress={() => handleViewSupplier(item)}
+                                  className="text-gray-700"
+                                >
+                                  Ver detalles
+                                </DropdownItem>
+                                
+                                {(isAdmin || isGerente) && (
+                                  <>
+                                    <DropdownItem
+                                      key="edit"
+                                      startContent={<PencilIcon className="w-4 h-4 text-blue-600" />}
+                                      onPress={() => handleEditSupplier(item)}
+                                      className="text-gray-700"
+                                    >
+                                      {item.isFromDb ? "Editar" : "Completar información"}
+                                    </DropdownItem>
+                                    
+                                    <DropdownItem
+                                      key="penalty"
+                                      startContent={<ExclamationTriangleIcon className="w-4 h-4 text-orange-600" />}
+                                      onPress={() => handleApplyPenalty(item)}
+                                      className="text-gray-700 data-[hover=true]:bg-orange-50 data-[hover=true]:text-orange-700"
+                                    >
+                                      Aplicar castigo
+                                    </DropdownItem>
+                                    
+                                    {item.isFromDb && (
+                                      <DropdownItem
+                                        key="delete"
+                                        startContent={<TrashIcon className="w-4 h-4 text-red-600" />}
+                                        onPress={() => handleDeleteSupplier(item)}
+                                        className="text-gray-700 data-[hover=true]:bg-red-50 data-[hover=true]:text-red-700"
+                                      >
+                                        Eliminar
+                                      </DropdownItem>
+                                    )}
+                                  </>
+                                )}
+                              </DropdownMenu>
+                            </Dropdown>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+              {/* Vista en grid para mobile */}
+              <div className="lg:hidden">
+                {suppliers.length === 0 ? (
+                  <div className="text-center py-20">
+                    <UserIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 text-sm">No hay proveedores disponibles</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {suppliers.map((item) => (
+                      <Card 
+                        key={item._id} 
+                        className="border border-gray-200 hover:border-gray-300 transition-colors duration-200 bg-white shadow-none hover:shadow-sm"
+                      >
+                        <CardBody className="p-4">
+                  <div className="space-y-4">
+                    {/* Header del proveedor */}
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        {item.userImageUrl ? (
+                          <Avatar
+                            src={item.userImageUrl}
+                            name={item.userFullName || item.name}
+                            size="md"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                            <UserIcon className="w-5 h-5 text-gray-500" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium text-gray-900 text-lg">{item.name}</h3>
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color={item.isActive ? 'success' : 'danger'}
+                          >
+                            {item.isActive ? 'Activo' : 'Inactivo'}
+                          </Chip>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-1">
                           {/* Indicador de penalizaciones */}
                           {item.penaltyData && item.penaltyData.totalPoints > 0 && (
                             <Chip
@@ -323,7 +556,7 @@ export default function SupplierManager() {
                           )}
                         </div>
                         
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 mt-1">
                           {item.isFromDb 
                             ? `${item.paymentTerms.creditDays} días de crédito`
                             : 'Información pendiente de completar'
@@ -331,111 +564,117 @@ export default function SupplierManager() {
                         </p>
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p>{item.contactInfo.email}</p>
-                      <p className="text-gray-500">{item.contactInfo.phone}</p>
+
+                    {/* Información de contacto */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</p>
+                        <p className="text-sm text-gray-900 mt-1">{item.contactInfo.email}</p>
+                        <p className="text-sm text-gray-600">{item.contactInfo.phone}</p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Calificación</p>
+                        <div className="mt-1">
+                          {renderStars(item.rating)}
+                        </div>
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {renderStars(item.rating)}
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{item.totalOrders}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{formatCurrency(item.totalSpent)}</span>
-                  </TableCell>
-                  <TableCell>
-                    {item.lastOrderDate ? (
-                      <span className="text-sm">{formatDate(item.lastOrderDate)}</span>
-                    ) : (
-                      <span className="text-gray-400 text-sm">Sin órdenes</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="sm"
-                      variant="flat"
-                      color={item.isActive ? 'success' : 'danger'}
-                    >
-                      {item.isActive ? 'Activo' : 'Inactivo'}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
+
+                    {/* Estadísticas */}
+                    <div className="grid grid-cols-3 gap-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-gray-900">{item.totalOrders}</p>
+                        <p className="text-xs text-gray-500">Órdenes</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-gray-900">{formatCurrency(item.totalSpent)}</p>
+                        <p className="text-xs text-gray-500">Total Gastado</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-900">
+                          {item.lastOrderDate ? formatDate(item.lastOrderDate) : 'Sin órdenes'}
+                        </p>
+                        <p className="text-xs text-gray-500">Última Orden</p>
+                      </div>
+                    </div>
+
+                    {/* Acciones */}
+                    <div className="flex gap-2 pt-2">
                       <Button
-                        isIconOnly
                         size="sm"
                         variant="light"
                         onPress={() => handleViewSupplier(item)}
+                        startContent={<EyeIcon className="w-4 h-4" />}
+                        className="flex-1"
                       >
-                        <EyeIcon className="w-4 h-4" />
+                        Ver
                       </Button>
                       
                       {(isAdmin || isGerente) && (
                         <>
                           <Button
-                            isIconOnly
                             size="sm"
                             variant="light"
                             color="primary"
                             onPress={() => handleEditSupplier(item)}
-                            title={item.isFromDb ? "Editar proveedor" : "Completar información del proveedor"}
+                            startContent={<PencilIcon className="w-4 h-4" />}
+                            className="flex-1"
                           >
-                            <PencilIcon className="w-4 h-4" />
+                            Editar
                           </Button>
                           
-                          {/* Botón Aplicar Castigo */}
                           <Button
-                            isIconOnly
                             size="sm"
                             variant="light"
                             color="warning"
                             onPress={() => handleApplyPenalty(item)}
-                            title="Aplicar castigo"
+                            startContent={<ExclamationTriangleIcon className="w-4 h-4" />}
+                            className="flex-1"
                           >
-                            <ExclamationTriangleIcon className="w-4 h-4" />
+                            Castigo
                           </Button>
                           
-                          {/* Solo permitir eliminar proveedores completos de la DB */}
                           {item.isFromDb && (
                             <Button
-                              isIconOnly
                               size="sm"
                               variant="light"
                               color="danger"
                               onPress={() => handleDeleteSupplier(item)}
-                              title="Eliminar proveedor"
+                              startContent={<TrashIcon className="w-4 h-4" />}
+                              className="flex-1"
                             >
-                              <TrashIcon className="w-4 h-4" />
+                              Eliminar
                             </Button>
                           )}
                         </>
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </div>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Paginación */}
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-6">
+                  <Pagination
+                    total={totalPages}
+                    page={currentPage}
+                    onChange={setCurrentPage}
+                    showControls
+                    showShadow
+                    color="primary"
+                  />
+                </div>
               )}
-            </TableBody>
-          </Table>
-          
-          {/* Paginación */}
-          {totalPages > 1 && (
-            <div className="flex justify-center p-4">
-              <Pagination
-                total={totalPages}
-                page={currentPage}
-                onChange={setCurrentPage}
-                showControls
-                showShadow
-                color="primary"
-              />
-            </div>
+            </>
           )}
-        </CardBody>
-      </Card>
+        </div>
+      </div>
 
       {/* Modal de proveedor */}
       {isSupplierModalOpen && (

@@ -44,6 +44,7 @@ import ConfigurationManager from "@/components/admin/ConfigurationManager"
 import FinanceManager from "@/components/finances/FinanceManager"
 import InventoryManager from "@/components/inventory/InventoryManager"
 import UserManagement from "@/components/dashboard/sections/UserManagement"
+import AnalyticsManager from "@/components/analytics/AnalyticsManager"
 
 type MenuItem = {
   id: string
@@ -150,6 +151,11 @@ export default function Dashboard() {
   const renderContent = () => {
     const activeItem = menuItems.find(item => item.id === activeMenuItem)
 
+    // Si es la sección de analytics, mostrar el componente específico
+    if (activeMenuItem === 'analytics') {
+      return <AnalyticsManager />
+    }
+
     // Si es la sección de reservas, mostrar el componente específico
     if (activeMenuItem === 'reservas') {
       return <ReservationManager />
@@ -175,179 +181,8 @@ export default function Dashboard() {
       return <UserManagement />
     }
 
-    return (
-      <div className="space-y-6">
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {activeItem?.label}
-            </h1>
-            <p className="text-sm text-gray-600 mt-1">
-              {activeItem?.description}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              isIconOnly
-              variant="light"
-              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            >
-              <MagnifyingGlassIcon className="w-5 h-5" />
-            </Button>
-            <Button
-              isIconOnly
-              variant="light"
-              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            >
-              <Cog8ToothIcon className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-        
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Total Reservas", value: "156", change: "+12%", trend: "up" },
-            { label: "Ingresos del Mes", value: "$45,230", change: "+8%", trend: "up" },
-            { label: "Eventos Completados", value: "89", change: "+15%", trend: "up" },
-            { label: "Tasa de Ocupación", value: "78%", change: "-2%", trend: "down" }
-          ].map((stat, index) => (
-            <Card key={index} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <CardBody className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                    <p className="text-2xl font-semibold text-gray-900 mt-1">{stat.value}</p>
-                  </div>
-                  <div className="text-right">
-                    <Chip
-                      size="sm"
-                      variant="flat"
-                      color={stat.trend === "up" ? "success" : "danger"}
-                      className="text-xs"
-                    >
-                      {stat.change}
-                    </Chip>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
-
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Primary Content */}
-          <div className="lg:col-span-2">
-            <Card className="border border-gray-200 shadow-sm">
-              <CardBody className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
-                  <Button variant="light" size="sm" className="text-gray-600">
-                    Ver todo
-                  </Button>
-                </div>
-                
-                <div className="space-y-4">
-                  {[
-                    { type: "reservation", title: "Nueva reserva creada", subtitle: "María González - 15 Feb", time: "Hace 2 horas" },
-                    { type: "payment", title: "Pago recibido", subtitle: "$2,500 MXN", time: "Hace 4 horas" },
-                    { type: "event", title: "Evento completado", subtitle: "Fiesta de Sofía", time: "Hace 6 horas" },
-                    { type: "config", title: "Paquete actualizado", subtitle: "Paquete Premium", time: "Hace 1 día" }
-                  ].map((activity, index) => (
-                    <div key={index} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{activity.title}</p>
-                        <p className="text-xs text-gray-600 truncate">{activity.subtitle}</p>
-                      </div>
-                      <div className="text-xs text-gray-500">{activity.time}</div>
-                    </div>
-                  ))}
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-
-          {/* Sidebar Content */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card className="border border-gray-200 shadow-sm">
-              <CardBody className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
-                <div className="space-y-3">
-                  <Button
-                    className="w-full justify-start bg-blue-50 text-blue-700 hover:bg-blue-100 border-0"
-                    variant="flat"
-                    startContent={<CalendarDaysIcon className="w-4 h-4" />}
-                    onPress={() => setActiveMenuItem('reservas')}
-                  >
-                    Nueva Reserva
-                  </Button>
-                  <Button
-                    className="w-full justify-start bg-green-50 text-green-700 hover:bg-green-100 border-0"
-                    variant="flat"
-                    startContent={<CurrencyDollarIcon className="w-4 h-4" />}
-                    onPress={() => setActiveMenuItem('finanzas')}
-                  >
-                    Registrar Pago
-                  </Button>
-                  {(isAdmin || isGerente || role === "proveedor") && (
-                    <Button
-                      className="w-full justify-start bg-orange-50 text-orange-700 hover:bg-orange-100 border-0"
-                      variant="flat"
-                      startContent={<ArchiveBoxIcon className="w-4 h-4" />}
-                      onPress={() => setActiveMenuItem('inventario')}
-                    >
-                      Gestionar Inventario
-                    </Button>
-                  )}
-                  <Button
-                    className="w-full justify-start bg-purple-50 text-purple-700 hover:bg-purple-100 border-0"
-                    variant="flat"
-                    startContent={<ChartBarIcon className="w-4 h-4" />}
-                    onPress={() => setActiveMenuItem('analytics')}
-                  >
-                    Ver Reportes
-                  </Button>
-                </div>
-              </CardBody>
-            </Card>
-
-            {/* Upcoming Events */}
-            <Card className="border border-gray-200 shadow-sm">
-              <CardBody className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Próximos Eventos</h3>
-                <div className="space-y-3">
-                  {[
-                    { name: "Fiesta de Ana", date: "Hoy 3:00 PM", status: "confirmed" },
-                    { name: "Cumpleaños de Luis", date: "Mañana 11:00 AM", status: "pending" },
-                    { name: "Evento Corporativo", date: "15 Feb 2:00 PM", status: "confirmed" }
-                  ].map((event, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{event.name}</p>
-                        <p className="text-xs text-gray-600">{event.date}</p>
-                      </div>
-                      <Badge 
-                        color={event.status === "confirmed" ? "success" : "warning"}
-                        variant="flat"
-                        size="sm"
-                      >
-                        {event.status === "confirmed" ? "Confirmado" : "Pendiente"}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-        </div>
-      </div>
-    )
+    // Default content - redirect to analytics since that's the main dashboard view
+    return <AnalyticsManager />
   }
 
   if (!isLoaded) {

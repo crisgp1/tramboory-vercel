@@ -52,6 +52,7 @@ import {
   PhotoIcon
 } from "@heroicons/react/24/outline"
 import toast from "react-hot-toast"
+import ProductsWithoutMovementsModal from "./ProductsWithoutMovementsModal"
 
 // Product status enum
 enum ProductApprovalStatus {
@@ -170,6 +171,7 @@ export default function SupplierProductManager() {
   const [loadingPriceHistory, setLoadingPriceHistory] = useState(false);
   const [modalView, setModalView] = useState<'details' | 'edit' | 'price' | 'stock'>('details');
   const [formError, setFormError] = useState<string | null>(null);
+  const [productsWithoutMovementsCount, setProductsWithoutMovementsCount] = useState(0);
   
   const { 
     isOpen: isProductModalOpen, 
@@ -181,6 +183,12 @@ export default function SupplierProductManager() {
     isOpen: isNewProductModalOpen, 
     onOpen: onNewProductModalOpen, 
     onClose: onNewProductModalClose 
+  } = useDisclosure();
+  
+  const { 
+    isOpen: isProductsWithoutMovementsModalOpen, 
+    onOpen: onProductsWithoutMovementsModalOpen, 
+    onClose: onProductsWithoutMovementsModalClose 
   } = useDisclosure();
 
   const itemsPerPage = 10;
@@ -207,6 +215,7 @@ export default function SupplierProductManager() {
 
   useEffect(() => {
     fetchProducts();
+    fetchProductsWithoutMovementsCount();
   }, [currentPage, searchTerm, statusFilter, categoryFilter]);
 
   const fetchProducts = async () => {
@@ -234,6 +243,18 @@ export default function SupplierProductManager() {
       toast.error("Error al cargar los productos");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProductsWithoutMovementsCount = async () => {
+    try {
+      const response = await fetch('/api/inventory/products?withoutMovements=true&limit=1000');
+      if (response.ok) {
+        const data = await response.json();
+        setProductsWithoutMovementsCount(data.products?.length || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching products without movements count:", error);
     }
   };
 
@@ -552,6 +573,23 @@ export default function SupplierProductManager() {
         </div>
 
         <div className="flex gap-2">
+          {productsWithoutMovementsCount > 0 && (
+            <div className="relative">
+              <Button
+                color="danger"
+                variant="solid"
+                startContent={<ExclamationTriangleIcon className="w-4 h-4" />}
+                onPress={onProductsWithoutMovementsModalOpen}
+                className="animate-pulse shadow-lg"
+                size="md"
+              >
+                <span className="font-semibold">
+                  {productsWithoutMovementsCount} Sin Movimientos
+                </span>
+              </Button>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+            </div>
+          )}
           <Button
             color="primary"
             startContent={<PlusIcon className="w-4 h-4" />}
@@ -1372,28 +1410,39 @@ export default function SupplierProductManager() {
       <Modal
         isOpen={isNewProductModalOpen}
         onClose={onNewProductModalClose}
-        size="3xl"
+        size="2xl"
         scrollBehavior="inside"
-        backdrop="blur"
+        backdrop="opaque"
+        placement="center"
         classNames={{
-          backdrop: "bg-gradient-to-t from-zinc-900 to-zinc-900/10 backdrop-opacity-20"
+          backdrop: "bg-gray-900/50",
+          base: "bg-white",
+          header: "border-b border-gray-200",
+          body: "p-6",
+          footer: "border-t border-gray-200"
         }}
       >
-        <ModalContent className="bg-white shadow-2xl">
+        <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 bg-white border-b border-gray-200">
-                <h3 className="text-lg font-semibold">Registrar Nuevo Producto</h3>
-                <p className="text-xs text-gray-500">
-                  Los productos nuevos requerirán aprobación de un administrador antes de estar disponibles en el sistema.
-                </p>
+              <ModalHeader className="px-6 py-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Registrar Nuevo Producto</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Los productos nuevos requerirán aprobación de un administrador antes de estar disponibles en el sistema.
+                  </p>
+                </div>
               </ModalHeader>
-              <ModalBody className="bg-white">
-                <Tabs variant="underlined" aria-label="Registro de producto">
-                  <Tab key="basic" title="Información Básica">
-                    <div className="py-2">
-                      <div className="space-y-4">
-                        <div>
+              <ModalBody>
+                <div className="space-y-6">
+                  {/* Información Básica */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
+                      Información Básica
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Nombre del Producto <span className="text-red-500">*</span>
                           </label>
@@ -1511,43 +1560,49 @@ export default function SupplierProductManager() {
                         </div>
                       </div>
                         
-                        <div className="space-y-4">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Características del Producto</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="p-3 border border-gray-200 rounded-lg">
-                              <Switch
-                                isSelected={newProduct.isPerishable}
-                                onValueChange={(value) => setNewProduct({...newProduct, isPerishable: value})}
-                              >
-                                <span className="font-medium">Producto Perecedero</span>
-                              </Switch>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Producto con fecha de caducidad o vida útil limitada
-                              </p>
-                            </div>
-                            
-                            <div className="p-3 border border-gray-200 rounded-lg">
-                              <Switch
-                                isSelected={newProduct.requiresBatch}
-                                onValueChange={(value) => setNewProduct({...newProduct, requiresBatch: value})}
-                              >
-                                <span className="font-medium">Requiere Control de Lote</span>
-                              </Switch>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Necesita seguimiento por número de lote o serie
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                    </div>
+                  </div>
+
+                  {/* Características del Producto */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
+                      Características del Producto
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 border border-gray-200 rounded-lg">
+                        <Switch
+                          isSelected={newProduct.isPerishable}
+                          onValueChange={(value) => setNewProduct({...newProduct, isPerishable: value})}
+                        >
+                          <span className="font-medium">Producto Perecedero</span>
+                        </Switch>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Producto con fecha de caducidad o vida útil limitada
+                        </p>
+                      </div>
+                      
+                      <div className="p-4 border border-gray-200 rounded-lg">
+                        <Switch
+                          isSelected={newProduct.requiresBatch}
+                          onValueChange={(value) => setNewProduct({...newProduct, requiresBatch: value})}
+                        >
+                          <span className="font-medium">Requiere Control de Lote</span>
+                        </Switch>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Necesita seguimiento por número de lote o serie
+                        </p>
                       </div>
                     </div>
-                  </Tab>
-                  
-                  <Tab key="pricing" title="Precios e Inventario">
-                    <div className="py-2">
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
+                  </div>
+
+                  {/* Precios e Inventario */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
+                      Precios e Inventario
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Precio de Costo (MXN) <span className="text-red-500">*</span>
                             </label>
@@ -1596,63 +1651,61 @@ export default function SupplierProductManager() {
                           </div>
                         </div>
                         
-                        <div className="space-y-4">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Control de Inventario</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Stock Mínimo ({newProduct.baseUnit})
-                              </label>
-                              <Input
-                                type="number"
-                                placeholder="Ej: 10"
-                                variant="bordered"
-                                value={newProduct.minStock.toString()}
-                                onChange={(e) => setNewProduct({...newProduct, minStock: parseInt(e.target.value) || 0})}
-                                min="0"
-                              />
-                              <p className="text-xs text-gray-500 mt-1">
-                                Cantidad mínima que debe mantenerse en inventario
-                              </p>
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Punto de Reorden ({newProduct.baseUnit})
-                              </label>
-                              <Input
-                                type="number"
-                                placeholder="Ej: 20"
-                                variant="bordered"
-                                value={newProduct.reorderPoint.toString()}
-                                onChange={(e) => setNewProduct({...newProduct, reorderPoint: parseInt(e.target.value) || 0})}
-                                min="0"
-                              />
-                              <p className="text-xs text-gray-500 mt-1">
-                                Nivel en el que se debe generar un nuevo pedido
-                              </p>
-                            </div>
-                          </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Stock Mínimo ({newProduct.baseUnit})
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="Ej: 10"
+                            variant="bordered"
+                            value={newProduct.minStock.toString()}
+                            onChange={(e) => setNewProduct({...newProduct, minStock: parseInt(e.target.value) || 0})}
+                            min="0"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Cantidad mínima que debe mantenerse en inventario
+                          </p>
                         </div>
                         
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Gestión de Inventario</h4>
-                          <p className="text-xs text-gray-600">
-                            <span className="font-medium">Stock Mínimo:</span> Nivel crítico por debajo del cual no debería caer el inventario.
-                          </p>
-                          <p className="text-xs text-gray-600 mt-1">
-                            <span className="font-medium">Punto de Reorden:</span> Nivel en el que se debe generar una alerta para realizar un nuevo pedido.
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Punto de Reorden ({newProduct.baseUnit})
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="Ej: 20"
+                            variant="bordered"
+                            value={newProduct.reorderPoint.toString()}
+                            onChange={(e) => setNewProduct({...newProduct, reorderPoint: parseInt(e.target.value) || 0})}
+                            min="0"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Nivel en el que se debe generar un nuevo pedido
                           </p>
                         </div>
                       </div>
+                      
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-xs text-gray-600">
+                          <span className="font-medium">Stock Mínimo:</span> Nivel crítico por debajo del cual no debería caer el inventario.
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          <span className="font-medium">Punto de Reorden:</span> Nivel en el que se debe generar una alerta para realizar un nuevo pedido.
+                        </p>
+                      </div>
                     </div>
-                  </Tab>
-                  
-                  <Tab key="additional" title="Información Adicional">
-                    <div className="py-2">
-                      <div className="space-y-4">
-                        <div className="space-y-3">
-                          <div>
+                  </div>
+
+                  {/* Información Adicional */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
+                      Información Adicional
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <div>
                             <h4 className="text-sm font-medium text-gray-700 mb-1">Etiquetas del Producto</h4>
                             <p className="text-xs text-gray-500 mb-3">
                               Palabras clave que faciliten la búsqueda del producto (ej: "ofertas", "nuevo", "premium", "eco-friendly")
@@ -1729,36 +1782,48 @@ export default function SupplierProductManager() {
                         </div>
                       </div>
                     </div>
-                  </Tab>
-                </Tabs>
-                
-                {formError && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
-                    <p className="text-sm text-red-600">{formError}</p>
                   </div>
-                )}
+
+                  {/* Error Message */}
+                  {formError && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-sm text-red-600">{formError}</p>
+                    </div>
+                  )}
+                </div>
               </ModalBody>
-              <ModalFooter className="bg-white border-t border-gray-200">
-                <Button 
-                  color="default" 
-                  variant="light" 
-                  onPress={onClose}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  color="primary"
-                  isLoading={loading}
-                  onPress={submitNewProduct}
-                  startContent={<FolderPlusIcon className="w-4 h-4" />}
-                >
-                  Enviar para Aprobación
-                </Button>
+              <ModalFooter className="px-6 py-4">
+                <div className="flex gap-3 justify-end w-full">
+                  <Button 
+                    variant="light" 
+                    onPress={onClose}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    color="primary"
+                    isLoading={loading}
+                    onPress={submitNewProduct}
+                    startContent={<FolderPlusIcon className="w-4 h-4" />}
+                  >
+                    Enviar para Aprobación
+                  </Button>
+                </div>
               </ModalFooter>
             </>
           )}
         </ModalContent>
       </Modal>
+
+      {/* Modal de productos sin movimientos */}
+      <ProductsWithoutMovementsModal
+        isOpen={isProductsWithoutMovementsModalOpen}
+        onClose={onProductsWithoutMovementsModalClose}
+        onSuccess={() => {
+          fetchProducts();
+          fetchProductsWithoutMovementsCount();
+        }}
+      />
     </div>
   );
 }

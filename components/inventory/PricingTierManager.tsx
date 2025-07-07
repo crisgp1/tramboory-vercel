@@ -9,12 +9,6 @@ import {
   Input,
   Select,
   SelectItem,
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
   Modal,
   ModalContent,
   ModalHeader,
@@ -26,7 +20,8 @@ import {
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
-  DropdownItem
+  DropdownItem,
+  Spinner
 } from "@heroui/react"
 import {
   PlusIcon,
@@ -35,9 +30,11 @@ import {
   CurrencyDollarIcon,
   TagIcon,
   EllipsisVerticalIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  EyeIcon
 } from "@heroicons/react/24/outline"
 import toast from "react-hot-toast"
+import NordicTable from "@/components/ui/NordicTable"
 
 interface PricingTier {
   _id?: string
@@ -480,6 +477,105 @@ export default function PricingTierManager() {
     return `${tier.minQuantity}+`
   }
 
+  const columns = [
+    { key: "tier", label: "Nivel" },
+    { key: "quantity", label: "Cantidad", width: "w-28", align: "center" as const },
+    { key: "discount", label: "Descuento", width: "w-28", align: "center" as const },
+    { key: "finalPrice", label: "Precio Final", width: "w-32", align: "right" as const },
+    { key: "savings", label: "Ahorro", width: "w-28", align: "right" as const },
+    { key: "status", label: "Estado", width: "w-24", align: "center" as const }
+  ]
+
+  const actions = [
+    {
+      key: "edit",
+      label: "Editar",
+      icon: <PencilIcon className="w-4 h-4" />,
+      color: "primary" as const,
+      onClick: handleEditTier
+    },
+    {
+      key: "delete",
+      label: "Eliminar",
+      icon: <TrashIcon className="w-4 h-4" />,
+      color: "danger" as const,
+      onClick: handleDeleteTier
+    }
+  ]
+
+  const renderCell = (tier: PricingTier, columnKey: string) => {
+    if (!productPricing) return null
+    
+    const discountedPrice = calculateDiscountedPrice(productPricing.basePrice, tier)
+    const savings = productPricing.basePrice - discountedPrice
+    const savingsPercentage = (savings / productPricing.basePrice) * 100
+
+    switch (columnKey) {
+      case "tier": {
+        return (
+          <div>
+            <p className="font-medium text-gray-900">{tier.name}</p>
+            {tier.description && (
+              <p className="text-sm text-gray-500">{tier.description}</p>
+            )}
+            <p className="text-xs text-gray-400">Prioridad: {tier.priority}</p>
+          </div>
+        )
+      }
+      case "quantity": {
+        return (
+          <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+            {getQuantityRange(tier)}
+          </span>
+        )
+      }
+      case "discount": {
+        return (
+          <span className="font-medium text-red-600">
+            {tier.discountType === 'percentage' 
+              ? `${tier.discountValue}%`
+              : formatCurrency(tier.discountValue, productPricing.currency)
+            }
+          </span>
+        )
+      }
+      case "finalPrice": {
+        return (
+          <span className="font-bold text-green-600">
+            {formatCurrency(discountedPrice, productPricing.currency)}
+          </span>
+        )
+      }
+      case "savings": {
+        return (
+          <div>
+            <p className="font-medium text-green-600">
+              {formatCurrency(savings, productPricing.currency)}
+            </p>
+            <p className="text-xs text-gray-500">
+              ({savingsPercentage.toFixed(1)}%)
+            </p>
+          </div>
+        )
+      }
+      case "status": {
+        return (
+          <Chip
+            color={tier.isActive ? 'success' : 'default'}
+            size="sm"
+            variant="flat"
+            className="font-medium"
+          >
+            {tier.isActive ? 'Activo' : 'Inactivo'}
+          </Chip>
+        )
+      }
+      default: {
+        return null
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -555,124 +651,147 @@ export default function PricingTierManager() {
           </CardHeader>
           
           <CardBody className="pt-0">
-            {productPricing.tiers.length > 0 ? (
-              <Table aria-label="Niveles de precios">
-                <TableHeader>
-                  <TableColumn>NIVEL</TableColumn>
-                  <TableColumn>CANTIDAD</TableColumn>
-                  <TableColumn>DESCUENTO</TableColumn>
-                  <TableColumn>PRECIO FINAL</TableColumn>
-                  <TableColumn>AHORRO</TableColumn>
-                  <TableColumn>ESTADO</TableColumn>
-                  <TableColumn>ACCIONES</TableColumn>
-                </TableHeader>
-                <TableBody>
+            {/* Vista Desktop - Tabla Nordic */}
+            <div className="hidden lg:block">
+              {productPricing.tiers.length > 0 ? (
+                <NordicTable
+                  columns={columns}
+                  data={productPricing.tiers}
+                  renderCell={renderCell}
+                  actions={actions}
+                  loading={loading}
+                  emptyMessage="No hay niveles de precios configurados"
+                />
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <CurrencyDollarIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>No hay niveles de precios configurados</p>
+                  <Button
+                    className="mt-2"
+                    color="primary"
+                    variant="light"
+                    startContent={<PlusIcon className="w-4 h-4" />}
+                    onPress={handleCreateTier}
+                  >
+                    Crear primer nivel
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Vista Mobile - Cards */}
+            <div className="lg:hidden">
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Spinner label="Cargando niveles..." />
+                </div>
+              ) : productPricing.tiers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <CurrencyDollarIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>No hay niveles de precios configurados</p>
+                  <Button
+                    className="mt-2"
+                    color="primary"
+                    variant="light"
+                    startContent={<PlusIcon className="w-4 h-4" />}
+                    onPress={handleCreateTier}
+                  >
+                    Crear primer nivel
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
                   {productPricing.tiers.map((tier) => {
                     const discountedPrice = calculateDiscountedPrice(productPricing.basePrice, tier)
                     const savings = productPricing.basePrice - discountedPrice
                     const savingsPercentage = (savings / productPricing.basePrice) * 100
                     
                     return (
-                      <TableRow key={tier._id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{tier.name}</p>
-                            {tier.description && (
-                              <p className="text-sm text-gray-500">{tier.description}</p>
-                            )}
-                            <p className="text-xs text-gray-400">Prioridad: {tier.priority}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-mono">{getQuantityRange(tier)}</span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium text-red-600">
-                            {tier.discountType === 'percentage' 
-                              ? `${tier.discountValue}%`
-                              : formatCurrency(tier.discountValue, productPricing.currency)
-                            }
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-bold text-green-600">
-                            {formatCurrency(discountedPrice, productPricing.currency)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium text-green-600">
-                              {formatCurrency(savings, productPricing.currency)}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              ({savingsPercentage.toFixed(1)}%)
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            color={tier.isActive ? 'success' : 'default'}
-                            size="sm"
-                            variant="flat"
-                          >
-                            {tier.isActive ? 'Activo' : 'Inactivo'}
-                          </Chip>
-                        </TableCell>
-                        <TableCell>
-                          <Dropdown>
-                            <DropdownTrigger>
-                              <Button
-                                isIconOnly
-                                size="sm"
-                                variant="light"
-                              >
-                                <EllipsisVerticalIcon className="w-4 h-4" />
-                              </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu
-                              classNames={{
-                                base: "bg-white border border-gray-200 shadow-lg rounded-lg"
-                              }}
+                      <Card key={tier._id} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <CardBody className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <p className="font-medium text-gray-900">{tier.name}</p>
+                              {tier.description && (
+                                <p className="text-sm text-gray-500">{tier.description}</p>
+                              )}
+                              <p className="text-xs text-gray-400">Prioridad: {tier.priority}</p>
+                            </div>
+                            <Chip
+                              color={tier.isActive ? 'success' : 'default'}
+                              size="sm"
+                              variant="flat"
                             >
-                              <DropdownItem
-                                key="edit"
-                                startContent={<PencilIcon className="w-4 h-4" />}
-                                onPress={() => handleEditTier(tier)}
-                              >
-                                Editar
-                              </DropdownItem>
-                              <DropdownItem
-                                key="delete"
-                                className="text-danger"
-                                color="danger"
-                                startContent={<TrashIcon className="w-4 h-4" />}
-                                onPress={() => handleDeleteTier(tier)}
-                              >
-                                Eliminar
-                              </DropdownItem>
-                            </DropdownMenu>
-                          </Dropdown>
-                        </TableCell>
-                      </TableRow>
+                              {tier.isActive ? 'Activo' : 'Inactivo'}
+                            </Chip>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">Cantidad</p>
+                              <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded inline-block">
+                                {getQuantityRange(tier)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">Descuento</p>
+                              <p className="font-medium text-red-600">
+                                {tier.discountType === 'percentage' 
+                                  ? `${tier.discountValue}%`
+                                  : formatCurrency(tier.discountValue, productPricing.currency)
+                                }
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">Precio Final</p>
+                              <p className="font-bold text-green-600">
+                                {formatCurrency(discountedPrice, productPricing.currency)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">Ahorro</p>
+                              <div>
+                                <p className="font-medium text-green-600">
+                                  {formatCurrency(savings, productPricing.currency)}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  ({savingsPercentage.toFixed(1)}%)
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="light"
+                              color="primary"
+                              onPress={() => handleEditTier(tier)}
+                              startContent={<PencilIcon className="w-4 h-4" />}
+                              className="flex-1"
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="light"
+                              color="danger"
+                              onPress={() => handleDeleteTier(tier)}
+                              isIconOnly
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardBody>
+                      </Card>
                     )
                   })}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <CurrencyDollarIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>No hay niveles de precios configurados</p>
-                <Button
-                  className="mt-2"
-                  color="primary"
-                  variant="light"
-                  startContent={<PlusIcon className="w-4 h-4" />}
-                  onPress={handleCreateTier}
-                >
-                  Crear primer nivel
-                </Button>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </CardBody>
         </Card>
       )}

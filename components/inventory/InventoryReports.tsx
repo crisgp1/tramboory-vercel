@@ -8,12 +8,6 @@ import {
   Select,
   SelectItem,
   DatePicker,
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
   Chip,
   Spinner
 } from "@heroui/react"
@@ -25,6 +19,7 @@ import {
   ExclamationTriangleIcon
 } from "@heroicons/react/24/outline"
 import { useRole } from "@/hooks/useRole"
+import NordicTable from "@/components/ui/NordicTable"
 
 interface ReportData {
   summary: {
@@ -140,6 +135,65 @@ export default function InventoryReports() {
     { key: "lastMonth", label: "Mes anterior" },
     { key: "thisYear", label: "Este año" }
   ]
+
+  const movementsColumns = [
+    { key: "date", label: "Fecha", width: "w-32" },
+    { key: "type", label: "Tipo", width: "w-28", align: "center" as const },
+    { key: "product", label: "Producto" },
+    { key: "quantity", label: "Cantidad", width: "w-32", align: "right" as const },
+    { key: "value", label: "Valor", width: "w-32", align: "right" as const }
+  ]
+
+  const renderMovementCell = (movement: any, columnKey: string) => {
+    switch (columnKey) {
+      case "date": {
+        return (
+          <span className="text-sm text-gray-900">
+            {formatDate(movement.date)}
+          </span>
+        )
+      }
+      case "type": {
+        return (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={
+              movement.type === 'ENTRADA' ? 'success' :
+              movement.type === 'SALIDA' ? 'danger' : 'primary'
+            }
+            className="font-medium"
+          >
+            {movement.type}
+          </Chip>
+        )
+      }
+      case "product": {
+        return (
+          <span className="font-medium text-gray-900">
+            {movement.productName}
+          </span>
+        )
+      }
+      case "quantity": {
+        return (
+          <span className="font-semibold text-gray-900">
+            {movement.quantity} {movement.unit}
+          </span>
+        )
+      }
+      case "value": {
+        return (
+          <span className="font-semibold text-gray-900">
+            {formatCurrency(movement.value)}
+          </span>
+        )
+      }
+      default: {
+        return null
+      }
+    }
+  }
 
   return (
     <div className="w-full space-y-6">
@@ -353,22 +407,30 @@ export default function InventoryReports() {
           )}
 
           {reportType === 'movements' && (
-            <Card className="border border-gray-200">
-              <CardBody className="p-0">
-                <Table aria-label="Movimientos de inventario">
-                  <TableHeader>
-                    <TableColumn>FECHA</TableColumn>
-                    <TableColumn>TIPO</TableColumn>
-                    <TableColumn>PRODUCTO</TableColumn>
-                    <TableColumn>CANTIDAD</TableColumn>
-                    <TableColumn>VALOR</TableColumn>
-                  </TableHeader>
-                  <TableBody emptyContent="No hay movimientos disponibles">
-                    {reportData.movements && reportData.movements.length > 0 ? (
-                      reportData.movements.map((movement, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{formatDate(movement.date)}</TableCell>
-                          <TableCell>
+            <>
+              {/* Vista Desktop - Tabla Nordic */}
+              <div className="hidden lg:block">
+                <NordicTable
+                  columns={movementsColumns}
+                  data={reportData.movements || []}
+                  renderCell={renderMovementCell}
+                  loading={loading}
+                  emptyMessage="No hay movimientos disponibles"
+                />
+              </div>
+
+              {/* Vista Mobile - Cards */}
+              <div className="lg:hidden">
+                {reportData.movements && reportData.movements.length > 0 ? (
+                  <div className="space-y-3">
+                    {reportData.movements.map((movement, index) => (
+                      <Card key={index} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        <CardBody className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <p className="font-medium text-gray-900">{movement.productName}</p>
+                              <p className="text-sm text-gray-500">{formatDate(movement.date)}</p>
+                            </div>
                             <Chip
                               size="sm"
                               variant="flat"
@@ -379,19 +441,31 @@ export default function InventoryReports() {
                             >
                               {movement.type}
                             </Chip>
-                          </TableCell>
-                          <TableCell>{movement.productName}</TableCell>
-                          <TableCell>
-                            {movement.quantity} {movement.unit}
-                          </TableCell>
-                          <TableCell>{formatCurrency(movement.value)}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : []}
-                  </TableBody>
-                </Table>
-              </CardBody>
-            </Card>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">Cantidad</p>
+                              <p className="font-semibold">{movement.quantity} {movement.unit}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">Valor</p>
+                              <p className="font-semibold text-gray-900">{formatCurrency(movement.value)}</p>
+                            </div>
+                          </div>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="border border-gray-200">
+                    <CardBody className="p-12 text-center">
+                      <p className="text-gray-600">No hay movimientos disponibles</p>
+                    </CardBody>
+                  </Card>
+                )}
+              </div>
+            </>
           )}
         </>
       ) : (

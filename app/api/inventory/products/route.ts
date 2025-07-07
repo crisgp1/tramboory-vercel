@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import dbConnect from '@/lib/mongodb';
 import Product from '@/lib/models/inventory/Product';
+import InventoryMovement from '@/lib/models/inventory/InventoryMovement';
 import { z } from 'zod';
 
 // Función temporal para verificar permisos (se puede mejorar más adelante)
@@ -101,6 +102,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const category = searchParams.get('category');
     const isActive = searchParams.get('isActive');
+    const withoutMovements = searchParams.get('withoutMovements') === 'true';
     const sortBy = searchParams.get('sortBy') || 'name';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
 
@@ -131,14 +133,37 @@ export async function GET(request: NextRequest) {
     // Ejecutar consulta
     const skip = (page - 1) * limit;
     
-    const [products, total] = await Promise.all([
-      Product.find(filters)
+    let productsQuery;
+    let countQuery;
+
+    if (withoutMovements) {
+      // Buscar productos que no tienen movimientos de inventario
+      const productsWithMovements = await InventoryMovement.distinct('productId');
+      
+      filters._id = { $nin: productsWithMovements };
+      
+      productsQuery = Product.find(filters)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
+        .select('_id name sku category units')
+        .lean();
+      
+      countQuery = Product.countDocuments(filters);
+    } else {
+      productsQuery = Product.find(filters)
         .sort(sortOptions)
         .skip(skip)
         .limit(limit)
         .populate('suppliers', 'name contactInfo')
-        .lean(),
-      Product.countDocuments(filters)
+        .lean();
+      
+      countQuery = Product.countDocuments(filters);
+    }
+    
+    const [products, total] = await Promise.all([
+      productsQuery,
+      countQuery
     ]);
 
     return NextResponse.json({

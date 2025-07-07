@@ -280,37 +280,28 @@ export default function SupplierPenaltyModal({
                 variant="flat"
                 classNames={{
                   trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-red-500",
-                  value: "text-gray-900"
+                  value: "text-gray-900",
+                  popoverContent: "bg-white border border-gray-200 shadow-lg",
+                  listbox: "p-2"
                 }}
               >
-                {Object.entries(
-                  PENALTY_CONCEPTS.reduce((acc, concept) => {
-                    if (!acc[concept.category]) acc[concept.category] = []
-                    acc[concept.category].push(concept)
-                    return acc
-                  }, {} as Record<string, PenaltyConceptConfig[]>)
-                ).map(([category, concepts]) => (
-                  <SelectItem key={`category-${category}`} className="text-xs text-gray-500 font-medium" isDisabled>
-                    {category.toUpperCase()}
-                  </SelectItem>
-                )).concat(
-                  PENALTY_CONCEPTS.map((concept) => {
-                    const IconComponent = iconMap[concept.icon]
-                    return (
-                      <SelectItem 
-                        key={concept.concept}
-                        startContent={
-                          IconComponent ? (
-                            <IconComponent className="w-4 h-4 text-gray-500" />
-                          ) : null
-                        }
-                        description={concept.description}
-                      >
-                        {concept.label}
-                      </SelectItem>
-                    )
-                  })
-                )}
+                {PENALTY_CONCEPTS.map((concept) => {
+                  const IconComponent = iconMap[concept.icon]
+                  return (
+                    <SelectItem 
+                      key={concept.concept}
+                      startContent={
+                        IconComponent ? (
+                          <IconComponent className="w-4 h-4 text-gray-500" />
+                        ) : null
+                      }
+                      description={concept.description}
+                      className="rounded-md hover:bg-gray-50"
+                    >
+                      {concept.label}
+                    </SelectItem>
+                  )
+                })}
               </Select>
             </div>
 

@@ -5,12 +5,6 @@ import {
   Card, 
   CardBody, 
   Button, 
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
   Input,
   Chip,
   Modal,
@@ -19,7 +13,6 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-  Pagination,
   Spinner
 } from "@heroui/react"
 import {
@@ -33,6 +26,7 @@ import {
 import { useRole } from "@/hooks/useRole"
 import ProductModal from "./ProductModal"
 import { PRODUCT_CATEGORIES } from "@/types/inventory"
+import NordicTable, { StatusChip } from "@/components/ui/NordicTable"
 
 interface Product {
   _id: string
@@ -170,15 +164,97 @@ export default function ProductManager() {
   }
 
   const columns = [
-    { key: "name", label: "PRODUCTO" },
-    { key: "sku", label: "SKU" },
-    { key: "category", label: "CATEGORÍA" },
-    { key: "baseUnit", label: "UNIDAD BASE" },
-    { key: "stockLevels", label: "NIVELES DE STOCK" },
-    { key: "suppliers", label: "PROVEEDORES" },
-    { key: "status", label: "ESTADO" },
-    { key: "actions", label: "ACCIONES" }
+    { key: "name", label: "Producto" },
+    { key: "sku", label: "SKU", width: "w-32" },
+    { key: "category", label: "Categoría", width: "w-32" },
+    { key: "baseUnit", label: "Unidad Base", width: "w-32" },
+    { key: "stockLevels", label: "Niveles de Stock", width: "w-36" },
+    { key: "suppliers", label: "Proveedores", width: "w-32" },
+    { key: "status", label: "Estado", width: "w-24", align: "center" as const }
   ]
+
+  const actions = [
+    {
+      key: "view",
+      label: "Ver detalles",
+      icon: <EyeIcon className="w-4 h-4" />,
+      onClick: handleViewProduct
+    },
+    ...(isAdmin || isGerente ? [
+      {
+        key: "edit",
+        label: "Editar",
+        icon: <PencilIcon className="w-4 h-4" />,
+        color: "primary" as const,
+        onClick: handleEditProduct
+      },
+      {
+        key: "delete",
+        label: "Eliminar",
+        icon: <TrashIcon className="w-4 h-4" />,
+        color: "danger" as const,
+        onClick: handleDeleteProduct
+      }
+    ] : [])
+  ]
+
+  const renderCell = (item: Product, columnKey: string) => {
+    switch (columnKey) {
+      case "name":
+        return (
+          <div>
+            <p className="font-medium text-gray-900">{item.name}</p>
+            {item.description && (
+              <p className="text-sm text-gray-500 truncate max-w-xs">
+                {item.description}
+              </p>
+            )}
+          </div>
+        )
+      case "sku":
+        return <span className="font-mono text-sm">{item.sku}</span>
+      case "category":
+        return (
+          <Chip
+            size="sm"
+            variant="flat"
+            color={getCategoryColor(item.category) as any}
+          >
+            {item.category}
+          </Chip>
+        )
+      case "baseUnit":
+        return (
+          <span className="text-sm">
+            {item.units.base.name} ({item.units.base.code})
+          </span>
+        )
+      case "stockLevels":
+        return (
+          <div className="text-sm">
+            <p>Mín: {item.stockLevels.minimum} {item.stockLevels.unit}</p>
+            <p className="text-gray-500">
+              Reorden: {item.stockLevels.reorderPoint} {item.stockLevels.unit}
+            </p>
+          </div>
+        )
+      case "suppliers":
+        return (
+          <div className="text-sm">
+            <p>{item.suppliers.length} proveedor(es)</p>
+            {item.suppliers.length > 0 && (
+              <p className="text-gray-500">
+                Preferido: {item.suppliers.find(s => s.isPreferred)?.supplierName || 'N/A'}
+              </p>
+            )}
+          </div>
+        )
+      case "status":
+        return <StatusChip status={item.isActive ? 'active' : 'inactive'} />
+      default:
+        return null
+    }
+  }
 
   return (
     <div className="w-full space-y-3 sm:space-y-4">
@@ -215,139 +291,22 @@ export default function ProductManager() {
         </div>
       </div>
 
-      {/* Vista Desktop - Tabla de productos */}
-      <Card className="w-full border border-gray-200 shadow-sm hidden lg:block">
-        <CardBody className="p-0">
-          <Table
-            aria-label="Tabla de productos"
-            classNames={{
-              wrapper: "min-h-[400px]",
-            }}
-          >
-            <TableHeader columns={columns}>
-              {(column) => (
-                <TableColumn key={column.key} className="bg-gray-50 text-gray-700 font-medium">
-                  {column.label}
-                </TableColumn>
-              )}
-            </TableHeader>
-            <TableBody
-              items={products}
-              isLoading={loading}
-              loadingContent={<Spinner label="Cargando productos..." />}
-              emptyContent="No se encontraron productos"
-            >
-              {(item) => (
-                <TableRow key={item._id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium text-gray-900">{item.name}</p>
-                      {item.description && (
-                        <p className="text-sm text-gray-500 truncate max-w-xs">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-sm">{item.sku}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="sm"
-                      variant="flat"
-                      color={getCategoryColor(item.category) as any}
-                    >
-                      {item.category}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">
-                      {item.units.base.name} ({item.units.base.code})
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p>Mín: {item.stockLevels.minimum} {item.stockLevels.unit}</p>
-                      <p className="text-gray-500">
-                        Reorden: {item.stockLevels.reorderPoint} {item.stockLevels.unit}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p>{item.suppliers.length} proveedor(es)</p>
-                      {item.suppliers.length > 0 && (
-                        <p className="text-gray-500">
-                          Preferido: {item.suppliers.find(s => s.isPreferred)?.supplierName || 'N/A'}
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="sm"
-                      variant="flat"
-                      color={item.isActive ? 'success' : 'danger'}
-                    >
-                      {item.isActive ? 'Activo' : 'Inactivo'}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        isIconOnly
-                        size="sm"
-                        variant="light"
-                        onPress={() => handleViewProduct(item)}
-                      >
-                        <EyeIcon className="w-4 h-4" />
-                      </Button>
-                      
-                      {(isAdmin || isGerente) && (
-                        <>
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                            color="primary"
-                            onPress={() => handleEditProduct(item)}
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                            color="danger"
-                            onPress={() => handleDeleteProduct(item)}
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          
-          {/* Paginación Desktop */}
-          {totalPages > 1 && (
-            <div className="flex justify-center p-4 border-t border-gray-100">
-              <Pagination
-                total={totalPages}
-                page={currentPage}
-                onChange={setCurrentPage}
-                showControls
-                showShadow
-                color="primary"
-              />
-            </div>
-          )}
-        </CardBody>
-      </Card>
+      {/* Vista Desktop - Tabla Nordic */}
+      <div className="hidden lg:block">
+        <NordicTable
+          columns={columns}
+          data={products}
+          renderCell={renderCell}
+          actions={actions}
+          loading={loading}
+          emptyMessage="No se encontraron productos"
+          pagination={totalPages > 1 ? {
+            total: totalPages,
+            current: currentPage,
+            onChange: setCurrentPage
+          } : undefined}
+        />
+      </div>
 
       {/* Vista Mobile - Cards optimizada */}
       <div className="w-full lg:hidden">

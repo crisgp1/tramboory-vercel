@@ -41,3 +41,12 @@ async function dbConnect(): Promise<typeof mongoose> {
 }
 
 export default dbConnect;
+
+// Alternative connection function for direct MongoDB operations
+export async function connectToDatabase() {
+  const connection = await dbConnect()
+  return {
+    db: connection.connection.db,
+    client: connection.connection.getClient()
+  }
+}
