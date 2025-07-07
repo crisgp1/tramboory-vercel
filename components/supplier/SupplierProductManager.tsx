@@ -1053,9 +1053,9 @@ export default function SupplierProductManager() {
                               variant="bordered"
                               isRequired
                               selectedKeys={[selectedProduct.category]}
-                              onChange={(keys: any) => {
-                                const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                                setSelectedProduct({...selectedProduct, category: selectedKey.toString()});
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setSelectedProduct({...selectedProduct, category: value});
                               }}
                             >
                               {categories.map((category) => (
@@ -1076,9 +1076,9 @@ export default function SupplierProductManager() {
                               variant="bordered"
                               isRequired
                               selectedKeys={[selectedProduct.baseUnit]}
-                              onChange={(keys: any) => {
-                                const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                                setSelectedProduct({...selectedProduct, baseUnit: selectedKey.toString()});
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setSelectedProduct({...selectedProduct, baseUnit: value});
                               }}
                             >
                               {unitOptions.map((unit) => (
@@ -1443,111 +1443,111 @@ export default function SupplierProductManager() {
                     
                     <div className="space-y-4">
                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Nombre del Producto <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          placeholder="Ej: Laptop Dell Inspiron 15 3000 Intel Core i5"
+                          variant="bordered"
+                          value={newProduct.name}
+                          onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                          isRequired
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Nombre completo y descriptivo que aparecerá en catálogos y facturas
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Descripción del Producto
+                        </label>
+                        <Textarea
+                          placeholder="Incluye características, especificaciones técnicas, beneficios y cualquier información relevante..."
+                          variant="bordered"
+                          value={newProduct.description}
+                          onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                          minRows={4}
+                          maxRows={6}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Información detallada que ayude a los compradores a entender las características y beneficios del producto
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nombre del Producto <span className="text-red-500">*</span>
+                            SKU (Código de Producto) <span className="text-red-500">*</span>
                           </label>
                           <Input
-                            placeholder="Ej: Laptop Dell Inspiron 15 3000 Intel Core i5"
+                            placeholder="Ej: DELL-LAP-INS15-001"
                             variant="bordered"
-                            value={newProduct.name}
-                            onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                            value={newProduct.sku}
+                            onChange={(e) => setNewProduct({...newProduct, sku: e.target.value})}
                             isRequired
                           />
                           <p className="text-xs text-gray-500 mt-1">
-                            Nombre completo y descriptivo que aparecerá en catálogos y facturas
+                            Código único de identificación interno del producto
                           </p>
                         </div>
                         
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Descripción del Producto
+                            Código de Barras (Opcional)
                           </label>
-                          <Textarea
-                            placeholder="Incluye características, especificaciones técnicas, beneficios y cualquier información relevante..."
+                          <Input
+                            placeholder="Ej: 123456789012"
                             variant="bordered"
-                            value={newProduct.description}
-                            onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                            minRows={4}
-                            maxRows={6}
+                            value={newProduct.barcode}
+                            onChange={(e) => setNewProduct({...newProduct, barcode: e.target.value})}
                           />
                           <p className="text-xs text-gray-500 mt-1">
-                            Información detallada que ayude a los compradores a entender las características y beneficios del producto
+                            Código de barras para escaneo (EAN, UPC, etc.)
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Categoría del Producto <span className="text-red-500">*</span>
+                          </label>
+                          <Select
+                            placeholder="Selecciona una categoría"
+                            variant="bordered"
+                            selectedKeys={newProduct.category ? [newProduct.category] : []}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setNewProduct({...newProduct, category: value});
+                            }}
+                            isRequired
+                          >
+                            {categories.map((category) => (
+                              <SelectItem key={category}>
+                                {category}
+                              </SelectItem>
+                            ))}
+                          </Select>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Clasifica el producto para facilitar su búsqueda y organización
                           </p>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              SKU (Código de Producto) <span className="text-red-500">*</span>
-                            </label>
-                            <Input
-                              placeholder="Ej: DELL-LAP-INS15-001"
-                              variant="bordered"
-                              value={newProduct.sku}
-                              onChange={(e) => setNewProduct({...newProduct, sku: e.target.value})}
-                              isRequired
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Código único de identificación interno del producto
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Código de Barras (Opcional)
-                            </label>
-                            <Input
-                              placeholder="Ej: 123456789012"
-                              variant="bordered"
-                              value={newProduct.barcode}
-                              onChange={(e) => setNewProduct({...newProduct, barcode: e.target.value})}
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Código de barras para escaneo (EAN, UPC, etc.)
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Categoría del Producto <span className="text-red-500">*</span>
-                            </label>
-                            <Select
-                              placeholder="Selecciona una categoría"
-                              variant="bordered"
-                              selectedKeys={newProduct.category ? [newProduct.category] : []}
-                              onChange={(keys: any) => {
-                                const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                                setNewProduct({...newProduct, category: selectedKey.toString()});
-                              }}
-                              isRequired
-                            >
-                              {categories.map((category) => (
-                                <SelectItem key={category}>
-                                  {category}
-                                </SelectItem>
-                              ))}
-                            </Select>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Clasifica el producto para facilitar su búsqueda y organización
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Unidad de Medida Base <span className="text-red-500">*</span>
-                            </label>
-                            <Select
-                              placeholder="Selecciona la unidad"
-                              variant="bordered"
-                              selectedKeys={[newProduct.baseUnit]}
-                              onChange={(keys: any) => {
-                                const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                                setNewProduct({...newProduct, baseUnit: selectedKey.toString()});
-                              }}
-                              isRequired
-                            >
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Unidad de Medida Base <span className="text-red-500">*</span>
+                          </label>
+                          <Select
+                            placeholder="Selecciona la unidad"
+                            variant="bordered"
+                            selectedKeys={[newProduct.baseUnit]}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setNewProduct({...newProduct, baseUnit: value});
+                            }}
+                            isRequired
+                          >
                             {unitOptions.map((unit) => (
                               <SelectItem key={unit.value}>
                                 {unit.label}
@@ -1559,7 +1559,6 @@ export default function SupplierProductManager() {
                           </p>
                         </div>
                       </div>
-                        
                     </div>
                   </div>
 
@@ -1603,54 +1602,54 @@ export default function SupplierProductManager() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Precio de Costo (MXN) <span className="text-red-500">*</span>
-                            </label>
-                            <Input
-                              type="number"
-                              placeholder="Ej: 1500.00"
-                              variant="bordered"
-                              startContent={
-                                <div className="pointer-events-none flex items-center">
-                                  <span className="text-default-400 text-small">$</span>
-                                </div>
-                              }
-                              value={newProduct.costPrice.toString()}
-                              onChange={(e) => setNewProduct({...newProduct, costPrice: parseFloat(e.target.value) || 0})}
-                              step="0.01"
-                              min="0"
-                              isRequired
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Precio al que compras o produces el producto (para cálculo de margen)
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Precio de Venta (MXN) <span className="text-red-500">*</span>
-                            </label>
-                            <Input
-                              type="number"
-                              placeholder="Ej: 2500.00"
-                              variant="bordered"
-                              startContent={
-                                <div className="pointer-events-none flex items-center">
-                                  <span className="text-default-400 text-small">$</span>
-                                </div>
-                              }
-                              value={newProduct.unitPrice.toString()}
-                              onChange={(e) => setNewProduct({...newProduct, unitPrice: parseFloat(e.target.value) || 0})}
-                              step="0.01"
-                              min="0"
-                              isRequired
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Precio al que vendes el producto a tus clientes
-                            </p>
-                          </div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Precio de Costo (MXN) <span className="text-red-500">*</span>
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="Ej: 1500.00"
+                            variant="bordered"
+                            startContent={
+                              <div className="pointer-events-none flex items-center">
+                                <span className="text-default-400 text-small">$</span>
+                              </div>
+                            }
+                            value={newProduct.costPrice.toString()}
+                            onChange={(e) => setNewProduct({...newProduct, costPrice: parseFloat(e.target.value) || 0})}
+                            step="0.01"
+                            min="0"
+                            isRequired
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Precio al que compras o produces el producto (para cálculo de margen)
+                          </p>
                         </div>
                         
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Precio de Venta (MXN) <span className="text-red-500">*</span>
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="Ej: 2500.00"
+                            variant="bordered"
+                            startContent={
+                              <div className="pointer-events-none flex items-center">
+                                <span className="text-default-400 text-small">$</span>
+                              </div>
+                            }
+                            value={newProduct.unitPrice.toString()}
+                            onChange={(e) => setNewProduct({...newProduct, unitPrice: parseFloat(e.target.value) || 0})}
+                            step="0.01"
+                            min="0"
+                            isRequired
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Precio al que vendes el producto a tus clientes
+                          </p>
+                        </div>
+                      </div>
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1706,79 +1705,78 @@ export default function SupplierProductManager() {
                     <div className="space-y-4">
                       <div className="space-y-3">
                         <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-1">Etiquetas del Producto</h4>
-                            <p className="text-xs text-gray-500 mb-3">
-                              Palabras clave que faciliten la búsqueda del producto (ej: "ofertas", "nuevo", "premium", "eco-friendly")
-                            </p>
-                          </div>
-                          
-                          {newProduct.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {newProduct.tags.map((tag) => (
-                                <Chip 
-                                  key={tag} 
-                                  onClose={() => handleRemoveTag(tag)}
-                                  variant="flat"
-                                  color="primary"
-                                >
-                                  {tag}
-                                </Chip>
-                              ))}
-                            </div>
-                          )}
-                          
-                          <div className="flex gap-2">
-                            <div className="flex-1">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Agregar Nueva Etiqueta
-                              </label>
-                              <Input
-                                placeholder="Ej: ofertas, premium, nuevo, eco-friendly..."
-                                variant="bordered"
-                                value={newTag}
-                                onChange={(e) => setNewTag(e.target.value)}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleAddTag();
-                                  }
-                                }}
-                              />
-                            </div>
-                            <Button 
-                              color="primary" 
-                              variant="bordered"
-                              onPress={handleAddTag}
-                              isDisabled={!newTag.trim() || newProduct.tags.includes(newTag.trim())}
-                            >
-                              Agregar
-                            </Button>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Las etiquetas ayudan a los compradores a encontrar productos relacionados y facilitan la organización del catálogo
+                          <h4 className="text-sm font-medium text-gray-700 mb-1">Etiquetas del Producto</h4>
+                          <p className="text-xs text-gray-500 mb-3">
+                            Palabras clave que faciliten la búsqueda del producto (ej: "ofertas", "nuevo", "premium", "eco-friendly")
                           </p>
                         </div>
                         
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Imágenes del Producto</h4>
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                            <div className="flex justify-center mb-4">
-                              <PhotoIcon className="w-10 h-10 text-gray-400" />
-                            </div>
-                            <h4 className="text-sm font-medium text-gray-900 mb-1">
-                              Sube imágenes del producto
-                            </h4>
-                            <p className="text-xs text-gray-500 mb-4">
-                              PNG, JPG, o WEBP hasta 5MB
-                            </p>
-                            <Button
-                              startContent={<ArrowUpTrayIcon className="w-4 h-4" />}
-                              color="primary"
-                              variant="flat"
-                              size="sm"
-                            >
-                              Seleccionar Archivo
-                            </Button>
+                        {newProduct.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {newProduct.tags.map((tag) => (
+                              <Chip 
+                                key={tag} 
+                                onClose={() => handleRemoveTag(tag)}
+                                variant="flat"
+                                color="primary"
+                              >
+                                {tag}
+                              </Chip>
+                            ))}
                           </div>
+                        )}
+                        
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Agregar Nueva Etiqueta
+                            </label>
+                            <Input
+                              placeholder="Ej: ofertas, premium, nuevo, eco-friendly..."
+                              variant="bordered"
+                              value={newTag}
+                              onChange={(e) => setNewTag(e.target.value)}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleAddTag();
+                                }
+                              }}
+                            />
+                          </div>
+                          <Button 
+                            color="primary" 
+                            variant="bordered"
+                            onPress={handleAddTag}
+                            isDisabled={!newTag.trim() || newProduct.tags.includes(newTag.trim())}
+                          >
+                            Agregar
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Las etiquetas ayudan a los compradores a encontrar productos relacionados y facilitan la organización del catálogo
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Imágenes del Producto</h4>
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                          <div className="flex justify-center mb-4">
+                            <PhotoIcon className="w-10 h-10 text-gray-400" />
+                          </div>
+                          <h4 className="text-sm font-medium text-gray-900 mb-1">
+                            Sube imágenes del producto
+                          </h4>
+                          <p className="text-xs text-gray-500 mb-4">
+                            PNG, JPG, o WEBP hasta 5MB
+                          </p>
+                          <Button
+                            startContent={<ArrowUpTrayIcon className="w-4 h-4" />}
+                            color="primary"
+                            variant="flat"
+                            size="sm"
+                          >
+                            Seleccionar Archivo
+                          </Button>
                         </div>
                       </div>
                     </div>
