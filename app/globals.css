@@ -112,3 +112,56 @@ html {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Clerk UserButton fixes */
+.cl-userButtonBox {
+  display: block !important;
+}
+
+.cl-avatarBox {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.cl-avatarImage {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* Fix Clerk dropdown transparency */
+.cl-userButtonPopoverCard {
+  background-color: white !important;
+  backdrop-filter: none !important;
+}
+
+/* Fix NextUI dropdown transparency */
+[role="menu"] {
+  background-color: white !important;
+  backdrop-filter: none !important;
+}
+
+/* HeroUI Avatar fixes */
+[data-slot="avatar"] {
+  display: block !important;
+}
+
+[data-slot="avatar"] img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* HeroUI Dropdown fixes */
+[data-slot="popover"] {
+  background-color: white !important;
+  backdrop-filter: none !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+[data-slot="dropdown-menu"] {
+  background-color: white !important;
+}

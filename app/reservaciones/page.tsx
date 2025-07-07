@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
-import ClientReservationManager from "@/components/reservations/client/ClientReservationManager"
+import ClientReservationManagerClean from "@/components/reservations/client/ClientReservationManagerClean"
 
 export default async function ReservationsPage() {
   const { userId } = await auth()
@@ -9,5 +9,5 @@ export default async function ReservationsPage() {
     redirect("/")
   }
 
-  return <ClientReservationManager />
+  return <ClientReservationManagerClean />
 }

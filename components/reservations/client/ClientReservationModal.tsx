@@ -13,7 +13,11 @@ import {
   Chip,
   Divider,
   Input,
-  Textarea
+  Textarea,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem
 } from '@heroui/react';
 import {
   CalendarDaysIcon,
@@ -28,9 +32,12 @@ import {
   CreditCardIcon,
   PhotoIcon,
   DocumentArrowUpIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 import { Reservation } from '@/types/reservation';
+import { exportToCalendar } from '@/lib/calendar-export';
+import toast from 'react-hot-toast';
 
 interface ClientReservationModalProps {
   isOpen: boolean;
@@ -689,13 +696,65 @@ export default function ClientReservationModal({
         </ModalBody>
 
         <ModalFooter className="px-6 py-4">
-          <Button
-            onPress={onClose}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
-            size="lg"
-          >
-            ¡Perfecto! 🎉
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  variant="bordered"
+                  startContent={<CalendarIcon className="w-4 h-4" />}
+                  className="border-gray-300 hover:border-gray-400"
+                >
+                  Agregar al calendario
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem
+                  startContent={<span className="text-sm">📅</span>}
+                  onPress={() => {
+                    exportToCalendar(reservation!, 'google');
+                    toast.success('Evento exportado a Google Calendar');
+                  }}
+                >
+                  Google Calendar
+                </DropdownItem>
+                <DropdownItem
+                  startContent={<span className="text-sm">📧</span>}
+                  onPress={() => {
+                    exportToCalendar(reservation!, 'outlook');
+                    toast.success('Evento exportado a Outlook');
+                  }}
+                >
+                  Outlook
+                </DropdownItem>
+                <DropdownItem
+                  startContent={<span className="text-sm">🟣</span>}
+                  onPress={() => {
+                    exportToCalendar(reservation!, 'yahoo');
+                    toast.success('Evento exportado a Yahoo Calendar');
+                  }}
+                >
+                  Yahoo Calendar
+                </DropdownItem>
+                <DropdownItem
+                  startContent={<span className="text-sm">📋</span>}
+                  onPress={() => {
+                    exportToCalendar(reservation!, 'ical');
+                    toast.success('Archivo iCal descargado');
+                  }}
+                >
+                  Descargar iCal
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+            
+            <Button
+              onPress={onClose}
+              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 flex-1"
+              size="lg"
+            >
+              ¡Perfecto! 🎉
+            </Button>
+          </div>
         </ModalFooter>
       </ModalContent>
     </Modal>

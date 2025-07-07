@@ -256,11 +256,15 @@ export default function Dashboard() {
                     src={user.imageUrl}
                     icon={!user.imageUrl ? <UserIcon className="w-4 h-4" /> : undefined}
                     size="sm"
-                    className="cursor-pointer"
+                    className="cursor-pointer ring-2 ring-gray-200 ring-offset-2"
+                    classNames={{
+                      base: "bg-gradient-to-br from-gray-100 to-gray-200",
+                      icon: "text-gray-600",
+                    }}
                   />
                 </DropdownTrigger>
-                <DropdownMenu>
-                  <DropdownItem key="profile" className="h-14 gap-2">
+                <DropdownMenu className="bg-white shadow-lg border border-gray-200">
+                  <DropdownItem key="profile" className="h-14 gap-2 bg-white hover:bg-gray-50">
                     <p className="font-medium">{user.fullName}</p>
                     <p className="text-small text-default-500">{user.primaryEmailAddress?.emailAddress}</p>
                   </DropdownItem>
@@ -269,6 +273,7 @@ export default function Dashboard() {
                     color="danger"
                     startContent={<ArrowRightOnRectangleIcon className="w-4 h-4" />}
                     onPress={handleSignOut}
+                    className="bg-white hover:bg-red-50"
                   >
                     Cerrar Sesión
                   </DropdownItem>
@@ -340,6 +345,11 @@ export default function Dashboard() {
                   src={user.imageUrl}
                   icon={!user.imageUrl ? <UserIcon className="w-4 h-4" /> : undefined}
                   size="sm"
+                  className="ring-2 ring-gray-200"
+                  classNames={{
+                    base: "bg-gradient-to-br from-gray-100 to-gray-200",
+                    icon: "text-gray-600",
+                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
