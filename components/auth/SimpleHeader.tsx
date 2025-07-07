@@ -88,7 +88,7 @@ export default function SimpleHeader({
                       <p className="font-semibold">{user.firstName} {user.lastName}</p>
                       <p className="text-xs text-gray-600">{user.primaryEmailAddress?.emailAddress}</p>
                     </DropdownItem>
-                    {showHomeLink && (
+                    {showHomeLink ? (
                       <DropdownItem 
                         key="home" 
                         startContent={<HomeIcon className="w-4 h-4" />}
@@ -96,7 +96,7 @@ export default function SimpleHeader({
                       >
                         Inicio
                       </DropdownItem>
-                    )}
+                    ) : null}
                     <DropdownItem key="logout" color="danger" className="text-danger">
                       <LogoutButton 
                         variant="light" 

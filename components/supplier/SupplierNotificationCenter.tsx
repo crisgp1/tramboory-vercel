@@ -198,10 +198,11 @@ export default function SupplierNotificationCenter({ supplierId, className }: Su
               <BellIcon className="w-6 h-6" />
               {unreadCount > 0 && (
                 <Badge
-                  content={unreadCount > 99 ? "99+" : unreadCount.toString()}
                   color="danger"
                   className="absolute -top-1 -right-1"
-                />
+                >
+                  {unreadCount > 99 ? "99+" : unreadCount.toString()}
+                </Badge>
               )}
             </Button>
           </DropdownTrigger>
@@ -249,55 +250,17 @@ export default function SupplierNotificationCenter({ supplierId, className }: Su
               </div>
             </DropdownItem>
             
-            {filteredNotifications.slice(0, 5).map((notification) => (
-              <DropdownItem 
-                key={notification.id} 
-                className="p-0"
-                onClick={() => {
-                  if (!notification.isRead) {
-                    markAsRead(notification.id);
-                  }
-                  setSelectedNotification(notification);
-                  onOpen();
-                  setShowDropdown(false);
-                }}
-              >
-                <div className={`p-3 hover:bg-gray-50 cursor-pointer ${!notification.isRead ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-1">
-                      {getNotificationIcon(notification.type, notification.priority)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <p className={`text-sm font-medium ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
-                          {notification.title}
-                        </p>
-                        <Chip
-                          size="sm"
-                          color={getPriorityColor(notification.priority)}
-                          variant="flat"
-                          className="ml-2"
-                        >
-                          {notification.priority}
-                        </Chip>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {formatTimeAgo(notification.timestamp)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </DropdownItem>
-            ))}
+            <DropdownItem key="notifications-info">
+              <div className="p-3 text-center text-gray-500">
+                {filteredNotifications.length} notificaciones disponibles
+              </div>
+            </DropdownItem>
             
-            {filteredNotifications.length === 0 && (
+            {filteredNotifications.length === 0 ? (
               <DropdownItem key="empty" className="p-4 text-center text-gray-500">
                 No hay notificaciones
               </DropdownItem>
-            )}
+            ) : null}
           </DropdownMenu>
         </Dropdown>
       </div>
@@ -382,15 +345,15 @@ export default function SupplierNotificationCenter({ supplierId, className }: Su
                                     </Button>
                                   </DropdownTrigger>
                                   <DropdownMenu aria-label="Acciones de notificación">
-                                    {!notification.isRead && (
+                                    {!notification.isRead ? (
                                       <DropdownItem
                                         key="mark-read"
                                         startContent={<CheckIcon className="w-4 h-4" />}
-                                        onClick={() => markAsRead(notification.id)}
+                                        onPress={() => markAsRead(notification.id)}
                                       >
                                         Marcar como leída
                                       </DropdownItem>
-                                    )}
+                                    ) : null}
                                     <DropdownItem
                                       key="delete"
                                       className="text-danger"

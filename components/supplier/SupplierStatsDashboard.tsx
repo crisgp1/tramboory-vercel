@@ -209,9 +209,9 @@ export default function SupplierStatsDashboard({ supplierId }: StatsDashboardPro
               className="w-32"
               size="sm"
             >
-              <SelectItem key="3months" value="3months">3 meses</SelectItem>
-              <SelectItem key="6months" value="6months">6 meses</SelectItem>
-              <SelectItem key="12months" value="12months">12 meses</SelectItem>
+              <SelectItem key="3months">3 meses</SelectItem>
+              <SelectItem key="6months">6 meses</SelectItem>
+              <SelectItem key="12months">12 meses</SelectItem>
             </Select>
           </div>
           

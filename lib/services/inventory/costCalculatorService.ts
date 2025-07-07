@@ -1,4 +1,4 @@
-import { IBatch } from '@/types/inventory';
+import { IBatch } from '@/types/inventory/index';
 import { COST_METHODS } from '@/lib/utils/inventory/constants';
 
 // Interface para resultado de cálculo de costo

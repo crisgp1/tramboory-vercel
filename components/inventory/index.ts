@@ -1,7 +1,6 @@
 export { default as InventoryManager } from './InventoryManager';
 export { default as ProductManager } from './ProductManager';
 export { default as StockManager } from './StockManager';
-export { default as InventoryTable } from './InventoryTable';
 export { default as ProductModal } from './ProductModal';
 export { default as StockModal } from './StockModal';
 export { default as InventoryFilters } from './InventoryFilters';

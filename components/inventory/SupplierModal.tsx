@@ -436,7 +436,6 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
                       {providerUsers.map((user) => (
                         <SelectItem
                           key={user.id}
-                          value={user.id}
                           startContent={
                             <Avatar
                               src={user.imageUrl}

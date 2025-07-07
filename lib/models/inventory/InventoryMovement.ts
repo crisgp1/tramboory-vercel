@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { MovementType, IMovementReference, IMovementCost } from '@/types/inventory';
+import { MovementType, IMovementReference, IMovementCost } from '@/types/inventory/index';
 
 // Interface para el documento de InventoryMovement
 export interface IInventoryMovement extends Document {

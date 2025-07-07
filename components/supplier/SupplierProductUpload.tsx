@@ -326,7 +326,7 @@ export default function SupplierProductUpload({ supplierId, onSuccess }: Supplie
                 errorMessage={errors.category}
               >
                 {categories.map(cat => (
-                  <SelectItem key={cat.key} value={cat.key}>
+                  <SelectItem key={cat.key}>
                     {cat.label}
                   </SelectItem>
                 ))}
@@ -396,7 +396,7 @@ export default function SupplierProductUpload({ supplierId, onSuccess }: Supplie
                 errorMessage={errors.unit}
               >
                 {units.map(unit => (
-                  <SelectItem key={unit.key} value={unit.key}>
+                  <SelectItem key={unit.key}>
                     {unit.label}
                   </SelectItem>
                 ))}

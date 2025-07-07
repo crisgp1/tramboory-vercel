@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function VerifyPage() {
+function VerifyComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -27,13 +27,21 @@ export default function VerifyPage() {
   }, [router, searchParams]);
 
   return (
+    <div className="text-center">
+      <h1 className="text-2xl font-bold mb-4">Verificando tu cuenta</h1>
+      <p className="mb-4">Por favor espera mientras verificamos tu cuenta...</p>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+    </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Verificando tu cuenta</h1>
-          <p className="mb-4">Por favor espera mientras verificamos tu cuenta...</p>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-        </div>
+        <Suspense fallback={<div>Loading...</div>}>
+          <VerifyComponent />
+        </Suspense>
       </div>
     </div>
   );

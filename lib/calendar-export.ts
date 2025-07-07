@@ -37,16 +37,16 @@ export function reservationToCalendarEvent(reservation: Reservation): CalendarEv
   
   if (reservation.foodOption) {
     description += `🍰 Comida: ${reservation.foodOption.name}\n`;
-    if (reservation.foodOption.description) {
-      description += `   ${reservation.foodOption.description}\n`;
+    if ((reservation.foodOption as any).description) {
+      description += `   ${(reservation.foodOption as any).description}\n`;
     }
     description += `\n`;
   }
   
   if (reservation.eventTheme) {
     description += `🎨 Tema: ${reservation.eventTheme.name}\n`;
-    if (reservation.selectedThemePackage) {
-      description += `   Paquete: ${reservation.selectedThemePackage}\n`;
+    if ((reservation as any).selectedThemePackage) {
+      description += `   Paquete: ${(reservation as any).selectedThemePackage}\n`;
     }
     description += `\n`;
   }

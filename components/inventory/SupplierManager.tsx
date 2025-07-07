@@ -439,7 +439,7 @@ export default function SupplierManager() {
                                   Ver detalles
                                 </DropdownItem>
                                 
-                                {(isAdmin || isGerente) && (
+{(isAdmin || isGerente) ? (
                                   <>
                                     <DropdownItem
                                       key="edit"
@@ -459,7 +459,7 @@ export default function SupplierManager() {
                                       Aplicar castigo
                                     </DropdownItem>
                                     
-                                    {item.isFromDb && (
+                                    {item.isFromDb ? (
                                       <DropdownItem
                                         key="delete"
                                         startContent={<TrashIcon className="w-4 h-4 text-red-600" />}
@@ -468,9 +468,9 @@ export default function SupplierManager() {
                                       >
                                         Eliminar
                                       </DropdownItem>
-                                    )}
+                                    ) : null}
                                   </>
-                                )}
+                                ) : null}
                               </DropdownMenu>
                             </Dropdown>
                           </div>

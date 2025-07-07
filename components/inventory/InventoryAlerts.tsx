@@ -56,7 +56,7 @@ export default function InventoryAlerts() {
       })
 
       if (response.ok) {
-        setAlerts(alerts.filter(alert => alert._id !== alertId))
+        setAlerts(alerts.filter(alert => alert._id.toString() !== alertId))
       }
     } catch (error) {
       console.error('Error dismissing alert:', error)

@@ -90,6 +90,7 @@ interface Product {
 
 interface Supplier {
   _id: string
+  supplierId: string
   name: string
   code: string
   paymentTerms: {
@@ -499,7 +500,6 @@ export default function PurchaseOrderModal({
                       Fecha de Entrega (Opcional)
                     </label>
                     <DateInput
-                      placeholder="Selecciona fecha"
                       value={formData.expectedDeliveryDate ? parseDate(formData.expectedDeliveryDate.split('T')[0]) : null}
                       onChange={(date) => setFormData(prev => ({
                         ...prev,

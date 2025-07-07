@@ -242,31 +242,27 @@ export default function AdminQuickNav({ variant = 'header', className = '' }: Ad
           description: "text-default-500"
         }}
       >
-        {availableItems.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <DropdownItem
-              key={item.key}
-              startContent={
-                <motion.div
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`p-2 rounded-lg bg-${item.color}-100 text-${item.color}-600`}
-                >
-                  <Icon className="w-4 h-4" />
-                </motion.div>
-              }
-              description={item.description}
-              onPress={() => handleNavigation(item.href)}
-              className="hover:bg-gray-50"
-            >
-              <div className="flex flex-col">
-                <span className="font-medium">{item.label}</span>
-              </div>
-            </DropdownItem>
-          );
-        })}
+        <DropdownItem
+          key="users"
+          onPress={() => handleNavigation('/dashboard/usuarios')}
+          className="hover:bg-gray-50"
+        >
+          Usuarios
+        </DropdownItem>
+        <DropdownItem
+          key="inventory"
+          onPress={() => handleNavigation('/dashboard/inventario')}
+          className="hover:bg-gray-50"
+        >
+          Inventario
+        </DropdownItem>
+        <DropdownItem
+          key="finances"
+          onPress={() => handleNavigation('/dashboard/finanzas')}
+          className="hover:bg-gray-50"
+        >
+          Finanzas
+        </DropdownItem>
 
         <DropdownItem
           key="divider"

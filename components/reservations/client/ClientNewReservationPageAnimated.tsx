@@ -626,7 +626,7 @@ Para cualquier duda, contacta:
                   }}
                 >
                   {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                    <SelectItem key={age.toString()} value={age.toString()}>
+                    <SelectItem key={age.toString()}>
                       {age} {age === 1 ? 'año' : 'años'}
                     </SelectItem>
                   ))}
@@ -696,7 +696,6 @@ Para cualquier duda, contacta:
                       {availableSlots.slots.map((slot) => (
                         <SelectItem 
                           key={slot.time} 
-                          value={slot.time}
                           isDisabled={!slot.available}
                         >
                           <div className="flex items-center justify-between w-full">

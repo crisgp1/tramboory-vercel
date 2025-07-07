@@ -709,6 +709,7 @@ export default function ClientReservationModal({
               </DropdownTrigger>
               <DropdownMenu>
                 <DropdownItem
+                  key="google"
                   startContent={<span className="text-sm">📅</span>}
                   onPress={() => {
                     exportToCalendar(reservation!, 'google');
@@ -718,6 +719,7 @@ export default function ClientReservationModal({
                   Google Calendar
                 </DropdownItem>
                 <DropdownItem
+                  key="outlook"
                   startContent={<span className="text-sm">📧</span>}
                   onPress={() => {
                     exportToCalendar(reservation!, 'outlook');
@@ -727,6 +729,7 @@ export default function ClientReservationModal({
                   Outlook
                 </DropdownItem>
                 <DropdownItem
+                  key="yahoo"
                   startContent={<span className="text-sm">🟣</span>}
                   onPress={() => {
                     exportToCalendar(reservation!, 'yahoo');
@@ -736,6 +739,7 @@ export default function ClientReservationModal({
                   Yahoo Calendar
                 </DropdownItem>
                 <DropdownItem
+                  key="ical"
                   startContent={<span className="text-sm">📋</span>}
                   onPress={() => {
                     exportToCalendar(reservation!, 'ical');

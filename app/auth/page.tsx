@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SignIn, SignUp } from "@clerk/nextjs";
 
-export default function AuthPage() {
+function AuthComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode") || "sign-in";
@@ -24,25 +24,34 @@ export default function AuthPage() {
     }
   }, [router]);
 
-  // Determine which component to render based on mode
+  return (
+    <>
+      {(mode === "sign-in" || !mode) && (
+        <SignIn 
+          path="/auth"
+          routing="path"
+          signUpUrl="/auth?mode=sign-up"
+        />
+      )}
+      
+      {mode === "sign-up" && (
+        <SignUp 
+          path="/auth" 
+          routing="path"
+          signInUrl="/auth?mode=sign-in"
+        />
+      )}
+    </>
+  );
+}
+
+export default function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {(mode === "sign-in" || !mode) && (
-          <SignIn 
-            path="/auth"
-            routing="path"
-            signUpUrl="/auth?mode=sign-up"
-          />
-        )}
-        
-        {mode === "sign-up" && (
-          <SignUp 
-            path="/auth" 
-            routing="path"
-            signInUrl="/auth?mode=sign-in"
-          />
-        )}
+        <Suspense fallback={<div>Loading...</div>}>
+          <AuthComponent />
+        </Suspense>
       </div>
     </div>
   );

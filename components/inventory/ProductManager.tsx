@@ -13,7 +13,8 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-  Spinner
+  Spinner,
+  Pagination
 } from "@heroui/react"
 import {
   MagnifyingGlassIcon,
