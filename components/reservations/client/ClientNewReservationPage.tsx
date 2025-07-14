@@ -63,9 +63,22 @@ interface FormData {
   paymentMethod: 'transfer' | 'cash' | 'card';
 }
 
-const timeSlots = [
-  '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
-];
+interface TimeSlot {
+  time: string;
+  endTime: string;
+  available: boolean;
+  remainingCapacity: number;
+  totalCapacity: number;
+}
+
+interface TimeBlock {
+  blockName: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  halfHourBreak: boolean;
+  slots: TimeSlot[];
+}
 
 interface PackageOption {
   _id: string;
@@ -153,6 +166,9 @@ export default function ClientNewReservationPage() {
   const [extraServices, setExtraServices] = useState<ExtraService[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [reservationId, setReservationId] = useState<string | null>(null);
+  const [availableBlocks, setAvailableBlocks] = useState<TimeBlock[]>([]);
+  const [selectedBlock, setSelectedBlock] = useState<string>('');
+  const [restDayInfo, setRestDayInfo] = useState<any>(null);
 
   const steps: { key: Step; title: string; icon: any }[] = [
     { key: 'basic', title: 'Información Básica', icon: CakeIcon },
@@ -165,12 +181,25 @@ export default function ClientNewReservationPage() {
 
   const currentStepIndex = steps.findIndex(step => step.key === currentStep);
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(amount);
+  };
 
   useEffect(() => {
     fetchPackages();
     fetchAdditionalOptions();
     fetchAvailability();
   }, []);
+  
+  useEffect(() => {
+    if (formData.eventDate) {
+      fetchAvailableBlocks(formData.eventDate);
+    }
+  }, [formData.eventDate]);
 
   const fetchPackages = async () => {
     try {
@@ -233,21 +262,100 @@ export default function ClientNewReservationPage() {
       date.setDate(today.getDate() + i);
       const dateKey = date.toISOString().split('T')[0];
       
-      // Mock logic: weekends are limited, some random dates unavailable
+      // Improved logic: ensure most dates are available for testing
       if (date.getDay() === 0 || date.getDay() === 6) {
-        mockAvailability[dateKey] = Math.random() > 0.3 ? 'limited' : 'unavailable';
+        // Weekends: 80% available, 15% limited, 5% unavailable
+        const rand = Math.random();
+        if (rand > 0.95) {
+          mockAvailability[dateKey] = 'unavailable';
+        } else if (rand > 0.8) {
+          mockAvailability[dateKey] = 'limited';
+        } else {
+          mockAvailability[dateKey] = 'available';
+        }
       } else {
-        mockAvailability[dateKey] = Math.random() > 0.1 ? 'available' : 'unavailable';
+        // Weekdays: 90% available, 8% limited, 2% unavailable
+        const rand = Math.random();
+        if (rand > 0.98) {
+          mockAvailability[dateKey] = 'unavailable';
+        } else if (rand > 0.9) {
+          mockAvailability[dateKey] = 'limited';
+        } else {
+          mockAvailability[dateKey] = 'available';
+        }
       }
     }
     
     setAvailability(mockAvailability);
   };
+  
+  const fetchAvailableBlocks = async (date: Date) => {
+    try {
+      const dateStr = date.toISOString().split('T')[0];
+      const response = await fetch(`/api/reservations/available-blocks?date=${dateStr}`);
+      const data = await response.json();
+      
+      console.log('Client fetchAvailableBlocks debug:', {
+        date: dateStr,
+        dayOfWeek: date.getDay(),
+        response: data
+      });
+      
+      if (data.success) {
+        const blocks = data.data.blocks || [];
+        setAvailableBlocks(blocks);
+        setRestDayInfo(data.data.restDayInfo);
+        
+        console.log('Blocks loaded:', {
+          blocksCount: blocks.length,
+          blocks: blocks.map((b: TimeBlock) => ({
+            name: b.blockName,
+            slotsCount: b.slots?.length || 0,
+            slots: b.slots
+          }))
+        });
+        
+        // Clear time selection if date changes
+        setFormData(prev => ({ ...prev, eventTime: '' }));
+        setSelectedBlock('');
+        
+        // If it's a rest day that can't be released, show warning
+        if (data.data.isRestDay && data.data.restDayInfo && !data.data.restDayInfo.canBeReleased) {
+          toast.error('Este día no está disponible para reservas');
+        } else if (data.data.isRestDay && data.data.restDayInfo) {
+          toast(`Día de descanso: se aplicará un cargo adicional de ${formatCurrency(data.data.restDayInfo.fee)}`, {
+            icon: '⚠️',
+            duration: 4000
+          });
+        }
+      } else {
+        // If there's an error, set empty blocks so fallback will work
+        console.error('API error:', data.error);
+        setAvailableBlocks([]);
+        setRestDayInfo(null);
+      }
+    } catch (error) {
+      console.error('Error fetching available blocks:', error);
+      // If there's an error, set empty blocks so fallback will work
+      setAvailableBlocks([]);
+      setRestDayInfo(null);
+    }
+  };
 
   const validateCurrentStep = (): boolean => {
     switch (currentStep) {
       case 'basic':
-        return !!(formData.childName.trim() && formData.childAge && formData.eventDate && formData.eventTime);
+        const isValid = !!(formData.childName.trim() && formData.childAge && formData.eventDate && formData.eventTime);
+        if (!isValid) {
+          console.log('Validation failed:', {
+            childName: formData.childName.trim(),
+            childAge: formData.childAge,
+            eventDate: formData.eventDate,
+            eventTime: formData.eventTime,
+            availableBlocks: availableBlocks.length
+          });
+        }
+        return isValid;
       case 'package':
         return !!formData.packageId;
       case 'food':
@@ -541,7 +649,7 @@ Para cualquier duda, contacta:
                   }}
                 >
                   {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                    <SelectItem key={age.toString()}>
+                    <SelectItem key={age.toString()} value={age.toString()}>
                       {age} {age === 1 ? 'año' : 'años'}
                     </SelectItem>
                   ))}
@@ -566,6 +674,17 @@ Para cualquier duda, contacta:
                     placeholderText="Selecciona una fecha"
                     className="w-full px-4 py-3 border-2 border-pink-200 hover:border-pink-300 focus:border-pink-500 rounded-lg text-gray-900 text-lg bg-white focus:outline-none"
                     calendarClassName="custom-calendar"
+                    withPortal={true}
+                    shouldCloseOnSelect={true}
+                    popperPlacement="bottom-start"
+                    popperModifiers={[
+                      {
+                        name: "offset",
+                        options: {
+                          offset: [0, 8],
+                        },
+                      },
+                    ]}
                   />
                 </div>
               </div>
@@ -573,24 +692,83 @@ Para cualquier duda, contacta:
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Hora del evento *
                 </label>
-                <Select
-                  placeholder="Selecciona la hora"
-                  selectedKeys={formData.eventTime ? [formData.eventTime] : []}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0] as string;
-                    setFormData(prev => ({ ...prev, eventTime: selected }));
-                  }}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    trigger: "border-2 border-pink-200 hover:border-pink-300 focus-within:border-pink-500 bg-white",
-                    value: "text-gray-900 text-lg"
-                  }}
-                >
-                  {timeSlots.map((time) => (
-                    <SelectItem key={time}>{time}</SelectItem>
-                  ))}
-                </Select>
+                {!formData.eventDate ? (
+                  <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg text-center">
+                    <p className="text-gray-600">Primero selecciona una fecha</p>
+                  </div>
+                ) : availableBlocks.length === 0 ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg text-center">
+                      <p className="text-yellow-800">No hay bloques configurados. Usando horarios por defecto.</p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {['14:00', '15:00', '16:00', '17:00', '18:00', '19:00'].map((time) => (
+                        <Button
+                          key={time}
+                          size="sm"
+                          variant={formData.eventTime === time ? "solid" : "bordered"}
+                          color={formData.eventTime === time ? "primary" : "default"}
+                          onPress={() => {
+                            setFormData(prev => ({ ...prev, eventTime: time }));
+                          }}
+                          className={formData.eventTime === time ? 'bg-pink-500 text-white' : 'border-pink-300 hover:bg-pink-50'}
+                        >
+                          {time}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {availableBlocks.map((block) => (
+                      <div key={block.blockName} className="border-2 border-pink-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-900 mb-2">{block.blockName}</h4>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Horario: {block.startTime} - {block.endTime} (Duración: {block.duration} horas{block.halfHourBreak ? ' + 30 min despedida' : ''})
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {block.slots.map((slot) => (
+                            <Button
+                              key={slot.time}
+                              size="sm"
+                              isDisabled={!slot.available}
+                              variant={formData.eventTime === slot.time ? "solid" : "bordered"}
+                              color={formData.eventTime === slot.time ? "primary" : "default"}
+                              onPress={() => {
+                                setFormData(prev => ({ ...prev, eventTime: slot.time }));
+                                setSelectedBlock(block.blockName);
+                              }}
+                              className={`${
+                                slot.available 
+                                  ? formData.eventTime === slot.time 
+                                    ? 'bg-pink-500 text-white' 
+                                    : 'border-pink-300 hover:bg-pink-50'
+                                  : 'opacity-50 cursor-not-allowed'
+                              }`}
+                            >
+                              <div className="text-center">
+                                <p className="font-medium">{slot.time}</p>
+                                {slot.available && (
+                                  <p className="text-xs opacity-80">
+                                    {slot.remainingCapacity} disponible{slot.remainingCapacity !== 1 ? 's' : ''}
+                                  </p>
+                                )}
+                              </div>
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {restDayInfo && (
+                      <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <p className="text-sm text-orange-800">
+                          <strong>Nota:</strong> Este es un día de descanso ({restDayInfo.name}). 
+                          Se aplicará un cargo adicional de {formatCurrency(restDayInfo.fee)}.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

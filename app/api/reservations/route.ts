@@ -102,7 +102,38 @@ export async function POST(request: NextRequest) {
     // Verificar si es día de descanso
     const eventDateObj = new Date(eventDate);
     const dayOfWeek = eventDateObj.getDay();
-    const isRestDay = dayOfWeek === systemConfig.restDay;
+    const restDay = systemConfig.restDays?.find((rd: any) => rd.day === dayOfWeek);
+    const isRestDay = !!restDay;
+    
+    // Verificar si el horario está dentro de un bloque válido
+    const validBlock = systemConfig.timeBlocks?.find((block: any) => {
+      if (!block.days.includes(dayOfWeek)) return false;
+      
+      // Verificar si el horario está dentro del rango del bloque
+      const [blockStartHour, blockStartMin] = block.startTime.split(':').map(Number);
+      const [blockEndHour, blockEndMin] = block.endTime.split(':').map(Number);
+      const [eventHour, eventMin] = eventTime.split(':').map(Number);
+      
+      const blockStartMinutes = blockStartHour * 60 + blockStartMin;
+      const blockEndMinutes = blockEndHour * 60 + blockEndMin;
+      const eventMinutes = eventHour * 60 + eventMin;
+      
+      return eventMinutes >= blockStartMinutes && eventMinutes < blockEndMinutes;
+    });
+    
+    if (!validBlock && !isRestDay) {
+      return NextResponse.json(
+        { success: false, error: 'El horario seleccionado no está disponible' },
+        { status: 400 }
+      );
+    }
+    
+    if (isRestDay && restDay && !restDay.canBeReleased) {
+      return NextResponse.json(
+        { success: false, error: 'No se permiten reservas en este día de descanso' },
+        { status: 400 }
+      );
+    }
     
     // Calcular precio del paquete según el día
     let packagePrice;
@@ -220,7 +251,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Calcular totales - asegurar que todos los valores sean números válidos
-    const restDayFee = isRestDay ? (parseFloat(systemConfig.restDayFee.toString()) || 0) : 0;
+    const restDayFee = isRestDay && restDay ? (parseFloat(restDay.fee.toString()) || 0) : 0;
     const subtotal = (parseFloat(packagePrice.toString()) || 0) +
                     (parseFloat(foodPrice.toString()) || 0) +
                     (parseFloat(extrasPrice.toString()) || 0) +
@@ -254,6 +285,12 @@ export async function POST(request: NextRequest) {
       },
       eventDate: eventDateObj,
       eventTime,
+      eventDuration: validBlock?.duration || systemConfig.defaultEventDuration,
+      eventBlock: validBlock ? {
+        name: validBlock.name,
+        startTime: validBlock.startTime,
+        endTime: validBlock.endTime
+      } : undefined,
       isRestDay,
       restDayFee,
       foodOption: foodOptionData,

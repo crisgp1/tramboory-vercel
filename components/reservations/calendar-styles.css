@@ -102,3 +102,23 @@
 .custom-calendar .react-datepicker__navigation:hover *::before {
   border-color: #111827;
 }
+
+/* Fix for DatePicker appearing behind modal */
+.react-datepicker-popper {
+  z-index: 1002 !important;
+}
+
+.react-datepicker__portal {
+  z-index: 1002 !important;
+}
+
+/* Ensure the date picker wrapper has proper positioning */
+.react-datepicker-wrapper {
+  display: block !important;
+  width: 100% !important;
+}
+
+.react-datepicker__input-container {
+  display: block !important;
+  width: 100% !important;
+}

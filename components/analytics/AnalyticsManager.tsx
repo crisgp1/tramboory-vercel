@@ -21,6 +21,8 @@ import {
   ExclamationTriangleIcon,
   ArrowDownTrayIcon
 } from "@heroicons/react/24/outline"
+import AvailabilityCalendar from "@/components/admin/AvailabilityCalendar"
+import DayDetailsModal from "@/components/admin/DayDetailsModal"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -108,6 +110,9 @@ export default function AnalyticsManager() {
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState("last30days")
   const [selectedMetric, setSelectedMetric] = useState("revenue")
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedAvailability, setSelectedAvailability] = useState<any>(null)
+  const [isDayDetailsOpen, setIsDayDetailsOpen] = useState(false)
 
   useEffect(() => {
     fetchAnalyticsData()
@@ -330,6 +335,18 @@ export default function AnalyticsManager() {
             Exportar
           </Button>
         </div>
+      </div>
+
+      {/* Availability Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AvailabilityCalendar
+          className="lg:col-span-2"
+          onDateClick={(date, availability) => {
+            setSelectedDate(date);
+            setSelectedAvailability(availability);
+            setIsDayDetailsOpen(true);
+          }}
+        />
       </div>
 
       {loading ? (
@@ -558,6 +575,14 @@ export default function AnalyticsManager() {
           <p className="text-gray-600">No hay datos disponibles para el período seleccionado</p>
         </div>
       )}
+      
+      {/* Day Details Modal */}
+      <DayDetailsModal
+        isOpen={isDayDetailsOpen}
+        onClose={() => setIsDayDetailsOpen(false)}
+        date={selectedDate}
+        availability={selectedAvailability}
+      />
     </div>
   )
 }

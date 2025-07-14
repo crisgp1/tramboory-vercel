@@ -48,9 +48,22 @@ interface FormData {
   specialComments: string;
 }
 
-const timeSlots = [
-  '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
-];
+interface TimeSlot {
+  time: string;
+  endTime: string;
+  available: boolean;
+  remainingCapacity: number;
+  totalCapacity: number;
+}
+
+interface TimeBlock {
+  blockName: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  halfHourBreak: boolean;
+  slots: TimeSlot[];
+}
 
 interface PackageOption {
   _id: string;
@@ -138,6 +151,9 @@ export default function NewReservationModal({
   const [eventThemes, setEventThemes] = useState<EventTheme[]>([]);
   const [extraServices, setExtraServices] = useState<ExtraService[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
+  const [availableBlocks, setAvailableBlocks] = useState<TimeBlock[]>([]);
+  const [selectedBlock, setSelectedBlock] = useState<string>('');
+  const [restDayInfo, setRestDayInfo] = useState<any>(null);
 
   const resetForm = () => {
     setFormData({
@@ -244,6 +260,57 @@ export default function NewReservationModal({
       fetchAvailability();
     }
   }, [isOpen]);
+
+  const fetchAvailableBlocks = async (date: Date) => {
+    try {
+      const dateStr = date.toISOString().split('T')[0];
+      const response = await fetch(`/api/reservations/available-blocks?date=${dateStr}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setAvailableBlocks(data.data.blocks || []);
+        setRestDayInfo(data.data.restDayInfo);
+        
+        // Clear time selection if date changes
+        setFormData(prev => ({ ...prev, eventTime: '' }));
+        setSelectedBlock('');
+        
+        // If it's a rest day that can't be released, show warning
+        if (data.data.isRestDay && data.data.restDayInfo && !data.data.restDayInfo.canBeReleased) {
+          toast.error('Este día no está disponible para reservas');
+        } else if (data.data.isRestDay && data.data.restDayInfo) {
+          toast(`Día de descanso: se aplicará un cargo adicional de ${formatCurrency(data.data.restDayInfo.fee)}`, {
+            icon: '⚠️',
+            duration: 4000
+          });
+        }
+      } else {
+        // If there's an error, set empty blocks so fallback will work
+        console.error('API error:', data.error);
+        setAvailableBlocks([]);
+        setRestDayInfo(null);
+      }
+    } catch (error) {
+      console.error('Error fetching available blocks:', error);
+      // If there's an error, set empty blocks so fallback will work
+      setAvailableBlocks([]);
+      setRestDayInfo(null);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(amount);
+  };
+
+  // Effect para cargar bloques cuando cambia la fecha
+  React.useEffect(() => {
+    if (formData.eventDate) {
+      fetchAvailableBlocks(formData.eventDate);
+    }
+  }, [formData.eventDate]);
 
   const handleClose = () => {
     if (!loading) {
@@ -508,7 +575,7 @@ export default function NewReservationModal({
                       }}
                     >
                       {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                        <SelectItem key={age.toString()}>
+                        <SelectItem key={age.toString()} value={age.toString()}>
                           {age} {age === 1 ? 'año' : 'años'}
                         </SelectItem>
                       ))}
@@ -538,6 +605,15 @@ export default function NewReservationModal({
                           className="w-full px-3 py-2 bg-gray-50 border-0 rounded-lg text-gray-900 hover:bg-gray-100 focus:bg-white focus:ring-1 focus:ring-gray-900 focus:outline-none"
                           calendarClassName="custom-calendar"
                           aria-label="Fecha del evento"
+                          popperPlacement="bottom-start"
+                          popperModifiers={[
+                            {
+                              name: "offset",
+                              options: {
+                                offset: [0, 8],
+                              },
+                            },
+                          ]}
                         />
                       </div>
                       <div className="mt-2 text-xs text-gray-500 flex items-center gap-4">
@@ -559,26 +635,83 @@ export default function NewReservationModal({
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Hora del evento *
                       </label>
-                      <Select
-                        placeholder="Selecciona la hora"
-                        selectedKeys={formData.eventTime ? [formData.eventTime] : []}
-                        onSelectionChange={(keys) => {
-                          const selected = Array.from(keys)[0] as string;
-                          setFormData(prev => ({ ...prev, eventTime: selected }));
-                        }}
-                        variant="flat"
-                        aria-label="Hora del evento"
-                        classNames={{
-                          trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                          value: "text-gray-900",
-                          listboxWrapper: "bg-white",
-                          popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-                        }}
-                      >
-                        {timeSlots.map((time) => (
-                          <SelectItem key={time}>{time}</SelectItem>
-                        ))}
-                      </Select>
+                      {!formData.eventDate ? (
+                        <div className="p-3 bg-gray-100 border border-gray-200 rounded-lg text-center">
+                          <p className="text-sm text-gray-600">Primero selecciona una fecha</p>
+                        </div>
+                      ) : availableBlocks.length === 0 ? (
+                        <div className="space-y-3">
+                          <div className="p-3 bg-yellow-100 border border-yellow-200 rounded-lg text-center">
+                            <p className="text-sm text-yellow-800">No hay bloques configurados. Usando horarios por defecto.</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {['14:00', '15:00', '16:00', '17:00', '18:00', '19:00'].map((time) => (
+                              <Button
+                                key={time}
+                                size="sm"
+                                variant={formData.eventTime === time ? "solid" : "bordered"}
+                                color={formData.eventTime === time ? "primary" : "default"}
+                                onPress={() => {
+                                  setFormData(prev => ({ ...prev, eventTime: time }));
+                                }}
+                                className={formData.eventTime === time ? 'bg-gray-900 text-white' : 'border-gray-300 hover:bg-gray-50'}
+                              >
+                                {time}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {availableBlocks.map((block) => (
+                            <div key={block.blockName} className="border border-gray-200 rounded-lg p-3">
+                              <h5 className="font-medium text-gray-900 mb-1">{block.blockName}</h5>
+                              <p className="text-xs text-gray-600 mb-2">
+                                {block.startTime} - {block.endTime} (Duración: {block.duration} horas{block.halfHourBreak ? ' + 30 min despedida' : ''})
+                              </p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {block.slots.map((slot) => (
+                                  <Button
+                                    key={slot.time}
+                                    size="sm"
+                                    isDisabled={!slot.available}
+                                    variant={formData.eventTime === slot.time ? "solid" : "bordered"}
+                                    color={formData.eventTime === slot.time ? "primary" : "default"}
+                                    onPress={() => {
+                                      setFormData(prev => ({ ...prev, eventTime: slot.time }));
+                                      setSelectedBlock(block.blockName);
+                                    }}
+                                    className={`${
+                                      slot.available 
+                                        ? formData.eventTime === slot.time 
+                                          ? 'bg-gray-900 text-white' 
+                                          : 'border-gray-300 hover:bg-gray-50'
+                                        : 'opacity-50 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    <div className="text-center">
+                                      <p className="text-xs font-medium">{slot.time}</p>
+                                      {slot.available && (
+                                        <p className="text-xs opacity-80">
+                                          {slot.remainingCapacity} disponible{slot.remainingCapacity !== 1 ? 's' : ''}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          {restDayInfo && (
+                            <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                              <p className="text-xs text-orange-800">
+                                <strong>Nota:</strong> Este es un día de descanso ({restDayInfo.name}). 
+                                Se aplicará un cargo adicional de {formatCurrency(restDayInfo.fee)}.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>

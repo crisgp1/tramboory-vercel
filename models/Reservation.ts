@@ -12,6 +12,12 @@ export interface IReservation extends Document {
   // Fecha y hora del evento
   eventDate: Date;
   eventTime: string;
+  eventDuration?: number;
+  eventBlock?: {
+    name: string;
+    startTime: string;
+    endTime: string;
+  };
   isRestDay: boolean;
   restDayFee: number;
   
@@ -76,6 +82,13 @@ export interface IReservation extends Document {
   // Estado de la reserva
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   
+  // Estado del pago
+  paymentStatus: 'pending' | 'paid' | 'partial' | 'overdue';
+  paymentMethod?: 'cash' | 'card' | 'transfer' | 'other';
+  paymentDate?: Date;
+  paymentNotes?: string;
+  amountPaid?: number;
+  
   // Metadatos
   createdAt: Date;
   updatedAt: Date;
@@ -109,6 +122,15 @@ const ReservationSchema = new Schema<IReservation>({
   eventTime: {
     type: String,
     required: true
+  },
+  eventDuration: {
+    type: Number,
+    default: 4
+  },
+  eventBlock: {
+    name: String,
+    startTime: String,
+    endTime: String
   },
   isRestDay: {
     type: Boolean,
@@ -244,6 +266,22 @@ const ReservationSchema = new Schema<IReservation>({
     type: String,
     enum: ['pending', 'confirmed', 'cancelled', 'completed'],
     default: 'pending'
+  },
+  
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'partial', 'overdue'],
+    default: 'pending'
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['cash', 'card', 'transfer', 'other']
+  },
+  paymentDate: Date,
+  paymentNotes: String,
+  amountPaid: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true

@@ -10,6 +10,21 @@ export interface ISystemConfig extends Document {
   advanceBookingDays: number;
   maxConcurrentEvents: number;
   defaultEventDuration: number;
+  timeBlocks: {
+    name: string;
+    days: number[];
+    startTime: string;
+    endTime: string;
+    duration: number;
+    halfHourBreak: boolean;
+    maxEventsPerBlock: number;
+  }[];
+  restDays: {
+    day: number;
+    name: string;
+    fee: number;
+    canBeReleased: boolean;
+  }[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -55,6 +70,63 @@ const SystemConfigSchema = new Schema<ISystemConfig>({
     min: [1, 'La duración mínima es 1 hora'],
     max: [24, 'La duración máxima es 24 horas']
   },
+  timeBlocks: [{
+    name: {
+      type: String,
+      required: [true, 'El nombre del bloque es requerido']
+    },
+    days: [{
+      type: Number,
+      min: [0, 'El día debe estar entre 0 (domingo) y 6 (sábado)'],
+      max: [6, 'El día debe estar entre 0 (domingo) y 6 (sábado)']
+    }],
+    startTime: {
+      type: String,
+      required: [true, 'La hora de inicio del bloque es requerida'],
+      match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato de hora inválido (HH:MM)']
+    },
+    endTime: {
+      type: String,
+      required: [true, 'La hora de fin del bloque es requerida'],
+      match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato de hora inválido (HH:MM)']
+    },
+    duration: {
+      type: Number,
+      required: [true, 'La duración del evento es requerida'],
+      min: [0.5, 'La duración mínima es 0.5 horas'],
+      max: [24, 'La duración máxima es 24 horas']
+    },
+    halfHourBreak: {
+      type: Boolean,
+      default: true
+    },
+    maxEventsPerBlock: {
+      type: Number,
+      required: [true, 'El máximo de eventos por bloque es requerido'],
+      min: [1, 'Debe permitir al menos 1 evento']
+    }
+  }],
+  restDays: [{
+    day: {
+      type: Number,
+      required: [true, 'El día es requerido'],
+      min: [0, 'El día debe estar entre 0 (domingo) y 6 (sábado)'],
+      max: [6, 'El día debe estar entre 0 (domingo) y 6 (sábado)']
+    },
+    name: {
+      type: String,
+      required: [true, 'El nombre del día es requerido']
+    },
+    fee: {
+      type: Number,
+      required: [true, 'El cargo es requerido'],
+      min: [0, 'El cargo no puede ser negativo']
+    },
+    canBeReleased: {
+      type: Boolean,
+      default: true
+    }
+  }],
   isActive: {
     type: Boolean,
     default: true
