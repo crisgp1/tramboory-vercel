@@ -33,6 +33,11 @@ const DASHBOARD_ALLOWED_ROLES = ["admin", "gerente", "vendedor"]
 const CLIENT_ONLY_ROLES = ["customer"]
 
 export default clerkMiddleware(async (auth, req) => {
+  // Skip middleware for API routes
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    return
+  }
+  
   if (isProtectedRoute(req)) {
     try {
       const { userId, sessionClaims } = await auth.protect()

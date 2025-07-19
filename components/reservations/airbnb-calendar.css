@@ -1,187 +1,326 @@
-/* Airbnb-style Calendar Enhancements */
-
-.availability-calendar {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+/* Airbnb-style Calendar Styling */
+.airbnb-calendar {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Date cells with availability indicators */
-.availability-calendar [data-available="true"] {
+/* Calendar container styling */
+.airbnb-calendar [data-slot="calendar"] {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  padding: 24px;
+}
+
+/* Header styling */
+.airbnb-calendar [data-slot="header"] {
+  padding: 0 0 16px 0;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 16px;
+}
+
+/* Month/Year buttons */
+.airbnb-calendar [data-slot="month-button"],
+.airbnb-calendar [data-slot="year-button"] {
+  color: #111827;
+  font-weight: 600;
+  font-size: 18px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.airbnb-calendar [data-slot="month-button"]:hover,
+.airbnb-calendar [data-slot="year-button"]:hover {
+  background-color: #f9fafb;
+}
+
+/* Navigation buttons */
+.airbnb-calendar [data-slot="prev-button"],
+.airbnb-calendar [data-slot="next-button"] {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.airbnb-calendar [data-slot="prev-button"]:hover,
+.airbnb-calendar [data-slot="next-button"]:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+  transform: scale(1.05);
+}
+
+/* Day names header */
+.airbnb-calendar [data-slot="grid-header-row"] {
+  margin-bottom: 8px;
+}
+
+.airbnb-calendar [data-slot="grid-header-cell"] {
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 0;
+}
+
+/* Calendar grid */
+.airbnb-calendar [data-slot="grid-body"] {
+  gap: 2px;
+}
+
+.airbnb-calendar [data-slot="grid-body-row"] {
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+/* Day cells - Base styling */
+.airbnb-calendar [data-slot="grid-cell"] button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-weight: 500;
+  font-size: 14px;
+  border: 2px solid transparent;
+  transition: all 0.15s ease;
   position: relative;
-  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%) !important;
-  border: 2px solid #10b981 !important;
-  color: #059669 !important;
+  background: white;
+  color: #374151;
+}
+
+/* Hover effects */
+.airbnb-calendar [data-slot="grid-cell"] button:hover:not([data-disabled]):not([data-selected]) {
+  background-color: #f3f4f6;
+  transform: scale(1.05);
+  border-color: #d1d5db;
+}
+
+/* Selected date */
+.airbnb-calendar [data-slot="grid-cell"] button[data-selected] {
+  background: linear-gradient(135deg, #ff385c 0%, #e31c5f 100%);
+  color: white;
+  border-color: #ff385c;
+  box-shadow: 0 4px 12px rgba(255, 56, 92, 0.3);
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+/* Today */
+.airbnb-calendar [data-slot="grid-cell"] button[data-today]:not([data-selected]) {
+  background-color: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
   font-weight: 600;
 }
 
-.availability-calendar [data-available="true"]::after {
-  content: "";
+/* Disabled dates */
+.airbnb-calendar [data-slot="grid-cell"] button[data-disabled] {
+  color: #d1d5db;
+  cursor: not-allowed;
+  background-color: #f9fafb;
+}
+
+/* Outside month dates */
+.airbnb-calendar [data-slot="grid-cell"] button[data-outside-month] {
+  color: #d1d5db;
+}
+
+/* Availability Styling - Custom data attributes */
+
+/* Available dates */
+.airbnb-calendar [data-slot="grid-cell"] button[data-available="true"]:not([data-disabled]):not([data-selected]) {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #10b981;
+  color: #065f46;
+  position: relative;
+}
+
+.airbnb-calendar [data-slot="grid-cell"] button[data-available="true"]:not([data-disabled]):not([data-selected]):hover {
+  background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.airbnb-calendar [data-slot="grid-cell"] button[data-available="true"]:not([data-disabled]):not([data-selected])::after {
+  content: '';
   position: absolute;
-  bottom: 2px;
+  top: 2px;
   right: 2px;
   width: 6px;
   height: 6px;
-  background: #10b981;
+  background-color: #10b981;
   border-radius: 50%;
-  animation: pulse 2s infinite;
+  border: 1px solid white;
 }
 
-.availability-calendar [data-available="limited"] {
+/* Limited availability */
+.airbnb-calendar [data-slot="grid-cell"] button[data-available="limited"]:not([data-disabled]):not([data-selected]) {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #f59e0b;
+  color: #92400e;
   position: relative;
-  background: linear-gradient(135deg, #fef3c7 0%, #fef7cd 100%) !important;
-  border: 2px solid #f59e0b !important;
-  color: #d97706 !important;
-  font-weight: 600;
 }
 
-.availability-calendar [data-available="limited"]::after {
-  content: "";
+.airbnb-calendar [data-slot="grid-cell"] button[data-available="limited"]:not([data-disabled]):not([data-selected]):hover {
+  background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.airbnb-calendar [data-slot="grid-cell"] button[data-available="limited"]:not([data-disabled]):not([data-selected])::after {
+  content: '';
   position: absolute;
-  bottom: 2px;
+  top: 2px;
   right: 2px;
   width: 6px;
   height: 6px;
-  background: #f59e0b;
+  background-color: #f59e0b;
   border-radius: 50%;
-  animation: pulse 2s infinite;
+  border: 1px solid white;
 }
 
-.availability-calendar [data-unavailable="true"] {
-  background: linear-gradient(135deg, #fef2f2 0%, #fef7f7 100%) !important;
-  border: 2px solid #ef4444 !important;
-  color: #dc2626 !important;
-  font-weight: 400;
+/* Unavailable dates */
+.airbnb-calendar [data-slot="grid-cell"] button[data-available="unavailable"]:not([data-disabled]):not([data-selected]) {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #ef4444;
+  color: #991b1b;
+  cursor: not-allowed;
   position: relative;
-  pointer-events: none;
-  opacity: 0.6;
 }
 
-.availability-calendar [data-unavailable="true"]::before {
-  content: "";
+.airbnb-calendar [data-slot="grid-cell"] button[data-available="unavailable"]:not([data-disabled]):not([data-selected])::after {
+  content: '';
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 16px;
+  width: 20px;
   height: 2px;
-  background: #ef4444;
+  background-color: #ef4444;
   transform: translate(-50%, -50%) rotate(45deg);
   border-radius: 1px;
 }
 
-/* Hover effects for available dates */
-.availability-calendar [data-available="true"]:hover,
-.availability-calendar [data-available="limited"]:hover {
-  transform: scale(1.05);
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-/* Selected date styling */
-.availability-calendar [data-selected="true"] {
-  background: linear-gradient(135deg, #fce7f3 0%, #fdf2f8 100%) !important;
-  border: 3px solid #ec4899 !important;
-  color: #be185d !important;
-  font-weight: 700;
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(236, 72, 153, 0.3);
-  z-index: 20;
-}
-
-/* Today's date special styling */
-.availability-calendar [data-today="true"] {
-  position: relative;
-  font-weight: 700;
-}
-
-.availability-calendar [data-today="true"]::before {
-  content: "";
+.airbnb-calendar [data-slot="grid-cell"] button[data-available="unavailable"]:not([data-disabled]):not([data-selected])::before {
+  content: '';
   position: absolute;
-  bottom: 1px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
   width: 20px;
   height: 2px;
-  background: #3b82f6;
+  background-color: #ef4444;
+  transform: translate(-50%, -50%) rotate(-45deg);
   border-radius: 1px;
 }
 
-/* Month navigation buttons */
-.availability-calendar [data-slot="prev-button"],
-.availability-calendar [data-slot="next-button"] {
-  background: white !important;
-  border: 2px solid #e5e7eb !important;
-  border-radius: 12px !important;
-  width: 40px !important;
-  height: 40px !important;
-  color: #6b7280 !important;
-  transition: all 0.2s ease !important;
+/* Popup/Popover styling */
+.airbnb-calendar-popover {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid #e5e7eb;
+  padding: 0;
+  overflow: hidden;
 }
 
-.availability-calendar [data-slot="prev-button"]:hover,
-.availability-calendar [data-slot="next-button"]:hover {
-  border-color: #f43f5e !important;
-  background: #fef2f2 !important;
-  color: #f43f5e !important;
-  transform: scale(1.05);
+/* Animation for calendar popup */
+.airbnb-calendar-popover[data-entering] {
+  animation: airbnb-scale-in 0.2s ease-out;
 }
 
-/* Calendar header styling */
-.availability-calendar [data-slot="header"] {
-  padding: 16px 24px 8px 24px;
+.airbnb-calendar-popover[data-exiting] {
+  animation: airbnb-scale-out 0.15s ease-in;
 }
 
-.availability-calendar [data-slot="title"] {
-  font-size: 20px !important;
-  font-weight: 700 !important;
-  color: #111827 !important;
-}
-
-/* Day labels */
-.availability-calendar [data-slot="grid-header-cell"] {
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  color: #6b7280 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 8px 0;
-}
-
-/* Calendar grid */
-.availability-calendar [data-slot="grid-body"] {
-  gap: 4px;
-}
-
-.availability-calendar [data-slot="cell"] button {
-  width: 44px !important;
-  height: 44px !important;
-  border-radius: 12px !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  transition: all 0.2s ease !important;
-  position: relative;
-}
-
-/* Pulse animation for availability indicators */
-@keyframes pulse {
-  0%, 100% {
+@keyframes airbnb-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
     opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.2);
+    transform: scale(1) translateY(0);
   }
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .availability-calendar [data-slot="cell"] button {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 13px !important;
+@keyframes airbnb-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
-  
-  .availability-calendar [data-slot="title"] {
-    font-size: 18px !important;
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
   }
+}
+
+/* Legend styling */
+.availability-legend {
+  display: flex;
+  gap: 16px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  margin-top: 16px;
+}
+
+.availability-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.availability-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.availability-legend-dot.available {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.availability-legend-dot.limited {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.availability-legend-dot.unavailable {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* Input field styling */
+.airbnb-date-input {
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  background: white;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.airbnb-date-input:hover {
+  border-color: #ff385c;
+  box-shadow: 0 0 0 1px #ff385c;
+}
+
+.airbnb-date-input:focus {
+  outline: none;
+  border-color: #ff385c;
+  box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.1);
+}
+
+.airbnb-date-input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
 }

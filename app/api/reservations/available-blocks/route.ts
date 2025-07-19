@@ -84,6 +84,22 @@ export async function GET(request: NextRequest) {
       });
     }
     
+    // If it's a rest day that can be released, we still need to provide time blocks
+    // Use default time blocks or create basic ones for rest days
+    let timeBlocksToUse = dayBlocks;
+    if (isRestDay && restDay && restDay.canBeReleased && dayBlocks.length === 0) {
+      // Create default time blocks for rest days
+      timeBlocksToUse = [{
+        name: 'Horario especial',
+        days: [dayOfWeek],
+        startTime: '10:00',
+        endTime: '18:00',
+        duration: 4,
+        halfHourBreak: true,
+        maxEventsPerBlock: 2
+      }];
+    }
+    
     // Get existing reservations for the date
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -99,7 +115,7 @@ export async function GET(request: NextRequest) {
     });
     
     // Process each time block
-    const availableBlocks = dayBlocks.map((block: TimeBlock) => {
+    const availableBlocks = timeBlocksToUse.map((block: TimeBlock) => {
       const slots = generateBlockSlots(
         block.startTime,
         block.endTime,

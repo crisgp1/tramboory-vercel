@@ -575,7 +575,7 @@ export default function NewReservationModal({
                       }}
                     >
                       {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                        <SelectItem key={age.toString()} value={age.toString()}>
+                        <SelectItem key={age.toString()}>
                           {age} {age === 1 ? 'año' : 'años'}
                         </SelectItem>
                       ))}
@@ -606,14 +606,6 @@ export default function NewReservationModal({
                           calendarClassName="custom-calendar"
                           aria-label="Fecha del evento"
                           popperPlacement="bottom-start"
-                          popperModifiers={[
-                            {
-                              name: "offset",
-                              options: {
-                                offset: [0, 8],
-                              },
-                            },
-                          ]}
                         />
                       </div>
                       <div className="mt-2 text-xs text-gray-500 flex items-center gap-4">

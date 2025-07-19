@@ -247,6 +247,9 @@ export default function PurchaseOrderModal({
           const supplierPrice = product.suppliers.find(s => s.supplierId === formData.supplierId)
           if (supplierPrice) {
             newItems[index].unitPrice = supplierPrice.lastPurchasePrice
+          } else {
+            // Si no hay precio del proveedor, mantener en 0 para permitir entrada manual
+            newItems[index].unitPrice = 0
           }
         }
       }
@@ -289,8 +292,17 @@ export default function PurchaseOrderModal({
       return
     }
     
-    if (formData.items.some(item => !item.productId || item.quantity <= 0 || item.unitPrice <= 0)) {
+    // Validar que todos los campos estén completos
+    const incompleteItem = formData.items.find(item => !item.productId || item.quantity <= 0 || item.unitPrice < 0)
+    if (incompleteItem) {
       toast.error('Completa todos los campos de los productos')
+      return
+    }
+
+    // Validar que no haya productos con precio 0 cuando no tienen precio histórico
+    const zeroPrice = formData.items.find(item => item.unitPrice === 0)
+    if (zeroPrice) {
+      toast.error('Ingresa un precio para todos los productos. Los productos sin precio histórico requieren un precio manual.')
       return
     }
 
@@ -611,11 +623,14 @@ export default function PurchaseOrderModal({
                               )}
                             </td>
                             <td className="py-3 px-2">
-                              {isReadOnly || formData.supplierId ? (
+                              {isReadOnly || (formData.supplierId && item.unitPrice > 0) ? (
                                 <div className="flex flex-col">
                                   <span className="font-medium">{formatCurrency(item.unitPrice)}</span>
-                                  {formData.supplierId && (
+                                  {formData.supplierId && item.unitPrice > 0 && (
                                     <span className="text-xs text-gray-500">Precio del proveedor</span>
+                                  )}
+                                  {formData.supplierId && item.unitPrice === 0 && (
+                                    <span className="text-xs text-yellow-600">Sin precio histórico</span>
                                   )}
                                 </div>
                               ) : (
@@ -636,7 +651,9 @@ export default function PurchaseOrderModal({
                                       inputWrapper: "bg-white border-gray-300 hover:border-gray-400 focus-within:border-blue-500"
                                     }}
                                   />
-                                  <span className="text-xs text-gray-500 mt-1">Precio estimado</span>
+                                  <span className="text-xs text-gray-500 mt-1">
+                                    {formData.supplierId ? 'Precio estimado' : 'Precio estimado'}
+                                  </span>
                                 </div>
                               )}
                             </td>

@@ -17,6 +17,8 @@
     "@hookform/resolvers": "^5.1.1",
     "@internationalized/date": "^3.8.2",
     "@knocklabs/node": "^1.10.3",
+    "@lottiefiles/dotlottie-react": "^0.14.3",
+    "@lottiefiles/lottie-player": "^2.0.12",
     "@types/bcryptjs": "^2.4.6",
     "@types/chart.js": "^2.9.41",
     "@vercel/analytics": "^1.5.0",

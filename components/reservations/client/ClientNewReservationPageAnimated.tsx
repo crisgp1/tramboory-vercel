@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import AdminQuickNav from '@/components/navigation/AdminQuickNav';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import {
   Button,
   Input,
@@ -49,15 +51,14 @@ import {
   StarIcon
 } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckIconSolid } from '@heroicons/react/24/solid';
-import { parseDate, getLocalTimeZone, today } from '@internationalized/date';
 import toast from 'react-hot-toast';
-import "../availability-calendar.css";
-import "../airbnb-calendar.css";
+import CustomCalendar from '../CustomCalendar';
+import "../modern-calendar.css";
 
 interface FormData {
   childName: string;
   childAge: string;
-  eventDate: any; // DateValue from @internationalized/date
+  eventDate: Date | null;
   eventTime: string;
   packageId: string;
   foodOptionId: string;
@@ -187,6 +188,7 @@ export default function ClientNewReservationPageAnimated() {
   const [packages, setPackages] = useState<PackageOption[]>([]);
   const [loadingPackages, setLoadingPackages] = useState(true);
   const [availability, setAvailability] = useState<AvailabilityData>({});
+  const [loadingAvailability, setLoadingAvailability] = useState(true);
   const [availableSlots, setAvailableSlots] = useState<AvailableSlots | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [foodOptions, setFoodOptions] = useState<FoodOption[]>([]);
@@ -194,6 +196,7 @@ export default function ClientNewReservationPageAnimated() {
   const [extraServices, setExtraServices] = useState<ExtraService[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [reservationId, setReservationId] = useState<string | null>(null);
+  const [celebrationAnimation, setCelebrationAnimation] = useState<any>(null);
 
   const steps: { key: Step; title: string; description: string; icon: any }[] = [
     { key: 'basic', title: 'Detalles', description: 'Información básica', icon: UserGroupIcon },
@@ -210,6 +213,7 @@ export default function ClientNewReservationPageAnimated() {
     fetchPackages();
     fetchAdditionalOptions();
     fetchAvailability();
+    loadCelebrationAnimation();
   }, []);
 
   useEffect(() => {
@@ -218,71 +222,6 @@ export default function ClientNewReservationPageAnimated() {
     }
   }, [formData.eventDate]);
 
-  // Apply availability styling to calendar
-  useEffect(() => {
-    const applyAvailabilityStyles = () => {
-      const calendarButtons = document.querySelectorAll('.availability-calendar button[role="gridcell"]');
-      
-      calendarButtons.forEach((button) => {
-        const dateElement = button as HTMLElement;
-        const dateText = dateElement.textContent?.trim();
-        
-        if (dateText && !isNaN(Number(dateText))) {
-          // Get the current month and year from calendar context
-          const calendarContainer = dateElement.closest('[data-slot="calendar"]');
-          const monthButton = calendarContainer?.querySelector('[data-slot="month-button"]');
-          const yearButton = calendarContainer?.querySelector('[data-slot="year-button"]');
-          
-          if (monthButton && yearButton) {
-            const monthText = monthButton.textContent?.trim();
-            const yearText = yearButton.textContent?.trim();
-            
-            // Create date key for availability lookup
-            const month = monthText ? new Date(`${monthText} 1, 2000`).getMonth() + 1 : new Date().getMonth() + 1;
-            const year = yearText ? parseInt(yearText) : new Date().getFullYear();
-            const day = parseInt(dateText);
-            
-            const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const availabilityStatus = availability[dateKey];
-            
-            // Remove existing availability attributes
-            dateElement.removeAttribute('data-available');
-            dateElement.removeAttribute('data-unavailable');
-            
-            // Apply availability styling
-            if (availabilityStatus === 'available') {
-              dateElement.setAttribute('data-available', 'true');
-            } else if (availabilityStatus === 'limited') {
-              dateElement.setAttribute('data-available', 'limited');
-            } else if (availabilityStatus === 'unavailable') {
-              dateElement.setAttribute('data-unavailable', 'true');
-            }
-          }
-        }
-      });
-    };
-
-    // Apply styles when calendar renders
-    const timer = setTimeout(applyAvailabilityStyles, 100);
-    
-    // Set up observer for calendar changes
-    const observer = new MutationObserver(applyAvailabilityStyles);
-    const calendarElement = document.querySelector('.availability-calendar');
-    
-    if (calendarElement) {
-      observer.observe(calendarElement, { 
-        childList: true, 
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['data-slot']
-      });
-    }
-
-    return () => {
-      clearTimeout(timer);
-      observer.disconnect();
-    };
-  }, [availability]);
 
   const fetchPackages = async () => {
     try {
@@ -336,24 +275,37 @@ export default function ClientNewReservationPageAnimated() {
   };
 
   const fetchAvailability = async () => {
-    // Mock availability data - in real app, this would come from API
-    const mockAvailability: AvailabilityData = {};
-    const today = new Date();
-    
-    for (let i = 0; i < 90; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const dateKey = date.toISOString().split('T')[0];
+    setLoadingAvailability(true);
+    try {
+      const response = await fetch('/api/reservations/availability');
       
-      // Mock logic: weekends are limited, some random dates unavailable
-      if (date.getDay() === 0 || date.getDay() === 6) {
-        mockAvailability[dateKey] = Math.random() > 0.3 ? 'limited' : 'unavailable';
-      } else {
-        mockAvailability[dateKey] = Math.random() > 0.1 ? 'available' : 'unavailable';
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAvailability(data.data);
+          setLoadingAvailability(false);
+          return;
+        }
       }
+      
+      // If API fails, show error
+      console.error('Failed to fetch availability data');
+      toast.error('Error al cargar disponibilidad');
+      setLoadingAvailability(false);
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+      toast.error('Error al cargar disponibilidad');
+      setLoadingAvailability(false);
     }
-    
-    setAvailability(mockAvailability);
+  };
+
+  const loadCelebrationAnimation = async () => {
+    try {
+      // DotLottieReact is loaded via import, no need to load external scripts
+      setCelebrationAnimation(true);
+    } catch (error) {
+      console.error('Error loading celebration animation:', error);
+    }
   };
 
   const fetchTimeSlots = async (date: Date) => {
@@ -382,6 +334,14 @@ export default function ClientNewReservationPageAnimated() {
         });
         
         setAvailableSlots(transformedData);
+        
+        // Check if date is fully booked (2 events max per day)
+        const dateAvailability = availability[dateStr];
+        if (dateAvailability === 'unavailable') {
+          setFormData(prev => ({ ...prev, eventTime: '' }));
+          toast.error('Esta fecha ya tiene la capacidad máxima de eventos (2 por día)');
+          return;
+        }
         
         // Reset time selection if previously selected time is not available
         if (formData.eventTime && !transformedData.slots.find((slot: TimeSlot) => 
@@ -496,36 +456,6 @@ export default function ClientNewReservationPageAnimated() {
     }
   };
 
-  // Custom day class names for availability
-  const getDayClassName = (date: Date) => {
-    const dateKey = date.toISOString().split('T')[0];
-    const dayAvailability = availability[dateKey];
-    
-    const baseClasses = "react-datepicker__day";
-    
-    switch (dayAvailability) {
-      case 'unavailable':
-        return `${baseClasses} react-datepicker__day--unavailable`;
-      case 'limited':
-        return `${baseClasses} react-datepicker__day--limited`;
-      case 'available':
-        return `${baseClasses} react-datepicker__day--available`;
-      default:
-        return baseClasses;
-    }
-  };
-
-  // Filter out past dates and unavailable dates
-  const isDateDisabled = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (date < today) return true;
-    
-    const dateKey = date.toISOString().split('T')[0];
-    return availability[dateKey] === 'unavailable';
-  };
-
   // Get selected package details
   const selectedPackage = packages.find(pkg => pkg._id === formData.packageId);
   const selectedFood = foodOptions.find(food => food._id === formData.foodOptionId);
@@ -593,7 +523,7 @@ Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}
 DATOS DEL EVENTO:
 - Festejado/a: ${formData.childName}
 - Edad: ${formData.childAge} años
-- Fecha: ${formData.eventDate?.toLocaleDateString('es-ES')}
+- Fecha: ${formData.eventDate ? formData.eventDate.toLocaleDateString('es-ES') : 'N/A'}
 - Hora: ${formData.eventTime}
 
 PAQUETE SELECCIONADO:
@@ -748,7 +678,7 @@ Para cualquier duda, contacta:
                     }}
                   >
                     {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                      <SelectItem key={age.toString()} value={age.toString()}>
+                      <SelectItem key={age.toString()}>
                         {age} {age === 1 ? 'año' : 'años'}
                       </SelectItem>
                     ))}
@@ -770,71 +700,45 @@ Para cualquier duda, contacta:
                     <span className="text-rose-500">*</span>
                   </label>
                   
-                  {/* Airbnb-style Date Picker */}
-                  <div className="bg-white border-2 border-gray-200 hover:border-rose-300 rounded-2xl p-6 transition-all duration-200">
-                    <DatePicker
-                      value={formData.eventDate}
-                      onChange={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
-                      minValue={today(getLocalTimeZone())}
-                      showMonthAndYearPickers
-                      isDateUnavailable={(date) => {
-                        const dateKey = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
-                        return availability[dateKey] === 'unavailable';
-                      }}
-                      classNames={{
-                        base: "w-full",
-                        inputWrapper: "hidden",
-                        popoverContent: "bg-white/95 backdrop-blur-md shadow-2xl border-0 rounded-3xl",
-                        calendar: "availability-calendar w-full",
-                        calendarContent: "p-6",
-                        header: "pb-4",
-                        title: "text-xl font-bold text-gray-900",
-                        gridHeader: "pb-2",
-                        gridHeaderCell: "text-sm font-semibold text-gray-600",
-                        gridBody: "gap-1",
-                        cell: "text-sm",
-                        cellButton: "w-12 h-12 rounded-xl hover:bg-rose-50 data-[selected=true]:bg-gradient-to-br data-[selected=true]:from-rose-400 data-[selected=true]:to-pink-600 data-[selected=true]:text-white transition-all"
-                      }}
-                      radius="lg"
-                    />
-                    
-                    {/* Availability Legend */}
-                    <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-rose-50 rounded-2xl border border-gray-100">
-                      <div className="flex items-center gap-2 mb-4">
-                        <InformationCircleIcon className="w-5 h-5 text-gray-500" />
-                        <span className="text-sm font-semibold text-gray-700">Disponibilidad</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-emerald-200 to-emerald-300 border-2 border-emerald-400 flex items-center justify-center shadow-sm">
-                            <div className="w-3 h-3 bg-emerald-600 rounded-full animate-pulse" />
-                          </div>
-                          <div>
-                            <span className="text-sm font-semibold text-emerald-700">Disponible</span>
-                            <p className="text-xs text-emerald-600">Espacios completos</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-amber-200 to-amber-300 border-2 border-amber-400 flex items-center justify-center shadow-sm">
-                            <div className="w-3 h-3 bg-amber-600 rounded-full animate-pulse" />
-                          </div>
-                          <div>
-                            <span className="text-sm font-semibold text-amber-700">Limitado</span>
-                            <p className="text-xs text-amber-600">Pocos espacios</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-red-200 to-red-300 border-2 border-red-400 flex items-center justify-center shadow-sm">
-                            <div className="w-4 h-1 bg-red-600 transform rotate-45 rounded-full" />
-                          </div>
-                          <div>
-                            <span className="text-sm font-semibold text-red-700">No disponible</span>
-                            <p className="text-xs text-red-600">Sin espacios</p>
-                          </div>
+                  {/* Custom Modern Calendar */}
+                  <div className="w-full">
+                    {loadingAvailability ? (
+                      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 min-h-[400px] flex items-center justify-center">
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+                          <p className="text-gray-500">Cargando disponibilidad...</p>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <CustomCalendar
+                        selectedDate={formData.eventDate}
+                        onDateSelect={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
+                        availability={availability}
+                        minDate={new Date()}
+                      />
+                    )}
                   </div>
+                  
+                  {/* Availability Notice */}
+                  {!loadingAvailability && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200"
+                    >
+                      <div className="flex items-start gap-3">
+                        <InformationCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm">
+                          <p className="font-semibold text-blue-900 mb-1">Nota sobre disponibilidad</p>
+                          <p className="text-blue-700">
+                            Por día se permiten máximo 2 eventos. Los días marcados en rojo ya tienen su capacidad completa. 
+                            Los días de descanso tienen un cargo adicional.
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </motion.div>
 
@@ -1032,7 +936,7 @@ Para cualquier duda, contacta:
                           : 'hover:shadow-2xl bg-white border border-gray-100'
                       }`}
                       onPress={() => setFormData(prev => ({ ...prev, packageId: pkg._id }))}
-                      radius="3xl"
+                      radius="lg"
                     >
                       {/* Package Header */}
                       <CardHeader className="pb-4 relative">
@@ -1118,7 +1022,7 @@ Para cualquier duda, contacta:
                                   </span>
                                 </div>
                                 <span className="text-xl font-bold text-emerald-600">
-                                  ${(formData.eventDate && formData.eventDate.day && (formData.eventDate.day === 0 || formData.eventDate.day === 6)
+                                  ${(formData.eventDate && (formData.eventDate.getDay() === 0 || formData.eventDate.getDay() === 6)
                                     ? pkg.pricing?.weekend 
                                     : pkg.pricing?.weekday)?.toLocaleString() || '0'}
                                 </span>
@@ -1414,120 +1318,116 @@ Para cualquier duda, contacta:
               <p className="text-gray-600">Selecciona tu método de pago preferido</p>
             </div>
 
-            <RadioGroup
-              value={formData.paymentMethod}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as 'transfer' | 'cash' | 'card' }))}
-            >
-              <motion.div className="space-y-3">
-                {[
-                  { value: 'transfer', icon: BanknotesIcon, color: 'blue', title: 'Transferencia bancaria', desc: 'Recibirás los datos bancarios por correo' },
-                  { value: 'cash', icon: BanknotesIcon, color: 'green', title: 'Efectivo', desc: 'Paga el día de tu evento' },
-                  { value: 'card', icon: CreditCardIcon, color: 'purple', title: 'Tarjeta de crédito o débito', desc: 'Paga con tarjeta el día del evento' }
-                ].map((method, index) => (
-                  <motion.div
-                    key={method.value}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Radio 
-                      value={method.value}
-                      classNames={{
-                        base: "max-w-full m-0 p-4 rounded-xl border-2 data-[selected=true]:border-pink-500 data-[selected=true]:bg-pink-50",
-                        label: "w-full"
-                      }}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <method.icon className={`w-6 h-6 text-${method.color}-500`} />
-                          <div>
-                            <p className="font-medium text-gray-900">{method.title}</p>
-                            <p className="text-sm text-gray-600">{method.desc}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </Radio>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </RadioGroup>
+            <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                { value: 'transfer', icon: BanknotesIcon, color: 'blue', title: 'Transferencia bancaria', desc: 'Datos por correo' },
+                { value: 'cash', icon: BanknotesIcon, color: 'green', title: 'Efectivo', desc: 'Paga el día del evento' },
+                { value: 'card', icon: CreditCardIcon, color: 'purple', title: 'Tarjeta', desc: 'Paga el día del evento' }
+              ].map((method, index) => (
+                <motion.button
+                  key={method.value}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setFormData(prev => ({ ...prev, paymentMethod: method.value as 'transfer' | 'cash' | 'card' }))}
+                  className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center text-center space-y-2 ${
+                    formData.paymentMethod === method.value
+                      ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  {React.createElement(method.icon, { 
+                    className: `w-5 h-5 ${method.color === 'blue' ? 'text-blue-600' : method.color === 'green' ? 'text-green-600' : 'text-purple-600'}` 
+                  })}
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">{method.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{method.desc}</p>
+                  </div>
+                </motion.button>
+              ))}
+            </motion.div>
           </motion.div>
         );
 
       case 'confirmation':
         return (
-          <motion.div 
-            key="confirmation"
-            variants={scaleIn}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.3 }}
-            className="space-y-8"
-          >
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", duration: 0.5 }}
-              className="text-center"
-            >
-              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
-                <CheckIcon className="w-10 h-10 text-white drop-shadow" />
+          <div className="space-y-8">
+            <div className="text-center">
+              <div className="flex flex-col items-center">
+                <div className="relative flex items-center justify-center">
+                  {celebrationAnimation && (
+                    <DotLottieReact
+                      src="https://lottie.host/bb5b54e5-d1d0-41af-a958-7203748ff3c1/wMVyMTX4XV.lottie"
+                      loop
+                      autoplay
+                      style={{ width: '200px', height: '200px' }}
+                    />
+                  )}
+                  <motion.div
+                    className={`w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center shadow-xl ${
+                      celebrationAnimation ? 'absolute' : 'mx-auto mb-4'
+                    }`}
+                    initial={{ scale: 0, opacity: 0, rotate: 0 }}
+                    animate={{ 
+                      scale: [0, 1.2, 1],
+                      opacity: [0, 1, 1],
+                      rotate: [0, 360]
+                    }}
+                    transition={{
+                      duration: 1,
+                      ease: "easeInOut"
+                    }}
+                    style={{ 
+                      zIndex: 10
+                    }}
+                  >
+                    <CheckIcon className="w-10 h-10 text-white drop-shadow" />
+                  </motion.div>
+                </div>
               </div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">¡Listo!</h2>
               <p className="text-gray-600">Tu reserva ha sido confirmada</p>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-50 to-purple-50">
-                <CardBody className="p-6">
-                  <div className="text-center mb-6">
-                    <p className="text-sm text-gray-600 mb-1">Número de reserva</p>
-                    <p className="text-2xl font-mono font-bold text-gray-900">{reservationId}</p>
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-50 to-purple-50">
+              <CardBody className="p-6">
+                <div className="text-center mb-6">
+                  <p className="text-sm text-gray-600 mb-1">Número de reserva</p>
+                  <p className="text-2xl font-mono font-bold text-gray-900">{reservationId}</p>
+                </div>
+                
+                <Divider className="my-4" />
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Festejado/a</span>
+                    <span className="font-medium">{formData.childName}</span>
                   </div>
-                  
-                  <Divider className="my-4" />
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Festejado/a</span>
-                      <span className="font-medium">{formData.childName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Fecha</span>
-                      <span className="font-medium">{formData.eventDate?.toLocaleDateString('es-ES', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Hora</span>
-                      <span className="font-medium">{formData.eventTime} hrs</span>
-                    </div>
-                    <Divider className="my-2" />
-                    <div className="flex justify-between text-lg">
-                      <span className="font-semibold text-gray-900">Total</span>
-                      <span className="font-bold text-green-600">{formatPrice(calculateTotal())}</span>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Fecha</span>
+                    <span className="font-medium">{formData.eventDate ? formData.eventDate.toLocaleDateString('es-ES', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    }) : ''}</span>
                   </div>
-                </CardBody>
-              </Card>
-            </motion.div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Hora</span>
+                    <span className="font-medium">{formData.eventTime} hrs</span>
+                  </div>
+                  <Divider className="my-2" />
+                  <div className="flex justify-between text-lg">
+                    <span className="font-semibold text-gray-900">Total</span>
+                    <span className="font-bold text-green-600">{formatPrice(calculateTotal())}</span>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
 
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="space-y-3"
-            >
+            <div className="space-y-3">
               <Button
                 color="primary"
                 size="lg"
@@ -1546,18 +1446,13 @@ Para cualquier duda, contacta:
               >
                 Ver mis reservas
               </Button>
-            </motion.div>
+            </div>
 
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="text-center text-sm text-gray-600"
-            >
+            <div className="text-center text-sm text-gray-600">
               <p>Te hemos enviado un correo con todos los detalles</p>
               <p className="mt-2">¿Necesitas ayuda? Llámanos al (55) 1234-5678</p>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         );
 
       default:

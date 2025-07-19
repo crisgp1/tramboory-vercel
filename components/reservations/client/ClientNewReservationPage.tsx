@@ -649,7 +649,7 @@ Para cualquier duda, contacta:
                   }}
                 >
                   {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                    <SelectItem key={age.toString()} value={age.toString()}>
+                    <SelectItem key={age.toString()}>
                       {age} {age === 1 ? 'año' : 'años'}
                     </SelectItem>
                   ))}
@@ -672,19 +672,11 @@ Para cualquier duda, contacta:
                     filterDate={(date) => !isDateDisabled(date)}
                     dayClassName={getDayClassName}
                     placeholderText="Selecciona una fecha"
-                    className="w-full px-4 py-3 border-2 border-pink-200 hover:border-pink-300 focus:border-pink-500 rounded-lg text-gray-900 text-lg bg-white focus:outline-none"
+                    className="w-full px-3 py-2 bg-gray-50 border-0 rounded-lg text-gray-900 hover:bg-gray-100 focus:bg-white focus:ring-1 focus:ring-gray-900 focus:outline-none"
                     calendarClassName="custom-calendar"
                     withPortal={true}
                     shouldCloseOnSelect={true}
                     popperPlacement="bottom-start"
-                    popperModifiers={[
-                      {
-                        name: "offset",
-                        options: {
-                          offset: [0, 8],
-                        },
-                      },
-                    ]}
                   />
                 </div>
               </div>

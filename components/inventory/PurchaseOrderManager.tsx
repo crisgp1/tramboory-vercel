@@ -103,7 +103,45 @@ export default function PurchaseOrderManager() {
   }, [currentPage, searchTerm, statusFilter, supplierFilter])
 
   const fetchOrders = async () => {
-    // Implementation here
+    try {
+      setLoading(true)
+      
+      // Construir URL con parámetros de consulta
+      const searchParams = new URLSearchParams()
+      searchParams.append('page', currentPage.toString())
+      searchParams.append('limit', itemsPerPage.toString())
+      
+      if (searchTerm) {
+        searchParams.append('search', searchTerm)
+      }
+      
+      if (statusFilter !== 'all') {
+        searchParams.append('status', statusFilter)
+      }
+      
+      if (supplierFilter !== 'all') {
+        searchParams.append('supplierId', supplierFilter)
+      }
+      
+      const response = await fetch(`/api/inventory/purchase-orders?${searchParams}`)
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener órdenes de compra')
+      }
+      
+      const data = await response.json()
+      
+      setOrders(data.orders || [])
+      setTotalPages(data.pagination?.totalPages || 1)
+      
+    } catch (error) {
+      console.error('Error fetching orders:', error)
+      toast.error('Error al cargar las órdenes de compra')
+      setOrders([])
+      setTotalPages(1)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleCreateOrder = () => {
@@ -130,7 +168,42 @@ export default function PurchaseOrderManager() {
   }
 
   const handleStatusChange = async (orderId: string, newStatus: PurchaseOrder['status']) => {
-    // Implementation here
+    try {
+      // Mapear el estado a la acción correspondiente
+      const statusToAction = {
+        'APPROVED': 'approve',
+        'ORDERED': 'order',
+        'RECEIVED': 'receive',
+        'CANCELLED': 'cancel'
+      }
+
+      const action = statusToAction[newStatus as keyof typeof statusToAction]
+      if (!action) {
+        throw new Error('Acción no válida para el estado')
+      }
+
+      const response = await fetch(`/api/inventory/purchase-orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action,
+          reason: newStatus === 'CANCELLED' ? 'Cancelada desde el dashboard' : undefined
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al actualizar el estado de la orden')
+      }
+
+      toast.success('Estado de la orden actualizado correctamente')
+      await fetchOrders() // Recargar la lista
+    } catch (error) {
+      console.error('Error updating order status:', error)
+      toast.error('Error al actualizar el estado de la orden')
+    }
   }
 
   const formatCurrency = (amount: number) => {
