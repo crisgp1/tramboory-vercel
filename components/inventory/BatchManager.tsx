@@ -2,30 +2,11 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
   Input,
   Select,
-  SelectItem,
-  Chip,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  DateInput,
-  Textarea,
-  Divider,
-  Progress,
-  Tooltip,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Spinner
+  SelectItem
 } from "@heroui/react"
+import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -35,12 +16,10 @@ import {
   ExclamationTriangleIcon,
   CalendarIcon,
   ArchiveBoxIcon,
-  ClockIcon,
-  EllipsisVerticalIcon
+  Squares2X2Icon,
+  ListBulletIcon
 } from "@heroicons/react/24/outline"
-import { parseDate } from "@internationalized/date"
 import toast from "react-hot-toast"
-import NordicTable from "@/components/ui/NordicTable"
 
 interface Batch {
   _id?: string
@@ -74,7 +53,7 @@ interface Product {
     }
   }
   trackBatches: boolean
-  shelfLife?: number // días
+  shelfLife?: number
 }
 
 interface BatchModalProps {
@@ -186,187 +165,227 @@ function BatchModal({ isOpen, onClose, batch, mode, onSuccess }: BatchModalProps
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      size="3xl"
-      scrollBehavior="inside"
-      backdrop="opaque"
-      classNames={{
-        backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
-        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto"
-      }}
-    >
-      <ModalContent>
-        <ModalHeader className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-            <ArchiveBoxIcon className="w-4 h-4 text-green-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">
-              {mode === 'create' ? 'Nuevo Lote' : 
-               mode === 'edit' ? 'Editar Lote' : 'Ver Lote'}
-            </h3>
-            {batch?.batchNumber && (
-              <p className="text-sm text-gray-600">Lote: {batch.batchNumber}</p>
-            )}
-          </div>
-        </ModalHeader>
-        
-        <ModalBody>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                placeholder="Número de Lote *"
-                value={formData.batchNumber || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, batchNumber: e.target.value }))}
-                isDisabled={isReadOnly}
-                variant="flat"
-                classNames={{
-                  input: "text-gray-900",
-                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                }}
-              />
-              
-              <Select
-                placeholder="Selecciona un producto *"
-                selectedKeys={formData.productId ? [formData.productId] : []}
-                onSelectionChange={(keys) => handleProductChange(Array.from(keys)[0] as string)}
-                isDisabled={isReadOnly}
-                variant="flat"
-                classNames={{
-                  trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                  value: "text-gray-900",
-                  listboxWrapper: "bg-white",
-                  popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-                }}
-              >
-                {products.map((product) => (
-                  <SelectItem key={product._id}>
-                    {product.name} ({product.sku})
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
-                type="number"
-                placeholder="Cantidad *"
-                value={formData.quantity?.toString() || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
-                isDisabled={isReadOnly}
-                min="0"
-                step="0.01"
-                endContent={formData.unit}
-                variant="flat"
-                classNames={{
-                  input: "text-gray-900",
-                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                }}
-              />
-              
-              <Input
-                placeholder="Ubicación *"
-                value={formData.location || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                isDisabled={isReadOnly}
-                variant="flat"
-                classNames={{
-                  input: "text-gray-900",
-                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                }}
-              />
-              
-              <Select
-                placeholder="Selecciona estado"
-                selectedKeys={formData.status ? [formData.status] : []}
-                onSelectionChange={(keys) => setFormData(prev => ({ ...prev, status: Array.from(keys)[0] as any }))}
-                isDisabled={isReadOnly}
-                variant="flat"
-                classNames={{
-                  trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                  value: "text-gray-900",
-                  listboxWrapper: "bg-white",
-                  popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-                }}
-              >
-                <SelectItem key="active">Activo</SelectItem>
-                <SelectItem key="quarantine">Cuarentena</SelectItem>
-                <SelectItem key="reserved">Reservado</SelectItem>
-                <SelectItem key="expired">Vencido</SelectItem>
-                <SelectItem key="consumed">Consumido</SelectItem>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de Fabricación
-                </label>
-                <DateInput
-                  value={formData.manufacturingDate ? parseDate(formData.manufacturingDate.split('T')[0]) : null}
-                  onChange={(date) => setFormData(prev => ({
-                    ...prev,
-                    manufacturingDate: date?.toString()
-                  }))}
-                  isDisabled={isReadOnly}
-                  variant="flat"
-                  classNames={{
-                    input: "text-gray-900",
-                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                  }}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de Vencimiento
-                </label>
-                <DateInput
-                  value={formData.expirationDate ? parseDate(formData.expirationDate.split('T')[0]) : null}
-                  onChange={(date) => setFormData(prev => ({
-                    ...prev,
-                    expirationDate: date?.toString()
-                  }))}
-                  isDisabled={isReadOnly}
-                  variant="flat"
-                  classNames={{
-                    input: "text-gray-900",
-                    inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                  }}
-                />
-              </div>
-            </div>
-            
-            <Textarea
-              placeholder="Notas adicionales del lote..."
-              value={formData.notes || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              isDisabled={isReadOnly}
-              maxRows={3}
-              variant="flat"
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-              }}
-            />
-          </div>
-        </ModalBody>
-        
+      title={mode === 'create' ? 'Nuevo Lote' : 
+             mode === 'edit' ? 'Editar Lote' : 'Detalles del Lote'}
+      subtitle={batch?.batchNumber ? `#${batch.batchNumber}` : undefined}
+      icon={ArchiveBoxIcon}
+      size="lg"
+      footer={
         <ModalFooter>
-          <Button variant="light" onPress={onClose} isDisabled={loading}>
-            {isReadOnly ? 'Cerrar' : 'Cancelar'}
-          </Button>
-          {!isReadOnly && (
-            <Button
-              color="primary"
-              onPress={handleSubmit}
-              isLoading={loading}
+          <ModalActions>
+            <ModalButton
+              onClick={onClose}
+              disabled={loading}
+              variant="secondary"
             >
-              {mode === 'create' ? 'Crear Lote' : 'Guardar Cambios'}
-            </Button>
-          )}
+              Cancelar
+            </ModalButton>
+            {!isReadOnly && (
+              <ModalButton
+                onClick={handleSubmit}
+                loading={loading}
+                variant="primary"
+              >
+                {mode === 'create' ? 'Crear Lote' : 'Guardar Cambios'}
+              </ModalButton>
+            )}
+          </ModalActions>
         </ModalFooter>
-      </ModalContent>
+      }
+    >
+              <div className="space-y-6">
+                {/* Información básica */}
+                <div className="glass-card p-6">
+                  <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <div className="w-4 h-4 bg-emerald-100 rounded flex items-center justify-center">
+                      <ArchiveBoxIcon className="w-3 h-3 text-emerald-600" />
+                    </div>
+                    Información Básica
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Número de Lote *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.batchNumber || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, batchNumber: e.target.value }))}
+                        disabled={isReadOnly}
+                        placeholder="Ej: LOT-2024-001"
+                        className={`glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 ${isReadOnly ? 'opacity-60' : ''}`}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Producto *
+                      </label>
+                      <select
+                        value={formData.productId || ''}
+                        onChange={(e) => {
+                          const productId = e.target.value
+                          if (productId) handleProductChange(productId)
+                        }}
+                        disabled={isReadOnly}
+                        className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${isReadOnly ? 'opacity-60' : ''}`}
+                      >
+                        <option value="">Selecciona un producto</option>
+                        {products.map((product, index) => (
+                          <option key={product._id || `product-${index}`} value={product._id}>
+                            {product.name} ({product.sku})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cantidad y ubicación */}
+                <div className="glass-card p-6">
+                  <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center">
+                      <Squares2X2Icon className="w-3 h-3 text-blue-600" />
+                    </div>
+                    Cantidad y Ubicación
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Cantidad *
+                      </label>
+                      <Input
+                        type="number"
+                        value={formData.quantity?.toString() || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
+                        disabled={isReadOnly}
+                        min="0"
+                        step="0.01"
+                        placeholder="0"
+                        endContent={
+                          formData.unit && (
+                            <span className="text-sm text-slate-500 font-medium">
+                              {formData.unit}
+                            </span>
+                          )
+                        }
+                        classNames={{
+                          input: "bg-white/70 backdrop-blur-sm",
+                          inputWrapper: "bg-white/70 backdrop-blur-sm border border-white/50 hover:border-blue-300 focus-within:border-blue-500"
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Ubicación *
+                      </label>
+                      <Input
+                        value={formData.location || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                        disabled={isReadOnly}
+                        placeholder="Ej: Almacén A-1"
+                        classNames={{
+                          input: "bg-white/70 backdrop-blur-sm",
+                          inputWrapper: "bg-white/70 backdrop-blur-sm border border-white/50 hover:border-blue-300 focus-within:border-blue-500"
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Estado
+                      </label>
+                      <Select
+                        selectedKeys={formData.status ? [formData.status] : []}
+                        onSelectionChange={(keys) => {
+                          const status = Array.from(keys)[0] as string
+                          setFormData(prev => ({ ...prev, status: status as any }))
+                        }}
+                        disabled={isReadOnly}
+                        placeholder="Selecciona estado"
+                        classNames={{
+                          trigger: "bg-white/70 backdrop-blur-sm border border-white/50 hover:border-blue-300",
+                          value: "text-slate-800"
+                        }}
+                      >
+                        <SelectItem key="active">Activo</SelectItem>
+                        <SelectItem key="quarantine">Cuarentena</SelectItem>
+                        <SelectItem key="reserved">Reservado</SelectItem>
+                        <SelectItem key="expired">Vencido</SelectItem>
+                        <SelectItem key="consumed">Consumido</SelectItem>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fechas */}
+                <div className="glass-card p-6">
+                  <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <div className="w-4 h-4 bg-purple-100 rounded flex items-center justify-center">
+                      <CalendarIcon className="w-3 h-3 text-purple-600" />
+                    </div>
+                    Fechas Importantes
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Fecha de Fabricación
+                      </label>
+                      <Input
+                        type="date"
+                        value={formData.manufacturingDate ? formData.manufacturingDate.split('T')[0] : ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          manufacturingDate: e.target.value ? e.target.value + 'T00:00:00.000Z' : undefined
+                        }))}
+                        disabled={isReadOnly}
+                        classNames={{
+                          input: "bg-white/70 backdrop-blur-sm",
+                          inputWrapper: "bg-white/70 backdrop-blur-sm border border-white/50 hover:border-purple-300 focus-within:border-purple-500"
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Fecha de Vencimiento
+                      </label>
+                      <Input
+                        type="date"
+                        value={formData.expirationDate ? formData.expirationDate.split('T')[0] : ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          expirationDate: e.target.value ? e.target.value + 'T00:00:00.000Z' : undefined
+                        }))}
+                        disabled={isReadOnly}
+                        classNames={{
+                          input: "bg-white/70 backdrop-blur-sm",
+                          inputWrapper: "bg-white/70 backdrop-blur-sm border border-white/50 hover:border-purple-300 focus-within:border-purple-500"
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notas */}
+                <div className="glass-card p-6">
+                  <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <div className="w-4 h-4 bg-amber-100 rounded flex items-center justify-center">
+                      <ListBulletIcon className="w-3 h-3 text-amber-600" />
+                    </div>
+                    Notas Adicionales
+                  </h3>
+                  <textarea
+                    value={formData.notes || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    disabled={isReadOnly}
+                    rows={4}
+                    placeholder="Información adicional sobre el lote..."
+                    className="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white/50 rounded-xl focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 resize-none text-slate-800 placeholder-slate-400"
+                  />
+                </div>
+              </div>
     </Modal>
   )
 }
@@ -441,16 +460,6 @@ export default function BatchManager() {
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'success'
-      case 'expired': return 'danger'
-      case 'quarantine': return 'warning'
-      case 'reserved': return 'primary'
-      case 'consumed': return 'default'
-      default: return 'default'
-    }
-  }
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -497,315 +506,248 @@ export default function BatchManager() {
     return matchesSearch && matchesStatus && matchesExpiration
   })
 
-  const columns = [
-    { key: "batch", label: "Lote" },
-    { key: "product", label: "Producto" },
-    { key: "quantity", label: "Cantidad", width: "w-24", align: "right" as const },
-    { key: "location", label: "Ubicación", width: "w-32" },
-    { key: "status", label: "Estado", width: "w-28", align: "center" as const },
-    { key: "expiration", label: "Vencimiento", width: "w-36" }
-  ]
+  const BatchCard = ({ batch }: { batch: Batch }) => {
+    const daysToExpiration = batch.expirationDate ? getDaysToExpiration(batch.expirationDate) : null
+    const expirationStatus = batch.expirationDate ? getExpirationStatus(batch.expirationDate) : null
 
-  const actions = [
-    {
-      key: "view",
-      label: "Ver detalles",
-      icon: <EyeIcon className="w-4 h-4" />,
-      onClick: handleView
-    },
-    {
-      key: "edit",
-      label: "Editar",
-      icon: <PencilIcon className="w-4 h-4" />,
-      color: "primary" as const,
-      onClick: handleEdit
-    },
-    {
-      key: "delete",
-      label: "Eliminar",
-      icon: <TrashIcon className="w-4 h-4" />,
-      color: "danger" as const,
-      onClick: handleDelete
-    }
-  ]
-
-  const renderCell = (batch: Batch, columnKey: string) => {
-    switch (columnKey) {
-      case "batch": {
-        return (
-          <div>
-            <p className="font-medium text-gray-900">{batch.batchNumber}</p>
-            <p className="text-sm text-gray-500 font-mono">{batch.productSku}</p>
-          </div>
-        )
-      }
-      case "product": {
-        return (
-          <div>
-            <p className="font-medium text-gray-900">{batch.productName}</p>
-            <p className="text-sm text-gray-500">{batch.supplier?.name || 'N/A'}</p>
-          </div>
-        )
-      }
-      case "quantity": {
-        return (
-          <span className="font-semibold text-gray-900">
-            {batch.quantity} {batch.unit}
-          </span>
-        )
-      }
-      case "location": {
-        return (
-          <span className="text-sm text-gray-900">{batch.location}</span>
-        )
-      }
-      case "status": {
-        return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={getStatusColor(batch.status) as any}
-            className="font-medium"
-          >
-            {getStatusLabel(batch.status)}
-          </Chip>
-        )
-      }
-      case "expiration": {
-        if (!batch.expirationDate) {
-          return <span className="text-gray-400">Sin fecha</span>
-        }
-        
-        const daysToExpiration = getDaysToExpiration(batch.expirationDate)
-        const expirationStatus = getExpirationStatus(batch.expirationDate)
-        
-        return (
-          <div className="flex items-center gap-2">
-            <div>
-              <p className="text-sm text-gray-900">
-                {new Date(batch.expirationDate).toLocaleDateString('es-MX')}
-              </p>
-              {daysToExpiration !== null && (
-                <p className={`text-xs ${
-                  expirationStatus === 'expired' ? 'text-red-600' :
-                  expirationStatus === 'critical' ? 'text-orange-600' :
-                  expirationStatus === 'warning' ? 'text-yellow-600' :
-                  'text-green-600'
-                }`}>
-                  {daysToExpiration < 0 
-                    ? `Vencido hace ${Math.abs(daysToExpiration)} días`
-                    : daysToExpiration === 0
-                    ? 'Vence hoy'
-                    : `${daysToExpiration} días`
-                  }
-                </p>
-              )}
+    return (
+      <div className="glass-card p-6 hover:scale-[1.02] transition-all duration-300">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center">
+                <ArchiveBoxIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">{batch.batchNumber}</h3>
+                <p className="text-sm text-slate-500 font-mono">{batch.productSku}</p>
+              </div>
             </div>
-            {(expirationStatus === 'expired' || expirationStatus === 'critical') && (
-              <ExclamationTriangleIcon className="w-4 h-4 text-red-500" />
-            )}
+            <p className="text-slate-700 font-medium mb-1">{batch.productName}</p>
+            <p className="text-sm text-slate-500">{batch.supplier?.name || 'Sin proveedor'}</p>
           </div>
-        )
-      }
-      default: {
-        return null
-      }
-    }
+          
+          <div className="flex flex-col items-end gap-2">
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              batch.status === 'active' ? 'bg-green-100/80 text-green-800' :
+              batch.status === 'expired' ? 'bg-red-100/80 text-red-800' :
+              batch.status === 'quarantine' ? 'bg-yellow-100/80 text-yellow-800' :
+              batch.status === 'reserved' ? 'bg-blue-100/80 text-blue-800' :
+              batch.status === 'consumed' ? 'bg-gray-100/80 text-gray-800' : 'bg-gray-100/80 text-gray-800'
+            }`}>
+              {getStatusLabel(batch.status)}
+            </span>
+            
+            <div className="flex gap-1">
+              <button
+                onClick={() => handleView(batch)}
+                className="glass-button-icon p-2"
+                title="Ver detalles"
+              >
+                <EyeIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleEdit(batch)}
+                className="glass-button-icon p-2"
+                title="Editar"
+              >
+                <PencilIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleDelete(batch)}
+                className="glass-button-icon p-2 text-red-600 hover:text-red-700"
+                title="Eliminar"
+              >
+                <TrashIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="glass-stat p-3">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Cantidad</p>
+              <p className="text-lg font-bold text-slate-800">{batch.quantity} {batch.unit}</p>
+            </div>
+            <div className="glass-stat p-3">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Ubicación</p>
+              <p className="text-sm font-medium text-slate-700">{batch.location}</p>
+            </div>
+          </div>
+
+          {batch.expirationDate && (
+            <div className="glass-stat p-3">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Vencimiento</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-700">
+                    {new Date(batch.expirationDate).toLocaleDateString('es-MX')}
+                  </p>
+                  {daysToExpiration !== null && (
+                    <p className={`text-xs font-medium ${
+                      expirationStatus === 'expired' ? 'text-red-600' :
+                      expirationStatus === 'critical' ? 'text-orange-600' :
+                      expirationStatus === 'warning' ? 'text-yellow-600' :
+                      'text-green-600'
+                    }`}>
+                      {daysToExpiration < 0 
+                        ? `Vencido hace ${Math.abs(daysToExpiration)} días`
+                        : daysToExpiration === 0
+                        ? 'Vence hoy'
+                        : `${daysToExpiration} días restantes`
+                      }
+                    </p>
+                  )}
+                </div>
+                {(expirationStatus === 'expired' || expirationStatus === 'critical') && (
+                  <ExclamationTriangleIcon className="w-5 h-5 text-red-500 flex-shrink-0" />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-      {/* Header y controles */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder="Buscar por lote, producto o SKU..."
-            value={searchTerm}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-            startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
-            className="w-full"
-            variant="flat"
-            classNames={{
-              input: "text-gray-900",
-              inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-            }}
-          />
+      {/* Header */}
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center">
+            <ArchiveBoxIcon className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-800">
+              Gestión de Lotes
+            </h1>
+            <p className="text-slate-600 text-sm">Administra y controla todos los lotes de inventario</p>
+          </div>
         </div>
         
-        <div className="flex gap-2">
-          <Select
-            placeholder="Estado"
-            selectedKeys={statusFilter !== 'all' ? [statusFilter] : []}
-            onSelectionChange={(keys: any) => setStatusFilter(Array.from(keys)[0] as string || 'all')}
-            className="min-w-[140px]"
-            variant="flat"
-            classNames={{
-              trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-              value: "text-gray-900",
-              listboxWrapper: "bg-white",
-              popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-            }}
-          >
-            <SelectItem key="all">Todos</SelectItem>
-            <SelectItem key="active">Activo</SelectItem>
-            <SelectItem key="quarantine">Cuarentena</SelectItem>
-            <SelectItem key="reserved">Reservado</SelectItem>
-            <SelectItem key="expired">Vencido</SelectItem>
-            <SelectItem key="consumed">Consumido</SelectItem>
-          </Select>
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <MagnifyingGlassIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
+              <input
+                type="text"
+                placeholder="Buscar por lote, producto o SKU..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="glass-input w-full pl-11 pr-4 py-3 text-slate-800 placeholder-slate-500"
+              />
+            </div>
+          </div>
           
-          <Select
-            placeholder="Vencimiento"
-            selectedKeys={expirationFilter !== 'all' ? [expirationFilter] : []}
-            onSelectionChange={(keys: any) => setExpirationFilter(Array.from(keys)[0] as string || 'all')}
-            className="min-w-[140px]"
-            variant="flat"
-            classNames={{
-              trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-              value: "text-gray-900",
-              listboxWrapper: "bg-white",
-              popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-            }}
-          >
-            <SelectItem key="all">Todos</SelectItem>
-            <SelectItem key="expired">Vencidos</SelectItem>
-            <SelectItem key="critical">Críticos (≤7 días)</SelectItem>
-            <SelectItem key="warning">Próximos (≤30 días)</SelectItem>
-            <SelectItem key="good">Buenos ({'>'}30 días)</SelectItem>
-          </Select>
+          <div className="flex gap-3">
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="glass-input min-w-[140px] px-4 py-3 pr-8 appearance-none cursor-pointer"
+              >
+                <option value="all">Todos los estados</option>
+                <option value="active">Activo</option>
+                <option value="quarantine">Cuarentena</option>
+                <option value="reserved">Reservado</option>
+                <option value="expired">Vencido</option>
+                <option value="consumed">Consumido</option>
+              </select>
+            </div>
+            
+            <div className="relative">
+              <select
+                value={expirationFilter}
+                onChange={(e) => setExpirationFilter(e.target.value)}
+                className="glass-input min-w-[140px] px-4 py-3 pr-8 appearance-none cursor-pointer"
+              >
+                <option value="all">Todos los vencimientos</option>
+                <option value="expired">Vencidos</option>
+                <option value="critical">Críticos (≤7 días)</option>
+                <option value="warning">Próximos (≤30 días)</option>
+                <option value="good">Buenos (&gt;30 días)</option>
+              </select>
+            </div>
 
-          <Button
-            color="primary"
-            startContent={<PlusIcon className="w-4 h-4" />}
-            onPress={handleCreate}
-            className="bg-gray-900 text-white hover:bg-gray-800"
-          >
-            Nuevo Lote
-          </Button>
+            <button
+              onClick={handleCreate}
+              className="glass-button px-6 py-3 flex items-center gap-2 font-medium"
+            >
+              <PlusIcon className="w-4 h-4" />
+              Nuevo Lote
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Vista Desktop - Tabla Nordic */}
-      <div className="hidden lg:block">
-        <NordicTable
-          columns={columns}
-          data={filteredBatches}
-          renderCell={renderCell}
-          actions={actions}
-          loading={loading}
-          emptyMessage="No se encontraron lotes"
-        />
-      </div>
-
-      {/* Vista Mobile - Cards */}
-      <div className="lg:hidden">
+      {/* Content */}
+      <div className="glass-card overflow-hidden">
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <Spinner label="Cargando lotes..." />
+          <div className="flex flex-col justify-center items-center py-20">
+            <div className="w-16 h-16 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin mb-6"></div>
+            <p className="text-slate-600 text-lg font-medium">Cargando lotes...</p>
           </div>
         ) : filteredBatches.length === 0 ? (
-          <div className="text-center py-12">
-            <ArchiveBoxIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No se encontraron lotes</p>
+          <div className="text-center py-20">
+            <div className="w-20 h-20 bg-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <ArchiveBoxIcon className="w-10 h-10 text-slate-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-700 mb-2">No se encontraron lotes</h3>
+            <p className="text-slate-500 mb-6 text-sm">
+              {searchTerm || statusFilter !== 'all' || expirationFilter !== 'all'
+                ? 'Intenta ajustar los filtros de búsqueda'
+                : 'Comienza creando tu primer lote de inventario'
+              }
+            </p>
+            {!searchTerm && statusFilter === 'all' && expirationFilter === 'all' && (
+              <button
+                onClick={handleCreate}
+                className="glass-button px-6 py-3 flex items-center gap-2 font-medium"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Crear Primer Lote
+              </button>
+            )}
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredBatches.map((batch) => {
-              const daysToExpiration = batch.expirationDate ? getDaysToExpiration(batch.expirationDate) : null
-              const expirationStatus = batch.expirationDate ? getExpirationStatus(batch.expirationDate) : null
-              
-              return (
-                <Card key={batch._id} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                  <CardBody className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-medium text-gray-900">{batch.batchNumber}</p>
-                        <p className="font-mono text-sm text-gray-500">{batch.productSku}</p>
-                        <p className="text-sm text-gray-600">{batch.productName}</p>
-                      </div>
-                      <Chip
-                        size="sm"
-                        variant="flat"
-                        color={getStatusColor(batch.status) as any}
-                      >
-                        {getStatusLabel(batch.status)}
-                      </Chip>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Cantidad</p>
-                        <p className="font-semibold">{batch.quantity} {batch.unit}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Ubicación</p>
-                        <p className="text-sm">{batch.location}</p>
-                      </div>
-                    </div>
-
-                    {batch.expirationDate && (
-                      <div className="mb-4">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Vencimiento</p>
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <p className="text-sm">{new Date(batch.expirationDate).toLocaleDateString('es-MX')}</p>
-                            {daysToExpiration !== null && (
-                              <p className={`text-xs ${
-                                expirationStatus === 'expired' ? 'text-red-600' :
-                                expirationStatus === 'critical' ? 'text-orange-600' :
-                                expirationStatus === 'warning' ? 'text-yellow-600' :
-                                'text-green-600'
-                              }`}>
-                                {daysToExpiration < 0 
-                                  ? `Vencido hace ${Math.abs(daysToExpiration)} días`
-                                  : daysToExpiration === 0
-                                  ? 'Vence hoy'
-                                  : `${daysToExpiration} días`
-                                }
-                              </p>
-                            )}
-                          </div>
-                          {(expirationStatus === 'expired' || expirationStatus === 'critical') && (
-                            <ExclamationTriangleIcon className="w-4 h-4 text-red-500" />
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="light"
-                        onPress={() => handleView(batch)}
-                        startContent={<EyeIcon className="w-4 h-4" />}
-                        className="flex-1"
-                      >
-                        Ver
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="light"
-                        color="primary"
-                        onPress={() => handleEdit(batch)}
-                        startContent={<PencilIcon className="w-4 h-4" />}
-                        className="flex-1"
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="light"
-                        color="danger"
-                        onPress={() => handleDelete(batch)}
-                        isIconOnly
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardBody>
-                </Card>
-              )
-            })}
+          <div className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredBatches.map((batch) => (
+                <BatchCard key={batch._id} batch={batch} />
+              ))}
+            </div>
+            
+            {/* Stats */}
+            <div className="mt-8 pt-6 border-t border-slate-200/50">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-slate-800">{filteredBatches.length}</p>
+                  <p className="text-sm text-slate-600">Total Lotes</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-slate-800">
+                    {filteredBatches.filter(b => b.status === 'active').length}
+                  </p>
+                  <p className="text-sm text-slate-600">Activos</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-slate-800">
+                    {filteredBatches.filter(b => b.expirationDate && getExpirationStatus(b.expirationDate) === 'expired').length}
+                  </p>
+                  <p className="text-sm text-slate-600">Vencidos</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-slate-800">
+                    {filteredBatches.filter(b => b.expirationDate && getExpirationStatus(b.expirationDate) === 'critical').length}
+                  </p>
+                  <p className="text-sm text-slate-600">Críticos</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

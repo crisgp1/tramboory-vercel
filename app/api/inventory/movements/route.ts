@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import dbConnect from '@/lib/mongodb';
-import InventoryService from '@/lib/services/inventory/inventoryService';
+import { SupabaseInventoryService } from '@/lib/supabase/inventory';
 import { MovementType } from '@/types/inventory';
 
 // Función temporal para verificar permisos
@@ -21,22 +20,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Sin permisos para leer movimientos' }, { status: 403 });
     }
 
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
     
-    const queryParams = {
-      productId: searchParams.get('productId') || undefined,
-      locationId: searchParams.get('locationId') || undefined,
-      type: searchParams.get('type') as MovementType || undefined,
-      userId: searchParams.get('userId') || undefined,
-      startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
-      endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
-      page: parseInt(searchParams.get('page') || '1'),
-      limit: parseInt(searchParams.get('limit') || '50')
-    };
+    const productId = searchParams.get('productId');
+    const locationId = searchParams.get('locationId');
+    const limit = parseInt(searchParams.get('limit') || '50');
 
-    const result = await InventoryService.getMovements(queryParams);
+    let result;
+    if (productId) {
+      result = await SupabaseInventoryService.getMovementsByProduct(productId, limit);
+    } else if (locationId) {
+      result = await SupabaseInventoryService.getMovementsByLocation(locationId, limit);
+    } else {
+      // For general movements, we can extend the service later
+      result = [];
+    }
 
     return NextResponse.json(result);
 

@@ -25,8 +25,7 @@ import {
   Avatar,
   Skeleton,
   DatePicker,
-  Spacer,
-  Badge
+  Spacer
 } from '@heroui/react';
 import {
   CheckIcon,
@@ -335,11 +334,11 @@ export default function ClientNewReservationPageAnimated() {
         
         setAvailableSlots(transformedData);
         
-        // Check if date is fully booked (2 events max per day)
+        // Check if date is fully booked
         const dateAvailability = availability[dateStr];
         if (dateAvailability === 'unavailable') {
           setFormData(prev => ({ ...prev, eventTime: '' }));
-          toast.error('Esta fecha ya tiene la capacidad máxima de eventos (2 por día)');
+          toast.error('Esta fecha ya tiene la capacidad máxima de eventos');
           return;
         }
         
@@ -457,10 +456,10 @@ export default function ClientNewReservationPageAnimated() {
   };
 
   // Get selected package details
-  const selectedPackage = packages.find(pkg => pkg._id === formData.packageId);
+  const selectedPackage = (packages || []).find(pkg => pkg._id === formData.packageId);
   const selectedFood = foodOptions.find(food => food._id === formData.foodOptionId);
   const selectedTheme = eventThemes.find(theme => theme._id === formData.eventThemeId);
-  const selectedExtras = extraServices.filter(service => formData.selectedExtraServices.includes(service._id));
+  const selectedExtras = (extraServices || []).filter(service => (formData.selectedExtraServices || []).includes(service._id));
 
   // Calculate total price
   const calculateTotal = () => {
@@ -468,7 +467,7 @@ export default function ClientNewReservationPageAnimated() {
     
     if (selectedPackage && formData.eventDate) {
       const isWeekend = formData.eventDate.getDay() === 0 || formData.eventDate.getDay() === 6;
-      total += isWeekend ? selectedPackage.pricing.weekend : selectedPackage.pricing.weekday;
+      total += isWeekend ? selectedPackage.pricing?.weekend || 0 : selectedPackage.pricing?.weekday || 0;
     }
     
     if (selectedFood) {
@@ -476,7 +475,7 @@ export default function ClientNewReservationPageAnimated() {
     }
     
     if (selectedTheme && formData.selectedThemePackage) {
-      const themePackage = selectedTheme.packages.find(pkg => pkg.name === formData.selectedThemePackage);
+      const themePackage = (selectedTheme?.packages || []).find(pkg => pkg.name === formData.selectedThemePackage);
       if (themePackage) {
         total += themePackage.price;
       }
@@ -508,7 +507,7 @@ export default function ClientNewReservationPageAnimated() {
     // Extract complex expressions
     const packagePrice = selectedPackage && formData.eventDate ? 
       (formData.eventDate.getDay() === 0 || formData.eventDate.getDay() === 6 ? 
-        selectedPackage.pricing.weekend : selectedPackage.pricing.weekday) : 0;
+        selectedPackage.pricing?.weekend || 0 : selectedPackage.pricing?.weekday || 0) : 0;
     
     const paymentMethodText = formData.paymentMethod === 'transfer' ? 'Transferencia Bancaria' :
       formData.paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta de Crédito/Débito';
@@ -539,7 +538,7 @@ COMIDA:
     }
 
     if (selectedTheme && formData.selectedThemePackage) {
-      const themePrice = selectedTheme.packages.find(pkg => pkg.name === formData.selectedThemePackage)?.price || 0;
+      const themePrice = (selectedTheme?.packages || []).find(pkg => pkg.name === formData.selectedThemePackage)?.price || 0;
       paymentSlip += `
 
 TEMA:
@@ -732,7 +731,7 @@ Para cualquier duda, contacta:
                         <div className="text-sm">
                           <p className="font-semibold text-blue-900 mb-1">Nota sobre disponibilidad</p>
                           <p className="text-blue-700">
-                            Por día se permiten máximo 2 eventos. Los días marcados en rojo ya tienen su capacidad completa. 
+                            La capacidad de eventos por día varía según la configuración. Los días marcados en rojo ya tienen su capacidad completa. 
                             Los días de descanso tienen un cargo adicional.
                           </p>
                         </div>
@@ -800,26 +799,11 @@ Para cualquier duda, contacta:
                               {slot.time}
                             </p>
                             {slot.available ? (
-                              <div className="mt-1">
-                                {slot.remainingCapacity <= 2 ? (
-                                  <Badge 
-                                    content={slot.remainingCapacity} 
-                                    color="warning" 
-                                    size="sm"
-                                    className="text-xs"
-                                  >
-                                    <span className="text-xs text-amber-600 font-medium">
-                                      Últimos lugares
-                                    </span>
-                                  </Badge>
-                                ) : (
-                                  <span className="text-xs text-emerald-600 font-medium">
-                                    Disponible
-                                  </span>
-                                )}
-                              </div>
+                              <span className="text-xs text-emerald-600 font-medium mt-1">
+                                Disponible
+                              </span>
                             ) : (
-                              <span className="text-xs text-red-500 font-medium">Lleno</span>
+                              <span className="text-xs text-red-500 font-medium mt-1">No disponible</span>
                             )}
                           </div>
                         </motion.button>
@@ -1254,7 +1238,7 @@ Para cualquier duda, contacta:
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => {
-                          const isSelected = formData.selectedExtraServices.includes(service._id);
+                          const isSelected = (formData.selectedExtraServices || []).includes(service._id);
                           if (isSelected) {
                             setFormData(prev => ({
                               ...prev,
@@ -1268,7 +1252,7 @@ Para cualquier duda, contacta:
                           }
                         }}
                         className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                          formData.selectedExtraServices.includes(service._id)
+                          (formData.selectedExtraServices || []).includes(service._id)
                             ? 'border-pink-500 bg-pink-50'
                             : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
@@ -1778,11 +1762,11 @@ Para cualquier duda, contacta:
                             <StarIcon className="w-4 h-4 text-purple-500" />
                             <p className="text-sm font-semibold text-purple-700">Paquete seleccionado</p>
                           </div>
-                          <p className="font-bold text-gray-900 text-lg mb-1">{selectedPackage.name}</p>
+                          <p className="font-bold text-gray-900 text-lg mb-1">{selectedPackage?.name || 'Paquete no seleccionado'}</p>
                           <p className="text-sm font-semibold text-emerald-600">
                             {formatPrice(formData.eventDate ? 
                               (formData.eventDate.getDay() === 0 || formData.eventDate.getDay() === 6 ? 
-                                selectedPackage.pricing.weekend : selectedPackage.pricing.weekday) : 0)}
+                                selectedPackage.pricing?.weekend || 0 : selectedPackage.pricing?.weekday || 0) : 0)}
                           </p>
                         </motion.div>
                       )}
@@ -1820,7 +1804,7 @@ Para cualquier duda, contacta:
                             {selectedTheme.name} - {formData.selectedThemePackage}
                           </p>
                           <p className="text-sm font-semibold text-emerald-600">
-                            +{formatPrice(selectedTheme.packages.find(pkg => pkg.name === formData.selectedThemePackage)?.price || 0)}
+                            +{formatPrice((selectedTheme?.packages || []).find(pkg => pkg.name === formData.selectedThemePackage)?.price || 0)}
                           </p>
                         </motion.div>
                       )}

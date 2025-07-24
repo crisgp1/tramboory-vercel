@@ -240,7 +240,7 @@ export default function BarcodeScanner({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      size="3xl"
+      size="lg"
       scrollBehavior="inside"
       backdrop="opaque"
       classNames={{
@@ -385,7 +385,10 @@ export default function BarcodeScanner({
                       <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           {scan.success ? (
-                            <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                            <div className="relative">
+                              <CheckCircleIcon className="w-4 h-4 text-emerald-600 drop-shadow-sm" />
+                              <div className="absolute inset-0 w-4 h-4 bg-gradient-to-br from-white/30 to-transparent rounded-full pointer-events-none" />
+                            </div>
                           ) : (
                             <XCircleIcon className="w-4 h-4 text-red-500" />
                           )}

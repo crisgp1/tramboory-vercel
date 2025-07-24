@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import dbConnect from "@/lib/mongodb";
 import Supplier from "@/lib/models/inventory/Supplier";
+import { SupabaseInventoryService } from "@/lib/supabase/inventory";
 import SupplierMessaging from "@/components/supplier/SupplierMessaging";
 
 export const metadata: Metadata = {
@@ -10,7 +11,35 @@ export const metadata: Metadata = {
   description: "Comunícate directamente con compradores y gestiona conversaciones",
 };
 
-async function getSupplierByUserId(userId: string, userRole: string) {
+// Supabase version
+async function getSupplierByUserIdSupabase(userId: string, userRole: string) {
+  try {
+    // Si es admin o gerente, intentar encontrar cualquier proveedor activo
+    if (userRole === "admin" || userRole === "gerente") {
+      // Primero intentar buscar por user_id vinculado
+      let supplier = await SupabaseInventoryService.getSupplierByUserId(userId);
+      
+      // Si no hay coincidencia, buscar cualquier proveedor activo para mostrar vista de ejemplo
+      if (!supplier) {
+        const suppliers = await SupabaseInventoryService.getAllSuppliers(true);
+        supplier = suppliers.length > 0 ? suppliers[0] : null;
+      }
+      
+      return supplier;
+    }
+    
+    // Para usuarios con rol proveedor, buscar por user_id vinculado
+    const supplier = await SupabaseInventoryService.getSupplierByUserId(userId);
+    return supplier;
+
+  } catch (error) {
+    console.error("Error getting supplier from Supabase:", error);
+    return null;
+  }
+}
+
+// MongoDB fallback version
+async function getSupplierByUserIdMongoDB(userId: string, userRole: string) {
   await dbConnect();
   
   // Si es admin o gerente, intentar encontrar cualquier proveedor activo
@@ -53,11 +82,19 @@ export default async function SupplierMessagesPage() {
   }
 
   const userRole = await getUserRole(userId);
-  const supplier = await getSupplierByUserId(userId, userRole);
+  
+  // Try Supabase first, fallback to MongoDB if needed
+  let supplier = await getSupplierByUserIdSupabase(userId, userRole);
+  
+  // If no supplier found in Supabase, try MongoDB as fallback
+  if (!supplier) {
+    console.log("🔄 Fallback to MongoDB for supplier lookup");
+    supplier = await getSupplierByUserIdMongoDB(userId, userRole);
+  }
   
   // Si es admin o gerente, permitir acceso incluso sin proveedor
   if (userRole === "admin" || userRole === "gerente") {
-    const supplierId = supplier?.supplierId || "default-admin-supplier";
+    const supplierId = supplier?.supplier_id || supplier?.supplierId || "default-admin-supplier";
     return <SupplierMessaging supplierId={supplierId} />;
   }
   
@@ -73,5 +110,5 @@ export default async function SupplierMessagesPage() {
     );
   }
 
-  return <SupplierMessaging supplierId={supplier.supplierId} />;
+  return <SupplierMessaging supplierId={supplier.supplier_id || supplier.supplierId} />;
 }

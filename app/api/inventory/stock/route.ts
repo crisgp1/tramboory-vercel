@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import dbConnect from '@/lib/mongodb';
-import InventoryService from '@/lib/services/inventory/inventoryService';
+import { InventoryService } from '@/lib/services/inventory.service';
 import { z } from 'zod';
 
 // Función temporal para verificar permisos
@@ -56,27 +55,44 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Sin permisos para leer inventario' }, { status: 403 });
     }
 
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
-    
-    const queryParams = {
-      productId: searchParams.get('productId') || undefined,
-      locationId: searchParams.get('locationId') || undefined,
-      search: searchParams.get('search') || undefined,
-      category: searchParams.get('category') || undefined,
-      lowStock: searchParams.get('lowStock') === 'true',
-      expiringSoon: searchParams.get('expiringSoon') === 'true',
-      expiryDays: parseInt(searchParams.get('expiryDays') || '7'),
-      page: parseInt(searchParams.get('page') || '1'),
-      limit: parseInt(searchParams.get('limit') || '50'),
-      sortBy: searchParams.get('sortBy') || 'lastUpdated',
-      sortOrder: (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc'
-    };
+    const productId = searchParams.get('productId');
+    const locationId = searchParams.get('locationId');
+    const lowStock = searchParams.get('lowStock') === 'true';
+    const expiringSoon = searchParams.get('expiringSoon') === 'true';
+    const expiryDays = parseInt(searchParams.get('expiryDays') || '7');
 
-    const result = await InventoryService.getInventory(queryParams);
+    let result: any[] = [];
+    let serviceResult;
 
-    return NextResponse.json(result);
+    if (productId) {
+      serviceResult = await InventoryService.getInventoryByProduct(productId);
+    } else if (locationId) {
+      serviceResult = await InventoryService.getInventoryByLocation(locationId);
+    } else if (lowStock) {
+      serviceResult = await InventoryService.getLowStockProducts();
+    } else if (expiringSoon) {
+      serviceResult = await InventoryService.getExpiringBatches(expiryDays);
+    } else {
+      // Get all inventory records for stock management
+      serviceResult = await InventoryService.getAllInventory();
+    }
+
+    if (!serviceResult.success) {
+      return NextResponse.json(
+        { error: serviceResult.error },
+        { status: 400 }
+      );
+    }
+
+    result = serviceResult.data || [];
+
+    return NextResponse.json({
+      success: true,
+      inventories: result || [],
+      total: result?.length || 0,
+      totalPages: Math.ceil((result?.length || 0) / parseInt(searchParams.get('limit') || '10'))
+    });
 
   } catch (error) {
     console.error('Error getting inventory:', error);
@@ -98,8 +114,6 @@ export async function POST(request: NextRequest) {
     if (!await hasInventoryPermission(userId, 'update')) {
       return NextResponse.json({ error: 'Sin permisos para modificar inventario' }, { status: 403 });
     }
-
-    await dbConnect();
 
     const body = await request.json();
     const { operation } = body;
@@ -133,8 +147,8 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           message: 'Stock ajustado exitosamente',
-          inventory: result.inventory,
-          movement: result.movement
+          inventory: result.data?.inventory,
+          movement: result.data?.movement
         });
       }
 
@@ -166,7 +180,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           message: 'Transferencia realizada exitosamente',
-          movements: result.movements
+          movements: result.data?.movements
         });
       }
 
@@ -198,7 +212,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           message: 'Stock reservado exitosamente',
-          inventory: result.inventory
+          inventory: result.data?.inventory
         });
       }
 
@@ -240,8 +254,8 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           message: 'Stock consumido exitosamente',
-          inventory: result.inventory,
-          movement: result.movement
+          inventory: result.data?.inventory,
+          movement: result.data?.movement
         });
       }
 
@@ -281,7 +295,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           message: 'Reserva liberada exitosamente',
-          inventory: result.inventory
+          inventory: result.data?.inventory
         });
       }
 

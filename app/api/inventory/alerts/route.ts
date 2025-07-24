@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import dbConnect from '@/lib/mongodb';
-import InventoryService from '@/lib/services/inventory/inventoryService';
+import { SupabaseInventoryService } from '@/lib/supabase/inventory';
 import { AlertType } from '@/types/inventory';
 import { z } from 'zod';
 
@@ -22,17 +21,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Sin permisos para leer alertas' }, { status: 403 });
     }
 
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
     
     const productId = searchParams.get('productId') || undefined;
     const locationId = searchParams.get('locationId') || undefined;
     const type = searchParams.get('type') as AlertType || undefined;
 
-    const alerts = await InventoryService.getActiveAlerts(productId, locationId, type);
+    const alerts = await SupabaseInventoryService.getActiveAlerts();
 
-    return NextResponse.json({ alerts });
+    return NextResponse.json({ 
+      success: true,
+      alerts 
+    });
 
   } catch (error) {
     console.error('Error getting alerts:', error);
@@ -55,8 +55,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Sin permisos para resolver alertas' }, { status: 403 });
     }
 
-    await dbConnect();
-
     const body = await request.json();
     
     const schema = z.object({
@@ -77,7 +75,7 @@ export async function PUT(request: NextRequest) {
 
     const { alertId, resolution } = validationResult.data;
 
-    const success = await InventoryService.resolveAlert(alertId, userId, resolution);
+    const success = await SupabaseInventoryService.resolveAlert(alertId, userId);
 
     if (!success) {
       return NextResponse.json(

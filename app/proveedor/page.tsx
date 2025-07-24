@@ -5,10 +5,49 @@ import Supplier from "@/lib/models/inventory/Supplier";
 import PurchaseOrder from "@/lib/models/inventory/PurchaseOrder";
 import Product from "@/lib/models/inventory/Product";
 import { PurchaseOrderStatus } from "@/types/inventory";
+import { SupabaseInventoryService } from "@/lib/supabase/inventory";
 import SupplierDashboardUber from "../../components/supplier/SupplierDashboardUber";
 
-// Función para obtener el ID del proveedor basado en el usuario autenticado
-async function getSupplierByUserId(userId: string, userRole: string) {
+// Función para obtener el proveedor desde Supabase
+async function getSupplierByUserIdSupabase(userId: string, userRole: string) {
+  console.log("🔍 Proveedor Page Debug - getSupplierByUserIdSupabase:", {
+    userId,
+    userRole
+  });
+
+  try {
+    // Si es admin o gerente, intentar encontrar cualquier proveedor activo
+    if (userRole === "admin" || userRole === "gerente") {
+      // Primero intentar buscar por user_id vinculado
+      let supplier = await SupabaseInventoryService.getSupplierByUserId(userId);
+      
+      // Si no hay coincidencia, buscar cualquier proveedor activo para mostrar vista de ejemplo
+      if (!supplier) {
+        const suppliers = await SupabaseInventoryService.getAllSuppliers(true);
+        supplier = suppliers.length > 0 ? suppliers[0] : null;
+        console.log("🔍 Admin/Gerente - Usando proveedor activo de ejemplo:", 
+          supplier ? supplier.name : "Ninguno encontrado");
+      }
+      
+      return supplier;
+    }
+    
+    // Para usuarios con rol proveedor, buscar por user_id vinculado
+    console.log("🔍 Searching for supplier with user_id:", userId);
+    
+    const supplier = await SupabaseInventoryService.getSupplierByUserId(userId);
+    
+    console.log("🔍 Proveedor encontrado (Supabase):", supplier ? "Sí" : "No");
+    return supplier;
+
+  } catch (error) {
+    console.error("Error getting supplier from Supabase:", error);
+    return null;
+  }
+}
+
+// Función para obtener el ID del proveedor basado en el usuario autenticado (MongoDB)
+async function getSupplierByUserIdMongoDB(userId: string, userRole: string) {
   await dbConnect();
   
   console.log("🔍 Proveedor Page Debug - getSupplierByUserId:", {
@@ -242,7 +281,14 @@ export default async function ProveedorDashboard() {
     userRole
   });
   
-  const supplier = await getSupplierByUserId(userId, userRole);
+  // Try Supabase first, fallback to MongoDB if needed
+  let supplier = await getSupplierByUserIdSupabase(userId, userRole);
+  
+  // If no supplier found in Supabase, try MongoDB as fallback
+  if (!supplier) {
+    console.log("🔄 Fallback to MongoDB for supplier lookup");
+    supplier = await getSupplierByUserIdMongoDB(userId, userRole);
+  }
 
   // Agregar logs adicionales para diagnosticar problemas
   console.log("🔍 Proveedor Page Access Check:", {

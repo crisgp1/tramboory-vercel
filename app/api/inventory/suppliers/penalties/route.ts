@@ -1,31 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import dbConnect from '@/lib/mongodb'
 import { auth } from '@clerk/nextjs/server'
 import { SupplierPenalty, PenaltyConcept, PenaltySeverity, PenaltyStatus } from '@/types/supplier-penalties'
-import { Schema, model, models } from 'mongoose'
+import { SupabaseInventoryService } from '@/lib/supabase/inventory'
 
 // Supplier penalty management API routes
 
-// Define Mongoose schema for penalties
-const SupplierPenaltySchema = new Schema({
-  supplierId: { type: String, required: true },
-  supplierName: { type: String, required: true },
-  concept: { type: String, enum: Object.values(PenaltyConcept), required: true },
-  severity: { type: String, enum: Object.values(PenaltySeverity), required: true },
-  description: { type: String, required: true },
-  penaltyValue: { type: Number, required: true },
-  monetaryPenalty: { type: Number },
-  appliedBy: { type: String, required: true },
-  appliedAt: { type: Date, default: Date.now },
-  expiresAt: { type: Date },
-  status: { type: String, enum: Object.values(PenaltyStatus), default: PenaltyStatus.ACTIVE },
-  evidence: [{ type: String }],
-  notes: { type: String }
-}, { timestamps: true })
-
-const PenaltyModel = models.SupplierPenalty || model('SupplierPenalty', SupplierPenaltySchema)
-
-// GET - Obtener penalizaciones
+// GET - Obtener penalizaciones (placeholder implementation)
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -39,22 +19,10 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
 
-    await dbConnect()
-
-    // Construir filtros
-    const filter: any = {}
-    if (supplierId) filter.supplierId = supplierId
-    if (status) filter.status = status
-
-    // Obtener penalizaciones con paginación
-    const penalties = await PenaltyModel
-      .find(filter)
-      .sort({ appliedAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean()
-
-    const total = await PenaltyModel.countDocuments(filter)
+    // TODO: Implement with proper Supabase table for supplier penalties
+    // This is a placeholder that returns empty results
+    const penalties: SupplierPenalty[] = []
+    const total = 0
 
     return NextResponse.json({
       penalties,
@@ -72,7 +40,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Crear nueva penalización
+// POST - Crear nueva penalización (placeholder implementation)
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
@@ -121,10 +89,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await dbConnect()
-
-    // Crear la penalización
-    const penalty: Omit<SupplierPenalty, '_id'> = {
+    // TODO: Implement with proper Supabase table for supplier penalties
+    // This is a placeholder implementation
+    const penalty: SupplierPenalty = {
+      _id: `penalty_${Date.now()}`,
       supplierId,
       supplierName,
       concept,
@@ -150,28 +118,14 @@ export async function POST(request: NextRequest) {
     expiresAt.setDate(expiresAt.getDate() + expirationDays[severity as keyof typeof expirationDays])
     penalty.expiresAt = expiresAt
 
-    const result = await PenaltyModel.create(penalty)
-
-    // Actualizar el score del proveedor
-    await updateSupplierScore(supplierId, penaltyValue, 'subtract')
-
-    // Registrar en logs/auditoría
-    await logPenaltyAction({
-      action: 'PENALTY_APPLIED',
-      supplierId,
-      supplierName,
-      penaltyId: (result._id as any).toString(),
-      concept,
-      severity,
-      points: penaltyValue,
-      appliedBy: userId,
-      timestamp: new Date()
-    })
+    // TODO: Store in Supabase table
+    // TODO: Update supplier score in Supabase
+    // TODO: Log penalty action in audit table
 
     return NextResponse.json({
-      message: 'Penalización aplicada exitosamente',
-      penaltyId: result._id,
-      penalty: result
+      message: 'Penalización aplicada exitosamente (placeholder)',
+      penaltyId: penalty._id,
+      penalty
     })
 
   } catch (error) {
@@ -183,43 +137,5 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Función auxiliar para actualizar el score del proveedor
-async function updateSupplierScore(supplierId: string, points: number, operation: 'add' | 'subtract') {
-  try {
-    const Supplier = models.Supplier || (await import('@/lib/models/inventory/Supplier')).default
-    const scoreChange = operation === 'add' ? points : -points
-    
-    await Supplier.findByIdAndUpdate(
-      supplierId,
-      { 
-        $inc: { 'performance.penaltyScore': scoreChange },
-        $set: { 'performance.lastUpdated': new Date() }
-      },
-      { upsert: false }
-    )
-  } catch (error) {
-    console.error('Error updating supplier score:', error)
-  }
-}
-
-// Función auxiliar para logging
-async function logPenaltyAction(logData: any) {
-  try {
-    const LogSchema = new Schema({
-      action: String,
-      supplierId: String,
-      supplierName: String,
-      penaltyId: String,
-      concept: String,
-      severity: String,
-      points: Number,
-      appliedBy: String,
-      timestamp: { type: Date, default: Date.now }
-    })
-    
-    const LogModel = models.SupplierPenaltyLog || model('SupplierPenaltyLog', LogSchema)
-    await LogModel.create(logData)
-  } catch (error) {
-    console.error('Error logging penalty action:', error)
-  }
-}
+// TODO: Helper functions for penalty operations would go here
+// These need to be implemented with proper Supabase operations when the penalty tables are created

@@ -80,20 +80,52 @@ export async function GET(request: NextRequest) {
       const restDay = systemConfig.restDays?.find((rd: RestDay) => rd.day === dayOfWeek);
       const isBlockedRestDay = restDay && !restDay.canBeReleased;
       
-      // Check if there are time blocks configured for this day
-      const hasTimeBlocks = systemConfig.timeBlocks?.some((block: TimeBlock) => 
+      // Get time blocks configured for this day
+      const dayTimeBlocks = systemConfig.timeBlocks?.filter((block: TimeBlock) => 
         block.days.includes(dayOfWeek)
-      );
+      ) || [];
       
-      // Mark as unavailable only if:
-      // 1. No time blocks are configured for this day (and it's not a rest day)
-      // 2. Already has 2 or more events
-      // Rest days that can't be released will show as 'available' but need unlocking
-      if ((!hasTimeBlocks && !restDay) || count >= 2) {
+      // Calculate total capacity for the day based on time blocks
+      let totalDayCapacity = dayTimeBlocks.reduce((total: number, block: TimeBlock) => {
+        return total + block.maxEventsPerBlock;
+      }, 0);
+      
+      // If it's a rest day that can be released and no blocks configured, add default capacity
+      const isRestDay = !!restDay;
+      if (isRestDay && restDay && restDay.canBeReleased && dayTimeBlocks.length === 0) {
+        totalDayCapacity = 2; // Default capacity for rest days
+      }
+      
+      // Debug logging for availability calculation
+      if (dateKey === '2025-07-22' || dateKey === '2025-07-23' || dateKey === '2025-07-24') {
+        console.log(`Availability debug for ${dateKey} (day ${dayOfWeek}):`, {
+          isRestDay,
+          isBlockedRestDay,
+          dayTimeBlocks: dayTimeBlocks.length,
+          totalDayCapacity,
+          currentReservations: count,
+          restDay
+        });
+      }
+      
+      // Mark as unavailable if:
+      // 1. It's a blocked rest day
+      // 2. No time blocks are configured for this day (and it's not a releaseable rest day)
+      // 3. Already reached the total capacity for the day
+      if (isBlockedRestDay) {
+        // Blocked rest days are truly unavailable
         availability[dateKey] = 'unavailable';
-      } else if (count === 1) {
+      } else if (totalDayCapacity === 0) {
+        // No capacity configured for this day
+        availability[dateKey] = 'unavailable';
+      } else if (count >= totalDayCapacity) {
+        // Day is fully booked
+        availability[dateKey] = 'unavailable';
+      } else if (totalDayCapacity > 0 && count >= totalDayCapacity * 0.5) {
+        // Day has limited availability (50% or more booked)
         availability[dateKey] = 'limited';
       } else {
+        // Day is available
         availability[dateKey] = 'available';
       }
       

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import dbConnect from '@/lib/mongodb';
-import Product from '@/lib/models/inventory/Product';
-import Inventory from '@/lib/models/inventory/Inventory';
+import { ProductRepository } from '@/lib/repositories/product.repository';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,18 +9,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    await dbConnect();
-
-    // Obtener productos que NO tienen registros de inventario
-    const productsWithInventory = await Inventory.distinct('productId');
+    // Get products without inventory using Supabase repository
+    const result = await ProductRepository.findWithoutInventory();
     
-    const productsWithoutInventory = await Product.find({
-      _id: { $nin: productsWithInventory },
-      isActive: true
-    }).select('name sku category units').lean();
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
 
     return NextResponse.json({
-      products: productsWithoutInventory
+      products: result.data
     });
 
   } catch (error) {

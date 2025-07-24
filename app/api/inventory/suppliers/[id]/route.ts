@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
-import dbConnect from '@/lib/mongodb';
-import Supplier from '@/lib/models/inventory/Supplier';
+import { SupabaseInventoryService } from '@/lib/supabase/inventory';
 import { z } from 'zod';
 
 // Función temporal para verificar permisos
@@ -51,16 +50,17 @@ export async function GET(
       return NextResponse.json({ error: 'Sin permisos para leer proveedores' }, { status: 403 });
     }
 
-    await dbConnect();
     const params = await context.params;
 
-    const supplier = await Supplier.findById(params.id).lean();
-
-    if (!supplier) {
-      return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
+    try {
+      const supplier = await SupabaseInventoryService.getSupplierById(params.id);
+      return NextResponse.json(supplier);
+    } catch (error) {
+      if (error.message?.includes('No rows found')) {
+        return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
+      }
+      throw error;
     }
-
-    return NextResponse.json(supplier);
 
   } catch (error) {
     console.error('Error getting supplier:', error);
@@ -86,7 +86,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Sin permisos para actualizar proveedores' }, { status: 403 });
     }
 
-    await dbConnect();
     const params = await context.params;
     const body = await request.json();
 
@@ -127,131 +126,106 @@ export async function PUT(
       const supplierData = validationResult.data;
 
       // Verificar si ya existe un proveedor con este userId
-      const existingByUserId = await Supplier.findOne({ userId: realUserId });
+      const existingByUserId = await SupabaseInventoryService.getSupplierByUserId(realUserId);
       
       if (existingByUserId) {
         // Si ya existe, actualizarlo en lugar de crear uno nuevo
         console.log("🔄 Supplier already exists for user, updating instead of creating", {
-          existingId: existingByUserId._id,
+          existingId: existingByUserId.id,
           userId: realUserId
         });
         
-        // Verificar que el código no exista en otro proveedor
-        if (supplierData.code !== existingByUserId.code) {
-          const existingCode = await Supplier.findOne({ 
-            code: supplierData.code,
-            _id: { $ne: existingByUserId._id }
-          });
-          if (existingCode) {
-            return NextResponse.json(
-              { error: 'Ya existe otro proveedor con este código' },
-              { status: 409 }
-            );
-          }
-        }
-        
         // Actualizar el proveedor existente
-        const updatedSupplier = await Supplier.findByIdAndUpdate(
-          existingByUserId._id,
+        const updatedSupplier = await SupabaseInventoryService.updateSupplier(
+          existingByUserId.id,
           {
-            ...supplierData,
-            updatedBy: userId,
-            updatedAt: new Date()
-          },
-          { new: true, runValidators: true }
+            name: supplierData.name,
+            contact_email: supplierData.contactInfo?.email,
+            contact_phone: supplierData.contactInfo?.phone,
+            contact_address: supplierData.contactInfo?.address,
+            contact_person: supplierData.contactInfo?.contactPerson,
+            credit_days: supplierData.paymentTerms?.creditDays || 0,
+            rating_quality: supplierData.rating?.quality || 3,
+            rating_delivery: supplierData.rating?.delivery || 3,
+            rating_service: supplierData.rating?.service || 3,
+            rating_price: supplierData.rating?.price || 3,
+            rating_overall: 3,
+            is_active: supplierData.isActive
+          }
         );
         
         console.log("✅ Existing supplier updated successfully");
         return NextResponse.json(updatedSupplier);
       }
 
-      // Si no existe, verificar que el código no exista
-      const existingCode = await Supplier.findOne({ code: supplierData.code });
-      if (existingCode) {
-        return NextResponse.json(
-          { error: 'Ya existe un proveedor con este código' },
-          { status: 409 }
-        );
-      }
-
-      // Generar supplierId único
-      const supplierCount = await Supplier.countDocuments();
+      // Crear nuevo proveedor
+      const allSuppliers = await SupabaseInventoryService.getAllSuppliers(false);
+      const supplierCount = allSuppliers.length;
       const supplierId = `SUP${String(supplierCount + 1).padStart(6, '0')}`;
 
-      // Crear nuevo proveedor con datos completos
-      const supplier = new Supplier({
-        ...supplierData,
-        supplierId,
-        userId: realUserId,
-        deliveryInfo: {
-          leadTimeDays: 1,
-          deliveryZones: []
-        },
-        rating: {
-          quality: supplierData.rating?.quality || 3,
-          reliability: supplierData.rating?.delivery || 3,
-          pricing: supplierData.rating?.price || 3,
-          overall: 3
-        },
-        isPreferred: false,
-        createdBy: userId,
-        updatedBy: userId
+      const supplier = await SupabaseInventoryService.createSupplier({
+        supplier_id: supplierId,
+        name: supplierData.name,
+        description: supplierData.description,
+        user_id: realUserId,
+        contact_email: supplierData.contactInfo?.email,
+        contact_phone: supplierData.contactInfo?.phone,
+        contact_address: supplierData.contactInfo?.address,
+        contact_person: supplierData.contactInfo?.contactPerson,
+        credit_days: supplierData.paymentTerms?.creditDays || 0,
+        payment_method: supplierData.paymentTerms?.paymentMethod || 'cash',
+        currency: supplierData.paymentTerms?.currency || 'MXN',
+        rating_quality: supplierData.rating?.quality || 3,
+        rating_delivery: supplierData.rating?.delivery || 3,
+        rating_service: supplierData.rating?.service || 3,
+        rating_price: supplierData.rating?.price || 3,
+        rating_overall: 3,
+        is_active: supplierData.isActive,
+        is_preferred: false
       });
-
-      await supplier.save();
 
       console.log("✅ User converted to supplier successfully:", {
-        supplierId: supplier.supplierId,
+        supplierId: supplier.supplier_id,
         name: supplier.name,
-        code: supplier.code,
-        userId: supplier.userId,
-        _id: supplier._id.toString()
+        userId: supplier.user_id,
+        id: supplier.id
       });
-      
-      // Verificar que se guardó correctamente
-      const savedSupplier = await Supplier.findById(supplier._id);
-      console.log("✅ Verification - Supplier saved in DB:", savedSupplier ? "Yes" : "No");
-      if (savedSupplier) {
-        console.log("✅ Saved supplier userId:", savedSupplier.userId);
-      }
       
       return NextResponse.json(supplier, { status: 201 });
 
     } else {
       // Actualización normal de proveedor existente
-      const existingSupplier = await Supplier.findById(params.id);
-      if (!existingSupplier) {
-        return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
-      }
+      try {
+        const existingSupplier = await SupabaseInventoryService.getSupplierById(params.id);
+        
+        // Actualizar proveedor
+        const updatedSupplier = await SupabaseInventoryService.updateSupplier(
+          params.id,
+          {
+            name: body.name,
+            description: body.description,
+            contact_email: body.contactInfo?.email,
+            contact_phone: body.contactInfo?.phone,
+            contact_address: body.contactInfo?.address,
+            contact_person: body.contactInfo?.contactPerson,
+            credit_days: body.paymentTerms?.creditDays,
+            payment_method: body.paymentTerms?.paymentMethod,
+            currency: body.paymentTerms?.currency,
+            rating_quality: body.rating?.quality,
+            rating_delivery: body.rating?.delivery,
+            rating_service: body.rating?.service,
+            rating_price: body.rating?.price,
+            is_active: body.isActive
+          }
+        );
 
-      // Validar datos de actualización
-      const updateData = {
-        ...body,
-        updatedBy: userId
-      };
-
-      // Verificar unicidad de código si se está actualizando
-      if (body.code && body.code !== existingSupplier.code) {
-        const existingCode = await Supplier.findOne({ 
-          code: body.code,
-          _id: { $ne: params.id }
-        });
-        if (existingCode) {
-          return NextResponse.json(
-            { error: 'Ya existe un proveedor con este código' },
-            { status: 409 }
-          );
+        return NextResponse.json(updatedSupplier);
+      } catch (error) {
+        if (error.message?.includes('No rows found')) {
+          return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
         }
+        throw error;
       }
-
-      // Actualizar proveedor
-      const updatedSupplier = await Supplier.findByIdAndUpdate(
-        params.id,
-        updateData,
-        { new: true, runValidators: true }
-      );
-
-      return NextResponse.json(updatedSupplier);
     }
 
   } catch (error) {
@@ -278,35 +252,30 @@ export async function DELETE(
       return NextResponse.json({ error: 'Sin permisos para eliminar proveedores' }, { status: 403 });
     }
 
-    await dbConnect();
     const params = await context.params;
 
-    // Verificar que el proveedor existe
-    const supplier = await Supplier.findById(params.id);
-    if (!supplier) {
-      return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
-    }
+    try {
+      // Verificar que el proveedor existe
+      const supplier = await SupabaseInventoryService.getSupplierById(params.id);
 
-    // Soft delete - marcar como inactivo
-    const deletedSupplier = await Supplier.findByIdAndUpdate(
-      params.id,
-      {
-        isActive: false,
-        lastUpdatedBy: userId,
-        updatedAt: new Date(),
-        metadata: {
-          ...supplier.metadata,
-          deletedAt: new Date(),
-          deletedBy: userId
+      // Soft delete - marcar como inactivo
+      const deletedSupplier = await SupabaseInventoryService.updateSupplier(
+        params.id,
+        {
+          is_active: false
         }
-      },
-      { new: true }
-    );
+      );
 
-    return NextResponse.json({ 
-      message: 'Proveedor eliminado exitosamente',
-      supplier: deletedSupplier
-    });
+      return NextResponse.json({ 
+        message: 'Proveedor eliminado exitosamente',
+        supplier: deletedSupplier
+      });
+    } catch (error) {
+      if (error.message?.includes('No rows found')) {
+        return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
+      }
+      throw error;
+    }
 
   } catch (error) {
     console.error('Error deleting supplier:', error);

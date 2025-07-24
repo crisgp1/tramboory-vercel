@@ -2,37 +2,18 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
-  Input,
-  Select,
-  SelectItem,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Chip,
-  Divider,
-  Tooltip,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Spinner
-} from "@heroui/react"
-import {
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  CurrencyDollarIcon,
-  TagIcon,
-  EllipsisVerticalIcon,
-  ChartBarIcon,
-  EyeIcon
-} from "@heroicons/react/24/outline"
+  Plus,
+  Edit3,
+  Trash2,
+  DollarSign,
+  Tag,
+  BarChart3,
+  Eye,
+  X,
+  ChevronDown,
+  Loader2
+} from 'lucide-react'
+import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
 import toast from "react-hot-toast"
 import NordicTable from "@/components/ui/NordicTable"
 
@@ -161,160 +142,129 @@ function PricingTierModal({
     onClose()
   }
 
+  if (!isOpen) return null
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      size="2xl"
-      scrollBehavior="inside"
-      backdrop="opaque"
-      classNames={{
-        backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
-        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto"
-      }}
-    >
-      <ModalContent>
-        <ModalHeader className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-            <TagIcon className="w-4 h-4 text-green-600" />
-          </div>
-          <h3 className="text-lg font-semibold">
-            {mode === 'create' ? 'Nuevo Nivel de Precios' : 'Editar Nivel de Precios'}
-          </h3>
-        </ModalHeader>
-        
-        <ModalBody>
-          <div className="space-y-4">
-            <Input
-              placeholder="Nombre del Nivel *"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              variant="flat"
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-              }}
-            />
-            
-            <Input
-              placeholder="Descripción opcional del nivel"
-              value={formData.description || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              variant="flat"
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-              }}
-            />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                type="number"
-                placeholder="Cantidad Mínima *"
-                value={formData.minQuantity.toString()}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  minQuantity: parseInt(e.target.value) || 1
-                }))}
-                min="1"
-                variant="flat"
-                classNames={{
-                  input: "text-gray-900",
-                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                }}
-              />
-              
-              <Input
-                type="number"
-                placeholder="Cantidad Máxima (opcional)"
-                value={formData.maxQuantity?.toString() || ''}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  maxQuantity: e.target.value ? parseInt(e.target.value) : undefined
-                }))}
-                min={formData.minQuantity + 1}
-                variant="flat"
-                classNames={{
-                  input: "text-gray-900",
-                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                }}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <Select
-                placeholder="Tipo de Descuento"
-                selectedKeys={[formData.discountType]}
-                onSelectionChange={(keys) => setFormData(prev => ({
-                  ...prev,
-                  discountType: Array.from(keys)[0] as 'percentage' | 'fixed_amount'
-                }))}
-                variant="flat"
-                classNames={{
-                  trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                  value: "text-gray-900",
-                  listboxWrapper: "bg-white",
-                  popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-                }}
-              >
-                <SelectItem key="percentage">Porcentaje (%)</SelectItem>
-                <SelectItem key="fixed_amount">Monto Fijo ($)</SelectItem>
-              </Select>
-              
-              <Input
-                type="number"
-                placeholder="Valor del Descuento *"
-                value={formData.discountValue.toString()}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  discountValue: parseFloat(e.target.value) || 0
-                }))}
-                min="0.01"
-                step="0.01"
-                endContent={formData.discountType === 'percentage' ? '%' : '$'}
-                variant="flat"
-                classNames={{
-                  input: "text-gray-900",
-                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                }}
-              />
-            </div>
-            
-            <div>
-              <Input
-                type="number"
-                placeholder="Prioridad"
-                value={formData.priority.toString()}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  priority: parseInt(e.target.value) || 1
-                }))}
-                min="1"
-                variant="flat"
-                classNames={{
-                  input: "text-gray-900",
-                  inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                }}
-              />
-              <p className="text-xs text-gray-500 mt-1">Orden de aplicación (menor número = mayor prioridad)</p>
-            </div>
-          </div>
-        </ModalBody>
-        
+      title={mode === 'create' ? 'Nuevo Nivel de Precios' : 'Editar Nivel de Precios'}
+      icon={Tag}
+      size="lg"
+      footer={
         <ModalFooter>
-          <Button variant="light" onPress={onClose} isDisabled={loading}>
-            Cancelar
-          </Button>
-          <Button
-            color="primary"
-            onPress={handleSubmit}
-            isLoading={loading}
-          >
-            {mode === 'create' ? 'Crear Nivel' : 'Guardar Cambios'}
-          </Button>
+          <ModalActions>
+            <ModalButton
+              onClick={onClose}
+              disabled={loading}
+              variant="secondary"
+            >
+              Cancelar
+            </ModalButton>
+            <ModalButton
+              onClick={handleSubmit}
+              loading={loading}
+              variant="primary"
+            >
+              {mode === 'create' ? 'Crear Nivel' : 'Guardar Cambios'}
+            </ModalButton>
+          </ModalActions>
         </ModalFooter>
-      </ModalContent>
+      }
+    >
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Nombre del Nivel *"
+          value={formData.name}
+          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500"
+        />
+        
+        <input
+          type="text"
+          placeholder="Descripción opcional del nivel"
+          value={formData.description || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500"
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="number"
+            placeholder="Cantidad Mínima *"
+            value={formData.minQuantity.toString()}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              minQuantity: parseInt(e.target.value) || 1
+            }))}
+            min="1"
+            className="glass-input px-4 py-3 text-slate-800 placeholder-slate-500"
+          />
+          
+          <input
+            type="number"
+            placeholder="Cantidad Máxima (opcional)"
+            value={formData.maxQuantity?.toString() || ''}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              maxQuantity: e.target.value ? parseInt(e.target.value) : undefined
+            }))}
+            min={formData.minQuantity + 1}
+            className="glass-input px-4 py-3 text-slate-800 placeholder-slate-500"
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="relative">
+            <select
+              value={formData.discountType}
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                discountType: e.target.value as 'percentage' | 'fixed_amount'
+              }))}
+              className="glass-input w-full px-4 py-3 pr-8 text-slate-800 appearance-none cursor-pointer"
+            >
+              <option value="percentage">Porcentaje (%)</option>
+              <option value="fixed_amount">Monto Fijo ($)</option>
+            </select>
+            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+          </div>
+          
+          <div className="relative">
+            <input
+              type="number"
+              placeholder="Valor del Descuento *"
+              value={formData.discountValue.toString()}
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                discountValue: parseFloat(e.target.value) || 0
+              }))}
+              min="0.01"
+              step="0.01"
+              className="glass-input px-4 py-3 pr-12 text-slate-800 placeholder-slate-500"
+            />
+            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm">
+              {formData.discountType === 'percentage' ? '%' : '$'}
+            </span>
+          </div>
+        </div>
+        
+        <div>
+          <input
+            type="number"
+            placeholder="Prioridad"
+            value={formData.priority.toString()}
+            onChange={(e) => setFormData(prev => ({
+              ...prev,
+              priority: parseInt(e.target.value) || 1
+            }))}
+            min="1"
+            className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500"
+          />
+          <p className="text-xs text-slate-500 mt-1">Orden de aplicación (menor número = mayor prioridad)</p>
+        </div>
+      </div>
     </Modal>
   )
 }
@@ -490,14 +440,14 @@ export default function PricingTierManager() {
     {
       key: "edit",
       label: "Editar",
-      icon: <PencilIcon className="w-4 h-4" />,
+      icon: <Edit3 className="w-4 h-4" />,
       color: "primary" as const,
       onClick: handleEditTier
     },
     {
       key: "delete",
       label: "Eliminar",
-      icon: <TrashIcon className="w-4 h-4" />,
+      icon: <Trash2 className="w-4 h-4" />,
       color: "danger" as const,
       onClick: handleDeleteTier
     }
@@ -560,14 +510,11 @@ export default function PricingTierManager() {
       }
       case "status": {
         return (
-          <Chip
-            color={tier.isActive ? 'success' : 'default'}
-            size="sm"
-            variant="flat"
-            className="font-medium"
-          >
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            tier.isActive ? 'bg-green-100/80 text-green-800' : 'bg-gray-100/80 text-gray-800'
+          }`}>
             {tier.isActive ? 'Activo' : 'Inactivo'}
-          </Chip>
+          </span>
         )
       }
       default: {
@@ -578,59 +525,55 @@ export default function PricingTierManager() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestión de Precios Escalonados</h2>
-          <p className="text-gray-600">Configura precios por volumen para productos</p>
+      {/* Header glassmorphism */}
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800">Gestión de Precios Escalonados</h2>
+            <p className="text-slate-600">Configura precios por volumen para productos</p>
+          </div>
         </div>
       </div>
 
-      {/* Product Selection */}
-      <Card>
-        <CardBody className="p-4">
-          <div className="flex items-center gap-4">
-            <Select
-              placeholder="Elige un producto para configurar precios"
-              selectedKeys={selectedProduct ? [selectedProduct] : []}
-              onSelectionChange={(keys) => setSelectedProduct(Array.from(keys)[0] as string)}
-              className="flex-1"
-              variant="flat"
-              classNames={{
-                trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                value: "text-gray-900",
-                listboxWrapper: "bg-white",
-                popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-              }}
+      {/* Product Selection glassmorphism */}
+      <div className="glass-card p-4">
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <select
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="glass-input w-full px-4 py-3 pr-8 text-slate-800 appearance-none cursor-pointer"
             >
-              {products.map((product) => (
-                <SelectItem key={product._id}>
+              <option value="">Elige un producto para configurar precios</option>
+              {products.map((product, index) => (
+                <option key={product._id || `product-${index}`} value={product._id}>
                   {product.name} ({product.sku}) - {formatCurrency(product.basePrice)}
-                </SelectItem>
+                </option>
               ))}
-            </Select>
-            
-            {selectedProduct && (
-              <Button
-                color="primary"
-                startContent={<PlusIcon className="w-4 h-4" />}
-                onPress={handleCreateTier}
-              >
-                Nuevo Nivel
-              </Button>
-            )}
+            </select>
+            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
           </div>
-        </CardBody>
-      </Card>
+          
+          {selectedProduct && (
+            <button
+              onClick={handleCreateTier}
+              className="glass-button px-6 py-3 flex items-center gap-2 text-sm font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo Nivel
+            </button>
+          )}
+        </div>
+      </div>
 
-      {/* Product Pricing */}
+      {/* Product Pricing glassmorphism */}
       {productPricing && (
-        <Card>
-          <CardHeader className="pb-3">
+        <div className="glass-card overflow-hidden">
+          <div className="p-6 border-b border-white/20">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <CurrencyDollarIcon className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 bg-blue-100/80 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-blue-600" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">{productPricing.productName}</h3>
@@ -640,17 +583,14 @@ export default function PricingTierManager() {
                   </p>
                 </div>
               </div>
-              <Chip
-                startContent={<ChartBarIcon className="w-3 h-3" />}
-                color="primary"
-                variant="flat"
-              >
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-blue-100/80 text-blue-800">
+                <BarChart3 className="w-3 h-3" />
                 {productPricing.tiers.length} niveles
-              </Chip>
+              </span>
             </div>
-          </CardHeader>
+          </div>
           
-          <CardBody className="pt-0">
+          <div className="p-6">
             {/* Vista Desktop - Tabla Nordic */}
             <div className="hidden lg:block">
               {productPricing.tiers.length > 0 ? (
@@ -663,18 +603,16 @@ export default function PricingTierManager() {
                   emptyMessage="No hay niveles de precios configurados"
                 />
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <CurrencyDollarIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <div className="text-center py-8 text-slate-500">
+                  <DollarSign className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                   <p>No hay niveles de precios configurados</p>
-                  <Button
-                    className="mt-2"
-                    color="primary"
-                    variant="light"
-                    startContent={<PlusIcon className="w-4 h-4" />}
-                    onPress={handleCreateTier}
+                  <button
+                    onClick={handleCreateTier}
+                    className="glass-button-secondary mt-3 px-4 py-2 flex items-center gap-2 text-sm font-medium mx-auto"
                   >
+                    <Plus className="w-4 h-4" />
                     Crear primer nivel
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>
@@ -686,18 +624,16 @@ export default function PricingTierManager() {
                   <Spinner label="Cargando niveles..." />
                 </div>
               ) : productPricing.tiers.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <CurrencyDollarIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <div className="text-center py-8 text-slate-500">
+                  <DollarSign className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                   <p>No hay niveles de precios configurados</p>
-                  <Button
-                    className="mt-2"
-                    color="primary"
-                    variant="light"
-                    startContent={<PlusIcon className="w-4 h-4" />}
-                    onPress={handleCreateTier}
+                  <button
+                    onClick={handleCreateTier}
+                    className="glass-button-secondary mt-3 px-4 py-2 flex items-center gap-2 text-sm font-medium mx-auto"
                   >
+                    <Plus className="w-4 h-4" />
                     Crear primer nivel
-                  </Button>
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -707,8 +643,7 @@ export default function PricingTierManager() {
                     const savingsPercentage = (savings / productPricing.basePrice) * 100
                     
                     return (
-                      <Card key={tier._id} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                        <CardBody className="p-4">
+                      <div key={tier._id} className="glass-card p-4 hover:shadow-lg transition-all duration-200">
                           <div className="flex items-start justify-between mb-3">
                             <div>
                               <p className="font-medium text-gray-900">{tier.name}</p>
@@ -717,13 +652,11 @@ export default function PricingTierManager() {
                               )}
                               <p className="text-xs text-gray-400">Prioridad: {tier.priority}</p>
                             </div>
-                            <Chip
-                              color={tier.isActive ? 'success' : 'default'}
-                              size="sm"
-                              variant="flat"
-                            >
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              tier.isActive ? 'bg-green-100/80 text-green-800' : 'bg-gray-100/80 text-gray-800'
+                            }`}>
                               {tier.isActive ? 'Activo' : 'Inactivo'}
-                            </Chip>
+                            </span>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-4 mb-4">
@@ -765,35 +698,28 @@ export default function PricingTierManager() {
                           </div>
 
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="light"
-                              color="primary"
-                              onPress={() => handleEditTier(tier)}
-                              startContent={<PencilIcon className="w-4 h-4" />}
-                              className="flex-1"
+                            <button
+                              onClick={() => handleEditTier(tier)}
+                              className="glass-button flex-1 px-3 py-2 flex items-center justify-center gap-2 text-sm font-medium"
                             >
+                              <Edit3 className="w-4 h-4" />
                               Editar
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="light"
-                              color="danger"
-                              onPress={() => handleDeleteTier(tier)}
-                              isIconOnly
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTier(tier)}
+                              className="glass-button-icon p-2 rounded-lg text-red-600 hover:text-red-800 hover:bg-red-50/50"
                             >
-                              <TrashIcon className="w-4 h-4" />
-                            </Button>
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                        </CardBody>
-                      </Card>
+                      </div>
                     )
                   })}
                 </div>
               )}
             </div>
-          </CardBody>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Modal */}

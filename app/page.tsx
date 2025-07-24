@@ -13,12 +13,13 @@ export default async function Home() {
     
     // Redirigir según el rol
     if (role === "proveedor") {
-      redirect("/proveedor")
+      redirect("/proveedor") 
     } else if (["admin", "gerente", "vendedor"].includes(role)) {
       redirect("/dashboard")
     } else {
       redirect("/reservaciones")
     }
+
   }
 
   return <HomePage />

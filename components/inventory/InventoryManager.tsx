@@ -32,16 +32,16 @@ import {
 } from "@heroicons/react/24/outline"
 import { useRole } from "@/hooks/useRole"
 import { useInventoryStats } from "@/hooks/useInventoryStats"
-import ProductManager from "./ProductManager"
-import StockManager from "./StockManager"
-import SupplierManager from "./SupplierManager"
+import ProductManager from "./products/ProductManager"
+import StockManager from "./stock/StockManager"
+import SupplierManager from "./suppliers/SupplierManager"
 import InventoryReports from "./InventoryReports"
 import InventoryAlerts from "./InventoryAlerts"
-import PurchaseOrderManager from "./PurchaseOrderManager"
+import PurchaseOrderManager from "./purchase-orders/PurchaseOrderManager"
 import BatchManager from "./BatchManager"
 import PricingTierManager from "./PricingTierManager"
 import BarcodeScanner from "./BarcodeScanner"
-import StockTransferModal from "./StockTransferModal"
+import StockTransferModal from "./transfers/StockTransferModal"
 
 export default function InventoryManager() {
   const { role, isAdmin, isGerente } = useRole()
@@ -224,102 +224,101 @@ export default function InventoryManager() {
   ]
 
   return (
-    <div className="space-y-8">
-      {/* Header minimalista */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-medium text-gray-900">
-            Inventario
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Control de materiales, equipos y suministros
-          </p>
+    <div className="space-y-8 p-6">
+      {/* Header glassmorphism */}
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 mb-2">
+              Inventario
+            </h1>
+            <p className="text-slate-600 text-sm">
+              Control inteligente de materiales, equipos y suministros
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveTab("products")}
+            className="glass-button px-6 py-3 flex items-center gap-2 text-sm font-medium"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Nuevo Producto
+          </button>
         </div>
-        <Button
-          startContent={<PlusIcon className="w-4 h-4" />}
-          onPress={() => setActiveTab("products")}
-          className="bg-gray-900 text-white hover:bg-gray-800 text-sm"
-          size="md"
-        >
-          Nuevo Producto
-        </Button>
       </div>
 
-      {/* Estadísticas minimalistas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Estadísticas glassmorphism */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon
           return (
-            <Card key={index} className="border border-gray-200 shadow-none">
-              <CardBody className="p-3 sm:p-4">
-                <div className="flex items-start sm:items-center gap-2 sm:gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    stat.color === 'blue' ? 'bg-blue-100' :
-                    stat.color === 'warning' ? 'bg-orange-100' :
-                    stat.color === 'success' ? 'bg-green-100' :
-                    stat.color === 'purple' ? 'bg-purple-100' : 'bg-gray-100'
-                  }`}>
-                    <Icon className={`w-4 h-4 ${
-                      stat.color === 'blue' ? 'text-blue-600' :
-                      stat.color === 'warning' ? 'text-orange-600' :
-                      stat.color === 'success' ? 'text-green-600' :
-                      stat.color === 'purple' ? 'text-purple-600' : 'text-gray-600'
-                    }`} />
+            <div key={index} className={`glass-stat p-4 cursor-pointer group ${
+              stat.color === 'blue' ? 'stat-blue' :
+              stat.color === 'warning' ? 'stat-orange' :
+              stat.color === 'success' ? 'stat-green' :
+              stat.color === 'purple' ? 'stat-purple' : ''
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 ${
+                  stat.color === 'blue' ? 'bg-blue-500' :
+                  stat.color === 'warning' ? 'bg-orange-500' :
+                  stat.color === 'success' ? 'bg-green-500' :
+                  stat.color === 'purple' ? 'bg-purple-500' : 'bg-slate-500'
+                }`}>
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-lg font-semibold text-slate-800 mb-1 truncate">
+                    {stat.value}
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-base sm:text-lg font-medium text-gray-900 truncate">
-                      {stat.value}
-                    </div>
-                    <div className="text-xs text-gray-600 uppercase tracking-wide truncate">
-                      {stat.label}
-                    </div>
+                  <div className="text-xs text-slate-600 uppercase tracking-wider truncate">
+                    {stat.label}
                   </div>
                 </div>
-              </CardBody>
-            </Card>
+              </div>
+            </div>
           )
         })}
       </div>
 
-      {/* Contenido principal */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="p-4 sm:p-6">
+      {/* Contenido principal glassmorphism */}
+      <div className="glass-card overflow-hidden">
+        <div className="p-6">
           {loading ? (
-            <div className="flex flex-col justify-center items-center py-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
-              <p className="text-gray-600 text-sm">Cargando inventario...</p>
+            <div className="flex flex-col justify-center items-center py-20">
+              <div className="w-12 h-12 border-4 border-slate-300 border-t-slate-600 rounded-full animate-spin mb-6"></div>
+              <p className="text-slate-600 text-base font-medium">Cargando inventario...</p>
             </div>
           ) : (
-            <Tabs
-              selectedKey={activeTab}
-              onSelectionChange={(key) => setActiveTab(key as string)}
-              variant="underlined"
-              classNames={{
-                tabList: "border-b border-gray-200 flex-nowrap overflow-x-auto scrollbar-hide",
-                cursor: "bg-gray-900",
-                tab: "px-3 py-3 min-w-fit whitespace-nowrap",
-                tabContent: "group-data-[selected=true]:text-gray-900"
-              }}
-            >
-              {filteredTabs.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <Tab
-                    key={tab.id}
-                    title={
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" />
-                        <span className="text-sm">{tab.label}</span>
-                      </div>
-                    }
-                  >
-                    <div className="pt-6">
-                      {tab.component}
-                    </div>
-                  </Tab>
-                )
-              })}
-            </Tabs>
+            <div className="space-y-6">
+              {/* Tabs glassmorphism */}
+              <div className="flex flex-wrap gap-2 p-2 bg-slate-50/50 rounded-2xl backdrop-blur-sm border border-white/20">
+                {filteredTabs.map((tab) => {
+                  const Icon = tab.icon
+                  const isActive = activeTab === tab.id
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`
+                        flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300
+                        ${isActive 
+                          ? 'glass-tab active text-slate-800' 
+                          : 'glass-tab text-slate-600 hover:text-slate-800 hover:bg-white/50'
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="whitespace-nowrap">{tab.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              
+              {/* Tab Content */}
+              <div className="min-h-[400px]">
+                {filteredTabs.find(tab => tab.id === activeTab)?.component}
+              </div>
+            </div>
           )}
         </div>
       </div>

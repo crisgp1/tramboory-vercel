@@ -1,0 +1,151 @@
+/* Design Tokens - Glass Morphism System */
+
+:root {
+  /* Glass Morphism Colors */
+  --glass-bg-primary: rgba(255, 255, 255, 0.85);
+  --glass-bg-secondary: rgba(255, 255, 255, 0.75);
+  --glass-bg-overlay: rgba(248, 250, 252, 0.85);
+  
+  /* Glass Borders */
+  --glass-border-primary: rgba(255, 255, 255, 0.3);
+  --glass-border-secondary: rgba(255, 255, 255, 0.2);
+  --glass-border-focus: rgba(59, 130, 246, 0.3);
+  
+  /* Glass Shadows */
+  --glass-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --glass-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --glass-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Glass Blur */
+  --glass-blur-sm: blur(8px);
+  --glass-blur-md: blur(12px);
+  --glass-blur-lg: blur(16px);
+  
+  /* Transitions */
+  --glass-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --glass-transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Glass Components */
+
+.glass-card {
+  background: var(--glass-bg-primary);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border: 1px solid var(--glass-border-primary);
+  border-radius: 0.75rem;
+  box-shadow: var(--glass-shadow-md);
+  transition: var(--glass-transition);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--glass-shadow-lg);
+  transform: translateY(-1px);
+}
+
+.glass-modal {
+  background: var(--glass-bg-primary);
+  backdrop-filter: var(--glass-blur-lg);
+  -webkit-backdrop-filter: var(--glass-blur-lg);
+  border: 1px solid var(--glass-border-primary);
+  border-radius: 1rem;
+  box-shadow: var(--glass-shadow-lg);
+}
+
+.glass-input {
+  background: var(--glass-bg-secondary);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--glass-border-secondary);
+  border-radius: 0.5rem;
+  transition: var(--glass-transition);
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--glass-border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+.glass-button {
+  background: var(--glass-bg-secondary);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--glass-border-secondary);
+  border-radius: 0.5rem;
+  transition: var(--glass-transition);
+  color: rgb(51, 65, 85);
+  font-weight: 500;
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--glass-border-primary);
+  box-shadow: var(--glass-shadow-sm);
+  transform: translateY(-1px);
+}
+
+.glass-button:active {
+  transform: translateY(0);
+}
+
+.glass-button-secondary {
+  background: rgba(248, 250, 252, 0.7);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  border-radius: 0.5rem;
+  transition: var(--glass-transition);
+  color: rgb(71, 85, 105);
+  font-weight: 500;
+}
+
+.glass-button-secondary:hover {
+  background: rgba(248, 250, 252, 0.9);
+  border-color: rgba(226, 232, 240, 0.8);
+  box-shadow: var(--glass-shadow-sm);
+}
+
+/* Utility Classes */
+
+.glass-overlay {
+  background: var(--glass-bg-overlay);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+}
+
+.glass-surface {
+  background: var(--glass-bg-primary);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--glass-border-primary);
+}
+
+.glass-border {
+  border: 1px solid var(--glass-border-primary);
+}
+
+.glass-border-secondary {
+  border: 1px solid var(--glass-border-secondary);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --glass-bg-primary: rgba(17, 24, 39, 0.85);
+    --glass-bg-secondary: rgba(17, 24, 39, 0.75);
+    --glass-bg-overlay: rgba(17, 24, 39, 0.85);
+    --glass-border-primary: rgba(75, 85, 99, 0.3);
+    --glass-border-secondary: rgba(75, 85, 99, 0.2);
+  }
+  
+  .glass-button {
+    color: rgb(229, 231, 235);
+  }
+  
+  .glass-button-secondary {
+    color: rgb(209, 213, 219);
+  }
+}

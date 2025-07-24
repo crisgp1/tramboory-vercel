@@ -1,8 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { InventoryService } from '@/lib/services/inventory.service';
 
-// GET /api/inventory - Documentación de la API de inventario
+// GET /api/inventory - Obtener resumen del inventario
 export async function GET(request: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    // Get inventory summary from services
+    const summaryResult = await InventoryService.getInventorySummary();
+    const statsResult = await InventoryService.getInventoryStats();
+    const lowStockResult = await InventoryService.getLowStockProducts();
+    const expiringResult = await InventoryService.getExpiringBatches(7);
+
+    // Check if any service failed
+    if (!summaryResult.success || !statsResult.success || !lowStockResult.success || !expiringResult.success) {
+      const errors = [
+        !summaryResult.success ? summaryResult.error : null,
+        !statsResult.success ? statsResult.error : null,
+        !lowStockResult.success ? lowStockResult.error : null,
+        !expiringResult.success ? expiringResult.error : null
+      ].filter(Boolean);
+
+      return NextResponse.json(
+        { error: 'Failed to fetch inventory data: ' + errors.join(', ') },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        summary: summaryResult.data,
+        stats: statsResult.data,
+        lowStockProducts: lowStockResult.data?.slice(0, 10) || [], // Top 10
+        expiringBatches: expiringResult.data?.slice(0, 10) || [], // Top 10
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting inventory data:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/inventory - Documentación de la API de inventario (mantener para compatibilidad)
+export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) {

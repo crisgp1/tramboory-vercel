@@ -24,28 +24,34 @@ export function useInventoryStats(): InventoryStats {
       try {
         setStats(prev => ({ ...prev, loading: true, error: null }))
         
-        // Fetch multiple endpoints in parallel
-        const [summaryResponse, suppliersResponse] = await Promise.all([
-          fetch('/api/inventory/reports?type=summary'),
-          fetch('/api/inventory/suppliers')
-        ])
+        // Fetch inventory data from new Supabase API
+        const inventoryResponse = await fetch('/api/inventory')
 
-        if (!summaryResponse.ok) {
-          throw new Error('Failed to fetch inventory summary')
+        if (!inventoryResponse.ok) {
+          throw new Error('Failed to fetch inventory data')
         }
 
-        if (!suppliersResponse.ok) {
-          throw new Error('Failed to fetch suppliers data')
+        const inventoryData = await inventoryResponse.json()
+
+        if (!inventoryData.success) {
+          throw new Error(inventoryData.error || 'Failed to fetch inventory data')
         }
 
-        const summaryData = await summaryResponse.json()
-        const suppliersData = await suppliersResponse.json()
+        const { stats: inventoryStats, lowStockProducts } = inventoryData.data
+
+        // Fetch suppliers count
+        const suppliersResponse = await fetch('/api/inventory/suppliers')
+        let suppliersCount = 0
+        if (suppliersResponse.ok) {
+          const suppliersData = await suppliersResponse.json()
+          suppliersCount = suppliersData.suppliers?.length || 0
+        }
 
         setStats({
-          totalProducts: summaryData.summary?.totalProducts || 0,
-          lowStockItems: summaryData.summary?.lowStockItems || 0,
-          totalValue: summaryData.summary?.totalValue || 0,
-          suppliersCount: suppliersData.pagination?.total || 0,
+          totalProducts: inventoryStats.totalProducts || 0,
+          lowStockItems: inventoryStats.lowStockProducts || 0,
+          totalValue: inventoryStats.totalValue || 0,
+          suppliersCount,
           loading: false,
           error: null
         })

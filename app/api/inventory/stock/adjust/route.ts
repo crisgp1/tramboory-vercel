@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
-import InventoryService, { StockAdjustmentParams } from '@/lib/services/inventory/inventoryService';
+import { SupabaseInventoryService } from '@/lib/supabase/inventory';
 import { MovementType } from '@/types/inventory';
-import dbConnect from '@/lib/mongodb';
 
 // Validation schema for stock adjustment
 const stockAdjustmentSchema = z.object({
@@ -30,9 +29,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Connect to database
-    await dbConnect();
-
     // Parse and validate request body
     const body = await request.json();
     const validatedData = stockAdjustmentSchema.parse(body);
@@ -50,8 +46,8 @@ export async function POST(request: NextRequest) {
       adjustmentQuantity = Math.abs(validatedData.quantity);
     }
 
-    // Prepare parameters for InventoryService
-    const adjustmentParams: StockAdjustmentParams = {
+    // Execute stock adjustment using Supabase service
+    const result = await SupabaseInventoryService.adjustStock({
       productId: validatedData.productId,
       locationId: validatedData.locationId,
       quantity: adjustmentQuantity,
@@ -62,10 +58,7 @@ export async function POST(request: NextRequest) {
       cost: validatedData.costPerUnit,
       expiryDate: validatedData.expiryDate,
       notes: validatedData.notes
-    };
-
-    // Execute stock adjustment
-    const result = await InventoryService.adjustStock(adjustmentParams);
+    });
 
     if (!result.success) {
       console.error('Stock adjustment failed:', result.error);

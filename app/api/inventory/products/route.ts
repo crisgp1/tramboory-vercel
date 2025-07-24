@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import dbConnect from '@/lib/mongodb';
-import Product from '@/lib/models/inventory/Product';
-import InventoryMovement from '@/lib/models/inventory/InventoryMovement';
+import { ProductService } from '@/lib/services/product.service';
 import { z } from 'zod';
 
 // Función temporal para verificar permisos (se puede mejorar más adelante)
@@ -12,73 +10,35 @@ async function hasInventoryPermission(userId: string, action: string): Promise<b
   return true;
 }
 
-// Schema de validación para crear/actualizar productos
+// Schema de validación para crear/actualizar productos (simplificado para Supabase)
 const ProductSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido').max(200),
+  name: z.string().min(1, 'El nombre es requerido').max(100),
   description: z.string().optional(),
   category: z.string().min(1, 'La categoría es requerida'),
   sku: z.string().min(1, 'El SKU es requerido'),
   barcode: z.string().optional(),
-  units: z.object({
-    base: z.object({
-      code: z.string().min(1, 'El código de unidad base es requerido'),
-      name: z.string().min(1, 'El nombre de unidad base es requerido'),
-      category: z.string().min(1, 'La categoría de unidad es requerida')
-    }),
-    alternatives: z.array(z.object({
-      code: z.string().min(1),
-      name: z.string().min(1),
-      category: z.string().min(1),
-      conversionFactor: z.number().positive('El factor de conversión debe ser positivo'),
-      conversionType: z.string().min(1),
-      containedUnit: z.string().optional()
-    })).default([])
-  }),
-  pricing: z.object({
-    tieredPricing: z.array(z.object({
-      minQuantity: z.number().min(0),
-      maxQuantity: z.number().min(0),
-      unit: z.string().min(1),
-      pricePerUnit: z.number().min(0.01),
-      type: z.enum(['retail', 'wholesale', 'bulk'])
-    })).default([]),
-    lastCost: z.number().min(0).optional(),
-    averageCost: z.number().min(0).optional()
-  }).optional(),
-  stockLevels: z.object({
-    minimum: z.number().min(0, 'El stock mínimo debe ser mayor o igual a 0'),
-    reorderPoint: z.number().min(0, 'El punto de reorden debe ser mayor o igual a 0'),
-    unit: z.string().min(1, 'La unidad de stock es requerida')
-  }),
-  suppliers: z.array(z.object({
-    supplierId: z.string().min(1),
-    supplierName: z.string().min(1),
-    isPreferred: z.boolean().default(false),
-    lastPurchasePrice: z.number().min(0).optional(),
-    leadTimeDays: z.number().min(0).default(1)
-  })).default([]),
-  expiryInfo: z.object({
-    hasExpiry: z.boolean().default(false),
-    shelfLifeDays: z.number().min(1).optional(),
-    warningDays: z.number().min(1).default(7)
-  }).optional(),
-  specifications: z.object({
-    weight: z.number().min(0).optional(),
-    dimensions: z.object({
-      length: z.number().min(0),
-      width: z.number().min(0),
-      height: z.number().min(0),
-      unit: z.string().default('cm')
-    }).optional(),
-    color: z.string().optional(),
-    brand: z.string().optional(),
-    model: z.string().optional()
-  }).optional(),
+  base_unit: z.string().min(1, 'La unidad base es requerida'),
+  stock_minimum: z.number().min(0, 'El stock mínimo debe ser mayor o igual a 0').default(0),
+  stock_reorder_point: z.number().min(0, 'El punto de reorden debe ser mayor o igual a 0').default(0),
+  stock_unit: z.string().min(1, 'La unidad de stock es requerida'),
+  last_cost: z.number().min(0).optional(),
+  average_cost: z.number().min(0).optional(),
+  spec_weight: z.number().min(0).optional(),
+  spec_length: z.number().min(0).optional(),
+  spec_width: z.number().min(0).optional(),
+  spec_height: z.number().min(0).optional(),
+  spec_dimensions_unit: z.string().default('cm').optional(),
+  spec_color: z.string().optional(),
+  spec_brand: z.string().optional(),
+  spec_model: z.string().optional(),
+  is_active: z.boolean().default(true),
+  is_perishable: z.boolean().default(false),
+  requires_batch: z.boolean().default(true),
+  expiry_has_expiry: z.boolean().default(false),
+  expiry_shelf_life_days: z.number().min(1).optional(),
+  expiry_warning_days: z.number().min(1).default(7).optional(),
   images: z.array(z.string()).default([]),
-  tags: z.array(z.string()).default([]),
-  isActive: z.boolean().default(true),
-  isPerishable: z.boolean().default(false),
-  requiresBatch: z.boolean().default(true)
+  tags: z.array(z.string()).default([])
 });
 
 // GET /api/inventory/products - Obtener productos con filtros
@@ -94,86 +54,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Sin permisos para leer inventario' }, { status: 403 });
     }
 
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
     const search = searchParams.get('search');
     const category = searchParams.get('category');
     const isActive = searchParams.get('isActive');
     const withoutMovements = searchParams.get('withoutMovements') === 'true';
-    const sortBy = searchParams.get('sortBy') || 'name';
-    const sortOrder = searchParams.get('sortOrder') || 'asc';
-
-    // Construir filtros
-    const filters: any = {};
     
-    if (search) {
-      filters.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { sku: { $regex: search, $options: 'i' } },
-        { barcode: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    if (category) {
-      filters.category = category;
-    }
-
-    if (isActive !== null) {
-      filters.isActive = isActive === 'true';
-    }
-
-    // Configurar ordenamiento
-    const sortOptions: any = {};
-    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
-    // Ejecutar consulta
-    const skip = (page - 1) * limit;
-    
-    let productsQuery;
-    let countQuery;
+    let products: any[] = [];
+    let result;
 
     if (withoutMovements) {
-      // Buscar productos que no tienen movimientos de inventario
-      const productsWithMovements = await InventoryMovement.distinct('productId');
-      
-      filters._id = { $nin: productsWithMovements };
-      
-      productsQuery = Product.find(filters)
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(limit)
-        .select('_id name sku category units')
-        .lean();
-      
-      countQuery = Product.countDocuments(filters);
+      // Get products without inventory movements
+      result = await ProductService.getProductsWithoutInventory();
+    } else if (search) {
+      result = await ProductService.searchProducts(search);
+    } else if (category) {
+      result = await ProductService.getProductsByCategory(category);
     } else {
-      productsQuery = Product.find(filters)
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(limit)
-        .populate('suppliers', 'name contactInfo')
-        .lean();
-      
-      countQuery = Product.countDocuments(filters);
+      const activeOnly = isActive !== 'false';
+      result = await ProductService.getAllProducts({ activeOnly });
     }
-    
-    const [products, total] = await Promise.all([
-      productsQuery,
-      countQuery
-    ]);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: 400 }
+      );
+    }
+
+    products = result.data || [];
 
     return NextResponse.json({
+      success: true,
       products,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
+      total: products.length
     });
 
   } catch (error) {
@@ -198,8 +112,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sin permisos para crear productos' }, { status: 403 });
     }
 
-    await dbConnect();
-
     const body = await request.json();
     
     // Validar datos
@@ -216,72 +128,69 @@ export async function POST(request: NextRequest) {
 
     const productData = validationResult.data;
 
-    // Verificar que el SKU no exista
-    const existingSku = await Product.findOne({ sku: productData.sku });
-    if (existingSku) {
-      return NextResponse.json(
-        { error: 'Ya existe un producto con este SKU' },
-        { status: 409 }
-      );
-    }
-
-    // Verificar que el código de barras no exista (si se proporciona y no está vacío)
-    if (productData.barcode && productData.barcode.trim() !== '') {
-      const existingBarcode = await Product.findOne({ barcode: productData.barcode.trim() });
-      if (existingBarcode) {
-        return NextResponse.json(
-          { error: 'Ya existe un producto con este código de barras' },
-          { status: 409 }
-        );
-      }
-    }
-
     // Generar productId único
     const productId = `PROD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Crear producto con la estructura correcta para el modelo MongoDB
-    const product = new Product({
-      productId,
+    // Create product using new service
+    const result = await ProductService.createProduct({
       name: productData.name,
       description: productData.description,
       category: productData.category,
       sku: productData.sku,
       barcode: productData.barcode && productData.barcode.trim() !== '' ? productData.barcode.trim() : undefined,
-      baseUnit: productData.units.base.code,
-      units: productData.units,
-      pricing: productData.pricing || {
-        tieredPricing: [],
-        lastCost: 0,
-        averageCost: 0
-      },
-      suppliers: productData.suppliers || [],
-      stockLevels: productData.stockLevels,
-      expiryInfo: productData.expiryInfo || {
-        hasExpiry: false,
-        warningDays: 7
-      },
-      specifications: productData.specifications,
-      images: productData.images || [],
-      tags: productData.tags || [],
-      isActive: productData.isActive,
-      isPerishable: productData.isPerishable || false,
-      requiresBatch: productData.requiresBatch !== undefined ? productData.requiresBatch : true,
-      createdBy: userId,
-      updatedBy: userId
+      base_unit: productData.base_unit,
+      stock_minimum: productData.stock_minimum,
+      stock_reorder_point: productData.stock_reorder_point,
+      stock_unit: productData.stock_unit,
+      last_cost: productData.last_cost,
+      average_cost: productData.average_cost,
+      spec_weight: productData.spec_weight,
+      spec_length: productData.spec_length,
+      spec_width: productData.spec_width,
+      spec_height: productData.spec_height,
+      spec_dimensions_unit: productData.spec_dimensions_unit,
+      spec_color: productData.spec_color,
+      spec_brand: productData.spec_brand,
+      spec_model: productData.spec_model,
+      is_active: productData.is_active,
+      is_perishable: productData.is_perishable,
+      requires_batch: productData.requires_batch,
+      expiry_has_expiry: productData.expiry_has_expiry,
+      expiry_shelf_life_days: productData.expiry_shelf_life_days,
+      expiry_warning_days: productData.expiry_warning_days,
+      images: productData.images,
+      tags: productData.tags,
+      created_by: userId,
+      updated_by: userId
     });
 
-    await product.save();
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error },
+        { status: 400 }
+      );
+    }
 
-    // NO crear registros de inventario automáticamente
-    console.log(`✅ Producto ${product.name} creado sin registros de inventario automáticos`);
+    console.log(`✅ Product ${result.data?.name || 'unknown'} created successfully`);
 
-    // Poblar datos para respuesta
-    await product.populate('suppliers', 'name contactInfo');
-
-    return NextResponse.json(product, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      product: result.data
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Error creating product:', error);
+    
+    // Handle Supabase specific errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === '23505') { // Unique constraint violation
+        return NextResponse.json(
+          { error: 'Ya existe un producto con este SKU o código de barras' },
+          { status: 409 }
+        );
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@heroui/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Switch } from "@heroui/react";
 import toast from "react-hot-toast";
 
 interface Supplier {
   id: string;
-  supplierId: string;
+  supplierId?: string;     // MongoDB field
+  supplier_id?: string;    // Supabase field
   name: string;
   code: string;
   email?: string;
@@ -19,9 +20,11 @@ interface User {
 }
 
 interface LinkedSupplier {
-  supplierId: string;
+  supplierId?: string;     // MongoDB field
+  supplier_id?: string;    // Supabase field
   name: string;
-  userId: string;
+  userId?: string;         // MongoDB field
+  user_id?: string;        // Supabase field
   email?: string;
 }
 
@@ -37,6 +40,9 @@ export default function LinkSuppliersPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  
+  // Database selection
+  const [useSupabase, setUseSupabase] = useState(true); // Default to Supabase
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -61,9 +67,19 @@ export default function LinkSuppliersPage() {
     fetchData();
   }, []);
 
+  // Refetch data when database selection changes
+  useEffect(() => {
+    if (isClient) {
+      setLoading(true);
+      fetchData();
+    }
+  }, [useSupabase]);
+
   const fetchData = async () => {
     try {
-      const response = await fetch("/api/debug/link-supplier");
+      // Choose API endpoint based on database selection
+      const endpoint = useSupabase ? "/api/inventory/suppliers/link" : "/api/debug/link-supplier";
+      const response = await fetch(endpoint);
       if (!response.ok) throw new Error("Error al cargar datos");
       
       const data = await response.json();
@@ -71,7 +87,7 @@ export default function LinkSuppliersPage() {
       setProviderUsers(data.providerUsers || []);
       setLinkedSuppliers(data.linkedSuppliers || []);
     } catch (error) {
-      toast.error("Error al cargar los datos");
+      toast.error(`Error al cargar los datos (${useSupabase ? 'Supabase' : 'MongoDB'})`);
       console.error(error);
     } finally {
       setLoading(false);
@@ -127,10 +143,16 @@ export default function LinkSuppliersPage() {
     showLoadingModal("Vinculando Proveedor", "Procesando la vinculación, por favor espere...");
     
     try {
-      const response = await fetch("/api/debug/link-supplier", {
+      // Choose API endpoint and payload based on database selection
+      const endpoint = useSupabase ? "/api/inventory/suppliers/link" : "/api/debug/link-supplier";
+      const payload = useSupabase 
+        ? { supplier_id: supplierId, user_id: userId }
+        : { supplierId, userId };
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ supplierId, userId })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
@@ -140,7 +162,7 @@ export default function LinkSuppliersPage() {
       }
 
       setShowModal(false);
-      showSuccessModal("Éxito", "El proveedor ha sido vinculado correctamente al usuario.");
+      showSuccessModal("Éxito", `El proveedor ha sido vinculado correctamente al usuario (${useSupabase ? 'Supabase' : 'MongoDB'}).`);
       await fetchData();
       setSelectedUsers(prev => {
         const updated = { ...prev };
@@ -168,10 +190,16 @@ export default function LinkSuppliersPage() {
     showLoadingModal("Desvinculando Proveedor", "Procesando la desvinculación, por favor espere...");
     
     try {
-      const response = await fetch("/api/debug/link-supplier", {
+      // Choose API endpoint and payload based on database selection
+      const endpoint = useSupabase ? "/api/inventory/suppliers/link" : "/api/debug/link-supplier";
+      const payload = useSupabase 
+        ? { supplier_id: supplierId }
+        : { supplierId };
+
+      const response = await fetch(endpoint, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ supplierId })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
@@ -199,9 +227,19 @@ export default function LinkSuppliersPage() {
 
   const filteredLinkedSuppliers = linkedSuppliers.filter(supplier =>
     supplier.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.supplierId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (supplier.supplierId || supplier.supplier_id)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Helper function to get the correct supplier ID field
+  const getSupplierId = (supplier: Supplier | LinkedSupplier) => {
+    return useSupabase ? supplier.supplier_id : supplier.supplierId;
+  };
+
+  // Helper function to get the correct user ID field
+  const getUserId = (supplier: LinkedSupplier) => {
+    return useSupabase ? supplier.user_id : supplier.userId;
+  };
 
   if (loading) {
     return (
@@ -279,6 +317,24 @@ export default function LinkSuppliersPage() {
           flexWrap: isMobile ? 'wrap' : 'nowrap',
           gap: isMobile ? '8px' : '0'
         }}>
+          {/* Database Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px' }}>
+            <span>MongoDB</span>
+            <Switch 
+              size="sm" 
+              isSelected={useSupabase}
+              onValueChange={setUseSupabase}
+              color="primary"
+            />
+            <span>Supabase</span>
+            <span style={{ 
+              color: useSupabase ? '#10b981' : '#f59e0b',
+              fontWeight: 'bold',
+              marginLeft: '4px'
+            }}>
+              ({useSupabase ? 'Supabase' : 'MongoDB'})
+            </span>
+          </div>
           <div style={{
             fontSize: isMobile ? '11px' : '12px',
             fontWeight: 'bold',
@@ -382,11 +438,11 @@ export default function LinkSuppliersPage() {
                       </div>
                       <div style={{ marginBottom: '6px' }}>
                         <select
-                          value={selectedUsers[supplier.supplierId] || ""}
+                          value={selectedUsers[getSupplierId(supplier) || ''] || ""}
                           onChange={(e) => {
                             setSelectedUsers(prev => ({
                               ...prev,
-                              [supplier.supplierId]: e.target.value
+                              [getSupplierId(supplier) || '']: e.target.value
                             }));
                           }}
                           style={{
@@ -407,20 +463,20 @@ export default function LinkSuppliersPage() {
                         </select>
                       </div>
                       <button
-                        onClick={() => handleLink(supplier.supplierId)}
-                        disabled={!selectedUsers[supplier.supplierId] || linking === supplier.supplierId}
+                        onClick={() => handleLink(getSupplierId(supplier) || '')}
+                        disabled={!selectedUsers[getSupplierId(supplier) || ''] || linking === getSupplierId(supplier)}
                         style={{
                           padding: '4px 8px',
-                          background: selectedUsers[supplier.supplierId] ? '#d4e7f7' : '#e6e6e6',
+                          background: selectedUsers[getSupplierId(supplier) || ''] ? '#d4e7f7' : '#e6e6e6',
                           border: '1px solid #9cbfdd',
                           borderRadius: '2px',
                           fontSize: '11px',
-                          cursor: selectedUsers[supplier.supplierId] ? 'pointer' : 'not-allowed',
-                          color: selectedUsers[supplier.supplierId] ? '#1f4e79' : '#999',
+                          cursor: selectedUsers[getSupplierId(supplier) || ''] ? 'pointer' : 'not-allowed',
+                          color: selectedUsers[getSupplierId(supplier) || ''] ? '#1f4e79' : '#999',
                           width: '100%'
                         }}
                       >
-                        {linking === supplier.supplierId ? 'Vinculando...' : 'Vincular'}
+                        {linking === getSupplierId(supplier) ? 'Vinculando...' : 'Vincular'}
                       </button>
                     </div>
                   ))}
@@ -499,11 +555,11 @@ export default function LinkSuppliersPage() {
                             fontSize: '11px'
                           }}>
                             <select
-                              value={selectedUsers[supplier.supplierId] || ""}
+                              value={selectedUsers[getSupplierId(supplier) || ''] || ""}
                               onChange={(e) => {
                                 setSelectedUsers(prev => ({
                                   ...prev,
-                                  [supplier.supplierId]: e.target.value
+                                  [getSupplierId(supplier) || '']: e.target.value
                                 }));
                               }}
                               style={{
@@ -528,19 +584,19 @@ export default function LinkSuppliersPage() {
                             fontSize: '11px'
                           }}>
                             <button
-                              onClick={() => handleLink(supplier.supplierId)}
-                              disabled={!selectedUsers[supplier.supplierId] || linking === supplier.supplierId}
+                              onClick={() => handleLink(getSupplierId(supplier) || '')}
+                              disabled={!selectedUsers[getSupplierId(supplier) || ''] || linking === getSupplierId(supplier)}
                               style={{
                                 padding: '2px 8px',
-                                background: selectedUsers[supplier.supplierId] ? '#d4e7f7' : '#e6e6e6',
+                                background: selectedUsers[getSupplierId(supplier) || ''] ? '#d4e7f7' : '#e6e6e6',
                                 border: '1px solid #9cbfdd',
                                 borderRadius: '2px',
                                 fontSize: '11px',
-                                cursor: selectedUsers[supplier.supplierId] ? 'pointer' : 'not-allowed',
-                                color: selectedUsers[supplier.supplierId] ? '#1f4e79' : '#999'
+                                cursor: selectedUsers[getSupplierId(supplier) || ''] ? 'pointer' : 'not-allowed',
+                                color: selectedUsers[getSupplierId(supplier) || ''] ? '#1f4e79' : '#999'
                               }}
                             >
-                              {linking === supplier.supplierId ? 'Vinculando...' : 'Vincular'}
+                              {linking === getSupplierId(supplier) ? 'Vinculando...' : 'Vincular'}
                             </button>
                           </td>
                         </tr>
@@ -585,7 +641,7 @@ export default function LinkSuppliersPage() {
                 // Mobile Card View
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {filteredLinkedSuppliers.map((supplier, index) => (
-                    <div key={supplier.supplierId} style={{
+                    <div key={getSupplierId(supplier) || supplier.name} style={{
                       background: index % 2 === 0 ? 'white' : '#f8f9fa',
                       border: '1px solid #ddd',
                       borderRadius: '2px',
@@ -600,7 +656,7 @@ export default function LinkSuppliersPage() {
                         {supplier.name}
                       </div>
                       <div style={{ fontSize: '10px', color: '#666', marginBottom: '6px' }}>
-                        <div>Código: {supplier.supplierId}</div>
+                        <div>Código: {getSupplierId(supplier)}</div>
                         <div>Email: {supplier.email || "-"}</div>
                         <div style={{ 
                           fontFamily: 'monospace',
@@ -609,7 +665,7 @@ export default function LinkSuppliersPage() {
                           marginTop: '2px',
                           borderRadius: '2px'
                         }}>
-                          ID: {supplier.userId}
+                          ID: {getUserId(supplier)}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -624,8 +680,8 @@ export default function LinkSuppliersPage() {
                           Vinculado
                         </span>
                         <button
-                          onClick={() => handleUnlink(supplier.supplierId, supplier.name)}
-                          disabled={unlinking === supplier.supplierId}
+                          onClick={() => handleUnlink(getSupplierId(supplier) || '', supplier.name)}
+                          disabled={unlinking === getSupplierId(supplier)}
                           style={{
                             padding: '2px 8px',
                             background: '#ffeaa7',
@@ -637,7 +693,7 @@ export default function LinkSuppliersPage() {
                             flex: 1
                           }}
                         >
-                          {unlinking === supplier.supplierId ? 'Desvinculando...' : 'Desvincular'}
+                          {unlinking === getSupplierId(supplier) ? 'Desvinculando...' : 'Desvincular'}
                         </button>
                       </div>
                     </div>
@@ -690,7 +746,7 @@ export default function LinkSuppliersPage() {
                     </thead>
                     <tbody>
                       {filteredLinkedSuppliers.map((supplier, index) => (
-                        <tr key={supplier.supplierId} style={{ 
+                        <tr key={getSupplierId(supplier) || supplier.name} style={{ 
                           background: index % 2 === 0 ? 'white' : '#f8f9fa' 
                         }}>
                           <td style={{ 
@@ -698,7 +754,7 @@ export default function LinkSuppliersPage() {
                             border: '1px solid #ddd',
                             fontSize: '11px'
                           }}>
-                            {supplier.supplierId}
+                            {getSupplierId(supplier)}
                           </td>
                           <td style={{ 
                             padding: '4px 6px', 
@@ -719,7 +775,7 @@ export default function LinkSuppliersPage() {
                             fontFamily: 'monospace',
                             display: window.innerWidth <= 900 ? 'none' : 'table-cell'
                           }}>
-                            {supplier.userId}
+                            {getUserId(supplier)}
                           </td>
                           <td style={{ 
                             padding: '4px 6px', 
@@ -743,8 +799,8 @@ export default function LinkSuppliersPage() {
                                 Vinculado
                               </span>
                               <button
-                                onClick={() => handleUnlink(supplier.supplierId, supplier.name)}
-                                disabled={unlinking === supplier.supplierId}
+                                onClick={() => handleUnlink(getSupplierId(supplier) || '', supplier.name)}
+                                disabled={unlinking === getSupplierId(supplier)}
                                 style={{
                                   padding: '1px 6px',
                                   background: '#ffeaa7',
@@ -755,7 +811,7 @@ export default function LinkSuppliersPage() {
                                   color: '#e17055'
                                 }}
                               >
-                                {unlinking === supplier.supplierId ? 'Desvinculando...' : 'Desvincular'}
+                                {unlinking === getSupplierId(supplier) ? 'Desvinculando...' : 'Desvincular'}
                               </button>
                             </div>
                           </td>

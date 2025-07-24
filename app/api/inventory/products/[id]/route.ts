@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import dbConnect from '@/lib/mongodb';
-import Product from '@/lib/models/inventory/Product';
+import { ProductRepository } from '@/lib/repositories/product.repository';
 import { z } from 'zod';
 
 // Función temporal para verificar permisos
@@ -66,18 +65,15 @@ export async function GET(
       return NextResponse.json({ error: 'Sin permisos para leer inventario' }, { status: 403 });
     }
 
-    await dbConnect();
     const params = await context.params;
 
-    const product = await Product.findById(params.id)
-      .populate('suppliers', 'name contactInfo')
-      .lean();
+    const result = await ProductRepository.findById(params.id);
 
-    if (!product) {
+    if (!result.success || !result.data) {
       return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
     }
 
-    return NextResponse.json(product);
+    return NextResponse.json(result.data);
 
   } catch (error) {
     console.error('Error getting product:', error);
@@ -103,7 +99,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Sin permisos para actualizar productos' }, { status: 403 });
     }
 
-    await dbConnect();
     const params = await context.params;
 
     const body = await request.json();
@@ -120,54 +115,20 @@ export async function PUT(
       );
     }
 
-    const updateData = validationResult.data;
+    const updateData = {
+      ...validationResult.data,
+      updated_by: userId,
+      updated_at: new Date().toISOString()
+    };
 
-    // Verificar que el producto existe
-    const existingProduct = await Product.findById(params.id);
-    if (!existingProduct) {
-      return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+    // Actualizar producto usando Supabase repository
+    const result = await ProductRepository.update(params.id, updateData);
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    // Verificar unicidad de SKU si se está actualizando
-    if (updateData.sku && updateData.sku !== existingProduct.sku) {
-      const existingSku = await Product.findOne({ 
-        sku: updateData.sku,
-        _id: { $ne: params.id }
-      });
-      if (existingSku) {
-        return NextResponse.json(
-          { error: 'Ya existe un producto con este SKU' },
-          { status: 409 }
-        );
-      }
-    }
-
-    // Verificar unicidad de código de barras si se está actualizando
-    if (updateData.barcode && updateData.barcode !== existingProduct.barcode) {
-      const existingBarcode = await Product.findOne({ 
-        barcode: updateData.barcode,
-        _id: { $ne: params.id }
-      });
-      if (existingBarcode) {
-        return NextResponse.json(
-          { error: 'Ya existe un producto con este código de barras' },
-          { status: 409 }
-        );
-      }
-    }
-
-    // Actualizar producto
-    const updatedProduct = await Product.findByIdAndUpdate(
-      params.id,
-      {
-        ...updateData,
-        lastUpdatedBy: userId,
-        updatedAt: new Date()
-      },
-      { new: true, runValidators: true }
-    ).populate('suppliers', 'name contactInfo');
-
-    return NextResponse.json(updatedProduct);
+    return NextResponse.json(result.data);
 
   } catch (error) {
     console.error('Error updating product:', error);
@@ -178,7 +139,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/inventory/products/[id] - Eliminar producto (soft delete)
+// DELETE /api/inventory/products/[id] - Eliminar producto (following industry best practices)
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -193,35 +154,70 @@ export async function DELETE(
       return NextResponse.json({ error: 'Sin permisos para eliminar productos' }, { status: 403 });
     }
 
-    await dbConnect();
     const params = await context.params;
+    const { searchParams } = new URL(request.url);
+    const forceHardDelete = searchParams.get('force') === 'true';
 
-    // Verificar que el producto existe
-    const product = await Product.findById(params.id);
-    if (!product) {
-      return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+    // Step 1: Check deletion eligibility (following SAP/Oracle approach)
+    const eligibilityCheck = await ProductRepository.checkDeletionEligibility(params.id);
+    
+    if (!eligibilityCheck.success || !eligibilityCheck.data) {
+      return NextResponse.json({ 
+        error: 'Error al verificar elegibilidad de eliminación',
+        details: eligibilityCheck.error
+      }, { status: 500 });
     }
 
-    // Soft delete - marcar como inactivo
-    const deletedProduct = await Product.findByIdAndUpdate(
-      params.id,
-      {
-        isActive: false,
-        lastUpdatedBy: userId,
-        updatedAt: new Date(),
-        metadata: {
-          ...product.metadata,
-          deletedAt: new Date(),
-          deletedBy: userId
-        }
-      },
-      { new: true }
-    );
+    const { canDelete, canDeactivate, blockers, report } = eligibilityCheck.data;
 
-    return NextResponse.json({ 
-      message: 'Producto eliminado exitosamente',
-      product: deletedProduct
-    });
+    // Step 2: Handle deletion based on dependencies (industry standard approach)
+    if (forceHardDelete) {
+      // Hard delete requested - only allow if no dependencies (Oracle/SAP style)
+      if (!canDelete) {
+        return NextResponse.json({
+          error: 'Eliminación física bloqueada por dependencias existentes',
+          blockers,
+          recommendation: 'Use eliminación lógica (desactivar) en lugar de eliminar físicamente',
+          report
+        }, { status: 409 }); // Conflict
+      }
+
+      // Proceed with hard deletion
+      const hardDeleteResult = await ProductRepository.hardDelete(params.id, userId);
+      
+      if (!hardDeleteResult.success) {
+        return NextResponse.json({ 
+          error: hardDeleteResult.error,
+          details: hardDeleteResult.details
+        }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        message: 'Producto eliminado físicamente',
+        type: 'HARD_DELETE',
+        report
+      });
+
+    } else {
+      // Default: Soft delete (industry standard - Odoo, NetSuite, SAP approach)
+      const deactivateResult = await ProductRepository.deactivate(params.id, userId);
+      
+      if (!deactivateResult.success) {
+        return NextResponse.json({ 
+          error: deactivateResult.error,
+          details: deactivateResult.details
+        }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        message: 'Producto desactivado exitosamente (eliminación lógica)',
+        type: 'SOFT_DELETE',
+        product: deactivateResult.data,
+        note: 'El producto se mantiene en el sistema para preservar la integridad referencial',
+        blockers: blockers.length > 0 ? blockers : undefined,
+        report: blockers.length > 0 ? report : undefined
+      });
+    }
 
   } catch (error) {
     console.error('Error deleting product:', error);

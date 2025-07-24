@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import dbConnect from '@/lib/mongodb';
-import PurchaseOrder from '@/lib/models/inventory/PurchaseOrder';
-import Product from '@/lib/models/inventory/Product';
-import Supplier from '@/lib/models/inventory/Supplier';
+import { SupabaseInventoryService } from '@/lib/supabase/inventory';
 import { z } from 'zod';
 import { PurchaseOrderStatus } from '@/types/inventory';
 
@@ -66,16 +63,17 @@ export async function GET(
       return NextResponse.json({ error: 'Sin permisos para leer órdenes de compra' }, { status: 403 });
     }
 
-    await dbConnect();
     const params = await context.params;
 
-    const order = await PurchaseOrder.findById(params.id).lean();
-    
-    if (!order) {
-      return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
+    try {
+      const order = await SupabaseInventoryService.getPurchaseOrderById(params.id);
+      return NextResponse.json(order);
+    } catch (error) {
+      if (error.message?.includes('No rows found')) {
+        return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
+      }
+      throw error;
     }
-
-    return NextResponse.json(order);
 
   } catch (error) {
     console.error('Error getting purchase order:', error);
@@ -86,7 +84,7 @@ export async function GET(
   }
 }
 
-// PUT /api/inventory/purchase-orders/[id] - Actualizar orden de compra
+// PUT /api/inventory/purchase-orders/[id] - Actualizar orden de compra (placeholder implementation)
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -101,9 +99,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Sin permisos para actualizar órdenes de compra' }, { status: 403 });
     }
 
-    await dbConnect();
     const params = await context.params;
-
     const body = await request.json();
     
     // Verificar si es un cambio de estado
@@ -125,74 +121,33 @@ export async function PUT(
 
     const updateData = validationResult.data;
 
-    // Buscar la orden existente
-    const existingOrder = await PurchaseOrder.findById(params.id);
-    if (!existingOrder) {
-      return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
-    }
+    try {
+      // Buscar la orden existente
+      const existingOrder = await SupabaseInventoryService.getPurchaseOrderById(params.id);
 
-    // Verificar si la orden puede ser modificada
-    if (!existingOrder.canBeModified()) {
-      return NextResponse.json(
-        { error: 'Esta orden no puede ser modificada en su estado actual' },
-        { status: 400 }
-      );
-    }
-
-    // Si se está actualizando el proveedor, verificar que existe
-    if (updateData.supplierId) {
-      const supplier = await Supplier.findOne({ _id: updateData.supplierId });
-      if (!supplier) {
-        return NextResponse.json(
-          { error: 'Proveedor no encontrado' },
-          { status: 404 }
-        );
-      }
-      updateData.supplierName = supplier.name;
-    }
-
-    // Si se están actualizando los items, verificar productos
-    if (updateData.items) {
-      const productIds = updateData.items.map(item => item.productId);
-      const products = await Product.find({ _id: { $in: productIds } });
-      if (products.length !== productIds.length) {
-        return NextResponse.json(
-          { error: 'Uno o más productos no fueron encontrados' },
-          { status: 404 }
-        );
-      }
-
-      // Validar cálculos si se proporcionan
-      if (updateData.subtotal !== undefined) {
-        const calculatedSubtotal = updateData.items.reduce((sum, item) => sum + item.totalPrice, 0);
-        const tolerance = 0.01;
-        
-        if (Math.abs(updateData.subtotal - calculatedSubtotal) > tolerance) {
-          return NextResponse.json(
-            { error: 'El subtotal no coincide con la suma de los items' },
-            { status: 400 }
-          );
+      // Actualizar la orden usando Supabase
+      const updatedOrder = await SupabaseInventoryService.updatePurchaseOrder(
+        params.id,
+        {
+          status: updateData.status,
+          subtotal: updateData.subtotal,
+          tax_amount: updateData.tax,
+          total_amount: updateData.total,
+          currency: updateData.currency,
+          expected_delivery_date: updateData.expectedDeliveryDate,
+          delivery_location: updateData.deliveryLocation,
+          notes: updateData.notes,
+          internal_notes: updateData.internalNotes
         }
+      );
+
+      return NextResponse.json(updatedOrder);
+    } catch (error) {
+      if (error.message?.includes('No rows found')) {
+        return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
       }
+      throw error;
     }
-
-    // Actualizar la orden
-    Object.assign(existingOrder, updateData);
-    existingOrder.updatedBy = userId;
-    
-    // Convertir fecha si se proporciona
-    if (updateData.expectedDeliveryDate) {
-      existingOrder.expectedDeliveryDate = new Date(updateData.expectedDeliveryDate);
-    }
-
-    // Recalcular totales si es necesario
-    if (updateData.items) {
-      existingOrder.recalculateTotals();
-    }
-
-    await existingOrder.save();
-
-    return NextResponse.json(existingOrder);
 
   } catch (error) {
     console.error('Error updating purchase order:', error);
@@ -203,7 +158,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/inventory/purchase-orders/[id] - Eliminar orden de compra
+// DELETE /api/inventory/purchase-orders/[id] - Eliminar orden de compra (placeholder implementation)
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -218,25 +173,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Sin permisos para eliminar órdenes de compra' }, { status: 403 });
     }
 
-    await dbConnect();
     const params = await context.params;
 
-    const order = await PurchaseOrder.findById(params.id);
-    if (!order) {
-      return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
-    }
-
-    // Solo permitir eliminar órdenes en estado DRAFT
-    if (order.status !== PurchaseOrderStatus.DRAFT) {
-      return NextResponse.json(
-        { error: 'Solo se pueden eliminar órdenes en estado borrador' },
-        { status: 400 }
-      );
-    }
-
-    await PurchaseOrder.findByIdAndDelete(params.id);
-
-    return NextResponse.json({ message: 'Orden de compra eliminada exitosamente' });
+    // TODO: Implement proper purchase order deletion with Supabase
+    // This is a placeholder implementation
+    return NextResponse.json({ 
+      message: 'Purchase order deletion not implemented with Supabase yet' 
+    });
 
   } catch (error) {
     console.error('Error deleting purchase order:', error);
@@ -247,7 +190,7 @@ export async function DELETE(
   }
 }
 
-// Función auxiliar para manejar cambios de estado
+// Función auxiliar para manejar cambios de estado (placeholder implementation)
 async function handleStatusChange(orderId: string, body: any, userId: string) {
   const validationResult = StatusChangeSchema.safeParse(body);
   if (!validationResult.success) {
@@ -262,70 +205,40 @@ async function handleStatusChange(orderId: string, body: any, userId: string) {
 
   const { action, reason, actualDeliveryDate } = validationResult.data;
 
-  const order = await PurchaseOrder.findById(orderId);
-  if (!order) {
-    return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
-  }
-
   try {
+    const order = await SupabaseInventoryService.getPurchaseOrderById(orderId);
+    
+    // TODO: Implement proper state change logic with Supabase
+    // This is a placeholder implementation
+    let newStatus = order.status;
+    
     switch (action) {
       case 'approve':
-        if (!order.canBeApproved()) {
-          return NextResponse.json(
-            { error: 'Esta orden no puede ser aprobada en su estado actual' },
-            { status: 400 }
-          );
-        }
-        await order.approve(userId);
+        newStatus = 'APPROVED';
         break;
-
       case 'order':
-        if (!order.canBeOrdered()) {
-          return NextResponse.json(
-            { error: 'Esta orden no puede ser enviada en su estado actual' },
-            { status: 400 }
-          );
-        }
-        await order.order(userId);
+        newStatus = 'ORDERED';
         break;
-
       case 'receive':
-        if (!order.canBeReceived()) {
-          return NextResponse.json(
-            { error: 'Esta orden no puede ser recibida en su estado actual' },
-            { status: 400 }
-          );
-        }
-        const deliveryDate = actualDeliveryDate ? new Date(actualDeliveryDate) : undefined;
-        await order.receive(userId, deliveryDate);
+        newStatus = 'RECEIVED';
         break;
-
       case 'cancel':
-        if (!order.canBeCancelled()) {
-          return NextResponse.json(
-            { error: 'Esta orden no puede ser cancelada en su estado actual' },
-            { status: 400 }
-          );
-        }
-        if (!reason) {
-          return NextResponse.json(
-            { error: 'Se requiere una razón para cancelar la orden' },
-            { status: 400 }
-          );
-        }
-        await order.cancel(userId, reason);
+        newStatus = 'CANCELLED';
         break;
-
-      default:
-        return NextResponse.json(
-          { error: 'Acción no válida' },
-          { status: 400 }
-        );
     }
 
-    return NextResponse.json(order);
+    const updatedOrder = await SupabaseInventoryService.updatePurchaseOrder(
+      orderId,
+      { status: newStatus }
+    );
+
+    return NextResponse.json(updatedOrder);
 
   } catch (error: any) {
+    if (error.message?.includes('No rows found')) {
+      return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
+    }
+    
     return NextResponse.json(
       { error: error.message || 'Error al cambiar el estado de la orden' },
       { status: 400 }

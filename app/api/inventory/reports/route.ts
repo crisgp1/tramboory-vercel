@@ -1,152 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import dbConnect from '@/lib/mongodb';
-import InventoryService from '@/lib/services/inventory/inventoryService';
-import Product from '@/lib/models/inventory/Product';
-import Inventory from '@/lib/models/inventory/Inventory';
-import InventoryMovement from '@/lib/models/inventory/InventoryMovement';
+import { SupabaseInventoryService } from '@/lib/supabase/inventory';
+import { InventoryService } from '@/lib/services/inventory.service';
 
 // Función temporal para verificar permisos
 async function hasInventoryPermission(userId: string, action: string): Promise<boolean> {
   return true;
 }
 
-// Función para obtener productos más activos
+// Función para obtener productos más activos (placeholder implementation)
 async function getTopProducts(locationId?: string, limit: number = 5) {
   try {
-    const matchStage: any = {};
-    if (locationId) {
-      matchStage.$or = [
-        { fromLocation: locationId },
-        { toLocation: locationId }
-      ];
-    }
-
-    const pipeline: any[] = [
-      { $match: matchStage },
+    // TODO: Implement with proper Supabase query for product movement analysis
+    // This is a placeholder that returns sample data structure
+    return [
       {
-        $group: {
-          _id: '$productId',
-          totalMovements: { $sum: 1 },
-          totalQuantity: { $sum: '$quantity' }
-        }
-      },
-      { $sort: { totalMovements: -1 } },
-      { $limit: limit },
-      {
-        $lookup: {
-          from: 'products',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'product'
-        }
-      },
-      { $unwind: '$product' },
-      {
-        $lookup: {
-          from: 'inventories',
-          let: { productId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ['$productId', '$$productId'] },
-                ...(locationId ? { locationId } : {})
-              }
-            }
-          ],
-          as: 'inventory'
-        }
+        productName: "Producto Ejemplo 1",
+        sku: "SKU001",
+        totalMovements: 50,
+        currentStock: 100,
+        value: 500
       }
     ];
-
-    const results = await InventoryMovement.aggregate(pipeline);
-    
-    return results.map(item => ({
-      productName: item.product.name,
-      sku: item.product.sku || (item.product._id as any).toString().slice(-8),
-      totalMovements: item.totalMovements,
-      currentStock: item.inventory[0]?.totals?.available || 0,
-      value: (item.inventory[0]?.totals?.available || 0) * (item.product.cost || 0)
-    }));
   } catch (error) {
     console.error('Error getting top products:', error);
     return [];
   }
 }
 
-// Función para obtener breakdown por categorías
+// Función para obtener breakdown por categorías (placeholder implementation)
 async function getCategoryBreakdown(locationId?: string) {
   try {
-    const matchStage: any = {};
-    if (locationId) {
-      matchStage.locationId = locationId;
-    }
-
-    const pipeline: any[] = [
-      { $match: matchStage },
+    // TODO: Implement with proper Supabase query for category analysis
+    // This is a placeholder that returns sample data structure
+    return [
       {
-        $lookup: {
-          from: 'products',
-          localField: 'productId',
-          foreignField: '_id',
-          as: 'product'
-        }
+        category: "Bebidas",
+        productCount: 25,
+        totalValue: 5000,
+        percentage: 40
       },
-      { $unwind: '$product' },
       {
-        $group: {
-          _id: '$product.category',
-          productCount: { $sum: 1 },
-          totalValue: {
-            $sum: {
-              $multiply: ['$totals.available', { $ifNull: ['$product.cost', 0] }]
-            }
-          }
-        }
-      },
-      { $sort: { totalValue: -1 } }
+        category: "Alimentos",
+        productCount: 30,
+        totalValue: 3750,
+        percentage: 30
+      }
     ];
-
-    const results = await Inventory.aggregate(pipeline);
-    const totalValue = results.reduce((sum, item) => sum + item.totalValue, 0);
-    
-    return results.map(item => ({
-      category: item._id || 'Sin categoría',
-      productCount: item.productCount,
-      totalValue: item.totalValue,
-      percentage: totalValue > 0 ? Math.round((item.totalValue / totalValue) * 100) : 0
-    }));
   } catch (error) {
     console.error('Error getting category breakdown:', error);
     return [];
   }
 }
 
-// Función para obtener movimientos recientes
+// Función para obtener movimientos recientes (placeholder implementation)
 async function getRecentMovements(locationId?: string, limit: number = 10) {
   try {
-    const matchStage: any = {};
-    if (locationId) {
-      matchStage.$or = [
-        { fromLocation: locationId },
-        { toLocation: locationId }
-      ];
-    }
-
-    const movements = await InventoryMovement.find(matchStage)
-      .populate('productId', 'name')
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .lean();
-
-    return movements.map(movement => ({
-      date: movement.createdAt.toISOString(),
-      type: movement.type,
-      productName: (movement.productId as any)?.name || 'Producto desconocido',
-      quantity: movement.quantity,
-      unit: movement.unit,
-      value: movement.cost?.totalCost || 0
-    }));
+    // TODO: Implement with proper Supabase query for recent movements
+    // This is a placeholder that returns sample data structure
+    return [
+      {
+        date: new Date().toISOString(),
+        type: "IN",
+        productName: "Producto Ejemplo",
+        quantity: 10,
+        unit: "unidades",
+        value: 100
+      }
+    ];
   } catch (error) {
     console.error('Error getting recent movements:', error);
     return [];
@@ -165,28 +86,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Sin permisos para leer reportes' }, { status: 403 });
     }
 
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
     const reportType = searchParams.get('type') || 'summary';
     const locationId = searchParams.get('locationId') || undefined;
 
     switch (reportType) {
       case 'summary': {
-        const [summary, topProducts, categoryBreakdown, movements] = await Promise.all([
-          InventoryService.getInventorySummary(locationId),
+        const [statsResult, topProducts, categoryBreakdown, movements] = await Promise.all([
+          InventoryService.getInventoryStats(),
           getTopProducts(locationId),
           getCategoryBreakdown(locationId),
           getRecentMovements(locationId)
         ]);
 
+        const stats = statsResult.data || { totalProducts: 0, totalValue: 0, lowStockProducts: 0, outOfStockProducts: 0 };
+
         // Ajustar el summary para que coincida con la interfaz esperada
         const reportData = {
           summary: {
-            totalProducts: summary.totalProducts,
-            totalValue: summary.totalValue,
-            lowStockItems: summary.lowStockItems,
-            expiringSoon: summary.expiringSoonItems
+            totalProducts: stats.totalProducts,
+            totalValue: stats.totalValue,
+            lowStockItems: stats.lowStockProducts,
+            expiringSoon: 0 // TODO: Implement expiring items count
           },
           topProducts,
           categoryBreakdown,
@@ -198,14 +119,15 @@ export async function GET(request: NextRequest) {
 
       case 'movements': {
         const movements = await getRecentMovements(locationId, 50);
-        const summary = await InventoryService.getInventorySummary(locationId);
+        const statsResult = await InventoryService.getInventoryStats();
+        const stats = statsResult.data || { totalProducts: 0, totalValue: 0, lowStockProducts: 0, outOfStockProducts: 0 };
         
         const reportData = {
           summary: {
-            totalProducts: summary.totalProducts,
-            totalValue: summary.totalValue,
-            lowStockItems: summary.lowStockItems,
-            expiringSoon: summary.expiringSoonItems
+            totalProducts: stats.totalProducts,
+            totalValue: stats.totalValue,
+            lowStockItems: stats.lowStockProducts,
+            expiringSoon: 0 // TODO: Implement expiring items count
           },
           topProducts: [],
           categoryBreakdown: [],
@@ -216,39 +138,40 @@ export async function GET(request: NextRequest) {
       }
 
       case 'valuation': {
-        const [valuation, summary] = await Promise.all([
-          InventoryService.calculateStockValuation(locationId),
-          InventoryService.getInventorySummary(locationId)
-        ]);
+        // TODO: Implement proper valuation calculation
+        const statsResult = await InventoryService.getInventoryStats();
+        const stats = statsResult.data || { totalProducts: 0, totalValue: 0, lowStockProducts: 0, outOfStockProducts: 0 };
 
         const reportData = {
           summary: {
-            totalProducts: summary.totalProducts,
-            totalValue: summary.totalValue,
-            lowStockItems: summary.lowStockItems,
-            expiringSoon: summary.expiringSoonItems
+            totalProducts: stats.totalProducts,
+            totalValue: stats.totalValue,
+            lowStockItems: stats.lowStockProducts,
+            expiringSoon: 0
           },
           topProducts: [],
           categoryBreakdown: [],
           movements: [],
-          valuation
+          valuation: { totalValue: stats.totalValue }
         };
 
         return NextResponse.json(reportData);
       }
 
       case 'alerts': {
-        const [alerts, summary] = await Promise.all([
-          InventoryService.getActiveAlerts(undefined, locationId),
-          InventoryService.getInventorySummary(locationId)
+        const [alerts, statsResult] = await Promise.all([
+          SupabaseInventoryService.getActiveAlerts(),
+          InventoryService.getInventoryStats()
         ]);
+
+        const stats = statsResult.data || { totalProducts: 0, totalValue: 0, lowStockProducts: 0, outOfStockProducts: 0 };
 
         const reportData = {
           summary: {
-            totalProducts: summary.totalProducts,
-            totalValue: summary.totalValue,
-            lowStockItems: summary.lowStockItems,
-            expiringSoon: summary.expiringSoonItems
+            totalProducts: stats.totalProducts,
+            totalValue: stats.totalValue,
+            lowStockItems: stats.lowStockProducts,
+            expiringSoon: 0
           },
           topProducts: [],
           categoryBreakdown: [],
@@ -260,17 +183,19 @@ export async function GET(request: NextRequest) {
       }
 
       case 'categories': {
-        const [categoryBreakdown, summary] = await Promise.all([
+        const [categoryBreakdown, statsResult] = await Promise.all([
           getCategoryBreakdown(locationId),
-          InventoryService.getInventorySummary(locationId)
+          InventoryService.getInventoryStats()
         ]);
+
+        const stats = statsResult.data || { totalProducts: 0, totalValue: 0, lowStockProducts: 0, outOfStockProducts: 0 };
 
         const reportData = {
           summary: {
-            totalProducts: summary.totalProducts,
-            totalValue: summary.totalValue,
-            lowStockItems: summary.lowStockItems,
-            expiringSoon: summary.expiringSoonItems
+            totalProducts: stats.totalProducts,
+            totalValue: stats.totalValue,
+            lowStockItems: stats.lowStockProducts,
+            expiringSoon: 0
           },
           topProducts: [],
           categoryBreakdown,

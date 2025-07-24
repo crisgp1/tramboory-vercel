@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     const isRestDay = !!restDay;
     
     // Verificar si el horario está dentro de un bloque válido
-    const validBlock = systemConfig.timeBlocks?.find((block: any) => {
+    let validBlock = systemConfig.timeBlocks?.find((block: any) => {
       if (!block.days.includes(dayOfWeek)) return false;
       
       // Verificar si el horario está dentro del rango del bloque
@@ -121,7 +121,32 @@ export async function POST(request: NextRequest) {
       return eventMinutes >= blockStartMinutes && eventMinutes < blockEndMinutes;
     });
     
+    // If no block found but it's a releaseable rest day, create default block
+    if (!validBlock && isRestDay && restDay && restDay.canBeReleased) {
+      const [eventHour, eventMin] = eventTime.split(':').map(Number);
+      const eventMinutes = eventHour * 60 + eventMin;
+      
+      // Default rest day hours: 10:00-18:00
+      if (eventMinutes >= 600 && eventMinutes < 1080) { // 10:00 AM to 6:00 PM
+        validBlock = {
+          name: 'Horario especial',
+          days: [dayOfWeek],
+          startTime: '10:00',
+          endTime: '18:00',
+          duration: 4,
+          halfHourBreak: true,
+          maxEventsPerBlock: 2
+        };
+      }
+    }
+    
     if (!validBlock && !isRestDay) {
+      console.error('No valid time block found:', {
+        eventTime,
+        dayOfWeek,
+        isRestDay,
+        availableBlocks: systemConfig.timeBlocks?.filter((b: any) => b.days.includes(dayOfWeek))
+      });
       return NextResponse.json(
         { success: false, error: 'El horario seleccionado no está disponible' },
         { status: 400 }
@@ -131,6 +156,98 @@ export async function POST(request: NextRequest) {
     if (isRestDay && restDay && !restDay.canBeReleased) {
       return NextResponse.json(
         { success: false, error: 'No se permiten reservas en este día de descanso' },
+        { status: 400 }
+      );
+    }
+    
+    // Verificar disponibilidad del slot de tiempo
+    // Obtener todas las reservas existentes para esa fecha
+    const startOfDay = new Date(eventDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(eventDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const existingReservations = await Reservation.find({
+      eventDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      },
+      status: { $ne: 'cancelled' }
+    });
+    
+    console.log('Reservation validation debug:', {
+      date: eventDate,
+      dayOfWeek,
+      eventTime,
+      existingReservationsCount: existingReservations.length,
+      validBlock: validBlock ? {
+        name: validBlock.name,
+        maxEventsPerBlock: validBlock.maxEventsPerBlock,
+        startTime: validBlock.startTime,
+        endTime: validBlock.endTime
+      } : null,
+      isRestDay,
+      restDay
+    });
+    
+    // Calcular el tiempo de finalización del evento
+    const eventDuration = validBlock?.duration || systemConfig.defaultEventDuration;
+    const [eventHour, eventMin] = eventTime.split(':').map(Number);
+    const eventEndMinutes = (eventHour * 60 + eventMin) + (eventDuration * 60);
+    const eventEndHour = Math.floor(eventEndMinutes / 60);
+    const eventEndMin = eventEndMinutes % 60;
+    const eventEndTime = `${eventEndHour.toString().padStart(2, '0')}:${eventEndMin.toString().padStart(2, '0')}`;
+    
+    // Verificar si hay conflictos de tiempo con otras reservas
+    const conflictingReservations = existingReservations.filter(res => {
+      const resStartTime = res.eventTime;
+      const resDuration = res.eventDuration || systemConfig.defaultEventDuration;
+      const [resHour, resMin] = resStartTime.split(':').map(Number);
+      const resEndMinutes = (resHour * 60 + resMin) + (resDuration * 60);
+      const resEndHour = Math.floor(resEndMinutes / 60);
+      const resEndMin = resEndMinutes % 60;
+      const resEndTime = `${resEndHour.toString().padStart(2, '0')}:${resEndMin.toString().padStart(2, '0')}`;
+      
+      // Convertir todo a minutos para comparación
+      const eventStartMinutes = eventHour * 60 + eventMin;
+      const eventEndMinutesCalc = eventEndMinutes;
+      const resStartMinutes = resHour * 60 + resMin;
+      const resEndMinutesCalc = resEndMinutes;
+      
+      // Verificar solapamiento
+      return (eventStartMinutes < resEndMinutesCalc && resStartMinutes < eventEndMinutesCalc);
+    });
+    
+    // Verificar capacidad del bloque de tiempo
+    if (validBlock) {
+      const maxEventsInBlock = validBlock.maxEventsPerBlock || 1;
+      if (conflictingReservations.length >= maxEventsInBlock) {
+        console.error('Block capacity exceeded:', {
+          blockName: validBlock.name,
+          maxEventsInBlock,
+          conflictingReservations: conflictingReservations.length,
+          eventTime,
+          existingTimes: conflictingReservations.map(r => r.eventTime)
+        });
+        return NextResponse.json(
+          { success: false, error: 'Este horario ya está completo. Por favor selecciona otro horario disponible.' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // Verificar capacidad total del día
+    const dayTimeBlocks = systemConfig.timeBlocks?.filter((block: any) => 
+      block.days.includes(dayOfWeek)
+    ) || [];
+    
+    const totalDayCapacity = dayTimeBlocks.reduce((total: number, block: any) => {
+      return total + (block.maxEventsPerBlock || 1);
+    }, 0);
+    
+    if (totalDayCapacity > 0 && existingReservations.length >= totalDayCapacity) {
+      return NextResponse.json(
+        { success: false, error: 'Este día ya tiene la capacidad máxima de eventos. Por favor selecciona otra fecha.' },
         { status: 400 }
       );
     }
