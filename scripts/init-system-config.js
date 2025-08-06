@@ -1,6 +1,12 @@
+require('dotenv').config({ path: '.env.local' });
 const { MongoClient } = require('mongodb');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tramboory';
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('MONGODB_URI environment variable is not set in .env.local');
+  process.exit(1);
+}
 
 async function initializeSystemConfig() {
   const client = new MongoClient(MONGODB_URI);

@@ -124,6 +124,21 @@ export default function SystemConfigManager() {
       } else {
         // Si no hay configuración, usar valores por defecto
         console.log('No system config found, using defaults');
+        const defaultConfig = {
+          restDay: 1,
+          restDayFee: 500,
+          businessHours: {
+            start: '09:00',
+            end: '18:00'
+          },
+          advanceBookingDays: 7,
+          maxConcurrentEvents: 3,
+          defaultEventDuration: 4,
+          timeBlocks: [],
+          restDays: [],
+          isActive: true
+        };
+        setConfig(defaultConfig);
       }
     } catch (error) {
       console.error('Error fetching system config:', error);
@@ -192,8 +207,8 @@ export default function SystemConfigManager() {
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center py-12">
-        <Spinner size="lg" className="text-gray-900" />
-        <p className="text-gray-500 mt-4">Cargando configuración del sistema...</p>
+        <Spinner size="lg" className="text-foreground" />
+        <p className="text-neutral-500 mt-4">Cargando configuración del sistema...</p>
       </div>
     );
   }
@@ -219,14 +234,14 @@ export default function SystemConfigManager() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 btn-primary rounded-lg flex items-center justify-center">
               <Cog6ToothIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">
+              <h2 className="text-2xl font-semibold text-foreground">
                 Configuración del Sistema
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-neutral-600 mt-1">
                 Ajusta los parámetros generales del sistema
               </p>
             </div>
@@ -235,7 +250,7 @@ export default function SystemConfigManager() {
             onPress={handleSave}
             isLoading={saving}
             isDisabled={!hasChanges}
-            className="bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-300 flex items-center gap-2"
+            className="btn-primary flex items-center gap-2"
             size="lg"
           >
             {!saving && <CheckCircleIcon className="w-4 h-4" />}
@@ -248,9 +263,9 @@ export default function SystemConfigManager() {
           aria-label="Configuración"
           classNames={{
             tabList: "gap-6 w-full relative rounded-none p-0 border-b border-gray-200",
-            cursor: "w-full bg-gray-900",
+            cursor: "w-full btn-primary",
             tab: "max-w-fit px-4 h-12",
-            tabContent: "group-data-[selected=true]:text-gray-900"
+            tabContent: "group-data-[selected=true]:text-foreground"
           }}
           color="primary"
           variant="underlined"
@@ -261,7 +276,7 @@ export default function SystemConfigManager() {
               <Card className="border border-gray-200 shadow-sm">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
-                    <CalendarDaysIcon className="w-5 h-5 text-gray-600" />
+                    <CalendarDaysIcon className="w-5 h-5 text-neutral-600" />
                     <h3 className="text-lg font-semibold">Horarios y Días</h3>
                   </div>
                 </CardHeader>
@@ -279,7 +294,7 @@ export default function SystemConfigManager() {
                       variant="bordered"
                       classNames={{
                         trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 min-h-[40px]",
-                        value: "text-gray-900",
+                        value: "text-foreground",
                         listboxWrapper: "bg-white",
                         popoverContent: "bg-white border border-gray-200 shadow-lg",
                         selectorIcon: "text-gray-400"
@@ -307,12 +322,12 @@ export default function SystemConfigManager() {
                         variant="bordered"
                         placeholder="500.00"
                         classNames={{
-                          input: "text-gray-900 pl-8",
+                          input: "text-foreground pl-8",
                           inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
                         }}
                       />
                     </div>
-                    <p className="text-xs text-gray-500">Cargo adicional: {formatCurrency(config.restDayFee || 500)}</p>
+                    <p className="text-xs text-neutral-500">Cargo adicional: {formatCurrency(config.restDayFee || 500)}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -328,7 +343,7 @@ export default function SystemConfigManager() {
                         variant="bordered"
                         classNames={{
                           trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 min-h-[40px]",
-                          value: "text-gray-900",
+                          value: "text-foreground",
                           listboxWrapper: "bg-white",
                           popoverContent: "bg-white border border-gray-200 shadow-lg",
                           selectorIcon: "text-gray-400"
@@ -354,7 +369,7 @@ export default function SystemConfigManager() {
                         variant="bordered"
                         classNames={{
                           trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 min-h-[40px]",
-                          value: "text-gray-900",
+                          value: "text-foreground",
                           listboxWrapper: "bg-white",
                           popoverContent: "bg-white border border-gray-200 shadow-lg",
                           selectorIcon: "text-gray-400"
@@ -375,7 +390,7 @@ export default function SystemConfigManager() {
               <Card className="border border-gray-200 shadow-sm">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
-                    <ClockIcon className="w-5 h-5 text-gray-600" />
+                    <ClockIcon className="w-5 h-5 text-neutral-600" />
                     <h3 className="text-lg font-semibold">Configuración de Reservas</h3>
                   </div>
                 </CardHeader>
@@ -391,11 +406,11 @@ export default function SystemConfigManager() {
                       variant="bordered"
                       placeholder="7"
                       classNames={{
-                        input: "text-gray-900",
+                        input: "text-foreground",
                         inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
                       }}
                     />
-                    <p className="text-xs text-gray-500">Mínimo {config.advanceBookingDays || 7} días de anticipación</p>
+                    <p className="text-xs text-neutral-500">Mínimo {config.advanceBookingDays || 7} días de anticipación</p>
                   </div>
 
                   <div className="space-y-2">
@@ -408,11 +423,11 @@ export default function SystemConfigManager() {
                       variant="bordered"
                       placeholder="3"
                       classNames={{
-                        input: "text-gray-900",
+                        input: "text-foreground",
                         inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
                       }}
                     />
-                    <p className="text-xs text-gray-500">Máximo {config.maxConcurrentEvents || 3} eventos al mismo tiempo</p>
+                    <p className="text-xs text-neutral-500">Máximo {config.maxConcurrentEvents || 3} eventos al mismo tiempo</p>
                   </div>
 
                   <div className="space-y-2">
@@ -426,11 +441,11 @@ export default function SystemConfigManager() {
                       variant="bordered"
                       placeholder="4"
                       classNames={{
-                        input: "text-gray-900",
+                        input: "text-foreground",
                         inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
                       }}
                     />
-                    <p className="text-xs text-gray-500">Duración estándar: {config.defaultEventDuration || 4} horas</p>
+                    <p className="text-xs text-neutral-500">Duración estándar: {config.defaultEventDuration || 4} horas</p>
                   </div>
 
                   <div className="space-y-2">
@@ -536,8 +551,8 @@ export default function SystemConfigManager() {
                 <div className="text-2xl font-semibold text-orange-600 mb-1">
                   {daysOfWeek.find(d => d.key === (config.restDay || 1))?.label}
                 </div>
-                <div className="text-sm text-gray-600">Día de descanso</div>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-sm text-neutral-600">Día de descanso</div>
+                <div className="text-xs text-neutral-500 mt-1">
                   +{formatCurrency(config.restDayFee || 500)}
                 </div>
               </div>
@@ -546,21 +561,21 @@ export default function SystemConfigManager() {
                 <div className="text-2xl font-semibold text-blue-600 mb-1">
                   {config.businessHours?.start || '09:00'} - {config.businessHours?.end || '18:00'}
                 </div>
-                <div className="text-sm text-gray-600">Horario de atención</div>
+                <div className="text-sm text-neutral-600">Horario de atención</div>
               </div>
 
               <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
                 <div className="text-2xl font-semibold text-green-600 mb-1">
                   {config.advanceBookingDays || 7}
                 </div>
-                <div className="text-sm text-gray-600">Días de anticipación</div>
+                <div className="text-sm text-neutral-600">Días de anticipación</div>
               </div>
 
               <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
                 <div className="text-2xl font-semibold text-purple-600 mb-1">
                   {config.maxConcurrentEvents || 3}
                 </div>
-                <div className="text-sm text-gray-600">Eventos simultáneos</div>
+                <div className="text-sm text-neutral-600">Eventos simultáneos</div>
               </div>
             </div>
           </CardBody>

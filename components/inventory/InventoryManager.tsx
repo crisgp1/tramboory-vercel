@@ -225,52 +225,62 @@ export default function InventoryManager() {
 
   return (
     <div className="space-y-8 p-6">
-      {/* Header glassmorphism */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between">
+      {/* Professional Header */}
+      <div className="surface-card">
+        <div className="flex items-center justify-between p-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">
+            <h1 className="text-2xl font-bold mb-2" style={{fontSize: 'var(--text-2xl)'}}>
               Inventario
             </h1>
-            <p className="text-slate-600 text-sm">
+            <p className="text-neutral-600" style={{fontSize: 'var(--text-sm)'}}>
               Control inteligente de materiales, equipos y suministros
             </p>
           </div>
           <button
             onClick={() => setActiveTab("products")}
-            className="glass-button px-6 py-3 flex items-center gap-2 text-sm font-medium"
+            className="btn-primary"
           >
-            <PlusIcon className="w-4 h-4" />
+            <PlusIcon className="icon-base" />
             Nuevo Producto
           </button>
         </div>
       </div>
 
-      {/* Estadísticas glassmorphism */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Professional Statistics Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4" style={{gap: 'var(--space-4)'}}>
         {stats.map((stat, index) => {
           const Icon = stat.icon
+          const statusClass = 
+            stat.color === 'blue' ? 'status-info' :
+            stat.color === 'warning' ? 'status-warning' :
+            stat.color === 'success' ? 'status-success' :
+            stat.color === 'purple' ? 'status-neutral' : 'status-neutral'
+          
           return (
-            <div key={index} className={`glass-stat p-4 cursor-pointer group ${
-              stat.color === 'blue' ? 'stat-blue' :
-              stat.color === 'warning' ? 'stat-orange' :
-              stat.color === 'success' ? 'stat-green' :
-              stat.color === 'purple' ? 'stat-purple' : ''
-            }`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 ${
+            <div key={index} className={`metric-card surface-card-interactive ${statusClass}`}>
+              <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
+                <div className={`rounded-xl flex items-center justify-center motion-safe ${
                   stat.color === 'blue' ? 'bg-blue-500' :
                   stat.color === 'warning' ? 'bg-orange-500' :
                   stat.color === 'success' ? 'bg-green-500' :
                   stat.color === 'purple' ? 'bg-purple-500' : 'bg-slate-500'
-                }`}>
-                  <Icon className="w-5 h-5 text-white" />
+                }`} style={{
+                  width: 'var(--space-10)',
+                  height: 'var(--space-10)',
+                  borderRadius: 'var(--radius-lg)'
+                }}>
+                  <Icon className="icon-base text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-lg font-semibold text-slate-800 mb-1 truncate">
+                  <div className="font-semibold mb-1 truncate" style={{
+                    fontSize: 'var(--text-lg)',
+                    marginBottom: 'var(--space-1)'
+                  }}>
                     {stat.value}
                   </div>
-                  <div className="text-xs text-slate-600 uppercase tracking-wider truncate">
+                  <div className="text-neutral-600 uppercase tracking-wider truncate" style={{
+                    fontSize: 'var(--text-xs)'
+                  }}>
                     {stat.label}
                   </div>
                 </div>
@@ -280,18 +290,23 @@ export default function InventoryManager() {
         })}
       </div>
 
-      {/* Contenido principal glassmorphism */}
-      <div className="glass-card overflow-hidden">
-        <div className="p-6">
+      {/* Professional Main Content */}
+      <div className="surface-card overflow-hidden">
+        <div style={{padding: 'var(--space-6)'}}>
           {loading ? (
-            <div className="flex flex-col justify-center items-center py-20">
-              <div className="w-12 h-12 border-4 border-slate-300 border-t-slate-600 rounded-full animate-spin mb-6"></div>
-              <p className="text-slate-600 text-base font-medium">Cargando inventario...</p>
+            <div className="flex flex-col justify-center items-center" style={{padding: 'var(--space-20) 0'}}>
+              <div className="loading-spinner" style={{marginBottom: 'var(--space-6)'}}></div>
+              <p className="text-neutral-600 font-medium" style={{fontSize: 'var(--text-base)'}}>Cargando inventario...</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Tabs glassmorphism */}
-              <div className="flex flex-wrap gap-2 p-2 bg-slate-50/50 rounded-2xl backdrop-blur-sm border border-white/20">
+            <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--space-6)'}}>
+              {/* Professional Tab Navigation */}
+              <div className="flex flex-wrap border rounded-xl surface-elevated" style={{
+                gap: 'var(--space-2)',
+                padding: 'var(--space-2)',
+                borderRadius: 'var(--radius-xl)',
+                border: `0.0625rem solid var(--border-default)`
+              }}>
                 {filteredTabs.map((tab) => {
                   const Icon = tab.icon
                   const isActive = activeTab === tab.id
@@ -299,15 +314,9 @@ export default function InventoryManager() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`
-                        flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300
-                        ${isActive 
-                          ? 'glass-tab active text-slate-800' 
-                          : 'glass-tab text-slate-600 hover:text-slate-800 hover:bg-white/50'
-                        }
-                      `}
+                      className={`nav-tab ${isActive ? 'active' : ''}`}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="icon-base" />
                       <span className="whitespace-nowrap">{tab.label}</span>
                     </button>
                   )
@@ -315,7 +324,7 @@ export default function InventoryManager() {
               </div>
               
               {/* Tab Content */}
-              <div className="min-h-[400px]">
+              <div style={{minHeight: '25rem'}}>
                 {filteredTabs.find(tab => tab.id === activeTab)?.component}
               </div>
             </div>
@@ -323,7 +332,7 @@ export default function InventoryManager() {
         </div>
       </div>
 
-      {/* Modales */}
+      {/* Professional Modals */}
       <BarcodeScanner
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}

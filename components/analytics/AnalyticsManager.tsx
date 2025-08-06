@@ -59,7 +59,7 @@ ChartJS.register(
   LineElement,
   BarElement,
   Title,
-  Tooltip,
+  ChartTooltip,
   Legend,
   ArcElement,
   Filler
@@ -307,149 +307,173 @@ export default function AnalyticsManager() {
 
   if (!isAdmin && !isGerente) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Card className="max-w-md w-full border border-gray-200">
-          <CardBody className="text-center p-8">
-            <ExclamationTriangleIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Acceso Restringido</h3>
-            <p className="text-gray-600">No tienes permisos para ver esta sección</p>
-          </CardBody>
-        </Card>
+      <div className="surface-card" style={{
+        maxWidth: '28rem',
+        margin: '0 auto',
+        marginTop: 'var(--space-8)',
+        padding: 'var(--space-6)',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          width: 'var(--space-12)',
+          height: 'var(--space-12)',
+          backgroundColor: '#fee2e2',
+          borderRadius: 'var(--radius-full)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto var(--space-4)'
+        }}>
+          <ExclamationTriangleIcon className="icon-lg text-red-600" />
+        </div>
+        <h3 style={{
+          fontSize: 'var(--text-lg)',
+          fontWeight: '600',
+          marginBottom: 'var(--space-2)'
+        }}>
+          Acceso Restringido
+        </h3>
+        <p className="text-neutral-600">No tienes permisos para ver esta sección</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header y controles */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Sistema de Distribución</h1>
-          <p className="text-gray-600">Centro de análisis y métricas</p>
-        </div>
-        
-        <div className="flex gap-2">
-          <Select
-            selectedKeys={[dateRange]}
-            onSelectionChange={(keys) => setDateRange(Array.from(keys)[0] as string)}
-            className="min-w-[160px]"
-            variant="bordered"
-            size="sm"
-          >
-            {dateRanges.map((range) => (
-              <SelectItem key={range.key}>{range.label}</SelectItem>
-            ))}
-          </Select>
+    <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--space-6)'}}>
+      {/* Professional Header y controles */}
+      <div className="surface-card">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between" style={{padding: 'var(--space-6)'}}>
+          <div>
+            <h1 style={{
+              fontSize: 'var(--text-2xl)',
+              fontWeight: '600',
+              marginBottom: 'var(--space-1)'
+            }}>
+              Analytics
+            </h1>
+            <p className="text-neutral-600" style={{fontSize: 'var(--text-sm)'}}>
+              Centro de análisis y métricas del negocio
+            </p>
+          </div>
           
-          <HeroTooltip content="Exportar reporte">
-            <Button
+          <div className="flex" style={{gap: 'var(--space-2)'}}>
+            <Select
+              selectedKeys={[dateRange]}
+              onSelectionChange={(keys) => setDateRange(Array.from(keys)[0] as string)}
+              className="min-w-[10rem]"
               variant="bordered"
               size="sm"
-              isIconOnly
-              onPress={() => exportReport('pdf')}
             >
-              <ArrowDownTrayIcon className="w-4 h-4" />
-            </Button>
-          </HeroTooltip>
+              {dateRanges.map((range) => (
+                <SelectItem key={range.key}>{range.label}</SelectItem>
+              ))}
+            </Select>
+            
+            <HeroTooltip content="Exportar reporte">
+              <button
+                className="btn-icon btn-icon-sm"
+                onClick={() => exportReport('pdf')}
+              >
+                <ArrowDownTrayIcon className="icon-sm" />
+              </button>
+            </HeroTooltip>
+          </div>
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <Card className="border border-gray-200">
-        <CardBody className="p-0">
-          <Tabs 
-            selectedKey={selectedTab} 
-            onSelectionChange={(key) => setSelectedTab(key as string)}
-            variant="underlined"
-            classNames={{
-              base: "w-full",
-              tabList: "gap-6 w-full relative rounded-none p-4 border-b border-gray-200",
-              cursor: "w-full bg-gray-900",
-              tab: "max-w-fit px-4 h-12",
-              tabContent: "group-data-[selected=true]:text-gray-900 font-medium"
-            }}
-          >
-            <Tab
-              key="overview"
-              title={
-                <div className="flex items-center gap-2">
-                  <ChartBarIcon className="w-4 h-4" />
-                  <span>Resumen General</span>
-                </div>
-              }
-            />
-            <Tab
-              key="graphs"
-              title={
-                <div className="flex items-center gap-2">
-                  <PresentationChartLineIcon className="w-4 h-4" />
-                  <span>Gráficos</span>
-                </div>
-              }
-            />
-            <Tab
-              key="calendar"
-              title={
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span>Calendario</span>
-                </div>
-              }
-            />
-            <Tab
-              key="distribution"
-              title={
-                <div className="flex items-center gap-2">
-                  <ChartPieIcon className="w-4 h-4" />
-                  <span>Distribución</span>
-                </div>
-              }
-            />
-          </Tabs>
-        </CardBody>
-      </Card>
+      {/* Professional Tabs Navigation */}
+      <div className="surface-card" style={{padding: '0'}}>
+        <div style={{
+          borderBottom: `0.0625rem solid var(--border-default)`
+        }}>
+          <nav className="flex" style={{
+            gap: 'var(--space-8)',
+            padding: '0 var(--space-6)'
+          }} aria-label="Tabs">
+            {[
+              { key: 'overview', icon: ChartBarIcon, label: 'Resumen General' },
+              { key: 'graphs', icon: PresentationChartLineIcon, label: 'Gráficos' },
+              { key: 'calendar', icon: CalendarIcon, label: 'Calendario' },
+              { key: 'distribution', icon: ChartPieIcon, label: 'Distribución' }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = selectedTab === tab.key;
+              
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setSelectedTab(tab.key)}
+                  className={`nav-tab-vertical ${isActive ? 'active' : ''}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                    padding: 'var(--space-4) var(--space-1)',
+                    borderBottom: isActive ? `0.125rem solid var(--primary)` : '0.125rem solid transparent',
+                    fontWeight: '500',
+                    fontSize: 'var(--text-sm)',
+                    transition: 'var(--motion-fast)',
+                    color: isActive ? 'var(--foreground)' : 'var(--neutral-500)'
+                  }}
+                >
+                  <Icon className="icon-sm" />
+                  <span className="hidden sm:block">{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <Spinner size="lg" />
+        <div className="flex justify-center items-center" style={{height: '16rem'}}>
+          <div className="loading-spinner"></div>
         </div>
       ) : analyticsData ? (
         <>
           {/* Tab: Overview */}
           {selectedTab === "overview" && (
-            <div className="space-y-6">
-              {/* KPIs Cards with improved design */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardBody className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center">
-                          <CurrencyDollarIcon className="w-6 h-6 text-green-700" />
-                        </div>
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          className={analyticsData.summary.monthlyGrowth >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}
-                        >
-                          {formatPercentage(analyticsData.summary.monthlyGrowth)}
-                        </Chip>
+            <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--space-6)'}}>
+              {/* Professional KPIs Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4" style={{gap: 'var(--space-4)'}}>
+                <div className="metric-card status-success">
+                  <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
+                    <div style={{
+                      width: 'var(--space-8)',
+                      height: 'var(--space-8)',
+                      backgroundColor: '#dcfce7',
+                      borderRadius: 'var(--radius-lg)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <CurrencyDollarIcon className="icon-base text-green-600" />
+                    </div>
+                    <div>
+                      <div style={{
+                        fontSize: 'var(--text-lg)',
+                        fontWeight: '500',
+                        marginBottom: 'var(--space-1)'
+                      }}>
+                        {formatCurrency(analyticsData.summary.totalRevenue)}
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Ingresos Totales</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">
-                          {formatCurrency(analyticsData.summary.totalRevenue)}
-                        </p>
-                        <Progress 
-                          value={75} 
-                          size="sm" 
-                          color="success" 
-                          className="mt-3"
-                        />
+                      <div className="text-neutral-600" style={{
+                        fontSize: 'var(--text-xs)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        Ingresos Totales
                       </div>
                     </div>
-                  </CardBody>
-                </Card>
+                  </div>
+                  <div style={{
+                    marginTop: 'var(--space-2)',
+                    fontSize: 'var(--text-xs)',
+                    color: analyticsData.summary.monthlyGrowth >= 0 ? '#16a34a' : '#dc2626'
+                  }}>
+                    {formatPercentage(analyticsData.summary.monthlyGrowth)} vs mes anterior
+                  </div>
+                </div>
 
                 <Card className="border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer">
                   <CardBody className="p-6">
@@ -468,7 +492,7 @@ export default function AnalyticsManager() {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Reservas</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">
+                        <p className="text-2xl font-bold text-foreground mt-1">
                           {analyticsData.summary.totalReservations}
                         </p>
                         <div className="flex items-center gap-2 mt-3">
@@ -497,7 +521,7 @@ export default function AnalyticsManager() {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Promedio</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">
+                        <p className="text-2xl font-bold text-foreground mt-1">
                           {formatCurrency(analyticsData.summary.averageEventValue)}
                         </p>
                         <Progress 
@@ -528,7 +552,7 @@ export default function AnalyticsManager() {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pagos Pendientes</p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">
+                        <p className="text-2xl font-bold text-foreground mt-1">
                           {formatCurrency(analyticsData.summary.pendingPayments)}
                         </p>
                         <div className="flex items-center gap-2 mt-3">
@@ -548,7 +572,7 @@ export default function AnalyticsManager() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Tasa de Cancelación</p>
-                        <p className="text-xl font-bold text-gray-900">{analyticsData.summary.cancellationRate.toFixed(1)}%</p>
+                        <p className="text-xl font-bold text-foreground">{analyticsData.summary.cancellationRate.toFixed(1)}%</p>
                       </div>
                       <div className="w-16 h-16">
                         <Doughnut
@@ -575,7 +599,7 @@ export default function AnalyticsManager() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Eventos Completados</p>
-                        <p className="text-xl font-bold text-gray-900">{analyticsData.summary.completedEvents}</p>
+                        <p className="text-xl font-bold text-foreground">{analyticsData.summary.completedEvents}</p>
                       </div>
                       <div className="w-16 h-16">
                         <Doughnut
@@ -605,7 +629,7 @@ export default function AnalyticsManager() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Tasa de Ocupación</p>
-                        <p className="text-xl font-bold text-gray-900">{analyticsData.summary.occupancyRate.toFixed(1)}%</p>
+                        <p className="text-xl font-bold text-foreground">{analyticsData.summary.occupancyRate.toFixed(1)}%</p>
                       </div>
                       <div className="w-16 h-16">
                         <Doughnut
@@ -639,7 +663,7 @@ export default function AnalyticsManager() {
                   size="sm"
                   variant={chartType === "line" ? "solid" : "bordered"}
                   onPress={() => setChartType("line")}
-                  className={chartType === "line" ? "bg-gray-900 text-white" : ""}
+                  className={chartType === "line" ? "btn-primary" : ""}
                 >
                   Líneas
                 </Button>
@@ -647,7 +671,7 @@ export default function AnalyticsManager() {
                   size="sm"
                   variant={chartType === "bar" ? "solid" : "bordered"}
                   onPress={() => setChartType("bar")}
-                  className={chartType === "bar" ? "bg-gray-900 text-white" : ""}
+                  className={chartType === "bar" ? "btn-primary" : ""}
                 >
                   Barras
                 </Button>
@@ -655,7 +679,7 @@ export default function AnalyticsManager() {
                   size="sm"
                   variant={chartType === "area" ? "solid" : "bordered"}
                   onPress={() => setChartType("area")}
-                  className={chartType === "area" ? "bg-gray-900 text-white" : ""}
+                  className={chartType === "area" ? "btn-primary" : ""}
                 >
                   Área
                 </Button>
@@ -665,7 +689,7 @@ export default function AnalyticsManager() {
               <Card className="border border-gray-200">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">Tendencia de Ingresos</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Tendencia de Ingresos</h3>
                     <div className="flex items-center gap-2">
                       <Chip size="sm" variant="flat" className="bg-green-100 text-green-700">
                         {formatPercentage(analyticsData.summary.monthlyGrowth)} vs mes anterior
@@ -711,7 +735,7 @@ export default function AnalyticsManager() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border border-gray-200">
                   <CardHeader className="pb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">Comparación Mensual</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Comparación Mensual</h3>
                   </CardHeader>
                   <CardBody className="pt-2">
                     <div className="h-64">
@@ -722,7 +746,7 @@ export default function AnalyticsManager() {
 
                 <Card className="border border-gray-200">
                   <CardHeader className="pb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">Estado de Reservas</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Estado de Reservas</h3>
                   </CardHeader>
                   <CardBody className="pt-2">
                     <div className="h-64">
@@ -767,7 +791,7 @@ export default function AnalyticsManager() {
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Días Disponibles</p>
-                        <p className="text-xl font-bold text-gray-900">15</p>
+                        <p className="text-xl font-bold text-foreground">15</p>
                       </div>
                     </div>
                   </CardBody>
@@ -781,7 +805,7 @@ export default function AnalyticsManager() {
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Parcialmente Ocupados</p>
-                        <p className="text-xl font-bold text-gray-900">8</p>
+                        <p className="text-xl font-bold text-foreground">8</p>
                       </div>
                     </div>
                   </CardBody>
@@ -795,7 +819,7 @@ export default function AnalyticsManager() {
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Totalmente Ocupados</p>
-                        <p className="text-xl font-bold text-gray-900">7</p>
+                        <p className="text-xl font-bold text-foreground">7</p>
                       </div>
                     </div>
                   </CardBody>
@@ -811,7 +835,7 @@ export default function AnalyticsManager() {
               <Card className="border border-gray-200">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">Servicios Populares</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Servicios Populares</h3>
                     <HeroTooltip content="Ver todos los servicios">
                       <Button size="sm" variant="light" isIconOnly>
                         <ChartPieIcon className="w-4 h-4" />
@@ -828,7 +852,7 @@ export default function AnalyticsManager() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <div className={`w-2 h-2 rounded-full bg-${['green', 'blue', 'purple', 'orange', 'pink'][index]}-500`} />
-                                <p className="font-medium text-gray-900 text-sm">{service.name}</p>
+                                <p className="font-medium text-foreground text-sm">{service.name}</p>
                               </div>
                               <div className="flex items-center gap-4 mt-1">
                                 <span className="text-xs text-gray-500">{service.bookings} reservas</span>
@@ -862,7 +886,7 @@ export default function AnalyticsManager() {
               <Card className="border border-gray-200">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">Distribución de Pagos</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Distribución de Pagos</h3>
                     <HeroTooltip content="Ver detalles">
                       <Button size="sm" variant="light" isIconOnly>
                         <BanknotesIcon className="w-4 h-4" />
@@ -914,7 +938,7 @@ export default function AnalyticsManager() {
                           <div className="w-3 h-3 bg-green-500 rounded-full" />
                           <span className="text-sm font-medium text-gray-700">Pagados</span>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-foreground">
                           {formatCurrency(analyticsData.paymentStatus.paid)}
                         </span>
                       </div>
@@ -924,7 +948,7 @@ export default function AnalyticsManager() {
                           <div className="w-3 h-3 bg-yellow-500 rounded-full" />
                           <span className="text-sm font-medium text-gray-700">Pendientes</span>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-foreground">
                           {formatCurrency(analyticsData.paymentStatus.pending)}
                         </span>
                       </div>
@@ -934,7 +958,7 @@ export default function AnalyticsManager() {
                           <div className="w-3 h-3 bg-red-500 rounded-full" />
                           <span className="text-sm font-medium text-gray-700">Vencidos</span>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-foreground">
                           {formatCurrency(analyticsData.paymentStatus.overdue)}
                         </span>
                       </div>

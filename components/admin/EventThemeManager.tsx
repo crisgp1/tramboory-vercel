@@ -279,14 +279,14 @@ export default function EventThemeManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 btn-primary rounded-lg flex items-center justify-center">
             <BuildingStorefrontIcon className="w-6 h-6 text-white" />
           </div>
           <div>
             <h2 className="text-2xl font-semibold text-gray-900">
               Temas de Evento
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-neutral-600 mt-1">
               Gestiona los temas y decoraciones disponibles
             </p>
           </div>
@@ -294,7 +294,7 @@ export default function EventThemeManager() {
         <Button
           startContent={<PlusIcon className="w-4 h-4" />}
           onPress={handleCreate}
-          className="bg-gray-900 text-white hover:bg-gray-800"
+          className="btn-primary text-white hover:bg-gray-800"
           size="lg"
         >
           Nuevo Tema
@@ -470,8 +470,8 @@ export default function EventThemeManager() {
         isDismissable={!submitting}
         backdrop="opaque"
         classNames={{
-          backdrop: "bg-black/60 backdrop-blur-sm",
-          base: "bg-white shadow-2xl border-0",
+          backdrop: "surface-overlay",
+          base: "surface-modal shadow-2xl border-0",
           wrapper: "z-[1001] items-center justify-center p-4",
           header: "border-b border-gray-200 bg-white",
           body: "py-6",
@@ -588,7 +588,7 @@ export default function EventThemeManager() {
                           <Button
                             onPress={addPackage}
                             size="sm"
-                            className="bg-gray-900 text-white w-full"
+                            className="btn-primary text-white w-full"
                           >
                             Agregar
                           </Button>
@@ -643,7 +643,7 @@ export default function EventThemeManager() {
                           <Button
                             onPress={addTheme}
                             size="sm"
-                            className="bg-gray-900 text-white"
+                            className="btn-primary text-white"
                           >
                             Agregar
                           </Button>
@@ -687,7 +687,7 @@ export default function EventThemeManager() {
                   onPress={handleSubmit}
                   isLoading={submitting}
                   size="sm"
-                  className="bg-gray-900 text-white"
+                  className="btn-primary text-white"
                 >
                   {submitting ? 'Guardando...' : (editingTheme ? 'Actualizar' : 'Crear')}
                 </Button>

@@ -177,25 +177,32 @@ export default function ReservationManager() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header minimalista */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-medium text-gray-900">
-            Reservas
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            {reservations.length} reservas en total
-          </p>
+    <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--space-8)'}}>
+      {/* Professional Header */}
+      <div className="surface-card">
+        <div className="flex items-center justify-between" style={{padding: 'var(--space-6)'}}>
+          <div>
+            <h1 style={{
+              fontSize: 'var(--text-xl)',
+              fontWeight: '600',
+              marginBottom: 'var(--space-1)'
+            }}>
+              Reservas
+            </h1>
+            <p className="text-neutral-600" style={{
+              fontSize: 'var(--text-sm)'
+            }}>
+              {reservations.length} reservas en total
+            </p>
+          </div>
+          <button
+            className="btn-primary"
+            onClick={handleCreateReservation}
+          >
+            <PlusIcon className="icon-base" />
+            Nueva Reserva
+          </button>
         </div>
-        <Button
-          startContent={<PlusIcon className="w-4 h-4" />}
-          onPress={handleCreateReservation}
-          className="bg-gray-900 text-white hover:bg-gray-800 text-sm"
-          size="md"
-        >
-          Nueva Reserva
-        </Button>
       </div>
 
       {/* Filtros */}
@@ -211,52 +218,138 @@ export default function ReservationManager() {
         onClearFilters={handleClearFilters}
       />
 
-      {/* Estadísticas minimalistas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-gray-200 shadow-none">
-          <CardBody className="p-4">
-            <div className="text-lg font-medium text-gray-900">
-              {reservations.length}
+      {/* Professional Statistics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4" style={{gap: 'var(--space-4)'}}>
+        <div className="metric-card status-neutral">
+          <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
+            <div style={{
+              width: 'var(--space-8)',
+              height: 'var(--space-8)',
+              backgroundColor: 'var(--surface-elevated)',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <CalendarDaysIcon className="icon-base text-neutral-600" />
             </div>
-            <div className="text-xs text-gray-600 uppercase tracking-wide">Total</div>
-          </CardBody>
-        </Card>
+            <div>
+              <div style={{
+                fontSize: 'var(--text-lg)',
+                fontWeight: '500',
+                marginBottom: 'var(--space-1)'
+              }}>
+                {reservations.length}
+              </div>
+              <div className="text-neutral-600" style={{
+                fontSize: 'var(--text-xs)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>Total</div>
+            </div>
+          </div>
+        </div>
         
-        <Card className="border border-gray-200 shadow-none">
-          <CardBody className="p-4">
-            <div className="text-lg font-medium text-gray-900">
-              {reservations.filter(r => r.status === 'pending').length}
+        <div className="metric-card status-warning">
+          <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
+            <div style={{
+              width: 'var(--space-8)',
+              height: 'var(--space-8)',
+              backgroundColor: '#fef3c7',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <CalendarDaysIcon className="icon-base text-orange-600" />
             </div>
-            <div className="text-xs text-gray-600 uppercase tracking-wide">Pendientes</div>
-          </CardBody>
-        </Card>
+            <div>
+              <div style={{
+                fontSize: 'var(--text-lg)',
+                fontWeight: '500',
+                marginBottom: 'var(--space-1)'
+              }}>
+                {reservations.filter(r => r.status === 'pending').length}
+              </div>
+              <div className="text-neutral-600" style={{
+                fontSize: 'var(--text-xs)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>Pendientes</div>
+            </div>
+          </div>
+        </div>
         
-        <Card className="border border-gray-200 shadow-none">
-          <CardBody className="p-4">
-            <div className="text-lg font-medium text-gray-900">
-              {reservations.filter(r => r.status === 'confirmed').length}
+        <div className="metric-card status-info">
+          <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
+            <div style={{
+              width: 'var(--space-8)',
+              height: 'var(--space-8)',
+              backgroundColor: '#dbeafe',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <CalendarDaysIcon className="icon-base text-blue-600" />
             </div>
-            <div className="text-xs text-gray-600 uppercase tracking-wide">Confirmadas</div>
-          </CardBody>
-        </Card>
+            <div>
+              <div style={{
+                fontSize: 'var(--text-lg)',
+                fontWeight: '500',
+                marginBottom: 'var(--space-1)'
+              }}>
+                {reservations.filter(r => r.status === 'confirmed').length}
+              </div>
+              <div className="text-neutral-600" style={{
+                fontSize: 'var(--text-xs)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>Confirmadas</div>
+            </div>
+          </div>
+        </div>
         
-        <Card className="border border-gray-200 shadow-none">
-          <CardBody className="p-4">
-            <div className="text-lg font-medium text-gray-900">
-              {reservations.filter(r => r.status === 'completed').length}
+        <div className="metric-card status-success">
+          <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
+            <div style={{
+              width: 'var(--space-8)',
+              height: 'var(--space-8)',
+              backgroundColor: '#dcfce7',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <CalendarDaysIcon className="icon-base text-green-600" />
             </div>
-            <div className="text-xs text-gray-600 uppercase tracking-wide">Completadas</div>
-          </CardBody>
-        </Card>
+            <div>
+              <div style={{
+                fontSize: 'var(--text-lg)',
+                fontWeight: '500',
+                marginBottom: 'var(--space-1)'
+              }}>
+                {reservations.filter(r => r.status === 'completed').length}
+              </div>
+              <div className="text-neutral-600" style={{
+                fontSize: 'var(--text-xs)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>Completadas</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Contenido principal */}
-      <div className="bg-white border border-gray-200 rounded-lg">
-        <div className="p-6">
+      {/* Professional Main Content */}
+      <div className="surface-card">
+        <div style={{padding: 'var(--space-6)'}}>
           {loading ? (
-            <div className="flex flex-col justify-center items-center py-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
-              <p className="text-gray-600 text-sm">Cargando reservas...</p>
+            <div className="flex flex-col justify-center items-center" style={{
+              padding: 'var(--space-16) 0'
+            }}>
+              <div className="loading-spinner" style={{marginBottom: 'var(--space-4)'}}></div>
+              <p className="text-neutral-600" style={{fontSize: 'var(--text-sm)'}}>Cargando reservas...</p>
             </div>
           ) : (
             <ReservationTable

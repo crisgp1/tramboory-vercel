@@ -500,6 +500,37 @@ export default function ClientNewReservationPageAnimated() {
     }).format(price);
   };
 
+  const downloadInvoice = async () => {
+    try {
+      const response = await fetch('/api/reservations/invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reservationId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error generating invoice');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `factura-reserva-${reservationId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Factura descargada exitosamente');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error('Error al descargar la factura');
+    }
+  };
+
   const generatePaymentSlip = () => {
     const total = calculateTotal();
     const referenceNumber = `REF-${Date.now()}`;
@@ -718,22 +749,23 @@ Para cualquier duda, contacta:
                     )}
                   </div>
                   
-                  {/* Availability Notice */}
+                  {/* Booking Rules Notice */}
                   {!loadingAvailability && (
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.5 }}
-                      className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200"
+                      className="mt-4 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200"
                     >
                       <div className="flex items-start gap-3">
-                        <InformationCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <InformationCircleIcon className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                         <div className="text-sm">
-                          <p className="font-semibold text-blue-900 mb-1">Nota sobre disponibilidad</p>
-                          <p className="text-blue-700">
-                            La capacidad de eventos por día varía según la configuración. Los días marcados en rojo ya tienen su capacidad completa. 
-                            Los días de descanso tienen un cargo adicional.
-                          </p>
+                          <p className="font-semibold text-emerald-800 mb-2">🎉 ¡Reserva tu celebración perfecta!</p>
+                          <ul className="space-y-1 text-emerald-700">
+                            <li>• Las reservaciones deben hacerse con <strong>al menos 1 semana de anticipación</strong></li>
+                            <li>• Selecciona tu fecha ideal y te mostraremos los horarios disponibles</li>
+                            <li>• Los días especiales pueden tener cargos adicionales</li>
+                          </ul>
                         </div>
                       </div>
                     </motion.div>
@@ -761,10 +793,12 @@ Para cualquier duda, contacta:
                     <p className="text-gray-500 text-sm">Los horarios disponibles aparecerán aquí</p>
                   </div>
                 ) : loadingSlots ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <Skeleton key={i} className="h-16 rounded-2xl" />
-                    ))}
+                  <div className="space-y-4">
+                    <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
+                      <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                      <p className="text-blue-700 font-medium">Cargando horarios disponibles...</p>
+                      <p className="text-blue-600 text-sm mt-1">Verificando disponibilidad para tu fecha seleccionada</p>
+                    </div>
                   </div>
                 ) : availableSlots && availableSlots.slots && availableSlots.slots.length > 0 ? (
                   <div className="space-y-6">
@@ -833,10 +867,16 @@ Para cualquier duda, contacta:
                     )}
                   </div>
                 ) : (
-                  <div className="p-8 bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-2xl text-center">
-                    <ClockIcon className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
-                    <p className="text-yellow-800 font-medium">No hay horarios disponibles</p>
-                    <p className="text-yellow-700 text-sm">Intenta con otra fecha</p>
+                  <div className="p-8 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl text-center">
+                    <ClockIcon className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                    <p className="text-amber-800 font-bold text-lg mb-2">Esta fecha no tiene horarios disponibles</p>
+                    <p className="text-amber-700 text-sm mb-4">Esto puede suceder porque:</p>
+                    <ul className="text-amber-700 text-sm space-y-1 mb-4 text-left max-w-sm mx-auto">
+                      <li>• Es un día de descanso sin disponibilidad</li>
+                      <li>• Todos los horarios ya están reservados</li>
+                      <li>• No hay configuración de horarios para este día</li>
+                    </ul>
+                    <p className="text-amber-800 font-semibold">💡 Intenta seleccionar otra fecha</p>
                   </div>
                 )}
               </motion.div>
@@ -1420,6 +1460,16 @@ Para cualquier duda, contacta:
                 className="w-full"
               >
                 Descargar ficha de pago
+              </Button>
+
+              <Button
+                color="success"
+                size="lg"
+                startContent={<DocumentTextIcon className="w-5 h-5" />}
+                onPress={downloadInvoice}
+                className="w-full"
+              >
+                Descargar factura PDF
               </Button>
               
               <Button

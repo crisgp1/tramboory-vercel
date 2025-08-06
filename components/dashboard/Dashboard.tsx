@@ -3,16 +3,11 @@
 import React, { useState } from "react"
 import { useUser, useClerk } from "@clerk/nextjs"
 import { 
-  Button, 
   Avatar, 
   Dropdown, 
   DropdownTrigger, 
   DropdownMenu, 
-  DropdownItem,
-  Card,
-  CardBody,
-  Badge,
-  Chip
+  DropdownItem
 } from "@heroui/react"
 import { 
   ArrowRightOnRectangleIcon,
@@ -187,13 +182,13 @@ export default function Dashboard() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--surface-elevated)'}}>
         <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 mx-auto"></div>
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-900 border-t-transparent absolute top-0 left-1/2 transform -translate-x-1/2"></div>
-          </div>
-          <p className="text-gray-600 mt-4 text-sm">Cargando...</p>
+          <div className="loading-spinner" style={{margin: '0 auto'}}></div>
+          <p className="text-neutral-600" style={{
+            marginTop: 'var(--space-4)',
+            fontSize: 'var(--text-sm)'
+          }}>Cargando...</p>
         </div>
       </div>
     )
@@ -201,79 +196,112 @@ export default function Dashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="max-w-md w-full mx-4 border border-gray-200 shadow-lg">
-          <CardBody className="p-8 text-center">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <UserIcon className="w-6 h-6 text-red-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sesión requerida</h3>
-            <p className="text-gray-600">No tienes una sesión activa</p>
-          </CardBody>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--surface-elevated)'}}>
+        <div className="surface-card" style={{
+          maxWidth: '28rem',
+          width: '100%',
+          margin: '0 var(--space-4)',
+          padding: 'var(--space-8)',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            width: 'var(--space-12)',
+            height: 'var(--space-12)',
+            backgroundColor: '#fee2e2',
+            borderRadius: 'var(--radius-full)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto var(--space-4)'
+          }}>
+            <UserIcon className="icon-lg text-red-600" />
+          </div>
+          <h3 style={{
+            fontSize: 'var(--text-lg)',
+            fontWeight: '600',
+            marginBottom: 'var(--space-2)'
+          }}>Sesión requerida</h3>
+          <p className="text-neutral-600">No tienes una sesión activa</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <div className="min-h-screen" style={{background: 'var(--surface-elevated)'}}>
+      {/* Professional Header */}
+      <header className="surface-elevated sticky top-0" style={{
+        borderBottom: `0.0625rem solid var(--border-default)`,
+        zIndex: '40'
+      }}>
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                isIconOnly
-                variant="light"
-                className="lg:hidden text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                onPress={() => setSidebarOpen(!sidebarOpen)}
+          <div className="flex justify-between items-center" style={{height: 'var(--space-16)'}}>
+            <div className="flex items-center" style={{gap: 'var(--space-4)'}}>
+              <button
+                className="btn-icon lg:hidden"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
               >
-                <Bars3Icon className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">T</span>
+                <Bars3Icon className="icon-base" />
+              </button>
+              <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
+                <div style={{
+                  width: 'var(--space-8)',
+                  height: 'var(--space-8)',
+                  backgroundColor: 'var(--primary)',
+                  borderRadius: 'var(--radius-lg)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <span style={{
+                    color: 'white',
+                    fontWeight: '600',
+                    fontSize: 'var(--text-sm)'
+                  }}>T</span>
                 </div>
-                <h1 className="text-lg font-semibold text-gray-900 hidden sm:block">
+                <h1 className="hidden sm:block" style={{
+                  fontSize: 'var(--text-lg)',
+                  fontWeight: '600'
+                }}>
                   Tramboory
                 </h1>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Button
-                isIconOnly
-                variant="light"
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              >
-                <BellIcon className="w-5 h-5" />
-              </Button>
+            <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
+              <button className="btn-icon">
+                <BellIcon className="icon-base" />
+              </button>
               
-              {/* User Menu */}
+              {/* Professional User Menu */}
               <Dropdown>
                 <DropdownTrigger>
                   <Avatar
                     src={user.imageUrl}
-                    icon={!user.imageUrl ? <UserIcon className="w-4 h-4" /> : undefined}
+                    icon={!user.imageUrl ? <UserIcon className="icon-base" /> : undefined}
                     size="sm"
-                    className="cursor-pointer ring-2 ring-gray-200 ring-offset-2"
-                    classNames={{
-                      base: "bg-gradient-to-br from-gray-100 to-gray-200",
-                      icon: "text-gray-600",
+                    className="cursor-pointer focus-ring"
+                    style={{
+                      border: `0.125rem solid var(--border-default)`,
+                      boxShadow: `0 0 0 0.125rem var(--surface-base)`
                     }}
                   />
                 </DropdownTrigger>
-                <DropdownMenu className="bg-white shadow-lg border border-gray-200">
-                  <DropdownItem key="profile" className="h-14 gap-2 bg-white hover:bg-gray-50">
-                    <p className="font-medium">{user.fullName}</p>
-                    <p className="text-small text-default-500">{user.primaryEmailAddress?.emailAddress}</p>
+                <DropdownMenu className="dropdown-menu">
+                  <DropdownItem key="profile" className="dropdown-menu-item" style={{
+                    height: 'var(--space-14)',
+                    gap: 'var(--space-2)'
+                  }}>
+                    <p style={{fontWeight: '500'}}>{user.fullName}</p>
+                    <p className="text-neutral-500" style={{fontSize: 'var(--text-sm)'}}>
+                      {user.primaryEmailAddress?.emailAddress}
+                    </p>
                   </DropdownItem>
                   <DropdownItem 
                     key="logout" 
-                    color="danger"
-                    startContent={<ArrowRightOnRectangleIcon className="w-4 h-4" />}
+                    className="dropdown-menu-item danger"
+                    startContent={<ArrowRightOnRectangleIcon className="icon-base" />}
                     onPress={handleSignOut}
-                    className="bg-white hover:bg-red-50"
                   >
                     Cerrar Sesión
                   </DropdownItem>
@@ -285,77 +313,100 @@ export default function Dashboard() {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
+        {/* Professional Sidebar */}
         <aside className={`
-          fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-out
+          fixed inset-y-0 left-0 z-30 surface-base transform transition-transform duration-300 ease-out
           lg:translate-x-0 lg:static lg:inset-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}>
+        `} style={{
+          width: '16rem',
+          borderRight: `0.0625rem solid var(--border-default)`
+        }}>
           <div className="flex flex-col h-full">
-            {/* Sidebar Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
-              <h2 className="text-lg font-semibold text-gray-900">Navegación</h2>
-              <Button
-                isIconOnly
-                variant="light"
-                size="sm"
-                className="text-gray-600 hover:text-gray-900"
-                onPress={() => setSidebarOpen(false)}
+            {/* Professional Sidebar Header */}
+            <div className="flex items-center justify-between lg:hidden" style={{
+              padding: 'var(--space-4)',
+              borderBottom: `0.0625rem solid var(--border-default)`
+            }}>
+              <h2 style={{
+                fontSize: 'var(--text-lg)',
+                fontWeight: '600'
+              }}>Navegación</h2>
+              <button
+                className="btn-icon btn-icon-sm"
+                onClick={() => setSidebarOpen(false)}
               >
-                <XMarkIcon className="w-4 h-4" />
-              </Button>
+                <XMarkIcon className="icon-base" />
+              </button>
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-1">
+            {/* Professional Navigation */}
+            <nav className="navigation-menu flex-1" style={{
+              padding: 'var(--space-4)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-1)'
+            }}>
               {filteredMenuItems.map((item) => {
                 const Icon = item.icon
                 const IconSolid = item.iconSolid
                 const isActive = activeMenuItem === item.id
                 
                 return (
-                  <Button
+                  <button
                     key={item.id}
-                    variant="light"
-                    className={`w-full justify-start h-11 font-medium transition-all duration-200 ${
-                      isActive 
-                        ? "bg-gray-900 text-white hover:bg-gray-800" 
-                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                    startContent={
-                      isActive ? 
-                        <IconSolid className="w-5 h-5" /> : 
-                        <Icon className="w-5 h-5" />
-                    }
-                    onPress={() => {
+                    className={`navigation-menu-item ${isActive ? 'active' : ''}`}
+                    style={{
+                      width: '100%',
+                      justifyContent: 'flex-start',
+                      minHeight: '2.75rem',
+                      fontWeight: '500'
+                    }}
+                    onClick={() => {
                       setActiveMenuItem(item.id)
                       setSidebarOpen(false)
                     }}
                   >
+                    {isActive ? 
+                      <IconSolid className="icon-base" /> : 
+                      <Icon className="icon-base" />
+                    }
                     <span className="text-left flex-1">{item.label}</span>
-                  </Button>
+                  </button>
                 )
               })}
             </nav>
 
-            {/* User Info */}
-            <div className="p-4 border-t border-gray-200">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+            {/* Professional User Info */}
+            <div style={{
+              padding: 'var(--space-4)',
+              borderTop: `0.0625rem solid var(--border-default)`
+            }}>
+              <div className="surface-elevated" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-3)',
+                padding: 'var(--space-3)',
+                borderRadius: 'var(--radius-lg)'
+              }}>
                 <Avatar
                   src={user.imageUrl}
-                  icon={!user.imageUrl ? <UserIcon className="w-4 h-4" /> : undefined}
+                  icon={!user.imageUrl ? <UserIcon className="icon-base" /> : undefined}
                   size="sm"
-                  className="ring-2 ring-gray-200"
-                  classNames={{
-                    base: "bg-gradient-to-br from-gray-100 to-gray-200",
-                    icon: "text-gray-600",
+                  style={{
+                    border: `0.125rem solid var(--border-default)`
                   }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="truncate" style={{
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: '500'
+                  }}>
                     {user.fullName}
                   </p>
-                  <p className="text-xs text-gray-600 truncate">
+                  <p className="text-neutral-600 truncate" style={{
+                    fontSize: 'var(--text-xs)'
+                  }}>
                     {role}
                   </p>
                 </div>
@@ -364,15 +415,19 @@ export default function Dashboard() {
           </div>
         </aside>
 
-        {/* Overlay for mobile */}
+        {/* Mobile Overlay */}
         {sidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-20 lg:hidden"
+            className="fixed inset-0 z-20 lg:hidden"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              backdropFilter: 'blur(0.25rem)'
+            }}
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
-        {/* Main Content */}
+        {/* Professional Main Content */}
         <main className="flex-1 lg:ml-0">
           <div className="p-4 sm:p-6 lg:p-8">
             {renderContent()}

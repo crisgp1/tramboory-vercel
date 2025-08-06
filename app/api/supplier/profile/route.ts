@@ -96,7 +96,7 @@ async function enhanceSupplierData(db: any, supplier: any) {
   
   try {
     // Add order statistics
-    const orderStats = await db.collection("purchaseOrders").aggregate([
+    const orderStats = await db.collection("purchase_orders").aggregate([
       { $match: { supplierId: supplier._id.toString() } },
       { $group: {
           _id: "$status",
@@ -124,7 +124,7 @@ async function enhanceSupplierData(db: any, supplier: any) {
     };
     
     // Get quality issues count
-    const qualityIssues = await db.collection("qualityReports").countDocuments({
+    const qualityIssues = await db.collection("quality_reports").countDocuments({
       supplierId: supplier._id.toString(),
       createdAt: { $gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) } // Last 90 days
     });
@@ -142,7 +142,7 @@ async function enhanceSupplierData(db: any, supplier: any) {
       averageOrderValue: 0
     };
     
-    const completedOrders = await db.collection("purchaseOrders").find({
+    const completedOrders = await db.collection("purchase_orders").find({
       supplierId: supplier._id.toString(),
       status: "RECEIVED"
     }).toArray();
@@ -172,7 +172,7 @@ async function enhanceSupplierData(db: any, supplier: any) {
       }
     }
     
-    const cancelledOrders = await db.collection("purchaseOrders").countDocuments({
+    const cancelledOrders = await db.collection("purchase_orders").countDocuments({
       supplierId: supplier._id.toString(),
       status: "CANCELLED"
     });
@@ -183,12 +183,12 @@ async function enhanceSupplierData(db: any, supplier: any) {
     }
     
     // Calculate return rate
-    const totalProductsDelivered = await db.collection("purchaseOrderItems").aggregate([
+    const totalProductsDelivered = await db.collection("purchase_order_items").aggregate([
       { $match: { supplierId: supplier._id.toString() } },
       { $group: { _id: null, total: { $sum: "$quantity" } } }
     ]).toArray();
     
-    const totalProductsReturned = await db.collection("productReturns").aggregate([
+    const totalProductsReturned = await db.collection("product_returns").aggregate([
       { $match: { supplierId: supplier._id.toString() } },
       { $group: { _id: null, total: { $sum: "$quantity" } } }
     ]).toArray();

@@ -126,34 +126,47 @@ export default function UserList() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <h3 className="text-lg font-semibold">Lista de Usuarios</h3>
-        </CardHeader>
-        <CardBody>
-          <Table aria-label="Lista de usuarios">
-            <TableHeader>
-              <TableColumn>USUARIO</TableColumn>
-              <TableColumn>EMAIL</TableColumn>
-              <TableColumn>ROL</TableColumn>
-              <TableColumn>ÚLTIMO ACCESO</TableColumn>
-              <TableColumn>ACCIONES</TableColumn>
-            </TableHeader>
-            <TableBody>
+      <div className="surface-card">
+        <div style={{
+          padding: 'var(--space-6)',
+          borderBottom: `0.0625rem solid var(--border-default)`
+        }}>
+          <h3 style={{
+            fontSize: 'var(--text-lg)',
+            fontWeight: '600'
+          }}>Lista de Usuarios</h3>
+        </div>
+        <div style={{padding: 'var(--space-6)'}}>
+          <div className="data-table">
+            <div className="table-header">
+              <div className="table-row" style={{display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr'}}>
+                <div className="table-cell">USUARIO</div>
+                <div className="table-cell">EMAIL</div>
+                <div className="table-cell">ROL</div>
+                <div className="table-cell">ÚLTIMO ACCESO</div>
+                <div className="table-cell">ACCIONES</div>
+              </div>
+            </div>
+            <div>
               {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">
+                <div key={user.id} className="table-row" style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr'
+                }}>
+                  <div className="table-cell">
+                    <div style={{display: 'flex', flexDirection: 'column'}}>
+                      <span style={{fontWeight: '500'}}>
                         {user.firstName} {user.lastName}
                       </span>
-                      <span className="text-tiny text-default-400">
+                      <span className="text-neutral-400" style={{
+                        fontSize: 'var(--text-xs)'
+                      }}>
                         ID: {user.id}
                       </span>
                     </div>
-                  </TableCell>
-                  <TableCell>{user.emailAddress}</TableCell>
-                  <TableCell>
+                  </div>
+                  <div className="table-cell">{user.emailAddress}</div>
+                  <div className="table-cell">
                     <Chip 
                       color={getRoleColor(user.role)}
                       variant="flat"
@@ -161,43 +174,53 @@ export default function UserList() {
                     >
                       {ROLES[user.role].label}
                     </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-small">
+                  </div>
+                  <div className="table-cell">
+                    <span style={{fontSize: 'var(--text-sm)'}}>
                       {new Date(user.lastSignInAt).toLocaleDateString()}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="primary"
-                      onPress={() => handleManageRole(user)}
-                      startContent={<CogIcon className="w-4 h-4" />}
+                  </div>
+                  <div className="table-cell">
+                    <button
+                      className="btn-secondary btn-sm"
+                      onClick={() => handleManageRole(user)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--space-2)'
+                      }}
                     >
+                      <CogIcon className="icon-sm" />
                       Gestionar
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                    </button>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          </div>
 
           {users.length === 0 && (
-            <div className="text-center py-8 text-default-500">
+            <div className="text-center text-neutral-500" style={{
+              padding: 'var(--space-8) 0'
+            }}>
               No hay usuarios para mostrar
             </div>
           )}
-        </CardBody>
-      </Card>
+        </div>
+      </div>
 
-      {/* Modal para gestionar roles */}
+      {/* Professional Modal for Role Management */}
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <ModalContent>
-          <ModalHeader>
+        <ModalContent className="surface-modal">
+          <ModalHeader style={{
+            padding: 'var(--space-6)',
+            borderBottom: `0.0625rem solid var(--border-default)`,
+            fontSize: 'var(--text-lg)',
+            fontWeight: '600'
+          }}>
             Gestionar Usuario: {selectedUser?.firstName} {selectedUser?.lastName}
           </ModalHeader>
-          <ModalBody className="pb-6">
+          <ModalBody style={{padding: 'var(--space-6)'}}>
             {selectedUser && (
               <RoleManager
                 targetUserId={selectedUser.id}

@@ -34,9 +34,26 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const date = new Date(dateParam);
-    const dayOfWeek = date.getDay();
+    const date = new Date(dateParam + 'T12:00:00.000Z'); // Parse as UTC noon to avoid timezone issues
+    const dayOfWeek = date.getUTCDay();
+    
+    console.log('Date calculation debug:', {
+      inputDate: dateParam,
+      dateObject: date.toISOString(),
+      dayOfWeek,
+      dayName: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][dayOfWeek]
+    });
     const systemConfig = await SystemConfig.findOne({ isActive: true });
+    
+    console.log('System config loaded:', {
+      found: !!systemConfig,
+      timeBlocksCount: systemConfig?.timeBlocks?.length || 0,
+      timeBlocksDetails: systemConfig?.timeBlocks?.map((b: any) => ({
+        name: b.name,
+        maxEventsPerBlock: b.maxEventsPerBlock,
+        days: b.days
+      }))
+    });
     
     if (!systemConfig) {
       return NextResponse.json(
@@ -57,6 +74,7 @@ export async function GET(request: NextRequest) {
     console.log('Available blocks debug:', {
       date: dateParam,
       dayOfWeek,
+      dayName: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][dayOfWeek],
       isRestDay,
       restDay,
       totalTimeBlocks: systemConfig.timeBlocks?.length || 0,
@@ -64,9 +82,12 @@ export async function GET(request: NextRequest) {
       dayBlocksDetails: dayBlocks.map((b: TimeBlock) => ({
         name: b.name,
         days: b.days,
+        daysNames: b.days.map(d => ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][d]),
         startTime: b.startTime,
         endTime: b.endTime,
-        duration: b.duration
+        duration: b.duration,
+        maxEventsPerBlock: b.maxEventsPerBlock,
+        includesCurrentDay: b.days.includes(dayOfWeek)
       }))
     });
     
@@ -100,11 +121,17 @@ export async function GET(request: NextRequest) {
       }];
     }
     
-    // Get existing reservations for the date
+    // Get existing reservations for the date - use UTC to match stored dates
     const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
+    startOfDay.setUTCHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+    
+    console.log('Querying reservations for date range:', {
+      inputDate: dateParam,
+      startOfDay: startOfDay.toISOString(),
+      endOfDay: endOfDay.toISOString()
+    });
     
     const existingReservations = await Reservation.find({
       eventDate: {
@@ -114,14 +141,33 @@ export async function GET(request: NextRequest) {
       status: { $ne: 'cancelled' }
     });
     
+    console.log('Found existing reservations:', {
+      count: existingReservations.length,
+      reservations: existingReservations.map(r => ({
+        id: r._id.toString(),
+        eventDate: r.eventDate.toISOString(),
+        eventTime: r.eventTime,
+        status: r.status
+      }))
+    });
+    
     // Process each time block
     const availableBlocks = timeBlocksToUse.map((block: TimeBlock) => {
+      console.log(`Processing time block: ${block.name}`, {
+        startTime: block.startTime,
+        endTime: block.endTime,
+        duration: block.duration,
+        halfHourBreak: block.halfHourBreak
+      });
+      
       const slots = generateBlockSlots(
         block.startTime,
         block.endTime,
         block.duration,
         block.halfHourBreak
       );
+      
+      console.log(`Generated ${slots.length} slots for ${block.name}:`, slots.map(s => s.time));
       
       // Check availability for each slot in the block
       const slotsWithAvailability = slots.map(slot => {
@@ -139,6 +185,15 @@ export async function GET(request: NextRequest) {
         
         const isAvailable = reservationsAtTime.length < block.maxEventsPerBlock;
         const remainingCapacity = block.maxEventsPerBlock - reservationsAtTime.length;
+        
+        console.log(`Slot ${slot.time} capacity check:`, {
+          slotTime: slot.time,
+          maxEventsPerBlock: block.maxEventsPerBlock,
+          reservationsAtTime: reservationsAtTime.length,
+          reservationTimes: reservationsAtTime.map(r => r.eventTime),
+          isAvailable,
+          remainingCapacity
+        });
         
         return {
           time: slot.time,

@@ -266,7 +266,7 @@ export default function UserManagement() {
     <div className="space-y-6">
       {/* Header con acciones */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h2 className="text-2xl font-bold text-foreground">
           Gestión de Usuarios
         </h2>
         {isAdmin && (
@@ -365,7 +365,7 @@ export default function UserManagement() {
                       size="sm" 
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
+                      <p className="text-sm font-medium text-foreground">{user.firstName} {user.lastName}</p>
                       <p className="text-xs text-gray-500">ID: {user.id.substring(0, 8)}...</p>
                     </div>
                   </div>
@@ -452,7 +452,7 @@ export default function UserManagement() {
         isOpen={isOpen} 
         onClose={onClose}
         classNames={{
-          backdrop: "bg-gray-900/20",
+          backdrop: "surface-overlay",
           base: "bg-white border border-gray-200",
           header: "border-b border-gray-100 flex-shrink-0",
           body: "p-6",
@@ -474,7 +474,7 @@ export default function UserManagement() {
                     defaultValue={selectedUser?.firstName}
                     isRequired
                     classNames={{
-                      input: "text-gray-900",
+                      input: "text-foreground",
                       inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
                     }}
                   />
@@ -488,7 +488,7 @@ export default function UserManagement() {
                     defaultValue={selectedUser?.lastName}
                     isRequired
                     classNames={{
-                      input: "text-gray-900",
+                      input: "text-foreground",
                       inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
                     }}
                   />
@@ -504,7 +504,7 @@ export default function UserManagement() {
                   defaultValue={selectedUser?.email}
                   isRequired
                   classNames={{
-                    input: "text-gray-900",
+                    input: "text-foreground",
                     inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
                   }}
                 />
@@ -519,8 +519,8 @@ export default function UserManagement() {
                   isRequired
                   isDisabled={!isAdmin}
                   classNames={{
-                    trigger: "bg-gray-50 border-0 hover:bg-gray-100 text-gray-900",
-                    value: "text-gray-900",
+                    trigger: "bg-gray-50 border-0 hover:bg-gray-100 text-foreground",
+                    value: "text-foreground",
                     listboxWrapper: "bg-white",
                     popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
                   }}
@@ -541,8 +541,8 @@ export default function UserManagement() {
                   defaultSelectedKeys={[selectedUser?.isActive ? 'active' : 'inactive']}
                   isRequired
                   classNames={{
-                    trigger: "bg-gray-50 border-0 hover:bg-gray-100 text-gray-900",
-                    value: "text-gray-900",
+                    trigger: "bg-gray-50 border-0 hover:bg-gray-100 text-foreground",
+                    value: "text-foreground",
                     listboxWrapper: "bg-white",
                     popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
                   }}
@@ -570,7 +570,7 @@ export default function UserManagement() {
         isOpen={isDeleteOpen} 
         onClose={onDeleteClose}
         classNames={{
-          backdrop: "bg-gray-900/20",
+          backdrop: "surface-overlay",
           base: "bg-white border border-gray-200",
           header: "border-b border-gray-100 flex-shrink-0",
           body: "p-6",
@@ -599,7 +599,7 @@ export default function UserManagement() {
         isOpen={isCreateOpen} 
         onClose={onCreateClose}
         classNames={{
-          backdrop: "bg-gray-900/20",
+          backdrop: "surface-overlay",
           base: "bg-white border border-gray-200",
           header: "border-b border-gray-100 flex-shrink-0",
           body: "p-6",
@@ -620,7 +620,7 @@ export default function UserManagement() {
                     name="firstName"
                     isRequired
                     classNames={{
-                      input: "text-gray-900",
+                      input: "text-foreground",
                       inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
                     }}
                   />
@@ -633,7 +633,7 @@ export default function UserManagement() {
                     name="lastName"
                     isRequired
                     classNames={{
-                      input: "text-gray-900",
+                      input: "text-foreground",
                       inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
                     }}
                   />
@@ -648,7 +648,7 @@ export default function UserManagement() {
                   type="email"
                   isRequired
                   classNames={{
-                    input: "text-gray-900",
+                    input: "text-foreground",
                     inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
                   }}
                 />
@@ -662,7 +662,7 @@ export default function UserManagement() {
                   type="password"
                   isRequired
                   classNames={{
-                    input: "text-gray-900",
+                    input: "text-foreground",
                     inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
                   }}
                 />
@@ -676,8 +676,8 @@ export default function UserManagement() {
                   defaultSelectedKeys={['customer']}
                   isRequired
                   classNames={{
-                    trigger: "bg-gray-50 border-0 hover:bg-gray-100 text-gray-900",
-                    value: "text-gray-900",
+                    trigger: "bg-gray-50 border-0 hover:bg-gray-100 text-foreground",
+                    value: "text-foreground",
                     listboxWrapper: "bg-white",
                     popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
                   }}

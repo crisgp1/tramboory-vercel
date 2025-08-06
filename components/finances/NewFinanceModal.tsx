@@ -328,8 +328,8 @@ export default function NewFinanceModal({
             variant="flat"
             aria-label="Descripción de la transacción"
             classNames={{
-              input: "text-gray-900",
-              inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+              input: "text-foreground",
+              inputWrapper: "form-input"
             }}
           />
         </div>
@@ -580,7 +580,7 @@ export default function NewFinanceModal({
 
   const renderSummary = () => (
     <div className="space-y-4">
-      <Card className="border border-gray-200">
+      <Card className="surface-card">
         <CardBody className="p-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -695,8 +695,8 @@ export default function NewFinanceModal({
       placement="center"
       isDismissable={!loading}
       classNames={{
-        backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
+        backdrop: "surface-overlay",
+        base: "surface-modal max-h-[90vh] my-4",
         wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto",
         header: "border-b border-gray-100 flex-shrink-0",
         body: "p-6 overflow-y-auto max-h-[calc(90vh-140px)]",
@@ -745,7 +745,7 @@ export default function NewFinanceModal({
                   <React.Fragment key={stepNumber}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                       stepNumber === step
-                        ? 'bg-gray-900 text-white'
+                        ? 'btn-primary text-white'
                         : stepNumber < step
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-600'
@@ -802,7 +802,7 @@ export default function NewFinanceModal({
                   color="primary"
                   onPress={handleNext}
                   size="sm"
-                  className="bg-gray-900 text-white hover:bg-gray-800"
+                  className="btn-primary"
                 >
                   Siguiente
                 </Button>
@@ -812,7 +812,7 @@ export default function NewFinanceModal({
                   onPress={handleSubmit}
                   isLoading={loading}
                   size="sm"
-                  className="bg-gray-900 text-white hover:bg-gray-800"
+                  className="btn-primary"
                 >
                   {loading ? 'Creando...' : 'Crear Transacción'}
                 </Button>

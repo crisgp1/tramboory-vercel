@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const date = new Date(dateParam);
+    const date = new Date(dateParam + 'T12:00:00.000Z'); // Parse as UTC noon to avoid timezone issues
     const systemConfig = await SystemConfig.findOne({ isActive: true });
     
     if (!systemConfig) {
@@ -34,11 +34,11 @@ export async function GET(request: NextRequest) {
       systemConfig.defaultEventDuration
     );
     
-    // Get existing reservations for the date
+    // Get existing reservations for the date - use UTC to match stored dates
     const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
+    startOfDay.setUTCHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    endOfDay.setUTCHours(23, 59, 59, 999);
     
     const existingReservations = await Reservation.find({
       eventDate: {

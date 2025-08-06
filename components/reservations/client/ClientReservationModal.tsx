@@ -33,7 +33,8 @@ import {
   PhotoIcon,
   DocumentArrowUpIcon,
   CheckCircleIcon,
-  CalendarIcon
+  CalendarIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import { Reservation } from '@/types/reservation';
 import { exportToCalendar } from '@/lib/calendar-export';
@@ -155,6 +156,37 @@ export default function ClientReservationModal({
       alert('Error al enviar el comprobante. Inténtalo de nuevo.');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    try {
+      const response = await fetch('/api/reservations/invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reservationId: reservation._id }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error generating invoice');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `factura-reserva-${reservation._id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Factura descargada exitosamente');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error('Error al descargar la factura');
     }
   };
 
@@ -697,6 +729,15 @@ export default function ClientReservationModal({
 
         <ModalFooter className="px-6 py-4">
           <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <Button
+              variant="flat"
+              color="success"
+              startContent={<DocumentTextIcon className="w-4 h-4" />}
+              onPress={handleDownloadInvoice}
+            >
+              Descargar factura
+            </Button>
+            
             <Dropdown>
               <DropdownTrigger>
                 <Button

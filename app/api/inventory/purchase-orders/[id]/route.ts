@@ -69,7 +69,7 @@ export async function GET(
       const order = await SupabaseInventoryService.getPurchaseOrderById(params.id);
       return NextResponse.json(order);
     } catch (error) {
-      if (error.message?.includes('No rows found')) {
+      if (error instanceof Error && error.message?.includes('No rows found')) {
         return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
       }
       throw error;
@@ -129,21 +129,21 @@ export async function PUT(
       const updatedOrder = await SupabaseInventoryService.updatePurchaseOrder(
         params.id,
         {
-          status: updateData.status,
-          subtotal: updateData.subtotal,
-          tax_amount: updateData.tax,
-          total_amount: updateData.total,
-          currency: updateData.currency,
-          expected_delivery_date: updateData.expectedDeliveryDate,
-          delivery_location: updateData.deliveryLocation,
-          notes: updateData.notes,
+          ...(updateData.status && { status: updateData.status as "DRAFT" | "PENDING" | "APPROVED" | "ORDERED" | "RECEIVED" | "CANCELLED" }),
+          ...(updateData.subtotal !== undefined && { subtotal: updateData.subtotal }),
+          ...(updateData.tax !== undefined && { tax_amount: updateData.tax }),
+          ...(updateData.total !== undefined && { total_amount: updateData.total }),
+          ...(updateData.currency && { currency: updateData.currency }),
+          ...(updateData.expectedDeliveryDate && { expected_delivery_date: updateData.expectedDeliveryDate }),
+          ...(updateData.deliveryLocation && { delivery_location: updateData.deliveryLocation }),
+          ...(updateData.notes && { notes: updateData.notes }),
           internal_notes: updateData.internalNotes
         }
       );
 
       return NextResponse.json(updatedOrder);
     } catch (error) {
-      if (error.message?.includes('No rows found')) {
+      if (error instanceof Error && error.message?.includes('No rows found')) {
         return NextResponse.json({ error: 'Orden de compra no encontrada' }, { status: 404 });
       }
       throw error;

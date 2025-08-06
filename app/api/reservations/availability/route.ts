@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
       endDate.setDate(endDate.getDate() + 90);
     }
     
-    // Set times to cover full days
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
+    // Set times to cover full days - use UTC to match stored dates
+    startDate.setUTCHours(0, 0, 0, 0);
+    endDate.setUTCHours(23, 59, 59, 999);
     
     // Get system configuration
     const systemConfig = await SystemConfig.findOne({ isActive: true });
@@ -109,23 +109,22 @@ export async function GET(request: NextRequest) {
       }
       
       // Mark as unavailable if:
-      // 1. It's a blocked rest day
-      // 2. No time blocks are configured for this day (and it's not a releaseable rest day)
-      // 3. Already reached the total capacity for the day
+      // 1. It's a blocked rest day (rest day that cannot be released)
+      // 2. Already reached the total capacity for the day
+      // Note: Days with no time blocks should be 'available' so users can click them,
+      // but will show "no slots available" when selected
       if (isBlockedRestDay) {
         // Blocked rest days are truly unavailable
         availability[dateKey] = 'unavailable';
-      } else if (totalDayCapacity === 0) {
-        // No capacity configured for this day
-        availability[dateKey] = 'unavailable';
-      } else if (count >= totalDayCapacity) {
+      } else if (totalDayCapacity > 0 && count >= totalDayCapacity) {
         // Day is fully booked
         availability[dateKey] = 'unavailable';
       } else if (totalDayCapacity > 0 && count >= totalDayCapacity * 0.5) {
         // Day has limited availability (50% or more booked)
         availability[dateKey] = 'limited';
       } else {
-        // Day is available
+        // Day is available (including days with no time blocks)
+        // Days with no time blocks will show as available but have no slots
         availability[dateKey] = 'available';
       }
       

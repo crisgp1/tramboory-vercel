@@ -4,13 +4,9 @@ import React, { useState } from 'react';
 import { useRole } from '@/hooks/useRole';
 import {
   Card,
-  CardBody,
-  CardHeader,
-  Button,
-  Tabs,
-  Tab,
-  Divider
+  CardBody
 } from '@heroui/react';
+import { PrimaryButton } from '@/components/shared/ui';
 import {
   CubeIcon,
   SparklesIcon,
@@ -80,16 +76,24 @@ export default function ConfigurationManager() {
 
   if (!isAdmin) {
     return (
-      <Card className="max-w-md mx-auto mt-8">
-        <CardBody className="text-center p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Acceso Restringido
-          </h3>
-          <p className="text-gray-600">
-            No tienes permisos para acceder a esta sección.
-          </p>
-        </CardBody>
-      </Card>
+      <div className="surface-card" style={{
+        maxWidth: '28rem',
+        margin: '0 auto',
+        marginTop: 'var(--space-8)',
+        padding: 'var(--space-6)',
+        textAlign: 'center'
+      }}>
+        <h3 style={{
+          fontSize: 'var(--text-lg)',
+          fontWeight: '600',
+          marginBottom: 'var(--space-2)'
+        }}>
+          Acceso Restringido
+        </h3>
+        <p className="text-neutral-600">
+          No tienes permisos para acceder a esta sección.
+        </p>
+      </div>
     );
   }
 
@@ -113,24 +117,28 @@ export default function ConfigurationManager() {
   const activeTabData = configTabs.find(tab => tab.id === activeTab);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Configuración del Sistema
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Administra todos los componentes de las reservas
-          </p>
-        </div>
-      </div>
+    <div className="w-full space-y-6 p-6">
+      {/* Professional Header */}
+      <Card className="bg-white border border-slate-200 shadow-sm">
+        <CardBody className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">
+                Configuración del Sistema
+              </h1>
+              <p className="text-sm text-slate-600">
+                Administra todos los componentes de las reservas
+              </p>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
-      {/* Navigation Tabs */}
-      <Card className="border border-gray-200 shadow-sm">
+      {/* Nordic Navigation Tabs */}
+      <Card className="bg-white border border-slate-200 shadow-sm">
         <CardBody className="p-0">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6" aria-label="Tabs">
+          <div className="border-b border-slate-200">
+            <nav className="flex gap-1 px-6 pt-4" aria-label="Tabs">
               {configTabs.map((tab) => {
                 const Icon = tab.icon;
                 const IconSolid = tab.iconSolid;
@@ -141,30 +149,26 @@ export default function ConfigurationManager() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
-                      flex items-center gap-3 py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200
-                      ${isActive 
-                        ? 'border-gray-900 text-gray-900' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      px-4 py-3 text-sm font-medium transition-colors rounded-t-lg
+                      flex items-center gap-2
+                      ${
+                        isActive
+                          ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                       }
                     `}
                   >
                     <div className={`
-                      w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-200
-                      ${isActive 
-                        ? 'bg-gray-900 text-white' 
-                        : 'bg-gray-100 text-gray-600'
-                      }
+                      w-5 h-5
+                      ${isActive ? 'text-blue-600' : 'text-slate-500'}
                     `}>
                       {isActive ? (
-                        <IconSolid className="w-4 h-4" />
+                        <IconSolid className="icon-sm" />
                       ) : (
-                        <Icon className="w-4 h-4" />
+                        <Icon className="icon-sm" />
                       )}
                     </div>
-                    <div className="text-left hidden sm:block">
-                      <div className="font-medium">{tab.label}</div>
-                      <div className="text-xs text-gray-500 hidden lg:block">{tab.description}</div>
-                    </div>
+                    <span>{tab.label}</span>
                   </button>
                 );
               })}
@@ -173,8 +177,8 @@ export default function ConfigurationManager() {
         </CardBody>
       </Card>
 
-      {/* Active Tab Content */}
-      <div className="min-h-[600px]">
+      {/* Nordic Tab Content */}
+      <div className="min-h-[600px] space-y-6">
         {renderTabContent()}
       </div>
     </div>

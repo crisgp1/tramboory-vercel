@@ -28,12 +28,17 @@ export async function POST(request: NextRequest) {
     // Verificar si ya existe una configuración
     const existingConfig = await SystemConfig.findOne({});
     if (existingConfig) {
-      return NextResponse.json(
-        { success: false, error: 'Ya existe una configuración del sistema. Use PUT para actualizar.' },
-        { status: 400 }
-      );
+      // Si existe, actualizarla en lugar de fallar
+      Object.assign(existingConfig, body);
+      await existingConfig.save();
+      
+      return NextResponse.json({
+        success: true,
+        data: existingConfig
+      });
     }
     
+    // Si no existe, crear una nueva
     const systemConfig = new SystemConfig(body);
     await systemConfig.save();
     

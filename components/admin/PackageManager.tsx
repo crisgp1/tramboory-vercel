@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardBody,
-  CardHeader,
-  Button,
   Input,
   Textarea,
   Modal,
@@ -26,8 +24,11 @@ import {
   DropdownMenu,
   DropdownItem,
   Spinner,
-  Switch
+  Switch,
+  Button
 } from '@heroui/react';
+import { PrimaryButton, SecondaryButton } from '@/components/shared/ui';
+import { Package, Plus, Edit3, Trash2, Eye, Users, Clock } from 'lucide-react';
 import {
   PlusIcon,
   CubeIcon,
@@ -236,65 +237,76 @@ export default function PackageManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-            <CubeIcon className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+            <Package className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">
               Gestión de Paquetes
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            </h1>
+            <p className="text-sm text-slate-600">
               Administra los paquetes de fiestas disponibles
             </p>
           </div>
         </div>
-        <Button
-          startContent={<PlusIcon className="w-4 h-4" />}
-          onPress={handleCreate}
-          className="bg-gray-900 text-white hover:bg-gray-800"
-          size="lg"
-        >
+        <PrimaryButton onClick={handleCreate}>
+          <Plus className="w-4 h-4" />
           Nuevo Paquete
-        </Button>
+        </PrimaryButton>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-gray-900 mb-2">
-              {packages.length}
+        <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <CardBody className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Total de Paquetes</p>
+                <p className="text-2xl font-bold text-slate-900">{packages.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
-            <div className="text-sm text-gray-600">Total de Paquetes</div>
           </CardBody>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-green-600 mb-2">
-              {packages.filter(p => p.isActive).length}
+        <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <CardBody className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Paquetes Activos</p>
+                <p className="text-2xl font-bold text-green-600">{packages.filter(p => p.isActive).length}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-green-600" />
+              </div>
             </div>
-            <div className="text-sm text-gray-600">Paquetes Activos</div>
           </CardBody>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-blue-600 mb-2">
-              {packages.length > 0 ? Math.round(packages.reduce((sum, p) => sum + p.maxGuests, 0) / packages.length) : 0}
+        <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <CardBody className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Promedio de Invitados</p>
+                <p className="text-2xl font-bold text-blue-600">{packages.length > 0 ? Math.round(packages.reduce((sum, p) => sum + p.maxGuests, 0) / packages.length) : 0}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
-            <div className="text-sm text-gray-600">Promedio de Invitados</div>
           </CardBody>
         </Card>
       </div>
 
       {/* Packages Table */}
-      <Card className="border border-gray-200 shadow-sm">
+      <Card className="bg-white border border-slate-200 shadow-sm">
         <CardBody className="p-0">
           {loading ? (
             <div className="flex flex-col justify-center items-center py-12">
-              <Spinner size="lg" className="text-gray-900" />
-              <p className="text-gray-500 mt-4">Cargando paquetes...</p>
+              <Spinner size="lg" className="text-foreground" />
+              <p className="text-neutral-500 mt-4">Cargando paquetes...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -302,7 +314,7 @@ export default function PackageManager() {
                 aria-label="Tabla de paquetes"
                 classNames={{
                   wrapper: "shadow-none",
-                  th: "bg-gray-50 text-gray-700 font-semibold",
+                  th: "surface-elevated text-neutral-700 font-semibold",
                   td: "py-4"
                 }}
               >
@@ -322,11 +334,11 @@ export default function PackageManager() {
                             <CubeIcon className="w-5 h-5 text-gray-600" />
                           </div>
                           <div>
-                            <div className="font-semibold text-gray-900">{pkg.name}</div>
-                            <div className="text-sm text-gray-500 mt-1 max-w-xs truncate">
+                            <div className="font-semibold text-foreground">{pkg.name}</div>
+                            <div className="text-sm text-neutral-500 mt-1 max-w-xs truncate">
                               {pkg.description}
                             </div>
-                            <div className="md:hidden text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            <div className="md:hidden text-xs text-neutral-500 mt-1 flex items-center gap-1">
                               <UsersIcon className="w-3 h-3" />
                               {pkg.maxGuests} invitados • {pkg.duration}h
                             </div>
@@ -335,23 +347,23 @@ export default function PackageManager() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2">
-                          <ClockIcon className="w-4 h-4 text-gray-500" />
+                          <ClockIcon className="w-4 h-4 text-neutral-500" />
                           <span className="font-medium">{pkg.duration}h</span>
-                          <span className="text-gray-500">•</span>
-                          <UsersIcon className="w-4 h-4 text-gray-500" />
+                          <span className="text-neutral-500">•</span>
+                          <UsersIcon className="w-4 h-4 text-neutral-500" />
                           <span className="font-medium">{pkg.maxGuests}</span>
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
                         <div className="space-y-1">
                           <div className="text-sm">
-                            <span className="text-gray-500">Entre semana:</span> {formatCurrency(pkg.pricing.weekday)}
+                            <span className="text-neutral-500">Entre semana:</span> {formatCurrency(pkg.pricing.weekday)}
                           </div>
                           <div className="text-sm">
-                            <span className="text-gray-500">Fin de semana:</span> {formatCurrency(pkg.pricing.weekend)}
+                            <span className="text-neutral-500">Fin de semana:</span> {formatCurrency(pkg.pricing.weekend)}
                           </div>
                           <div className="text-sm">
-                            <span className="text-gray-500">Festivo:</span> {formatCurrency(pkg.pricing.holiday)}
+                            <span className="text-neutral-500">Festivo:</span> {formatCurrency(pkg.pricing.holiday)}
                           </div>
                         </div>
                       </TableCell>
@@ -379,7 +391,7 @@ export default function PackageManager() {
                             isIconOnly
                             variant="light"
                             size="sm"
-                            className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                            className="text-neutral-600 hover:text-neutral-700 hover:bg-neutral-50"
                             onPress={() => handleEdit(pkg)}
                           >
                             <PencilIcon className="w-4 h-4" />
@@ -413,19 +425,19 @@ export default function PackageManager() {
         isDismissable={!submitting}
         backdrop="opaque"
         classNames={{
-          backdrop: "bg-black/60 backdrop-blur-sm",
-          base: "bg-white shadow-2xl border-0",
+          backdrop: "surface-overlay",
+          base: "surface-modal",
           wrapper: "z-[1001] items-center justify-center p-4",
-          header: "border-b border-gray-200 bg-white",
+          header: "border-b border-gray-200",
           body: "py-6",
-          footer: "border-t border-gray-200 bg-gray-50"
+          footer: "border-t border-gray-200 surface-elevated"
         }}
       >
         <ModalContent>
           {(onClose) => (
             <>
               <ModalHeader className="px-6 py-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-foreground">
                   {editingPackage ? 'Editar paquete' : 'Nuevo paquete'}
                 </h3>
               </ModalHeader>
@@ -442,8 +454,8 @@ export default function PackageManager() {
                       onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
                       variant="flat"
                       classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        input: "text-foreground",
+                        inputWrapper: "form-input"
                       }}
                     />
                   </div>
@@ -463,8 +475,8 @@ export default function PackageManager() {
                         variant="flat"
                         endContent={<span className="text-gray-400 text-sm">hrs</span>}
                         classNames={{
-                          input: "text-gray-900",
-                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                          input: "text-foreground",
+                          inputWrapper: "form-input"
                         }}
                       />
                     </div>
@@ -481,8 +493,8 @@ export default function PackageManager() {
                         onValueChange={(value) => setFormData(prev => ({ ...prev, maxGuests: value }))}
                         variant="flat"
                         classNames={{
-                          input: "text-gray-900",
-                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                          input: "text-foreground",
+                          inputWrapper: "form-input"
                         }}
                       />
                     </div>
@@ -494,7 +506,7 @@ export default function PackageManager() {
                     </label>
                     <div className="grid grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Lunes - Jueves</label>
+                        <label className="block text-xs text-neutral-500 mb-1">Lunes - Jueves</label>
                         <Input
                           placeholder="2500"
                           type="number"
@@ -505,14 +517,14 @@ export default function PackageManager() {
                           variant="flat"
                           startContent={<span className="text-gray-400">$</span>}
                           classNames={{
-                            input: "text-gray-900",
-                            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                            input: "text-foreground",
+                            inputWrapper: "form-input"
                           }}
                         />
                       </div>
                       
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Viernes - Domingo</label>
+                        <label className="block text-xs text-neutral-500 mb-1">Viernes - Domingo</label>
                         <Input
                           placeholder="3000"
                           type="number"
@@ -523,14 +535,14 @@ export default function PackageManager() {
                           variant="flat"
                           startContent={<span className="text-gray-400">$</span>}
                           classNames={{
-                            input: "text-gray-900",
-                            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                            input: "text-foreground",
+                            inputWrapper: "form-input"
                           }}
                         />
                       </div>
                       
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Días festivos</label>
+                        <label className="block text-xs text-neutral-500 mb-1">Días festivos</label>
                         <Input
                           placeholder="3500"
                           type="number"
@@ -541,8 +553,8 @@ export default function PackageManager() {
                           variant="flat"
                           startContent={<span className="text-gray-400">$</span>}
                           classNames={{
-                            input: "text-gray-900",
-                            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                            input: "text-foreground",
+                            inputWrapper: "form-input"
                           }}
                         />
                       </div>
@@ -560,8 +572,8 @@ export default function PackageManager() {
                       minRows={2}
                       variant="flat"
                       classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        input: "text-foreground",
+                        inputWrapper: "form-input"
                       }}
                     />
                   </div>
@@ -577,8 +589,8 @@ export default function PackageManager() {
                       minRows={2}
                       variant="flat"
                       classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        input: "text-foreground",
+                        inputWrapper: "form-input"
                       }}
                     />
                   </div>
@@ -604,14 +616,19 @@ export default function PackageManager() {
                 >
                   Cancelar
                 </Button>
-                <Button
-                  onPress={handleSubmit}
-                  isLoading={submitting}
-                  size="sm"
-                  className="bg-gray-900 text-white"
+                <button
+                  className="btn-primary btn-sm"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)'
+                  }}
                 >
+                  {submitting && <div className="loading-spinner" style={{width: 'var(--space-3)', height: 'var(--space-3)'}}></div>}
                   {submitting ? 'Guardando...' : (editingPackage ? 'Actualizar' : 'Crear')}
-                </Button>
+                </button>
               </ModalFooter>
             </>
           )}

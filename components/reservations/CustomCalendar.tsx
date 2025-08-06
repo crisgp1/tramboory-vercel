@@ -74,10 +74,17 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    if (date < today) return true;
+    // Add 1-week minimum advance booking rule
+    const oneWeekFromNow = new Date();
+    oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+    oneWeekFromNow.setHours(0, 0, 0, 0);
+    
+    if (date < oneWeekFromNow) return true;
     if (maxDate && date > maxDate) return true;
     
-    return getDateAvailability(date) === 'unavailable';
+    // Only disable if it's truly unavailable (blocked rest days)
+    const availability = getDateAvailability(date);
+    return availability === 'unavailable';
   };
 
   const isDateSelected = (date: Date) => {
@@ -212,10 +219,15 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
                 return <motion.div key={index} className="h-14" />;
               }
 
-              const availability = getDateAvailability(date);
               const disabled = isDateDisabled(date);
               const selected = isDateSelected(date);
               const today = isToday(date);
+              const isWithinWeek = (() => {
+                const oneWeekFromNow = new Date();
+                oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+                oneWeekFromNow.setHours(0, 0, 0, 0);
+                return date < oneWeekFromNow;
+              })();
 
               return (
                 <motion.button
@@ -244,11 +256,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
                         ? 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 ring-2 ring-blue-300 border-blue-400'
                         : disabled
                           ? 'text-gray-300 cursor-not-allowed bg-gray-50 border-gray-200'
-                          : availability === 'available'
-                            ? 'text-gray-700 hover:bg-gradient-to-br hover:from-green-50 hover:to-green-100 hover:text-green-700 hover:border-green-300 bg-white border-gray-200'
-                            : availability === 'limited'
-                              ? 'text-gray-700 hover:bg-gradient-to-br hover:from-yellow-50 hover:to-yellow-100 hover:text-yellow-700 hover:border-yellow-300 bg-white border-gray-200'
-                              : 'text-gray-300 cursor-not-allowed bg-gray-50 border-gray-200'
+                          : 'text-gray-700 hover:bg-gradient-to-br hover:from-rose-50 hover:to-pink-50 hover:text-rose-700 hover:border-rose-300 bg-white border-gray-200'
                     }
                   `}
                 >
@@ -260,21 +268,13 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
                     {date.getDate()}
                   </motion.span>
                   
-                  {/* Availability indicator */}
-                  {!disabled && !selected && (
+                  {/* Warning indicator for dates within one week */}
+                  {!disabled && !selected && isWithinWeek && (
                     <motion.div 
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: index * 0.02 + 0.2, type: "spring" }}
-                      className={`
-                        absolute top-2 right-2 w-2.5 h-2.5 rounded-full shadow-sm
-                        ${availability === 'available' 
-                          ? 'bg-green-500 shadow-green-200' 
-                          : availability === 'limited' 
-                            ? 'bg-yellow-500 shadow-yellow-200' 
-                            : 'bg-red-500 shadow-red-200'
-                        }
-                      `} 
+                      className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-200" 
                     />
                   )}
                   
@@ -303,33 +303,24 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Legend */}
+      {/* Information Panel */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.8 }}
-        className="calendar-legend bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200 p-6"
+        className="calendar-legend bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-blue-200 p-6"
       >
-        <div className="flex items-center justify-center gap-8 text-sm">
-          {[
-            { color: 'bg-green-500', label: 'Disponible', shadow: 'shadow-green-200' },
-            { color: 'bg-yellow-500', label: 'Limitado', shadow: 'shadow-yellow-200' },
-            { color: 'bg-red-500', label: 'No disponible', shadow: 'shadow-red-200' }
-          ].map((item, index) => (
-            <motion.div 
-              key={item.label}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.9 + index * 0.1 }}
-              className="flex items-center gap-3"
-            >
-              <motion.div 
-                whileHover={{ scale: 1.2, rotate: 360 }}
-                className={`w-4 h-4 rounded-full shadow-md ${item.color} ${item.shadow}`}
-              />
-              <span className="text-gray-700 font-medium">{item.label}</span>
-            </motion.div>
-          ))}
+        <div className="text-center space-y-3">
+          <div className="flex items-center justify-center gap-2 text-sm font-semibold text-blue-800">
+            <div className="w-4 h-4 rounded-full bg-blue-500 shadow-sm" />
+            <span>Selecciona una fecha para ver horarios disponibles</span>
+          </div>
+          <div className="text-xs text-blue-600">
+            📅 Las reservaciones deben hacerse con al menos 1 semana de anticipación
+          </div>
+          <div className="text-xs text-gray-500">
+            Los horarios y disponibilidad se mostrarán después de seleccionar tu fecha
+          </div>
         </div>
       </motion.div>
     </motion.div>

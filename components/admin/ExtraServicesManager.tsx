@@ -224,9 +224,9 @@ export default function ExtraServicesManager() {
       fotografia: 'bg-green-100 text-green-700',
       sonido: 'bg-yellow-100 text-yellow-700',
       transporte: 'bg-red-100 text-red-700',
-      otros: 'bg-gray-100 text-gray-700'
+      otros: 'bg-neutral-100 text-neutral-700'
     };
-    return colors[category] || 'bg-gray-100 text-gray-700';
+    return colors[category] || 'bg-neutral-100 text-neutral-700';
   };
 
   return (
@@ -234,14 +234,14 @@ export default function ExtraServicesManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 btn-primary rounded-lg flex items-center justify-center">
             <SparklesIcon className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <h2 className="text-2xl font-semibold text-foreground">
               Servicios Extras
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-neutral-600 mt-1">
               Gestiona los servicios adicionales disponibles
             </p>
           </div>
@@ -249,7 +249,7 @@ export default function ExtraServicesManager() {
         <Button
           startContent={<PlusIcon className="w-4 h-4" />}
           onPress={handleCreate}
-          className="bg-gray-900 text-white hover:bg-gray-800"
+          className="btn-primary"
           size="lg"
         >
           Nuevo Servicio
@@ -260,10 +260,10 @@ export default function ExtraServicesManager() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-gray-900 mb-2">
+            <div className="text-2xl font-semibold text-foreground mb-2">
               {extraServices.length}
             </div>
-            <div className="text-sm text-gray-600">Total de Servicios</div>
+            <div className="text-sm text-neutral-600">Total de Servicios</div>
           </CardBody>
         </Card>
         
@@ -272,7 +272,7 @@ export default function ExtraServicesManager() {
             <div className="text-2xl font-semibold text-green-600 mb-2">
               {extraServices.filter(s => s.isActive).length}
             </div>
-            <div className="text-sm text-gray-600">Servicios Activos</div>
+            <div className="text-sm text-neutral-600">Servicios Activos</div>
           </CardBody>
         </Card>
         
@@ -281,7 +281,7 @@ export default function ExtraServicesManager() {
             <div className="text-2xl font-semibold text-blue-600 mb-2">
               {new Set(extraServices.map(s => s.category)).size}
             </div>
-            <div className="text-sm text-gray-600">Categorías</div>
+            <div className="text-sm text-neutral-600">Categorías</div>
           </CardBody>
         </Card>
         
@@ -290,7 +290,7 @@ export default function ExtraServicesManager() {
             <div className="text-2xl font-semibold text-orange-600 mb-2">
               {extraServices.length > 0 ? formatCurrency(extraServices.reduce((sum, s) => sum + s.price, 0) / extraServices.length) : '$0'}
             </div>
-            <div className="text-sm text-gray-600">Precio Promedio</div>
+            <div className="text-sm text-neutral-600">Precio Promedio</div>
           </CardBody>
         </Card>
       </div>
@@ -300,8 +300,8 @@ export default function ExtraServicesManager() {
         <CardBody className="p-0">
           {loading ? (
             <div className="flex flex-col justify-center items-center py-12">
-              <Spinner size="lg" className="text-gray-900" />
-              <p className="text-gray-500 mt-4">Cargando servicios extras...</p>
+              <Spinner size="lg" className="text-foreground" />
+              <p className="text-neutral-500 mt-4">Cargando servicios extras...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -309,7 +309,7 @@ export default function ExtraServicesManager() {
                 aria-label="Tabla de servicios extras"
                 classNames={{
                   wrapper: "shadow-none",
-                  th: "bg-gray-50 text-gray-700 font-semibold",
+                  th: "surface-elevated text-neutral-700 font-semibold",
                   td: "py-4"
                 }}
               >
@@ -326,16 +326,16 @@ export default function ExtraServicesManager() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <SparklesIcon className="w-5 h-5 text-gray-600" />
+                            <SparklesIcon className="w-5 h-5 text-neutral-600" />
                           </div>
                           <div>
-                            <div className="font-semibold text-gray-900">{service.name}</div>
+                            <div className="font-semibold text-foreground">{service.name}</div>
                             {service.description && (
-                              <div className="text-sm text-gray-500 mt-1 max-w-xs truncate">
+                              <div className="text-sm text-neutral-500 mt-1 max-w-xs truncate">
                                 {service.description}
                               </div>
                             )}
-                            <div className="lg:hidden text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            <div className="lg:hidden text-xs text-neutral-500 mt-1 flex items-center gap-1">
                               <CurrencyDollarIcon className="w-3 h-3" />
                               {formatCurrency(service.price)}
                             </div>
@@ -353,7 +353,7 @@ export default function ExtraServicesManager() {
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
                         <div className="flex items-center gap-2">
-                          <CurrencyDollarIcon className="w-4 h-4 text-gray-500" />
+                          <CurrencyDollarIcon className="w-4 h-4 text-neutral-500" />
                           <span className="font-medium">{formatCurrency(service.price)}</span>
                         </div>
                       </TableCell>
@@ -381,7 +381,7 @@ export default function ExtraServicesManager() {
                             isIconOnly
                             variant="light"
                             size="sm"
-                            className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                            className="text-neutral-600 hover:text-neutral-700 hover:bg-neutral-50"
                             onPress={() => handleEdit(service)}
                           >
                             <PencilIcon className="w-4 h-4" />
@@ -415,7 +415,7 @@ export default function ExtraServicesManager() {
         isDismissable={!submitting}
         backdrop="opaque"
         classNames={{
-          backdrop: "bg-black/60 backdrop-blur-sm",
+          backdrop: "surface-overlay",
           base: "bg-white shadow-2xl border-0",
           wrapper: "z-[1001] items-center justify-center p-4",
           header: "border-b border-gray-200 bg-white",
@@ -427,7 +427,7 @@ export default function ExtraServicesManager() {
           {(onClose) => (
             <>
               <ModalHeader className="px-6 py-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-foreground">
                   {editingService ? 'Editar servicio' : 'Nuevo servicio'}
                 </h3>
               </ModalHeader>
@@ -435,7 +435,7 @@ export default function ExtraServicesManager() {
               <ModalBody>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
                       Nombre del servicio *
                     </label>
                     <Input
@@ -444,15 +444,15 @@ export default function ExtraServicesManager() {
                       onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
                       variant="flat"
                       classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        input: "text-foreground",
+                        inputWrapper: "form-input"
                       }}
                     />
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
                         Precio *
                       </label>
                       <Input
@@ -462,22 +462,22 @@ export default function ExtraServicesManager() {
                         value={formData.price}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, price: value }))}
                         variant="flat"
-                        startContent={<span className="text-gray-400">$</span>}
+                        startContent={<span className="text-neutral-400">$</span>}
                         classNames={{
-                          input: "text-gray-900",
-                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                          input: "text-foreground",
+                          inputWrapper: "form-input"
                         }}
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
                         Categoría *
                       </label>
                       <select
                         value={formData.category}
                         onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                        className="w-full px-3 py-2 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-900 focus:bg-white text-gray-900"
+                        className="w-full px-3 py-2 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-1 focus-ring focus:bg-white text-foreground"
                       >
                         {categories.map((category) => (
                           <option key={category.key} value={category.key}>
@@ -489,7 +489,7 @@ export default function ExtraServicesManager() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
                       Descripción
                     </label>
                     <Textarea
@@ -499,8 +499,8 @@ export default function ExtraServicesManager() {
                       minRows={2}
                       variant="flat"
                       classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        input: "text-foreground",
+                        inputWrapper: "form-input"
                       }}
                     />
                   </div>
@@ -511,7 +511,7 @@ export default function ExtraServicesManager() {
                       onValueChange={(value) => setFormData(prev => ({ ...prev, isActive: value }))}
                       size="sm"
                     />
-                    <span className="text-sm text-gray-700">Servicio activo</span>
+                    <span className="text-sm text-neutral-700">Servicio activo</span>
                   </div>
                 </div>
               </ModalBody>
@@ -522,7 +522,7 @@ export default function ExtraServicesManager() {
                   onPress={onClose}
                   isDisabled={submitting}
                   size="sm"
-                  className="text-gray-600"
+                  className="text-neutral-600"
                 >
                   Cancelar
                 </Button>
@@ -530,7 +530,7 @@ export default function ExtraServicesManager() {
                   onPress={handleSubmit}
                   isLoading={submitting}
                   size="sm"
-                  className="bg-gray-900 text-white"
+                  className="btn-primary text-white"
                 >
                   {submitting ? 'Guardando...' : (editingService ? 'Actualizar' : 'Crear')}
                 </Button>

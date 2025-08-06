@@ -122,9 +122,13 @@ export default function SupplierDashboardUber({ dashboardData }: SupplierDashboa
   // Notifications are now handled by SupplierNotificationCenter component
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{backgroundColor: 'var(--background)'}}>
       {/* Header Uber-style */}
-      <header className="bg-black text-white sticky top-0 z-50">
+      <header className="surface-base sticky top-0 z-50" style={{
+        backgroundColor: 'var(--primary)',
+        color: 'white',
+        borderBottom: `0.0625rem solid var(--border-default)`
+      }}>
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             {/* Logo y nombre */}
@@ -210,9 +214,14 @@ export default function SupplierDashboardUber({ dashboardData }: SupplierDashboa
 
       {/* Menú móvil */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setMobileMenuOpen(false)}>
+        <div className="lg:hidden fixed inset-0 z-40" style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.5)'
+        }} onClick={() => setMobileMenuOpen(false)}>
           <div className="bg-white w-64 h-full shadow-lg" onClick={e => e.stopPropagation()}>
-            <div className="p-4 bg-black text-white">
+            <div className="p-4" style={{
+              backgroundColor: 'var(--primary)',
+              color: 'white'
+            }}>
               <h2 className="font-bold text-lg">Menú</h2>
             </div>
             <nav className="p-4 space-y-2">

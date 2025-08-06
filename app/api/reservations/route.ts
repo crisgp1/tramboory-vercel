@@ -99,9 +99,9 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar si es día de descanso
-    const eventDateObj = new Date(eventDate);
-    const dayOfWeek = eventDateObj.getDay();
+    // Verificar si es día de descanso - use UTC to avoid timezone issues
+    const eventDateObj = new Date(eventDate + (eventDate.includes('T') ? '' : 'T12:00:00.000Z'));
+    const dayOfWeek = eventDateObj.getUTCDay();
     const restDay = systemConfig.restDays?.find((rd: any) => rd.day === dayOfWeek);
     const isRestDay = !!restDay;
     
@@ -161,11 +161,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Verificar disponibilidad del slot de tiempo
-    // Obtener todas las reservas existentes para esa fecha
+    // Obtener todas las reservas existentes para esa fecha - use UTC to match stored dates
     const startOfDay = new Date(eventDate);
-    startOfDay.setHours(0, 0, 0, 0);
+    startOfDay.setUTCHours(0, 0, 0, 0);
     const endOfDay = new Date(eventDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    endOfDay.setUTCHours(23, 59, 59, 999);
     
     const existingReservations = await Reservation.find({
       eventDate: {
@@ -392,6 +392,16 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Log antes de crear la reserva
+    console.log('Creating new reservation with data:', {
+      packageName: packageConfig.name,
+      eventDate: eventDateObj,
+      eventTime,
+      customerEmail: customer.email,
+      childName: child.name,
+      total: total
+    });
+    
     // Crear la reserva
     const newReservation = new Reservation({
       package: {
@@ -427,10 +437,51 @@ export async function POST(request: NextRequest) {
       }
     });
     
-    await newReservation.save();
+    // Guardar la reserva con validación
+    let savedReservation;
+    try {
+      savedReservation = await newReservation.save();
+      console.log('Save operation completed, reservation ID:', savedReservation._id);
+    } catch (saveError: any) {
+      console.error('Error saving reservation to MongoDB:', saveError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Error al guardar la reserva: ' + (saveError.message || 'Unknown error'),
+          details: saveError.errors ? Object.keys(saveError.errors).map(key => ({
+            field: key,
+            message: saveError.errors[key].message
+          })) : undefined
+        },
+        { status: 500 }
+      );
+    }
+    
+    // Verificar que se guardó correctamente
+    const verifyReservation = await Reservation.findById(savedReservation._id);
+    if (!verifyReservation) {
+      console.error('Reservation was not found after save:', savedReservation._id);
+      
+      // Intentar contar reservas para verificar conexión
+      const count = await Reservation.countDocuments();
+      console.log('Total reservations in database:', count);
+      
+      return NextResponse.json(
+        { success: false, error: 'La reserva no se pudo verificar en la base de datos' },
+        { status: 500 }
+      );
+    }
+    
+    console.log('Reservation saved and verified successfully:', {
+      id: savedReservation._id.toString(),
+      eventDate: savedReservation.eventDate,
+      eventTime: savedReservation.eventTime,
+      status: savedReservation.status,
+      customerEmail: savedReservation.customer.email
+    });
     
     return NextResponse.json(
-      { success: true, data: newReservation },
+      { success: true, data: savedReservation },
       { status: 201 }
     );
   } catch (error) {

@@ -27,7 +27,9 @@ import {
   DropdownItem,
   Spinner,
   Switch,
-  Divider
+  Divider,
+  Select,
+  SelectItem
 } from '@heroui/react';
 import {
   PlusIcon,
@@ -50,6 +52,7 @@ interface FoodOption {
   name: string;
   basePrice: number;
   description?: string;
+  category: 'main' | 'appetizer' | 'dessert' | 'beverage';
   extras: FoodExtra[];
   isActive: boolean;
   createdAt: string;
@@ -60,6 +63,7 @@ interface FoodFormData {
   name: string;
   basePrice: string;
   description: string;
+  category: 'main' | 'appetizer' | 'dessert' | 'beverage';
   extras: FoodExtra[];
   isActive: boolean;
 }
@@ -76,6 +80,7 @@ export default function FoodOptionsManager() {
     name: '',
     basePrice: '',
     description: '',
+    category: 'main',
     extras: [],
     isActive: true
   });
@@ -110,6 +115,7 @@ export default function FoodOptionsManager() {
       name: '',
       basePrice: '',
       description: '',
+      category: 'main',
       extras: [],
       isActive: true
     });
@@ -128,6 +134,7 @@ export default function FoodOptionsManager() {
       name: food.name,
       basePrice: food.basePrice.toString(),
       description: food.description || '',
+      category: food.category,
       extras: [...food.extras],
       isActive: food.isActive
     });
@@ -173,6 +180,7 @@ export default function FoodOptionsManager() {
         name: formData.name.trim(),
         basePrice: parseFloat(formData.basePrice),
         description: formData.description.trim(),
+        category: formData.category,
         extras: formData.extras,
         isActive: formData.isActive
       };
@@ -245,33 +253,45 @@ export default function FoodOptionsManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-            <CakeIcon className="w-6 h-6 text-white" />
+          <div style={{
+          width: 'var(--space-12)',
+          height: 'var(--space-12)',
+          backgroundColor: 'var(--primary)',
+          borderRadius: 'var(--radius-lg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+            <CakeIcon className="icon-base text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <h2 className="text-2xl font-semibold text-foreground">
               Opciones de Comida
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-neutral-600 mt-1">
               Gestiona las opciones de alimentos y bebidas
             </p>
           </div>
         </div>
-        <Button
-          startContent={<PlusIcon className="w-4 h-4" />}
-          onPress={handleCreate}
-          className="bg-gray-900 text-white hover:bg-gray-800"
-          size="lg"
+        <button
+          className="btn-primary"
+          onClick={handleCreate}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)'
+          }}
         >
+          <PlusIcon className="icon-base" />
           Nueva Opción
-        </Button>
+        </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
           <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-gray-900 mb-2">
+            <div className="text-2xl font-semibold text-foreground mb-2">
               {foodOptions.length}
             </div>
             <div className="text-sm text-gray-600">Total de Opciones</div>
@@ -302,7 +322,7 @@ export default function FoodOptionsManager() {
         <CardBody className="p-0">
           {loading ? (
             <div className="flex flex-col justify-center items-center py-12">
-              <Spinner size="lg" className="text-gray-900" />
+              <Spinner size="lg" className="text-foreground" />
               <p className="text-gray-500 mt-4">Cargando opciones de comida...</p>
             </div>
           ) : (
@@ -331,7 +351,22 @@ export default function FoodOptionsManager() {
                             <CakeIcon className="w-5 h-5 text-gray-600" />
                           </div>
                           <div>
-                            <div className="font-semibold text-gray-900">{food.name}</div>
+                            <div className="font-semibold text-foreground">{food.name}</div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Chip
+                                size="sm"
+                                variant="flat"
+                                color={
+                                  food.category === 'main' ? 'primary' :
+                                  food.category === 'appetizer' ? 'secondary' :
+                                  food.category === 'dessert' ? 'success' : 'warning'
+                                }
+                              >
+                                {food.category === 'main' ? 'Principal' :
+                                 food.category === 'appetizer' ? 'Entrada' :
+                                 food.category === 'dessert' ? 'Postre' : 'Bebida'}
+                              </Chip>
+                            </div>
                             {food.description && (
                               <div className="text-sm text-gray-500 mt-1 max-w-xs truncate">
                                 {food.description}
@@ -425,8 +460,8 @@ export default function FoodOptionsManager() {
         isDismissable={!submitting}
         backdrop="opaque"
         classNames={{
-          backdrop: "bg-black/60 backdrop-blur-sm",
-          base: "bg-white shadow-2xl border-0",
+          backdrop: "surface-overlay",
+          base: "surface-modal",
           wrapper: "z-[1001] items-center justify-center p-4",
           header: "border-b border-gray-200 bg-white",
           body: "py-6",
@@ -437,7 +472,7 @@ export default function FoodOptionsManager() {
           {(onClose) => (
             <>
               <ModalHeader className="px-6 py-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-foreground">
                   {editingFood ? 'Editar opción de comida' : 'Nueva opción de comida'}
                 </h3>
               </ModalHeader>
@@ -455,8 +490,7 @@ export default function FoodOptionsManager() {
                         onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
                         variant="flat"
                         classNames={{
-                          input: "text-gray-900",
-                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                          inputWrapper: "form-input"
                         }}
                       />
                     </div>
@@ -474,8 +508,7 @@ export default function FoodOptionsManager() {
                         variant="flat"
                         startContent={<span className="text-gray-400">$</span>}
                         classNames={{
-                          input: "text-gray-900",
-                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                          inputWrapper: "form-input"
                         }}
                       />
                     </div>
@@ -501,14 +534,36 @@ export default function FoodOptionsManager() {
                       minRows={2}
                       variant="flat"
                       classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
+                        inputWrapper: "form-input"
                       }}
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Categoría *
+                    </label>
+                    <Select
+                      placeholder="Selecciona una categoría"
+                      selectedKeys={[formData.category]}
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] as 'main' | 'appetizer' | 'dessert' | 'beverage';
+                        setFormData(prev => ({ ...prev, category: selected }));
+                      }}
+                      variant="flat"
+                      classNames={{
+                        trigger: "form-input"
+                      }}
+                    >
+                      <SelectItem key="main" value="main">Plato Principal</SelectItem>
+                      <SelectItem key="appetizer" value="appetizer">Entrada</SelectItem>
+                      <SelectItem key="dessert" value="dessert">Postre</SelectItem>
+                      <SelectItem key="beverage" value="beverage">Bebida</SelectItem>
+                    </Select>
+                  </div>
+
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-gray-900">Extras disponibles</h4>
+                    <h4 className="text-sm font-medium text-foreground">Extras disponibles</h4>
                     
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <div className="flex flex-col sm:flex-row gap-3">
@@ -521,8 +576,7 @@ export default function FoodOptionsManager() {
                             variant="flat"
                             size="sm"
                             classNames={{
-                              input: "text-gray-900",
-                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
+                              inputWrapper: "form-input"
                             }}
                           />
                         </div>
@@ -538,8 +592,7 @@ export default function FoodOptionsManager() {
                             size="sm"
                             startContent={<span className="text-gray-400">$</span>}
                             classNames={{
-                              input: "text-gray-900",
-                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
+                              inputWrapper: "form-input"
                             }}
                           />
                         </div>
@@ -547,7 +600,7 @@ export default function FoodOptionsManager() {
                           <Button
                             onPress={addExtra}
                             size="sm"
-                            className="bg-gray-900 text-white"
+                            className="btn-primary btn-sm"
                           >
                             Agregar
                           </Button>
@@ -560,7 +613,7 @@ export default function FoodOptionsManager() {
                         {formData.extras.map((extra, index) => (
                           <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
                             <div className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-gray-900">{extra.name}</span>
+                              <span className="text-sm font-medium text-foreground">{extra.name}</span>
                               <span className="text-xs text-gray-500">{formatCurrency(extra.price)}</span>
                             </div>
                             <Button
@@ -590,14 +643,19 @@ export default function FoodOptionsManager() {
                 >
                   Cancelar
                 </Button>
-                <Button
-                  onPress={handleSubmit}
-                  isLoading={submitting}
-                  size="sm"
-                  className="bg-gray-900 text-white"
+                <button
+                  className="btn-primary btn-sm"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)'
+                  }}
                 >
+                  {submitting && <div className="loading-spinner" style={{width: 'var(--space-3)', height: 'var(--space-3)'}}></div>}
                   {submitting ? 'Guardando...' : (editingFood ? 'Actualizar' : 'Crear')}
-                </Button>
+                </button>
               </ModalFooter>
             </>
           )}

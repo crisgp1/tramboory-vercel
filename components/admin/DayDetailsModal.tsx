@@ -196,8 +196,8 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
       size="4xl"
       scrollBehavior="inside"
       classNames={{
-        backdrop: "bg-gray-900/50",
-        base: "bg-white",
+        backdrop: "surface-overlay",
+        base: "surface-modal",
         header: "border-b border-gray-200",
         body: "p-6",
         footer: "border-t border-gray-200"
@@ -208,7 +208,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
           <div className="flex items-center gap-3">
             <CalendarDaysIcon className="w-6 h-6 text-blue-500" />
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className="text-xl font-semibold text-foreground">
                 Detalles del Día
               </h3>
               {date && (
@@ -238,12 +238,12 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
             <div className="space-y-6">
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="border border-gray-200">
+                <Card className="surface-card">
                   <CardBody className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Horarios Disponibles</p>
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-2xl font-bold text-foreground">
                           {dayDetails.availableSlots}/{dayDetails.totalSlots}
                         </p>
                       </div>
@@ -254,12 +254,12 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                   </CardBody>
                 </Card>
 
-                <Card className="border border-gray-200">
+                <Card className="surface-card">
                   <CardBody className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Reservaciones</p>
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-2xl font-bold text-foreground">
                           {dayDetails.reservations.length}
                         </p>
                       </div>
@@ -270,12 +270,12 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                   </CardBody>
                 </Card>
 
-                <Card className="border border-gray-200">
+                <Card className="surface-card">
                   <CardBody className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Ingresos</p>
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-2xl font-bold text-foreground">
                           {formatCurrency(dayDetails.totalRevenue)}
                         </p>
                       </div>
@@ -308,13 +308,13 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
 
               {/* Time Blocks */}
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900">Bloques de Horarios</h4>
+                <h4 className="text-lg font-semibold text-foreground">Bloques de Horarios</h4>
                 {dayDetails.timeBlocks.map((block, index) => (
-                  <Card key={index} className="border border-gray-200">
+                  <Card key={index} className="surface-card">
                     <CardBody className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div>
-                          <h5 className="font-medium text-gray-900">{block.name}</h5>
+                          <h5 className="font-medium text-foreground">{block.name}</h5>
                           <p className="text-sm text-gray-600">
                             {block.startTime} - {block.endTime} (Duración: {block.duration}h)
                           </p>
@@ -338,7 +338,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                                 : 'bg-red-50 border-red-200'
                             }`}
                           >
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium text-foreground">
                               {slot.time}
                             </p>
                             <p className="text-xs text-gray-600">
@@ -364,16 +364,16 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
 
               {/* Reservations List */}
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900">Reservaciones del Día</h4>
+                <h4 className="text-lg font-semibold text-foreground">Reservaciones del Día</h4>
                 {dayDetails.reservations.length > 0 ? (
                   <div className="space-y-3">
                     {dayDetails.reservations.map((reservation) => (
-                      <Card key={reservation._id} className="border border-gray-200">
+                      <Card key={reservation._id} className="surface-card">
                         <CardBody className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <h5 className="font-medium text-gray-900">
+                                <h5 className="font-medium text-foreground">
                                   {reservation.customer.name}
                                 </h5>
                                 <Chip
@@ -395,14 +395,14 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <div>
-                                  <p className="text-gray-600">Festejado: <span className="font-medium text-gray-900">{reservation.child.name}</span></p>
-                                  <p className="text-gray-600">Edad: <span className="font-medium text-gray-900">{reservation.child.age} años</span></p>
-                                  <p className="text-gray-600">Teléfono: <span className="font-medium text-gray-900">{reservation.customer.phone}</span></p>
+                                  <p className="text-gray-600">Festejado: <span className="font-medium text-foreground">{reservation.child.name}</span></p>
+                                  <p className="text-gray-600">Edad: <span className="font-medium text-foreground">{reservation.child.age} años</span></p>
+                                  <p className="text-gray-600">Teléfono: <span className="font-medium text-foreground">{reservation.customer.phone}</span></p>
                                 </div>
                                 <div>
-                                  <p className="text-gray-600">Hora: <span className="font-medium text-gray-900">{reservation.eventTime}</span></p>
-                                  <p className="text-gray-600">Duración: <span className="font-medium text-gray-900">{reservation.eventDuration}h</span></p>
-                                  <p className="text-gray-600">Paquete: <span className="font-medium text-gray-900">{reservation.packageName}</span></p>
+                                  <p className="text-gray-600">Hora: <span className="font-medium text-foreground">{reservation.eventTime}</span></p>
+                                  <p className="text-gray-600">Duración: <span className="font-medium text-foreground">{reservation.eventDuration}h</span></p>
+                                  <p className="text-gray-600">Paquete: <span className="font-medium text-foreground">{reservation.packageName}</span></p>
                                 </div>
                               </div>
                               
@@ -416,7 +416,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                             </div>
                             
                             <div className="text-right">
-                              <p className="text-lg font-semibold text-gray-900">
+                              <p className="text-lg font-semibold text-foreground">
                                 {formatCurrency(reservation.totalAmount)}
                               </p>
                               <Button
@@ -434,7 +434,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                     ))}
                   </div>
                 ) : (
-                  <Card className="border border-gray-200">
+                  <Card className="surface-card">
                     <CardBody className="p-8 text-center">
                       <CalendarDaysIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                       <p className="text-gray-600">No hay reservaciones para este día</p>

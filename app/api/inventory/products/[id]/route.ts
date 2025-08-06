@@ -187,8 +187,7 @@ export async function DELETE(
       
       if (!hardDeleteResult.success) {
         return NextResponse.json({ 
-          error: hardDeleteResult.error,
-          details: hardDeleteResult.details
+          error: hardDeleteResult.error
         }, { status: 500 });
       }
 
@@ -204,8 +203,7 @@ export async function DELETE(
       
       if (!deactivateResult.success) {
         return NextResponse.json({ 
-          error: deactivateResult.error,
-          details: deactivateResult.details
+          error: deactivateResult.error
         }, { status: 500 });
       }
 

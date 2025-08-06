@@ -42,8 +42,7 @@ export async function POST(
     
     if (!reactivateResult.success) {
       return NextResponse.json({ 
-        error: reactivateResult.error,
-        details: reactivateResult.details
+        error: reactivateResult.error
       }, { status: 500 });
     }
 

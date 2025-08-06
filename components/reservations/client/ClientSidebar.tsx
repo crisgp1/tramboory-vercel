@@ -20,63 +20,118 @@ export default function ClientSidebar() {
   const router = useRouter();
 
   return (
-    <div className="w-72 h-full bg-white border-r border-gray-100 flex flex-col">
-      {/* User Profile Section */}
-      <div className="p-6 bg-gray-50 border-b border-gray-100">
-        <div className="flex items-center gap-3 mb-6">
+    <div className="surface-elevated" style={{
+      width: '18rem',
+      height: '100%',
+      borderRight: `0.0625rem solid var(--border-default)`,
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      {/* Professional User Profile Section */}
+      <div className="surface-elevated" style={{
+        padding: 'var(--space-6)',
+        borderBottom: `0.0625rem solid var(--border-default)`
+      }}>
+        <div className="flex items-center" style={{
+          gap: 'var(--space-3)',
+          marginBottom: 'var(--space-6)'
+        }}>
           <Avatar
             src={user?.imageUrl}
             name={user?.fullName || user?.firstName || 'Usuario'}
             size="md"
-            className="ring-1 ring-gray-200"
+            style={{
+              border: `0.125rem solid var(--border-default)`
+            }}
           />
           <div className="flex-1">
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 style={{
+              fontSize: 'var(--text-base)',
+              fontWeight: '600',
+              marginBottom: 'var(--space-1)'
+            }}>
               {user?.firstName || 'Usuario'}
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-neutral-500" style={{
+              fontSize: 'var(--text-sm)'
+            }}>
               Mis reservaciones
             </p>
           </div>
         </div>
       </div>
 
-      {/* Main Actions */}
-      <div className="p-6 space-y-3">
-        <Button
-          onPress={() => router.push('/reservaciones/nueva')}
-          className="w-full bg-gray-900 text-white hover:bg-gray-800 transition-colors duration-200"
-          size="lg"
-          startContent={<PlusIcon className="w-5 h-5" />}
+      {/* Professional Main Actions */}
+      <div style={{
+        padding: 'var(--space-6)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-3)'
+      }}>
+        <button
+          className="btn-primary"
+          onClick={() => router.push('/reservaciones/nueva')}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            justifyContent: 'center'
+          }}
         >
+          <PlusIcon className="icon-base" />
           Nueva Reserva
-        </Button>
+        </button>
         
-        <Button
-          onPress={() => router.push('/reservaciones')}
-          variant="bordered"
-          className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-          size="lg"
-          startContent={<EyeIcon className="w-5 h-5" />}
+        <button
+          className="btn-secondary"
+          onClick={() => router.push('/reservaciones')}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            justifyContent: 'center'
+          }}
         >
+          <EyeIcon className="icon-base" />
           Consultar Reservas
-        </Button>
+        </button>
       </div>
 
-      <Divider className="mx-6" />
+      <div style={{
+        height: '0.0625rem',
+        backgroundColor: 'var(--border-default)',
+        margin: '0 var(--space-6)'
+      }} />
 
-      {/* Footer */}
-      <div className="mt-auto p-6 space-y-4">
-        <div className="space-y-2">
-          <Button
-            onPress={() => router.push('/')}
-            variant="light"
-            className="w-full text-gray-600 hover:text-gray-900 justify-start"
-            size="sm"
-            startContent={<HomeIcon className="w-4 h-4" />}
+      {/* Professional Footer */}
+      <div style={{
+        marginTop: 'auto',
+        padding: 'var(--space-6)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-4)'
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--space-2)'
+        }}>
+          <button
+            className="btn-tertiary"
+            onClick={() => router.push('/')}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-2)',
+              justifyContent: 'flex-start'
+            }}
           >
+            <HomeIcon className="icon-sm" />
             Inicio
-          </Button>
+          </button>
           <LogoutButton 
             variant="light" 
             color="danger" 
@@ -84,7 +139,9 @@ export default function ClientSidebar() {
             className="w-full justify-start"
           />
         </div>
-        <p className="text-xs text-gray-400 text-center">
+        <p className="text-neutral-400 text-center" style={{
+          fontSize: 'var(--text-xs)'
+        }}>
           Tramboory © 2025
         </p>
       </div>

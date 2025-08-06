@@ -128,7 +128,7 @@ export default function FinanceFilters({
               startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
               classNames={{
                 input: "text-sm",
-                inputWrapper: "border border-gray-200 hover:border-gray-300 focus-within:border-gray-900"
+                inputWrapper: "form-input"
               }}
             />
           </div>
@@ -145,7 +145,7 @@ export default function FinanceFilters({
             >
               Filtros
               {hasActiveFilters && (
-                <span className="ml-1 bg-gray-900 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="ml-1 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {[selectedType, selectedCategory, selectedStatus, selectedPaymentMethod]
                     .filter(Boolean).length + 
                    selectedTags.length + 
@@ -185,7 +185,7 @@ export default function FinanceFilters({
                   onTypeChange(value || '');
                 }}
                 classNames={{
-                  trigger: "border border-gray-200 hover:border-gray-300 focus:border-gray-900",
+                  trigger: "form-input",
                   label: "text-sm font-medium text-gray-700"
                 }}
               >
@@ -211,7 +211,7 @@ export default function FinanceFilters({
                   onCategoryChange(value || '');
                 }}
                 classNames={{
-                  trigger: "border border-gray-200 hover:border-gray-300 focus:border-gray-900",
+                  trigger: "form-input",
                   label: "text-sm font-medium text-gray-700"
                 }}
               >
@@ -231,7 +231,7 @@ export default function FinanceFilters({
                   onStatusChange(value || '');
                 }}
                 classNames={{
-                  trigger: "border border-gray-200 hover:border-gray-300 focus:border-gray-900",
+                  trigger: "form-input",
                   label: "text-sm font-medium text-gray-700"
                 }}
               >
@@ -254,7 +254,7 @@ export default function FinanceFilters({
                   onPaymentMethodChange(value || '');
                 }}
                 classNames={{
-                  trigger: "border border-gray-200 hover:border-gray-300 focus:border-gray-900",
+                  trigger: "form-input",
                   label: "text-sm font-medium text-gray-700"
                 }}
               >
@@ -275,7 +275,7 @@ export default function FinanceFilters({
                 }}
                 classNames={{
                   input: "text-sm",
-                  inputWrapper: "border border-gray-200 hover:border-gray-300 focus-within:border-gray-900",
+                  inputWrapper: "form-input",
                   label: "text-sm font-medium text-gray-700"
                 }}
                 startContent={<CalendarIcon className="w-4 h-4 text-gray-400" />}
@@ -291,7 +291,7 @@ export default function FinanceFilters({
                 }}
                 classNames={{
                   input: "text-sm",
-                  inputWrapper: "border border-gray-200 hover:border-gray-300 focus-within:border-gray-900",
+                  inputWrapper: "form-input",
                   label: "text-sm font-medium text-gray-700"
                 }}
                 startContent={<CalendarIcon className="w-4 h-4 text-gray-400" />}
@@ -312,7 +312,7 @@ export default function FinanceFilters({
                 startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
                 classNames={{
                   input: "text-sm",
-                  inputWrapper: "border border-gray-200 hover:border-gray-300 focus-within:border-gray-900",
+                  inputWrapper: "form-input",
                   label: "text-sm font-medium text-gray-700"
                 }}
               />
@@ -329,7 +329,7 @@ export default function FinanceFilters({
                 startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
                 classNames={{
                   input: "text-sm",
-                  inputWrapper: "border border-gray-200 hover:border-gray-300 focus-within:border-gray-900",
+                  inputWrapper: "form-input",
                   label: "text-sm font-medium text-gray-700"
                 }}
               />
@@ -354,7 +354,7 @@ export default function FinanceFilters({
                   classNames={{
                     base: "flex-1"
                   }}
-                  className="border border-gray-200 hover:border-gray-300 focus-within:border-gray-900"
+                  className="form-input"
                 >
                   {availableTags.map((tag) => (
                     <AutocompleteItem key={tag}>

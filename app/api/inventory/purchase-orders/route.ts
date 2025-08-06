@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
         purchase_order_id: purchaseOrderId,
         supplier_id: orderData.supplierId,
         supplier_name: orderData.supplierName,
-        status: orderData.status || 'DRAFT',
+        status: (orderData.status || 'DRAFT') as "DRAFT" | "PENDING" | "APPROVED" | "ORDERED" | "RECEIVED" | "CANCELLED",
         subtotal: orderData.subtotal,
         tax_rate: orderData.taxRate,
         tax: orderData.tax,
@@ -192,8 +192,9 @@ export async function POST(request: NextRequest) {
           notes: item.notes
         }));
 
-        const { error: itemsError } = await SupabaseInventoryService.createPurchaseOrderItems(itemsToInsert);
-        if (itemsError) {
+        try {
+          await SupabaseInventoryService.createPurchaseOrderItems(itemsToInsert);
+        } catch (itemsError) {
           console.error('Error creating purchase order items:', itemsError);
           // Continue anyway, don't fail the whole order
         }
@@ -201,7 +202,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(purchaseOrder, { status: 201 });
     } catch (error) {
-      if (error.message?.includes('No rows found')) {
+      if (error instanceof Error && error.message?.includes('No rows found')) {
         return NextResponse.json(
           { error: 'Proveedor no encontrado' },
           { status: 404 }
