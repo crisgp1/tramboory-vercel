@@ -326,12 +326,12 @@ PurchaseOrderSchema.methods.addItem = function(item: PurchaseOrderItem) {
 };
 
 PurchaseOrderSchema.methods.removeItem = function(productId: string) {
-  this.items = this.items.filter(item => item.productId !== productId);
+  this.items = this.items.filter((item: any) => item.productId !== productId);
   return this.save();
 };
 
 PurchaseOrderSchema.methods.updateItem = function(productId: string, updates: Partial<PurchaseOrderItem>) {
-  const itemIndex = this.items.findIndex(item => item.productId === productId);
+  const itemIndex = this.items.findIndex((item: any) => item.productId === productId);
   
   if (itemIndex >= 0) {
     this.items[itemIndex] = { ...this.items[itemIndex], ...updates };
@@ -377,9 +377,9 @@ PurchaseOrderSchema.virtual('daysUntilDelivery').get(function() {
 // Virtual for delivery status
 PurchaseOrderSchema.virtual('deliveryStatus').get(function() {
   if (this.status === PurchaseOrderStatus.RECEIVED) return 'delivered';
-  if (this.isOverdue()) return 'overdue';
+  if ((this as any).isOverdue()) return 'overdue';
   if (this.expectedDeliveryDate) {
-    const daysUntil = this.daysUntilDelivery;
+    const daysUntil = (this as any).daysUntilDelivery;
     if (daysUntil !== null) {
       if (daysUntil <= 0) return 'due';
       if (daysUntil <= 3) return 'soon';

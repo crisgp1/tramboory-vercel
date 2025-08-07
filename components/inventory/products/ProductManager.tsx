@@ -10,7 +10,8 @@ import {
   Package,
   RotateCcw,
   AlertTriangle,
-  X
+  X,
+  Loader2
 } from 'lucide-react'
 import { useRole } from "@/hooks/useRole"
 import ProductModal from "./ProductModal"

@@ -21,7 +21,28 @@ import {
   EyeIcon
 } from "@heroicons/react/24/outline"
 import { AlertPriority, AlertType } from "@/types/inventory"
-import { IInventoryAlert } from "@/lib/models/inventory/InventoryAlert"
+
+// Local interface for inventory alerts
+interface IInventoryAlert {
+  _id?: string;
+  type: AlertType;
+  priority: AlertPriority;
+  message: string;
+  productId?: string;
+  productName?: string;
+  currentStock?: number;
+  minStock?: number;
+  expiryDate?: string;
+  metadata?: Record<string, any>;
+  status: 'active' | 'dismissed' | 'resolved';
+  createdBy: string;
+  dismissedBy?: string;
+  dismissedAt?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function InventoryAlerts() {
   const [alerts, setAlerts] = useState<IInventoryAlert[]>([])
@@ -56,7 +77,7 @@ export default function InventoryAlerts() {
       })
 
       if (response.ok) {
-        setAlerts(alerts.filter(alert => alert._id.toString() !== alertId))
+        setAlerts(alerts.filter(alert => alert._id?.toString() !== alertId))
       }
     } catch (error) {
       console.error('Error dismissing alert:', error)

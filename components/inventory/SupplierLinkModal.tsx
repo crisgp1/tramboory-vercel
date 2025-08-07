@@ -69,7 +69,7 @@ export default function SupplierLinkModal({ isOpen, onClose, onSuccess }: Suppli
         console.log('No Supabase configuration detected, using mock data')
         loadMockData()
         setUseSupabase(false)
-        toast.info('Modo desarrollo: usando datos de prueba')
+        toast.success('Modo desarrollo: usando datos de prueba')
       } else {
         fetchData()
       }
@@ -100,7 +100,7 @@ export default function SupplierLinkModal({ isOpen, onClose, onSuccess }: Suppli
           console.log('Supabase failed, loading mock data for development')
           setUseSupabase(false)
           loadMockData()
-          toast.info('Usando datos de prueba - Configure las variables de Supabase')
+          toast.success('Usando datos de prueba - Configure las variables de Supabase')
           return
         }
         
@@ -108,7 +108,7 @@ export default function SupplierLinkModal({ isOpen, onClose, onSuccess }: Suppli
         if (process.env.NODE_ENV === 'development') {
           console.log('API failed, using mock data in development mode')
           loadMockData()
-          toast.info('Usando datos de prueba - Error en API')
+          toast.success('Usando datos de prueba - Error en API')
           return
         }
         
@@ -128,9 +128,9 @@ export default function SupplierLinkModal({ isOpen, onClose, onSuccess }: Suppli
       if (process.env.NODE_ENV === 'development') {
         console.log('Loading mock data for development')
         loadMockData()
-        toast.info('Usando datos de prueba - Configure las variables de Supabase')
+        toast.success('Usando datos de prueba - Configure las variables de Supabase')
       } else {
-        toast.error(`Error al cargar los datos (${useSupabase ? 'Supabase' : 'MongoDB'}): ${error.message}`)
+        toast.error(`Error al cargar los datos (${useSupabase ? 'Supabase' : 'MongoDB'}): ${error instanceof Error ? error.message : 'Error desconocido'}`)
       }
     } finally {
       setLoading(false)
@@ -244,8 +244,8 @@ export default function SupplierLinkModal({ isOpen, onClose, onSuccess }: Suppli
         delete updated[supplierId]
         return updated
       })
-    } catch (error: any) {
-      toast.error(error.message || "No se pudo vincular el proveedor")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo vincular el proveedor")
     } finally {
       setLinking(null)
     }
@@ -274,9 +274,12 @@ export default function SupplierLinkModal({ isOpen, onClose, onSuccess }: Suppli
         if (supplier) {
           setLinkedSuppliers(prev => prev.filter(s => getSupplierId(s) !== supplierId))
           setUnlinkedSuppliers(prev => [...prev, {
-            ...supplier,
-            user_id: undefined,
-            userId: undefined
+            id: supplier.supplierId || supplier.supplier_id || 'temp-id',
+            supplierId: supplier.supplierId,
+            supplier_id: supplier.supplier_id,
+            name: supplier.name,
+            code: supplier.supplierId || supplier.supplier_id || 'N/A',
+            email: supplier.email
           }])
           toast.success("Proveedor desvinculado correctamente (DEMO)")
         }
@@ -303,8 +306,8 @@ export default function SupplierLinkModal({ isOpen, onClose, onSuccess }: Suppli
 
       toast.success("Proveedor desvinculado correctamente")
       await fetchData()
-    } catch (error: any) {
-      toast.error(error.message || "No se pudo desvincular el proveedor")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo desvincular el proveedor")
     } finally {
       setUnlinking(null)
     }

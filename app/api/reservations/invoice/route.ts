@@ -24,6 +24,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
     }
 
+    // Cast reservation to any to avoid TypeScript issues with MongoDB lean() result
+    const reservationData = reservation as any;
+
     // Generate HTML invoice
     const invoiceHtml = `
 <!DOCTYPE html>
@@ -31,7 +34,7 @@ export async function POST(request: NextRequest) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Factura - Reserva #${reservation._id}</title>
+    <title>Factura - Reserva #${(reservation as any)._id}</title>
     <style>
         * {
             margin: 0;
@@ -150,31 +153,31 @@ export async function POST(request: NextRequest) {
         <div class="invoice-info">
             <div class="invoice-section">
                 <h3>Detalles de la Factura</h3>
-                <p><strong>Factura #:</strong> INV-${reservation._id}</p>
+                <p><strong>Factura #:</strong> INV-${(reservation as any)._id}</p>
                 <p><strong>Fecha de Emisión:</strong> ${new Date().toLocaleDateString('es-ES')}</p>
-                <p><strong>Estado:</strong> <span class="status-badge">${reservation.status === 'confirmed' ? 'Confirmada' : reservation.status === 'pending' ? 'Pendiente' : 'Cancelada'}</span></p>
+                <p><strong>Estado:</strong> <span class="status-badge">${reservationData.status === 'confirmed' ? 'Confirmada' : reservationData.status === 'pending' ? 'Pendiente' : 'Cancelada'}</span></p>
             </div>
             
             <div class="invoice-section">
                 <h3>Información del Cliente</h3>
-                <p><strong>${reservation.customer?.name || 'Cliente'}</strong></p>
-                <p>${reservation.customer?.email || ''}</p>
-                <p>${reservation.customer?.phone || ''}</p>
+                <p><strong>${reservationData.customer?.name || 'Cliente'}</strong></p>
+                <p>${reservationData.customer?.email || ''}</p>
+                <p>${reservationData.customer?.phone || ''}</p>
             </div>
         </div>
         
         <div class="invoice-section" style="margin-bottom: 30px;">
             <h3>Detalles del Evento</h3>
-            <p><strong>Fecha del Evento:</strong> ${new Date(reservation.eventDate).toLocaleDateString('es-ES', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+            <p><strong>Fecha del Evento:</strong> ${new Date(reservationData.eventDate).toLocaleDateString('es-ES', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
             })}</p>
-            <p><strong>Horario:</strong> ${reservation.eventTime || 'Por confirmar'}</p>
-            <p><strong>Número de Invitados:</strong> ${reservation.guests || 'N/A'}</p>
-            <p><strong>Nombre del Festejado:</strong> ${reservation.child?.name || 'N/A'}</p>
-            <p><strong>Edad:</strong> ${reservation.child?.age || 'N/A'} años</p>
+            <p><strong>Horario:</strong> ${reservationData.eventTime || 'Por confirmar'}</p>
+            <p><strong>Número de Invitados:</strong> ${reservationData.guests || 'N/A'}</p>
+            <p><strong>Nombre del Festejado:</strong> ${reservationData.child?.name || 'N/A'}</p>
+            <p><strong>Edad:</strong> ${reservationData.child?.age || 'N/A'} años</p>
         </div>
         
         <table class="details-table">
@@ -187,34 +190,34 @@ export async function POST(request: NextRequest) {
                 </tr>
             </thead>
             <tbody>
-                ${reservation.package ? `
+                ${reservationData.package ? `
                 <tr>
-                    <td><strong>Paquete: ${reservation.package.name}</strong></td>
+                    <td><strong>Paquete: ${reservationData.package.name}</strong></td>
                     <td style="text-align: center;">1</td>
-                    <td style="text-align: right;">$${(reservation.pricing?.packagePrice || 0).toFixed(2)}</td>
-                    <td style="text-align: right;">$${(reservation.pricing?.packagePrice || 0).toFixed(2)}</td>
+                    <td style="text-align: right;">$${(reservationData.pricing?.packagePrice || 0).toFixed(2)}</td>
+                    <td style="text-align: right;">$${(reservationData.pricing?.packagePrice || 0).toFixed(2)}</td>
                 </tr>
                 ` : ''}
                 
-                ${reservation.foodOption ? `
+                ${reservationData.foodOption ? `
                 <tr>
-                    <td>Opción de Comida: ${reservation.foodOption.name}</td>
+                    <td>Opción de Comida: ${reservationData.foodOption.name}</td>
                     <td style="text-align: center;">1</td>
-                    <td style="text-align: right;">$${(reservation.pricing?.foodPrice || 0).toFixed(2)}</td>
-                    <td style="text-align: right;">$${(reservation.pricing?.foodPrice || 0).toFixed(2)}</td>
+                    <td style="text-align: right;">$${(reservationData.pricing?.foodPrice || 0).toFixed(2)}</td>
+                    <td style="text-align: right;">$${(reservationData.pricing?.foodPrice || 0).toFixed(2)}</td>
                 </tr>
                 ` : ''}
                 
-                ${reservation.eventTheme ? `
+                ${reservationData.eventTheme ? `
                 <tr>
-                    <td>Tema: ${reservation.eventTheme.name} ${reservation.eventTheme.selectedPackage ? `- ${reservation.eventTheme.selectedPackage.name}` : ''}</td>
+                    <td>Tema: ${reservationData.eventTheme.name} ${reservationData.eventTheme.selectedPackage ? `- ${reservationData.eventTheme.selectedPackage.name}` : ''}</td>
                     <td style="text-align: center;">1</td>
-                    <td style="text-align: right;">$${(reservation.pricing?.themePrice || 0).toFixed(2)}</td>
-                    <td style="text-align: right;">$${(reservation.pricing?.themePrice || 0).toFixed(2)}</td>
+                    <td style="text-align: right;">$${(reservationData.pricing?.themePrice || 0).toFixed(2)}</td>
+                    <td style="text-align: right;">$${(reservationData.pricing?.themePrice || 0).toFixed(2)}</td>
                 </tr>
                 ` : ''}
                 
-                ${reservation.extraServices && reservation.extraServices.length > 0 ? reservation.extraServices.map((extra: any) => `
+                ${reservationData.extraServices && reservationData.extraServices.length > 0 ? reservationData.extraServices.map((extra: any) => `
                 <tr>
                     <td>Extra: ${extra.name}</td>
                     <td style="text-align: center;">${extra.quantity || 1}</td>
@@ -228,15 +231,15 @@ export async function POST(request: NextRequest) {
         <div class="total-section">
             <div class="total-row">
                 <span class="total-label">Subtotal:</span>
-                <span class="total-value">$${(reservation.pricing?.total || 0).toFixed(2)}</span>
+                <span class="total-value">$${(reservationData.pricing?.total || 0).toFixed(2)}</span>
             </div>
             <div class="total-row">
                 <span class="total-label">IVA (16%):</span>
-                <span class="total-value">$${((reservation.pricing?.total || 0) * 0.16).toFixed(2)}</span>
+                <span class="total-value">$${((reservationData.pricing?.total || 0) * 0.16).toFixed(2)}</span>
             </div>
             <div class="total-row grand-total">
                 <span class="total-label">Total a Pagar:</span>
-                <span class="total-value">$${((reservation.pricing?.total || 0) * 1.16).toFixed(2)}</span>
+                <span class="total-value">$${((reservationData.pricing?.total || 0) * 1.16).toFixed(2)}</span>
             </div>
         </div>
         
@@ -296,7 +299,7 @@ export async function POST(request: NextRequest) {
       return new NextResponse(pdfBuffer, {
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="factura-reserva-${reservation._id}.pdf"`,
+          'Content-Disposition': `attachment; filename="factura-reserva-${(reservation as any)._id}.pdf"`,
         },
       });
     } catch (error) {

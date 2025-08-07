@@ -272,7 +272,7 @@ export default function StockManager() {
         return (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <CubeIcon className="w-5 h-5 text-blue-600" />
+              <Package className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <p className="font-medium text-gray-900">{item.product?.name || 'Producto sin nombre'}</p>
@@ -291,7 +291,7 @@ export default function StockManager() {
       case "location": {
         return (
           <div className="flex items-center gap-2">
-            <MapPinIcon className="w-4 h-4 text-gray-400" />
+            <MapPin className="w-4 h-4 text-gray-400" />
             <span className="text-sm">{item.location_id}</span>
           </div>
         )
@@ -315,14 +315,7 @@ export default function StockManager() {
       case "status": {
         const stockStatus = getStockStatus(item)
         return (
-          <Chip
-            size="sm"
-            variant="flat"
-            color={stockStatus.color as any}
-            className="font-medium"
-          >
-            {stockStatus.label}
-          </Chip>
+          <StatusChip status={stockStatus.label} />
         )
       }
       case "lastMovement": {
@@ -330,7 +323,7 @@ export default function StockManager() {
           <div className="text-sm">
             <p className="font-medium">{item.last_movement.movement_type}</p>
             <p className="text-gray-500 flex items-center gap-1">
-              <ClockIcon className="w-3 h-3" />
+              <Clock className="w-3 h-3" />
               {formatDate(item.last_movement.created_at)}
             </p>
           </div>

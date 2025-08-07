@@ -24,7 +24,7 @@ import {
   NordicButton,
   nordicTokens 
 } from "@/components/ui/nordic"
-import ProductModalEnhanced from "./ProductModalEnhanced"
+import ProductModal from "./ProductModal"
 import toast from "react-hot-toast"
 
 interface Product {
@@ -353,10 +353,10 @@ export default function ProductManagerNordic({ searchQuery = "" }: ProductManage
       />
 
       {/* Product Modal */}
-      <ProductModalEnhanced
+      <ProductModal
         isOpen={isOpen}
         onClose={onClose}
-        product={selectedProduct}
+        product={selectedProduct as any}
         mode={modalMode}
         onSuccess={fetchProducts}
       />

@@ -328,8 +328,7 @@ export class ProductRepository extends BaseRepository {
         const blockers = await ProductIntegrityService.getDeletionBlockers(id);
         return {
           success: false,
-          error: 'Cannot delete product due to existing dependencies',
-          details: blockers.join('; ')
+          error: `Cannot delete product due to existing dependencies: ${blockers.join('; ')}`
         };
       }
 
@@ -390,8 +389,7 @@ export class ProductRepository extends BaseRepository {
     const result = await this.deactivate(id, userId, 'Legacy delete call');
     return {
       success: result.success,
-      error: result.error,
-      details: result.details
+      error: result.error
     };
   }
 }

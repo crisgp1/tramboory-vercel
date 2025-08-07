@@ -25,7 +25,13 @@ import {
   Avatar,
   Skeleton,
   DatePicker,
-  Spacer
+  Spacer,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure
 } from '@heroui/react';
 import {
   CheckIcon,
@@ -143,29 +149,30 @@ interface AvailabilityData {
   [key: string]: 'available' | 'limited' | 'unavailable';
 }
 
-type Step = 'basic' | 'package' | 'food' | 'extras' | 'payment' | 'confirmation';
+type Step = 'basic' | 'datetime' | 'package' | 'food' | 'extras' | 'payment' | 'confirmation';
 
 const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
+  initial: { opacity: 0, y: 1.25 },
   animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 }
+  exit: { opacity: 0, y: -1.25 }
 };
 
 const slideIn = {
-  initial: { opacity: 0, x: 20 },
+  initial: { opacity: 0, x: 1.25 },
   animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -20 }
+  exit: { opacity: 0, x: -1.25 }
 };
 
 const scaleIn = {
-  initial: { opacity: 0, scale: 0.9 },
+  initial: { opacity: 0, scale: 0.95 },
   animate: { opacity: 1, scale: 1 },
-  exit: { opacity: 0, scale: 0.9 }
+  exit: { opacity: 0, scale: 0.95 }
 };
 
 export default function ClientNewReservationPageAnimated() {
   const { user } = useUser();
   const router = useRouter();
+  const { isOpen, onOpen, onClose } = useDisclosure();
   
   const [currentStep, setCurrentStep] = useState<Step>('basic');
   const [formData, setFormData] = useState<FormData>({
@@ -198,7 +205,8 @@ export default function ClientNewReservationPageAnimated() {
   const [celebrationAnimation, setCelebrationAnimation] = useState<any>(null);
 
   const steps: { key: Step; title: string; description: string; icon: any }[] = [
-    { key: 'basic', title: 'Detalles', description: 'Información básica', icon: UserGroupIcon },
+    { key: 'basic', title: 'Detalles', description: 'Información básica', icon: CakeIcon },
+    { key: 'datetime', title: 'Fecha', description: 'Cuándo celebrar', icon: CalendarDaysIcon },
     { key: 'package', title: 'Paquete', description: 'Elige tu experiencia', icon: StarIcon },
     { key: 'food', title: 'Extras', description: 'Personaliza tu evento', icon: HeartIcon },
     { key: 'extras', title: 'Servicios', description: 'Agrega más diversión', icon: PlusIcon },
@@ -220,7 +228,6 @@ export default function ClientNewReservationPageAnimated() {
       fetchTimeSlots(formData.eventDate);
     }
   }, [formData.eventDate]);
-
 
   const fetchPackages = async () => {
     try {
@@ -363,7 +370,9 @@ export default function ClientNewReservationPageAnimated() {
   const validateCurrentStep = (): boolean => {
     switch (currentStep) {
       case 'basic':
-        return !!(formData.childName.trim() && formData.childAge && formData.eventDate && formData.eventTime);
+        return !!(formData.childName.trim() && formData.childAge);
+      case 'datetime':
+        return !!(formData.eventDate && formData.eventTime);
       case 'package':
         return !!formData.packageId;
       case 'food':
@@ -643,265 +652,149 @@ Para cualquier duda, contacta:
             animate="animate"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="space-y-10"
+            className="space-y-6"
+            style={{ transform: 'scale(0.9)' }}
           >
-            {/* Header Section */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+            {/* Modern Header Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.25 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center space-y-4"
+              className="text-center space-y-2"
             >
-              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
                 ¿Para quién es la celebración?
               </h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto leading-relaxed px-3">
                 Comencemos con los detalles del festejado para crear una experiencia perfecta
               </p>
             </motion.div>
             
-            {/* Form Section */}
-            <div className="space-y-8">
+            {/* Modern Form Section */}
+            <div className="space-y-6">
               {/* Child Details */}
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 1.875 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
               >
-                <div className="space-y-3">
-                  <label className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                    <CakeIcon className="w-5 h-5 text-rose-500" />
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                    <CakeIcon className="w-3 h-3 sm:w-4 sm:h-4 text-rose-500" />
                     Nombre del festejado/a
                     <span className="text-rose-500">*</span>
                   </label>
                   <Input
                     placeholder="Ej: Sofía"
                     value={formData.childName}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, childName: value }))}
+                    onValueChange={(value) => {
+                      // Regex to allow only letters, spaces, accents, and hyphens
+                      const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-]*$/;
+                      if (nameRegex.test(value)) {
+                        setFormData(prev => ({ ...prev, childName: value }));
+                      }
+                    }}
                     variant="bordered"
                     size="lg"
+                    radius="lg"
                     classNames={{
-                      input: "text-gray-900 text-lg placeholder:text-gray-400",
-                      inputWrapper: "border-2 border-gray-200 hover:border-rose-300 focus-within:border-rose-500 bg-white/50 backdrop-blur-sm h-14 rounded-2xl"
+                      input: "text-gray-900 text-sm sm:text-base placeholder:text-gray-400",
+                      inputWrapper: "border-1.5 border-gray-200/70 hover:border-rose-300 focus-within:border-rose-500 bg-white/50 backdrop-blur-lg h-10 sm:h-12 rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
                     }}
                   />
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                    <SparklesIcon className="w-5 h-5 text-rose-500" />
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                    <SparklesIcon className="w-3 h-3 sm:w-4 sm:h-4 text-rose-500" />
                     Edad que cumple
                     <span className="text-rose-500">*</span>
                   </label>
-                  <Select
-                    placeholder="Selecciona la edad"
-                    selectedKeys={formData.childAge ? [formData.childAge] : []}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as string;
-                      setFormData(prev => ({ ...prev, childAge: selected }));
-                    }}
-                    variant="bordered"
-                    size="lg"
-                    classNames={{
-                      trigger: "border-2 border-gray-200 hover:border-rose-300 focus-within:border-rose-500 bg-white/50 backdrop-blur-sm h-14 rounded-2xl",
-                      value: "text-gray-900 text-lg"
-                    }}
-                  >
-                    {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                      <SelectItem key={age.toString()}>
-                        {age} {age === 1 ? 'año' : 'años'}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                </div>
-              </motion.div>
-
-              {/* Date Selection - Airbnb Style */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="space-y-6"
-              >
-                <div className="space-y-3">
-                  <label className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                    <CalendarDaysIcon className="w-5 h-5 text-rose-500" />
-                    ¿Cuándo quieres celebrar?
-                    <span className="text-rose-500">*</span>
-                  </label>
-                  
-                  {/* Custom Modern Calendar */}
-                  <div className="w-full">
-                    {loadingAvailability ? (
-                      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 min-h-[400px] flex items-center justify-center">
-                        <div className="flex flex-col items-center space-y-4">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
-                          <p className="text-gray-500">Cargando disponibilidad...</p>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      placeholder="Ej: 5"
+                      value={formData.childAge}
+                      onValueChange={(value) => {
+                        // Ensure the value is within valid range (1-15)
+                        const numValue = parseInt(value);
+                        if (value === '' || (numValue >= 1 && numValue <= 15)) {
+                          setFormData(prev => ({ ...prev, childAge: value }));
+                        }
+                      }}
+                      min={1}
+                      max={15}
+                      variant="bordered"
+                      size="lg"
+                      radius="lg"
+                      classNames={{
+                        input: "text-gray-900 text-sm sm:text-base placeholder:text-gray-400",
+                        inputWrapper: "border-1.5 border-gray-200/70 hover:border-rose-300 focus-within:border-rose-500 bg-white/50 backdrop-blur-lg h-10 sm:h-12 rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
+                      }}
+                      endContent={
+                        <div className="flex flex-col">
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-rose-500 transition-colors p-0.5"
+                            onClick={() => {
+                              const currentAge = parseInt(formData.childAge) || 0;
+                              if (currentAge < 15) {
+                                setFormData(prev => ({ ...prev, childAge: (currentAge + 1).toString() }));
+                              }
+                            }}
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-rose-500 transition-colors p-0.5"
+                            onClick={() => {
+                              const currentAge = parseInt(formData.childAge) || 0;
+                              if (currentAge > 1) {
+                                setFormData(prev => ({ ...prev, childAge: (currentAge - 1).toString() }));
+                              }
+                            }}
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
                         </div>
+                      }
+                    />
+                    {formData.childAge && (
+                      <div className="absolute right-12 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 pointer-events-none">
+                        {parseInt(formData.childAge) === 1 ? 'año' : 'años'}
                       </div>
-                    ) : (
-                      <CustomCalendar
-                        selectedDate={formData.eventDate}
-                        onDateSelect={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
-                        availability={availability}
-                        minDate={new Date()}
-                      />
                     )}
                   </div>
-                  
-                  {/* Booking Rules Notice */}
-                  {!loadingAvailability && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                      className="mt-4 p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200"
-                    >
-                      <div className="flex items-start gap-3">
-                        <InformationCircleIcon className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm">
-                          <p className="font-semibold text-emerald-800 mb-2">🎉 ¡Reserva tu celebración perfecta!</p>
-                          <ul className="space-y-1 text-emerald-700">
-                            <li>• Las reservaciones deben hacerse con <strong>al menos 1 semana de anticipación</strong></li>
-                            <li>• Selecciona tu fecha ideal y te mostraremos los horarios disponibles</li>
-                            <li>• Los días especiales pueden tener cargos adicionales</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
                 </div>
-              </motion.div>
-
-              {/* Time Selection */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-4"
-              >
-                <label className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                  <ClockIcon className="w-5 h-5 text-rose-500" />
-                  Hora perfecta
-                  <span className="text-rose-500">*</span>
-                </label>
-                
-                {!formData.eventDate ? (
-                  <div className="p-8 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl text-center">
-                    <CalendarDaysIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium">Primero selecciona una fecha</p>
-                    <p className="text-gray-500 text-sm">Los horarios disponibles aparecerán aquí</p>
-                  </div>
-                ) : loadingSlots ? (
-                  <div className="space-y-4">
-                    <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
-                      <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-                      <p className="text-blue-700 font-medium">Cargando horarios disponibles...</p>
-                      <p className="text-blue-600 text-sm mt-1">Verificando disponibilidad para tu fecha seleccionada</p>
-                    </div>
-                  </div>
-                ) : availableSlots && availableSlots.slots && availableSlots.slots.length > 0 ? (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {availableSlots.slots.map((slot) => (
-                        <motion.button
-                          key={slot.time}
-                          whileHover={{ scale: slot.available ? 1.02 : 1 }}
-                          whileTap={{ scale: slot.available ? 0.98 : 1 }}
-                          onClick={() => {
-                            if (slot.available) {
-                              setFormData(prev => ({ ...prev, eventTime: slot.time }));
-                            }
-                          }}
-                          disabled={!slot.available}
-                          className={`p-4 rounded-2xl border-2 transition-all duration-200 ${
-                            formData.eventTime === slot.time
-                              ? 'border-rose-500 bg-gradient-to-br from-rose-50 to-pink-50 shadow-lg'
-                              : slot.available
-                                ? 'border-gray-200 hover:border-rose-300 bg-white hover:bg-rose-50'
-                                : 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
-                          }`}
-                        >
-                          <div className="text-center">
-                            <p className={`text-lg font-bold ${
-                              formData.eventTime === slot.time
-                                ? 'text-rose-600'
-                                : slot.available
-                                  ? 'text-gray-900'
-                                  : 'text-gray-400'
-                            }`}>
-                              {slot.time}
-                            </p>
-                            {slot.available ? (
-                              <span className="text-xs text-emerald-600 font-medium mt-1">
-                                Disponible
-                              </span>
-                            ) : (
-                              <span className="text-xs text-red-500 font-medium mt-1">No disponible</span>
-                            )}
-                          </div>
-                        </motion.button>
-                      ))}
-                    </div>
-                    
-                    {availableSlots.isRestDay && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-                            <ExclamationTriangleIcon className="w-5 h-5 text-amber-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-amber-800">
-                              Día especial
-                            </p>
-                            <p className="text-xs text-amber-700">
-                              Cargo adicional de {formatPrice(availableSlots.restDayFee)}
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-8 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl text-center">
-                    <ClockIcon className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-                    <p className="text-amber-800 font-bold text-lg mb-2">Esta fecha no tiene horarios disponibles</p>
-                    <p className="text-amber-700 text-sm mb-4">Esto puede suceder porque:</p>
-                    <ul className="text-amber-700 text-sm space-y-1 mb-4 text-left max-w-sm mx-auto">
-                      <li>• Es un día de descanso sin disponibilidad</li>
-                      <li>• Todos los horarios ya están reservados</li>
-                      <li>• No hay configuración de horarios para este día</li>
-                    </ul>
-                    <p className="text-amber-800 font-semibold">💡 Intenta seleccionar otra fecha</p>
-                  </div>
-                )}
               </motion.div>
 
               {/* Comments Section */}
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 1.875 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="space-y-3"
+                transition={{ delay: 0.2 }}
+                className="space-y-2"
               >
-                <label className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                  <DocumentTextIcon className="w-5 h-5 text-rose-500" />
+                <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                  <DocumentTextIcon className="w-3 h-3 sm:w-4 sm:h-4 text-rose-500" />
                   Algo especial que debamos saber?
-                  <span className="text-sm font-normal text-gray-500">(opcional)</span>
+                  <span className="text-xs font-normal text-gray-500">(opcional)</span>
                 </label>
                 <Textarea
                   placeholder="Alergias, solicitudes especiales, decoración preferida, cumpleaños temático..."
                   value={formData.specialComments}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, specialComments: value }))}
-                  minRows={4}
+                  minRows={3}
                   variant="bordered"
+                  radius="lg"
                   classNames={{
-                    input: "text-gray-900 placeholder:text-gray-400",
-                    inputWrapper: "border-2 border-gray-200 hover:border-rose-300 focus-within:border-rose-500 bg-white/50 backdrop-blur-sm rounded-2xl"
+                    input: "text-gray-900 placeholder:text-gray-400 text-xs sm:text-sm",
+                    inputWrapper: "border-1.5 border-gray-200/70 hover:border-rose-300 focus-within:border-rose-500 bg-white/50 backdrop-blur-lg rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
                   }}
                 />
               </motion.div>
@@ -909,584 +802,718 @@ Para cualquier duda, contacta:
           </motion.div>
         );
 
+      case 'datetime':
+        return (
+          <motion.div
+            key="datetime"
+            variants={fadeInUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4 }}
+            className="space-y-6"
+            style={{ transform: 'scale(0.9)' }}
+          >
+            {/* Header Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.25 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-2"
+            >
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                ¿Cuándo quieres celebrar?
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto leading-relaxed px-3">
+                Selecciona la fecha y hora perfecta para tu celebración especial
+              </p>
+            </motion.div>
+            
+            {/* Date Selection */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                  <CalendarDaysIcon className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
+                  Fecha del evento
+                  <span className="text-blue-500">*</span>
+                </label>
+                
+                <div className="w-full">
+                  {loadingAvailability ? (
+                    <div className="bg-white/50 backdrop-blur-lg rounded-xl shadow-lg border border-gray-100/70 p-4 min-h-80 flex items-center justify-center">
+                      <div className="flex flex-col items-center space-y-3">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <p className="text-gray-500 text-sm">Cargando disponibilidad...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white/50 backdrop-blur-lg rounded-xl shadow-lg border border-gray-100/70 overflow-hidden">
+                      <CustomCalendar
+                        selectedDate={formData.eventDate}
+                        onDateSelect={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
+                        availability={availability}
+                        minDate={new Date()}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Time Selection */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="space-y-3"
+            >
+              <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                <ClockIcon className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
+                Hora del evento
+                <span className="text-blue-500">*</span>
+              </label>
+              
+              {!formData.eventDate ? (
+                <div className="p-6 bg-gradient-to-br from-gray-50/90 to-gray-100/90 backdrop-blur-sm border-2 border-dashed border-gray-300/70 rounded-xl text-center">
+                  <CalendarDaysIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600 font-medium text-sm">Primero selecciona una fecha</p>
+                  <p className="text-gray-500 text-xs mt-1">Los horarios disponibles aparecerán aquí</p>
+                </div>
+              ) : loadingSlots ? (
+                <div className="text-center p-3 bg-gradient-to-r from-blue-50/90 to-indigo-50/90 backdrop-blur-sm rounded-xl">
+                  <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-1"></div>
+                  <p className="text-blue-700 font-medium text-sm">Cargando horarios disponibles...</p>
+                </div>
+              ) : availableSlots && availableSlots.slots && availableSlots.slots.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {availableSlots.slots.map((slot) => (
+                    <motion.button
+                      key={slot.time}
+                      whileHover={{ scale: slot.available ? 1.02 : 1 }}
+                      whileTap={{ scale: slot.available ? 0.98 : 1 }}
+                      onClick={() => {
+                        if (slot.available) {
+                          setFormData(prev => ({ ...prev, eventTime: slot.time }));
+                        }
+                      }}
+                      disabled={!slot.available}
+                      className={`p-3 rounded-xl border-1.5 transition-all duration-200 min-h-16 ${
+                        formData.eventTime === slot.time
+                          ? 'border-blue-500 bg-gradient-to-br from-blue-50/90 to-indigo-50/90 backdrop-blur-sm shadow-lg'
+                          : slot.available
+                            ? 'border-gray-200/70 hover:border-blue-300 bg-white/50 backdrop-blur-lg hover:bg-blue-50/50'
+                            : 'border-gray-200/70 bg-gray-50/50 backdrop-blur-sm opacity-50 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <p className={`text-base font-bold ${
+                          formData.eventTime === slot.time
+                            ? 'text-blue-600'
+                            : slot.available
+                              ? 'text-gray-900'
+                              : 'text-gray-400'
+                        }`}>
+                          {slot.time}
+                        </p>
+                        {slot.available ? (
+                          <span className="text-xs text-emerald-600 font-medium mt-0.5 block">
+                            Disponible
+                          </span>
+                        ) : (
+                          <span className="text-xs text-red-500 font-medium mt-0.5 block">No disponible</span>
+                        )}
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 bg-gradient-to-br from-amber-50/90 to-orange-50/90 backdrop-blur-sm border-1.5 border-amber-200/70 rounded-xl text-center">
+                  <ClockIcon className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                  <p className="text-amber-800 font-bold text-base mb-1">Esta fecha no tiene horarios disponibles</p>
+                  <p className="text-amber-800 font-semibold text-sm">💡 Intenta seleccionar otra fecha</p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        );
+
       case 'package':
         return (
-          <motion.div 
+          <motion.div
             key="package"
             variants={fadeInUp}
             initial="initial"
             animate="animate"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="space-y-10"
+            className="space-y-6"
+            style={{ transform: 'scale(0.9)' }}
           >
             {/* Header Section */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+            <motion.div
+              initial={{ opacity: 0, y: 1.25 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center space-y-4"
+              className="text-center space-y-2"
             >
-              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Elige tu experiencia perfecta
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                Elige tu paquete perfecto
               </h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                Cada paquete está diseñado para crear momentos mágicos e inolvidables
+              <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto leading-relaxed px-3">
+                Selecciona el paquete que mejor se adapte a tu celebración
               </p>
             </motion.div>
-            
-            {loadingPackages ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-64 rounded-3xl" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-                {packages.map((pkg, index) => (
-                  <motion.div
-                    key={pkg._id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.15 }}
-                    whileHover={{ y: -8, transition: { duration: 0.2 } }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Card
-                      isPressable
-                      shadow="lg"
-                      className={`transition-all duration-300 cursor-pointer overflow-hidden ${
+
+            {/* Package Selection */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-4"
+            >
+              {loadingPackages ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-32 rounded-xl" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {packages.map((pkg) => (
+                    <motion.div
+                      key={pkg._id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setFormData(prev => ({ ...prev, packageId: pkg._id }))}
+                      className={`p-4 rounded-xl border-1.5 cursor-pointer transition-all duration-300 ${
                         formData.packageId === pkg._id
-                          ? 'ring-4 ring-purple-200 bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 shadow-2xl'
-                          : 'hover:shadow-2xl bg-white border border-gray-100'
+                          ? 'border-purple-500 bg-gradient-to-br from-purple-50/90 to-indigo-50/90 backdrop-blur-lg shadow-lg'
+                          : 'border-gray-200/70 hover:border-purple-300 bg-white/50 backdrop-blur-lg hover:bg-purple-50/30'
                       }`}
-                      onPress={() => setFormData(prev => ({ ...prev, packageId: pkg._id }))}
-                      radius="lg"
                     >
-                      {/* Package Header */}
-                      <CardHeader className="pb-4 relative">
-                        <div className="flex items-start justify-between w-full">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
-                              formData.packageId === pkg._id 
-                                ? 'bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg' 
-                                : 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600'
-                            }`}>
-                              <StarIcon className="w-7 h-7" />
-                            </div>
-                            <div>
-                              <h3 className="text-xl font-bold text-gray-900 mb-1">
-                                {pkg.number ? `Paquete ${pkg.number}` : pkg.name}
-                              </h3>
-                              <p className="text-gray-600 text-sm leading-relaxed">
-                                {pkg.description || 'Experiencia completa de celebración'}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <AnimatePresence>
-                            {formData.packageId === pkg._id && (
-                              <motion.div
-                                initial={{ scale: 0, rotate: -180 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                exit={{ scale: 0, rotate: 180 }}
-                                className="absolute -top-2 -right-2"
-                              >
-                                <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
-                                  <CheckIconSolid className="w-5 h-5 text-white" />
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      </CardHeader>
-                      
-                      <CardBody className="pt-0 pb-6">
-                        <div className="space-y-4">
-                          {/* Guest Capacity */}
-                          <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-                            <div className="w-8 h-8 bg-blue-500 rounded-xl flex items-center justify-center">
-                              <UserGroupIcon className="w-4 h-4 text-white" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-blue-900">Capacidad</p>
-                              <p className="text-xs text-blue-700">Hasta {pkg.maxGuests} invitados</p>
-                            </div>
-                          </div>
-                          
-                          {/* Pricing */}
-                          <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-4 space-y-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Entre semana</span>
-                              <span className="text-lg font-bold text-gray-900">
-                                ${pkg.pricing?.weekday?.toLocaleString() || '0'}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Fin de semana</span>
-                              <span className="text-lg font-bold text-purple-600">
-                                ${pkg.pricing?.weekend?.toLocaleString() || '0'}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          {/* Date-specific pricing */}
-                          {formData.eventDate && (
-                            <motion.div 
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl border border-emerald-200"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
-                                    <CalendarDaysIcon className="w-3 h-3 text-white" />
-                                  </div>
-                                  <span className="text-sm font-semibold text-emerald-700">
-                                    Precio para tu fecha
-                                  </span>
-                                </div>
-                                <span className="text-xl font-bold text-emerald-600">
-                                  ${(formData.eventDate && (formData.eventDate.getDay() === 0 || formData.eventDate.getDay() === 6)
-                                    ? pkg.pricing?.weekend 
-                                    : pkg.pricing?.weekday)?.toLocaleString() || '0'}
-                                </span>
-                              </div>
-                            </motion.div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-base text-gray-900 mb-1">{pkg.name}</h3>
+                          {pkg.description && (
+                            <p className="text-xs text-gray-600 mb-2">{pkg.description}</p>
                           )}
+                          <div className="flex items-center gap-2 mb-2">
+                            <UserGroupIcon className="w-3 h-3 text-purple-500" />
+                            <span className="text-xs text-gray-700">Hasta {pkg.maxGuests} invitados</span>
+                          </div>
                         </div>
-                      </CardBody>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            )}
+                        {formData.packageId === pkg._id && (
+                          <CheckIconSolid className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                        )}
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-600">Entre semana:</span>
+                          <span className="text-sm font-bold text-gray-900">{formatPrice(pkg.pricing.weekday)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-600">Fin de semana:</span>
+                          <span className="text-sm font-bold text-gray-900">{formatPrice(pkg.pricing.weekend)}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         );
 
       case 'food':
         return (
-          <motion.div 
+          <motion.div
             key="food"
             variants={fadeInUp}
             initial="initial"
             animate="animate"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="space-y-10"
+            className="space-y-6"
+            style={{ transform: 'scale(0.9)' }}
           >
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+            {/* Header Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.25 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center space-y-4"
+              className="text-center space-y-2"
             >
-              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-                ¡Hagámoslo especial!
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                Personaliza tu menú
               </h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                Agrega sabores deliciosos y temas mágicos para crear recuerdos inolvidables
+              <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto leading-relaxed px-3">
+                Agrega opciones de comida para hacer tu evento aún más especial
               </p>
             </motion.div>
-            
+
             {/* Food Options */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
+              className="space-y-4"
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Opciones de comida</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {foodOptions.map((option, index) => (
-                  <motion.div
-                    key={option._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setFormData(prev => ({ ...prev, foodOptionId: prev.foodOptionId === option._id ? '' : option._id }))}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      formData.foodOptionId === option._id
-                        ? 'border-pink-500 bg-pink-50'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-1">{option.name}</h4>
-                        <p className="text-sm text-gray-600 mb-2">{option.description}</p>
-                        <div className="flex items-center gap-2">
-                          <Chip size="sm" variant="flat" className="bg-gray-100">
-                            {option.category === 'main' ? 'Principal' : 
-                             option.category === 'appetizer' ? 'Entrada' :
-                             option.category === 'dessert' ? 'Postre' : 'Bebida'}
-                          </Chip>
-                          <span className="text-sm font-semibold text-green-600">
-                            +${option.basePrice.toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                      <AnimatePresence>
-                        {formData.foodOptionId === option._id && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                          >
-                            <CheckIconSolid className="w-5 h-5 text-pink-500" />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Event Themes */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Temas de decoración</h3>
-              <div className="space-y-4">
-                {eventThemes.map((theme, index) => (
-                  <motion.div 
-                    key={theme._id} 
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="space-y-3"
-                  >
+              {loadingOptions ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-24 rounded-xl" />
+                  ))}
+                </div>
+              ) : foodOptions.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {foodOptions.map((food) => (
                     <motion.div
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      onClick={() => setFormData(prev => ({ 
-                        ...prev, 
-                        eventThemeId: prev.eventThemeId === theme._id ? '' : theme._id,
-                        selectedThemePackage: '' 
+                      key={food._id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        foodOptionId: prev.foodOptionId === food._id ? '' : food._id
                       }))}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        formData.eventThemeId === theme._id
-                          ? 'border-pink-500 bg-pink-50'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                      className={`p-4 rounded-xl border-1.5 cursor-pointer transition-all duration-300 ${
+                        formData.foodOptionId === food._id
+                          ? 'border-emerald-500 bg-gradient-to-br from-emerald-50/90 to-teal-50/90 backdrop-blur-lg shadow-lg'
+                          : 'border-gray-200/70 hover:border-emerald-300 bg-white/50 backdrop-blur-lg hover:bg-emerald-50/30'
                       }`}
                     >
                       <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-semibold text-gray-900 mb-1">{theme.name}</h4>
-                          {theme.description && (
-                            <p className="text-sm text-gray-600">{theme.description}</p>
-                          )}
+                        <div className="flex-1">
+                          <h3 className="font-bold text-sm text-gray-900 mb-1">{food.name}</h3>
+                          <p className="text-xs text-gray-600 mb-2">{food.description}</p>
+                          <div className="flex items-center justify-between">
+                            <Chip size="sm" variant="flat" className="bg-emerald-100 text-emerald-700 text-xs">
+                              {food.category}
+                            </Chip>
+                            <span className="text-sm font-bold text-gray-900">{formatPrice(food.basePrice)}</span>
+                          </div>
                         </div>
-                        <AnimatePresence>
-                          {formData.eventThemeId === theme._id && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              exit={{ scale: 0 }}
-                            >
-                              <CheckIconSolid className="w-5 h-5 text-pink-500" />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                        {formData.foodOptionId === food._id && (
+                          <CheckIconSolid className="w-4 h-4 text-emerald-500 flex-shrink-0 ml-2" />
+                        )}
                       </div>
                     </motion.div>
-                    
-                    <AnimatePresence>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-6 bg-gray-50/50 backdrop-blur-sm rounded-xl">
+                  <p className="text-gray-500 text-sm">No hay opciones de comida disponibles en este momento</p>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Theme Selection */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="space-y-4"
+            >
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <SparklesIcon className="w-4 h-4 text-emerald-500" />
+                Temas decorativos
+                <span className="text-xs font-normal text-gray-500">(opcional)</span>
+              </h2>
+              
+              {eventThemes.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {eventThemes.map((theme) => (
+                    <motion.div
+                      key={theme._id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        eventThemeId: prev.eventThemeId === theme._id ? '' : theme._id,
+                        selectedThemePackage: ''
+                      }))}
+                      className={`p-4 rounded-xl border-1.5 cursor-pointer transition-all duration-300 ${
+                        formData.eventThemeId === theme._id
+                          ? 'border-emerald-500 bg-gradient-to-br from-emerald-50/90 to-teal-50/90 backdrop-blur-lg shadow-lg'
+                          : 'border-gray-200/70 hover:border-emerald-300 bg-white/50 backdrop-blur-lg hover:bg-emerald-50/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-sm text-gray-900 mb-1">{theme.name}</h3>
+                          {theme.description && (
+                            <p className="text-xs text-gray-600 mb-2">{theme.description}</p>
+                          )}
+                        </div>
+                        {formData.eventThemeId === theme._id && (
+                          <CheckIconSolid className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        )}
+                      </div>
+                      
                       {formData.eventThemeId === theme._id && theme.packages.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="ml-4 space-y-2 overflow-hidden"
-                        >
-                          <p className="text-sm font-medium text-gray-700">Selecciona un paquete:</p>
+                        <div className="space-y-2 mt-3 pt-3 border-t border-gray-200/50">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">Selecciona un paquete:</p>
                           {theme.packages.map((pkg) => (
-                            <motion.div
+                            <motion.button
                               key={pkg.name}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              onClick={() => setFormData(prev => ({ ...prev, selectedThemePackage: pkg.name }))}
-                              className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedThemePackage: prev.selectedThemePackage === pkg.name ? '' : pkg.name
+                                }));
+                              }}
+                              className={`w-full p-2 rounded-lg border text-left transition-all duration-200 ${
                                 formData.selectedThemePackage === pkg.name
-                                  ? 'border-pink-500 bg-pink-50'
-                                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                                  ? 'border-emerald-400 bg-emerald-50/80'
+                                  : 'border-gray-200/70 hover:border-emerald-300 bg-white/50'
                               }`}
                             >
                               <div className="flex justify-between items-center">
                                 <div>
-                                  <p className="font-medium text-gray-900">{pkg.name}</p>
-                                  <p className="text-sm text-gray-600">{pkg.pieces} piezas</p>
+                                  <p className="text-xs font-medium text-gray-900">{pkg.name}</p>
+                                  <p className="text-xs text-gray-600">{pkg.pieces} piezas</p>
                                 </div>
-                                <span className="font-semibold text-green-600">
-                                  +${pkg.price.toLocaleString()}
-                                </span>
+                                <span className="text-xs font-bold text-gray-900">{formatPrice(pkg.price)}</span>
                               </div>
-                            </motion.div>
+                            </motion.button>
                           ))}
-                        </motion.div>
+                        </div>
                       )}
-                    </AnimatePresence>
-                  </motion.div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-6 bg-gray-50/50 backdrop-blur-sm rounded-xl">
+                  <p className="text-gray-500 text-sm">No hay temas decorativos disponibles en este momento</p>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         );
 
       case 'extras':
         return (
-          <motion.div 
+          <motion.div
             key="extras"
             variants={fadeInUp}
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ duration: 0.3 }}
-            className="space-y-8"
+            transition={{ duration: 0.4 }}
+            className="space-y-6"
+            style={{ transform: 'scale(0.9)' }}
           >
-            <div className="text-center lg:text-left">
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Servicios adicionales</h2>
-              <p className="text-gray-600">Haz tu evento aún más especial</p>
-            </div>
-            
-            <div className="space-y-6">
-              {Object.entries(
-                extraServices.reduce((acc, service) => {
-                  if (!acc[service.category]) acc[service.category] = [];
-                  acc[service.category].push(service);
-                  return acc;
-                }, {} as Record<string, ExtraService[]>)
-              ).map(([category, services], categoryIndex) => (
-                <motion.div 
-                  key={category}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: categoryIndex * 0.1 }}
-                >
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
-                    {category}
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {services.map((service, index) => (
-                      <motion.div
-                        key={service._id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: categoryIndex * 0.1 + index * 0.05 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          const isSelected = (formData.selectedExtraServices || []).includes(service._id);
-                          if (isSelected) {
-                            setFormData(prev => ({
-                              ...prev,
-                              selectedExtraServices: prev.selectedExtraServices.filter(id => id !== service._id)
-                            }));
-                          } else {
-                            setFormData(prev => ({
-                              ...prev,
-                              selectedExtraServices: [...prev.selectedExtraServices, service._id]
-                            }));
-                          }
-                        }}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                          (formData.selectedExtraServices || []).includes(service._id)
-                            ? 'border-pink-500 bg-pink-50'
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 mb-1">{service.name}</h4>
-                            <p className="text-sm text-gray-600 mb-2">{service.description}</p>
-                            <span className="text-sm font-semibold text-green-600">
-                              +${service.price.toLocaleString()}
-                            </span>
+            {/* Header Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.25 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-2"
+            >
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                Servicios adicionales
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto leading-relaxed px-3">
+                Agrega servicios extra para hacer tu celebración inolvidable
+              </p>
+            </motion.div>
+
+            {/* Extra Services */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-4"
+            >
+              {loadingOptions ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-20 rounded-xl" />
+                  ))}
+                </div>
+              ) : extraServices.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {extraServices.map((service) => (
+                    <motion.div
+                      key={service._id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        const isSelected = formData.selectedExtraServices.includes(service._id);
+                        setFormData(prev => ({
+                          ...prev,
+                          selectedExtraServices: isSelected
+                            ? prev.selectedExtraServices.filter(id => id !== service._id)
+                            : [...prev.selectedExtraServices, service._id]
+                        }));
+                      }}
+                      className={`p-4 rounded-xl border-1.5 cursor-pointer transition-all duration-300 ${
+                        formData.selectedExtraServices.includes(service._id)
+                          ? 'border-amber-500 bg-gradient-to-br from-amber-50/90 to-orange-50/90 backdrop-blur-lg shadow-lg'
+                          : 'border-gray-200/70 hover:border-amber-300 bg-white/50 backdrop-blur-lg hover:bg-amber-50/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-sm text-gray-900 mb-1">{service.name}</h3>
+                          <p className="text-xs text-gray-600 mb-2">{service.description}</p>
+                          <div className="flex items-center justify-between">
+                            <Chip size="sm" variant="flat" className="bg-amber-100 text-amber-700 text-xs">
+                              {service.category}
+                            </Chip>
+                            <span className="text-sm font-bold text-gray-900">{formatPrice(service.price)}</span>
                           </div>
-                          <AnimatePresence>
-                            {formData.selectedExtraServices.includes(service._id) && (
-                              <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                exit={{ scale: 0 }}
-                              >
-                                <CheckIconSolid className="w-5 h-5 text-pink-500" />
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
                         </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                        {formData.selectedExtraServices.includes(service._id) && (
+                          <CheckIconSolid className="w-4 h-4 text-amber-500 flex-shrink-0 ml-2" />
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-6 bg-gray-50/50 backdrop-blur-sm rounded-xl">
+                  <p className="text-gray-500 text-sm">No hay servicios adicionales disponibles en este momento</p>
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         );
 
       case 'payment':
         return (
-          <motion.div 
+          <motion.div
             key="payment"
             variants={fadeInUp}
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ duration: 0.3 }}
-            className="space-y-8"
+            transition={{ duration: 0.4 }}
+            className="space-y-6"
+            style={{ transform: 'scale(0.9)' }}
           >
-            <div className="text-center lg:text-left">
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">¿Cómo prefieres pagar?</h2>
-              <p className="text-gray-600">Selecciona tu método de pago preferido</p>
-            </div>
+            {/* Header Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.25 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-2"
+            >
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Método de pago
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto leading-relaxed px-3">
+                Selecciona cómo prefieres realizar el pago de tu reservación
+              </p>
+            </motion.div>
 
-            <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {[
-                { value: 'transfer', icon: BanknotesIcon, color: 'blue', title: 'Transferencia bancaria', desc: 'Datos por correo' },
-                { value: 'cash', icon: BanknotesIcon, color: 'green', title: 'Efectivo', desc: 'Paga el día del evento' },
-                { value: 'card', icon: CreditCardIcon, color: 'purple', title: 'Tarjeta', desc: 'Paga el día del evento' }
-              ].map((method, index) => (
-                <motion.button
-                  key={method.value}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setFormData(prev => ({ ...prev, paymentMethod: method.value as 'transfer' | 'cash' | 'card' }))}
-                  className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center text-center space-y-2 ${
-                    formData.paymentMethod === method.value
-                      ? 'border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+            {/* Payment Methods */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-4"
+            >
+              <RadioGroup
+                value={formData.paymentMethod}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as 'transfer' | 'cash' | 'card' }))}
+                className="space-y-3"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  className={`p-4 rounded-xl border-1.5 transition-all duration-300 ${
+                    formData.paymentMethod === 'transfer'
+                      ? 'border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg'
+                      : 'border-gray-200/70 hover:border-green-300 bg-white/50 backdrop-blur-lg'
                   }`}
                 >
-                  {React.createElement(method.icon, { 
-                    className: `w-5 h-5 ${method.color === 'blue' ? 'text-blue-600' : method.color === 'green' ? 'text-green-600' : 'text-purple-600'}` 
-                  })}
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">{method.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{method.desc}</p>
+                  <Radio value="transfer" className="w-full">
+                    <div className="flex items-center gap-3 w-full">
+                      <BanknotesIcon className="w-5 h-5 text-green-500" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-gray-900">Transferencia Bancaria</p>
+                        <p className="text-xs text-gray-600">Pago seguro mediante transferencia</p>
+                      </div>
+                    </div>
+                  </Radio>
+                </motion.div>
+
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  className={`p-4 rounded-xl border-1.5 transition-all duration-300 ${
+                    formData.paymentMethod === 'cash'
+                      ? 'border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg'
+                      : 'border-gray-200/70 hover:border-green-300 bg-white/50 backdrop-blur-lg'
+                  }`}
+                >
+                  <Radio value="cash" className="w-full">
+                    <div className="flex items-center gap-3 w-full">
+                      <BanknotesIcon className="w-5 h-5 text-green-500" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-gray-900">Efectivo</p>
+                        <p className="text-xs text-gray-600">Pago en efectivo el día del evento</p>
+                      </div>
+                    </div>
+                  </Radio>
+                </motion.div>
+
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  className={`p-4 rounded-xl border-1.5 transition-all duration-300 ${
+                    formData.paymentMethod === 'card'
+                      ? 'border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg'
+                      : 'border-gray-200/70 hover:border-green-300 bg-white/50 backdrop-blur-lg'
+                  }`}
+                >
+                  <Radio value="card" className="w-full">
+                    <div className="flex items-center gap-3 w-full">
+                      <CreditCardIcon className="w-5 h-5 text-green-500" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-gray-900">Tarjeta de Crédito/Débito</p>
+                        <p className="text-xs text-gray-600">Pago con tarjeta bancaria</p>
+                      </div>
+                    </div>
+                  </Radio>
+                </motion.div>
+              </RadioGroup>
+            </motion.div>
+
+            {/* Summary */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="p-4 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg rounded-xl border border-green-200/70"
+            >
+              <h3 className="font-bold text-base text-gray-900 mb-3">Resumen de tu reservación</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Festejado/a:</span>
+                  <span className="font-semibold text-gray-900">{formData.childName} ({formData.childAge} años)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Fecha:</span>
+                  <span className="font-semibold text-gray-900">
+                    {formData.eventDate?.toLocaleDateString('es-ES')} a las {formData.eventTime}
+                  </span>
+                </div>
+                {selectedPackage && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Paquete:</span>
+                    <span className="font-semibold text-gray-900">{selectedPackage.name}</span>
                   </div>
-                </motion.button>
-              ))}
+                )}
+                <Divider className="my-2" />
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-gray-900">Total:</span>
+                  <span className="text-xl font-black text-green-600">{formatPrice(calculateTotal())}</span>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         );
 
       case 'confirmation':
         return (
-          <div className="space-y-8">
-            <div className="text-center">
-              <div className="flex flex-col items-center">
-                <div className="relative flex items-center justify-center">
-                  {celebrationAnimation && (
-                    <DotLottieReact
-                      src="https://lottie.host/bb5b54e5-d1d0-41af-a958-7203748ff3c1/wMVyMTX4XV.lottie"
-                      loop
-                      autoplay
-                      style={{ width: '200px', height: '200px' }}
-                    />
-                  )}
-                  <motion.div
-                    className={`w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center shadow-xl ${
-                      celebrationAnimation ? 'absolute' : 'mx-auto mb-4'
-                    }`}
-                    initial={{ scale: 0, opacity: 0, rotate: 0 }}
-                    animate={{ 
-                      scale: [0, 1.2, 1],
-                      opacity: [0, 1, 1],
-                      rotate: [0, 360]
-                    }}
-                    transition={{
-                      duration: 1,
-                      ease: "easeInOut"
-                    }}
-                    style={{ 
-                      zIndex: 10
-                    }}
-                  >
-                    <CheckIcon className="w-10 h-10 text-white drop-shadow" />
-                  </motion.div>
+          <motion.div
+            key="confirmation"
+            variants={scaleIn}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.6 }}
+            className="text-center space-y-6"
+            style={{ transform: 'scale(0.9)' }}
+          >
+            {/* Success Animation */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-xl"
+            >
+              <CheckIconSolid className="w-10 h-10 text-white" />
+            </motion.div>
+
+            {/* Success Message */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="space-y-3"
+            >
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                ¡Reservación Confirmada!
+              </h1>
+              <p className="text-base text-gray-600 max-w-lg mx-auto">
+                Tu reservación ha sido creada exitosamente. Recibirás un email de confirmación en breve.
+              </p>
+            </motion.div>
+
+            {/* Reservation Details */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="bg-gradient-to-br from-emerald-50/90 to-green-50/90 backdrop-blur-lg rounded-xl p-6 border border-emerald-200/70 max-w-md mx-auto"
+            >
+              <h3 className="font-bold text-lg text-gray-900 mb-4">Detalles de tu reservación</h3>
+              <div className="space-y-3 text-left">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">ID de Reservación:</span>
+                  <span className="text-sm font-semibold text-gray-900">{reservationId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Festejado/a:</span>
+                  <span className="text-sm font-semibold text-gray-900">{formData.childName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Fecha:</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {formData.eventDate?.toLocaleDateString('es-ES')}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Hora:</span>
+                  <span className="text-sm font-semibold text-gray-900">{formData.eventTime}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Total:</span>
+                  <span className="text-lg font-bold text-emerald-600">{formatPrice(calculateTotal())}</span>
                 </div>
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">¡Listo!</h2>
-              <p className="text-gray-600">Tu reserva ha sido confirmada</p>
-            </div>
+            </motion.div>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-50 to-purple-50">
-              <CardBody className="p-6">
-                <div className="text-center mb-6">
-                  <p className="text-sm text-gray-600 mb-1">Número de reserva</p>
-                  <p className="text-2xl font-mono font-bold text-gray-900">{reservationId}</p>
-                </div>
-                
-                <Divider className="my-4" />
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Festejado/a</span>
-                    <span className="font-medium">{formData.childName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Fecha</span>
-                    <span className="font-medium">{formData.eventDate ? formData.eventDate.toLocaleDateString('es-ES', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    }) : ''}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Hora</span>
-                    <span className="font-medium">{formData.eventTime} hrs</span>
-                  </div>
-                  <Divider className="my-2" />
-                  <div className="flex justify-between text-lg">
-                    <span className="font-semibold text-gray-900">Total</span>
-                    <span className="font-bold text-green-600">{formatPrice(calculateTotal())}</span>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-
-            <div className="space-y-3">
+            {/* Action Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto"
+            >
               <Button
-                color="primary"
                 size="lg"
-                startContent={<DocumentTextIcon className="w-5 h-5" />}
                 onPress={generatePaymentSlip}
-                className="w-full"
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all font-semibold"
+                radius="full"
+                startContent={<DocumentTextIcon className="w-4 h-4" />}
               >
                 Descargar ficha de pago
               </Button>
-
               <Button
-                color="success"
                 size="lg"
-                startContent={<DocumentTextIcon className="w-5 h-5" />}
-                onPress={downloadInvoice}
-                className="w-full"
-              >
-                Descargar factura PDF
-              </Button>
-              
-              <Button
                 variant="bordered"
-                size="lg"
                 onPress={() => router.push('/reservaciones')}
-                className="w-full"
+                className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 font-semibold"
+                radius="full"
               >
-                Ver mis reservas
+                Ver mis reservaciones
               </Button>
-            </div>
-
-            <div className="text-center text-sm text-gray-600">
-              <p>Te hemos enviado un correo con todos los detalles</p>
-              <p className="mt-2">¿Necesitas ayuda? Llámanos al (55) 1234-5678</p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         );
 
       default:
@@ -1497,17 +1524,17 @@ Para cualquier duda, contacta:
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-white to-pink-50">
-        <motion.div className="text-center space-y-4">
+        <motion.div className="text-center space-y-3">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 border-4 border-rose-300 border-t-rose-600 rounded-full mx-auto"
+            className="w-12 h-12 border-4 border-rose-300 border-t-rose-600 rounded-full mx-auto"
           />
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="text-gray-600 font-medium"
+            className="text-gray-600 font-medium text-sm"
           >
             Preparando tu experiencia...
           </motion.p>
@@ -1517,120 +1544,110 @@ Para cualquier duda, contacta:
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
-      {/* Header */}
-      <motion.div 
-        initial={{ y: -100 }}
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50" style={{ transform: 'scale(0.9)', transformOrigin: 'top left' }}>
+      {/* Modern Header */}
+      <motion.div
+        initial={{ y: -6.25 }}
         animate={{ y: 0 }}
-        className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-40 shadow-sm"
+        className="bg-white/80 backdrop-blur-lg border-b border-gray-200/60 sticky top-0 z-40 shadow-sm"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center justify-between py-3">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => router.push('/reservaciones')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors p-2 rounded-full hover:bg-gray-100"
+              className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 transition-colors p-1.5 rounded-full hover:bg-gray-100"
             >
-              <ArrowLeftIcon className="w-5 h-5" />
-              <span className="hidden sm:inline font-medium">Volver</span>
+              <ArrowLeftIcon className="w-4 h-4" />
+              <span className="hidden sm:inline font-medium text-sm">Volver</span>
             </motion.button>
             
             {/* Progress Indicator */}
-            <div className="flex-1 max-w-5xl mx-6">
-              <div className="hidden md:flex items-center justify-between">
-                {steps.map((step, index) => {
-                  const isActive = currentStep === step.key;
-                  const isCompleted = currentStepIndex > index;
-                  const Icon = step.icon;
-                  
-                  return (
-                    <React.Fragment key={step.key}>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex flex-col items-center px-1 relative z-10"
-                      >
+            <div className="flex-1 max-w-2xl mx-4">
+              <div className="hidden md:flex items-center justify-center">
+                <div className="flex items-center space-x-3">
+                  {steps.map((step, index) => {
+                    const isActive = currentStep === step.key;
+                    const isCompleted = currentStepIndex > index;
+                    
+                    return (
+                      <React.Fragment key={step.key}>
                         <motion.div
-                          animate={{
-                            scale: isActive ? 1.15 : 1,
-                          }}
-                          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-                            isCompleted 
-                              ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-xl shadow-emerald-200' 
-                              : isActive 
-                                ? 'bg-gradient-to-br from-rose-400 to-pink-600 text-white shadow-xl shadow-rose-200 ring-4 ring-rose-100' 
-                                : 'bg-white text-gray-400 border-2 border-gray-200 shadow-sm'
-                          }`}
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="flex items-center space-x-1.5"
                         >
-                          {isCompleted ? (
-                            <CheckIconSolid className="w-6 h-6" />
-                          ) : (
-                            <Icon className="w-6 h-6" />
-                          )}
-                        </motion.div>
-                        <div className="mt-3 text-center max-w-24">
-                          <div className={`text-sm font-semibold ${
+                          <motion.div
+                            animate={{
+                              scale: isActive ? 1.1 : 1,
+                            }}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${
+                              isCompleted
+                                ? 'bg-emerald-500 text-white'
+                                : isActive
+                                  ? 'bg-rose-500 text-white ring-2 ring-rose-200'
+                                  : 'bg-gray-200 text-gray-500'
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <CheckIconSolid className="w-3 h-3" />
+                            ) : (
+                              <span className="text-xs font-semibold">{index + 1}</span>
+                            )}
+                          </motion.div>
+                          <div className={`text-xs font-medium ${
                             isActive ? 'text-rose-600' : isCompleted ? 'text-emerald-600' : 'text-gray-500'
                           }`}>
                             {step.title}
                           </div>
-                          <div className={`text-xs mt-1 ${
-                            isActive ? 'text-rose-500' : 'text-gray-400'
-                          }`}>
-                            {step.description}
-                          </div>
-                        </div>
-                      </motion.div>
-                      {index < steps.length - 1 && (
-                        <div className="flex-1 px-4 relative -top-5">
-                          <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                        </motion.div>
+                        {index < steps.length - 1 && (
+                          <div className="w-6 h-0.5 bg-gray-200 rounded-full overflow-hidden">
                             <motion.div
                               initial={{ width: "0%" }}
-                              animate={{ 
+                              animate={{
                                 width: currentStepIndex > index ? "100%" : "0%"
                               }}
-                              transition={{ duration: 0.8, ease: "easeInOut" }}
-                              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full"
+                              transition={{ duration: 0.5, ease: "easeInOut" }}
+                              className="h-full bg-emerald-500 rounded-full"
                             />
                           </div>
-                        </div>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
               </div>
               
               {/* Mobile Progress */}
-              <div className="md:hidden space-y-4">
+              <div className="md:hidden space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
-                      'bg-gradient-to-br from-rose-400 to-pink-600 text-white shadow-lg shadow-rose-200'
-                    }`}>
-                      {React.createElement(steps[currentStepIndex].icon, { className: "w-5 h-5" })}
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-br from-rose-400 to-pink-600 text-white shadow-lg">
+                      {React.createElement(steps[currentStepIndex].icon, { className: "w-4 h-4" })}
                     </div>
                     <div>
-                      <div className="text-base font-semibold text-gray-900">
+                      <div className="text-sm font-semibold text-gray-900">
                         {steps[currentStepIndex].title}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs text-gray-500">
                         {steps[currentStepIndex].description}
                       </div>
                     </div>
                   </div>
-                  <Chip 
-                    size="lg" 
-                    variant="flat" 
-                    className="bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700 border border-rose-200"
+                  <Chip
+                    size="sm"
+                    variant="flat"
+                    className="bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700 border border-rose-200 text-xs"
                   >
                     {currentStepIndex + 1} de {steps.length}
                   </Chip>
                 </div>
-                <Progress 
+                <Progress
                   value={((currentStepIndex + 1) / steps.length) * 100}
-                  size="md"
+                  size="sm"
                   classNames={{
                     track: "bg-gray-200",
                     indicator: "bg-gradient-to-r from-rose-400 to-pink-600"
@@ -1640,33 +1657,25 @@ Para cualquier duda, contacta:
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <AdminQuickNav variant="header" />
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="hidden lg:flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-full"
-              >
-                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                <span className="font-medium">Tramboory</span>
-              </motion.div>
             </div>
           </div>
         </div>
       </motion.div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-6 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Form Section */}
           <div className="lg:col-span-2">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 1.875 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
             >
-              <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-xl overflow-visible rounded-3xl">
-                <CardBody className="p-8 lg:p-12 overflow-visible">
+              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-xl overflow-visible rounded-xl">
+                <CardBody className="p-6 lg:p-8 overflow-visible">
                   <AnimatePresence mode="wait">
                     {renderStepContent()}
                   </AnimatePresence>
@@ -1675,23 +1684,24 @@ Para cualquier duda, contacta:
 
               {/* Navigation */}
               {currentStep !== 'confirmation' && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
+                <motion.div
+                  initial={{ opacity: 0, y: 1.25 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="flex justify-between items-center mt-8"
+                  className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center mt-6 gap-3 sm:gap-0"
                 >
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
+                    className="order-2 sm:order-1"
                   >
                     <Button
                       variant="bordered"
                       size="lg"
-                      startContent={<ArrowLeftIcon className="w-5 h-5" />}
+                      startContent={<ArrowLeftIcon className="w-4 h-4" />}
                       onPress={handlePrevious}
                       isDisabled={currentStepIndex === 0}
-                      className="min-w-[140px] border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 font-semibold"
+                      className="w-full sm:min-w-32 border-1.5 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 font-semibold"
                       radius="full"
                     >
                       Anterior
@@ -1702,12 +1712,13 @@ Para cualquier duda, contacta:
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      className="order-1 sm:order-2"
                     >
                       <Button
                         size="lg"
                         onPress={handleSubmit}
                         isLoading={loading}
-                        className="min-w-[180px] bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-xl hover:shadow-2xl transition-all font-semibold"
+                        className="w-full sm:min-w-40 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-xl hover:shadow-2xl transition-all font-semibold"
                         radius="full"
                       >
                         {loading ? 'Confirmando...' : '✨ Confirmar reserva'}
@@ -1717,13 +1728,14 @@ Para cualquier duda, contacta:
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      className="order-1 sm:order-2"
                     >
                       <Button
                         size="lg"
-                        endContent={<ArrowRightIcon className="w-5 h-5" />}
+                        endContent={<ArrowRightIcon className="w-4 h-4" />}
                         onPress={handleNext}
                         isDisabled={!validateCurrentStep()}
-                        className="min-w-[140px] bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-xl hover:shadow-2xl transition-all font-semibold disabled:opacity-50"
+                        className="w-full sm:min-w-32 bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-xl hover:shadow-2xl transition-all font-semibold disabled:opacity-50"
                         radius="full"
                       >
                         Continuar
@@ -1738,170 +1750,65 @@ Para cualquier duda, contacta:
           {/* Summary Sidebar */}
           <div className="lg:col-span-1">
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
+              initial={{ opacity: 0, x: 1.875 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="sticky top-28"
+              className="sticky top-20"
             >
-              <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-xl rounded-3xl overflow-hidden">
-                <CardBody className="p-8">
-                  <motion.h3 
+              <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-xl rounded-xl overflow-hidden">
+                <CardBody className="p-6">
+                  <motion.h3
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3"
+                    className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-br from-rose-400 to-pink-600 rounded-2xl flex items-center justify-center">
-                      <ShoppingCartIcon className="w-4 h-4 text-white" />
+                    <div className="w-6 h-6 bg-gradient-to-br from-rose-400 to-pink-600 rounded-xl flex items-center justify-center">
+                      <ShoppingCartIcon className="w-3 h-3 text-white" />
                     </div>
                     Resumen
                   </motion.h3>
                   
-                  <AnimatePresence>
-                    <div className="space-y-5">
-                      {/* Basic Info */}
-                      {formData.childName && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="p-4 bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border border-rose-100"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <CakeIcon className="w-4 h-4 text-rose-500" />
-                            <p className="text-sm font-semibold text-rose-700">Festejado/a</p>
-                          </div>
-                          <p className="font-bold text-gray-900 text-lg">
-                            {formData.childName} {formData.childAge && `(${formData.childAge} años)`}
-                          </p>
-                        </motion.div>
-                      )}
-                      
-                      {formData.eventDate && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <CalendarDaysIcon className="w-4 h-4 text-blue-500" />
-                            <p className="text-sm font-semibold text-blue-700">Fecha y hora</p>
-                          </div>
-                          <p className="font-bold text-gray-900">
-                            {formData.eventDate.toLocaleDateString('es-ES', { 
-                              weekday: 'long', 
-                              day: 'numeric',
-                              month: 'long'
-                            })}
-                            {formData.eventTime && (
-                              <span className="text-blue-600"> a las {formData.eventTime}</span>
-                            )}
-                          </p>
-                        </motion.div>
-                      )}
-                      
-                      {/* Package */}
-                      {selectedPackage && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <StarIcon className="w-4 h-4 text-purple-500" />
-                            <p className="text-sm font-semibold text-purple-700">Paquete seleccionado</p>
-                          </div>
-                          <p className="font-bold text-gray-900 text-lg mb-1">{selectedPackage?.name || 'Paquete no seleccionado'}</p>
-                          <p className="text-sm font-semibold text-emerald-600">
-                            {formatPrice(formData.eventDate ? 
-                              (formData.eventDate.getDay() === 0 || formData.eventDate.getDay() === 6 ? 
-                                selectedPackage.pricing?.weekend || 0 : selectedPackage.pricing?.weekday || 0) : 0)}
-                          </p>
-                        </motion.div>
-                      )}
-                      
-                      {/* Food */}
-                      {selectedFood && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-100"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <HeartIcon className="w-4 h-4 text-orange-500" />
-                            <p className="text-sm font-semibold text-orange-700">Comida</p>
-                          </div>
-                          <p className="font-bold text-gray-900 text-lg mb-1">{selectedFood.name}</p>
-                          <p className="text-sm font-semibold text-emerald-600">+{formatPrice(selectedFood.basePrice)}</p>
-                        </motion.div>
-                      )}
-                      
-                      {/* Theme */}
-                      {selectedTheme && formData.selectedThemePackage && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500" />
-                            <p className="text-sm font-semibold text-indigo-700">Decoración</p>
-                          </div>
-                          <p className="font-bold text-gray-900 text-lg mb-1">
-                            {selectedTheme.name} - {formData.selectedThemePackage}
-                          </p>
-                          <p className="text-sm font-semibold text-emerald-600">
-                            +{formatPrice((selectedTheme?.packages || []).find(pkg => pkg.name === formData.selectedThemePackage)?.price || 0)}
-                          </p>
-                        </motion.div>
-                      )}
-                      
-                      {/* Extras */}
-                      {selectedExtras.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-2xl border border-teal-100"
-                        >
-                          <div className="flex items-center gap-2 mb-3">
-                            <PlusIcon className="w-4 h-4 text-teal-500" />
-                            <p className="text-sm font-semibold text-teal-700">Servicios extras</p>
-                          </div>
-                          <div className="space-y-2">
-                            {selectedExtras.map((extra) => (
-                              <div key={extra._id} className="flex justify-between items-center">
-                                <span className="text-gray-700 font-medium">{extra.name}</span>
-                                <span className="text-emerald-600 font-semibold">+{formatPrice(extra.price)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                      
-                      {/* Rest Day Fee */}
-                      {availableSlots?.isRestDay && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <ExclamationTriangleIcon className="w-4 h-4 text-amber-600" />
-                            <p className="text-sm font-semibold text-amber-800">Día especial</p>
-                          </div>
-                          <p className="text-gray-700 font-medium mb-1">Cargo por día de descanso</p>
-                          <p className="text-emerald-600 font-semibold">
-                            +{formatPrice(availableSlots.restDayFee)}
-                          </p>
-                        </motion.div>
-                      )}
-                    </div>
-                  </AnimatePresence>
+                  <div className="space-y-3">
+                    {/* Basic Info */}
+                    {formData.childName && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="p-3 bg-gradient-to-r from-rose-50/90 to-pink-50/90 backdrop-blur-sm rounded-xl border border-rose-100/70"
+                      >
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <CakeIcon className="w-3 h-3 text-rose-500" />
+                          <p className="text-xs font-semibold text-rose-700">Festejado/a</p>
+                        </div>
+                        <p className="font-bold text-gray-900 text-base">
+                          {formData.childName} {formData.childAge && `(${formData.childAge} años)`}
+                        </p>
+                      </motion.div>
+                    )}
+                    
+                    {formData.eventDate && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="p-3 bg-gradient-to-r from-blue-50/90 to-indigo-50/90 backdrop-blur-sm rounded-xl border border-blue-100/70"
+                      >
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <CalendarDaysIcon className="w-3 h-3 text-blue-500" />
+                          <p className="text-xs font-semibold text-blue-700">Fecha y hora</p>
+                        </div>
+                        <p className="font-bold text-gray-900 text-sm">
+                          {formData.eventDate.toLocaleDateString('es-ES', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long'
+                          })}
+                          {formData.eventTime && (
+                            <span className="text-blue-600"> a las {formData.eventTime}</span>
+                          )}
+                        </p>
+                      </motion.div>
+                    )}
+                  </div>
                   
                   {/* Total */}
                   {(selectedPackage || selectedFood || selectedExtras.length > 0) && (
@@ -1909,79 +1816,28 @@ Para cualquier duda, contacta:
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.3 }}
-                      className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 rounded-3xl border border-emerald-200"
+                      className="mt-4 p-4 bg-gradient-to-br from-emerald-50/90 to-green-50/90 backdrop-blur-sm rounded-xl border border-emerald-200/70"
                     >
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-xl font-bold text-gray-900">Total estimado</span>
-                        <motion.span 
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-base font-bold text-gray-900">Total estimado</span>
+                        <motion.span
                           key={calculateTotal()}
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
-                          className="text-3xl font-black bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent"
+                          className="text-2xl font-black bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent"
                         >
                           {formatPrice(calculateTotal())}
                         </motion.span>
                       </div>
-                      <p className="text-sm text-emerald-600 font-medium">Pesos mexicanos (MXN)</p>
+                      <p className="text-xs text-emerald-600 font-medium">Pesos mexicanos (MXN)</p>
                     </motion.div>
                   )}
                 </CardBody>
               </Card>
-
-              {/* Help Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Card className="border-0 shadow-xl mt-6 bg-gradient-to-br from-rose-50 to-pink-50 overflow-hidden">
-                  <CardBody className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-rose-400 to-pink-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-                        <InformationCircleIcon className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-base font-bold text-gray-900 mb-2">¿Necesitas ayuda?</p>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Nuestro equipo está listo para ayudarte
-                        </p>
-                        <motion.a 
-                          href="tel:5512345678" 
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-white rounded-full text-rose-600 font-semibold text-sm border border-rose-200 hover:bg-rose-50 transition-colors"
-                        >
-                          📞 (55) 1234-5678
-                        </motion.a>
-                      </div>
-                    </div>
-                  </CardBody>
-                </Card>
-              </motion.div>
             </motion.div>
           </div>
         </div>
       </div>
-      
-      {/* Floating Action Button for Mobile */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5 }}
-        className="fixed bottom-6 right-6 lg:hidden z-50"
-      >
-        {currentStep !== 'confirmation' && formData.childName && formData.eventDate && formData.eventTime && (
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handleNext}
-            disabled={!validateCurrentStep()}
-            className="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-600 text-white rounded-full shadow-2xl flex items-center justify-center disabled:opacity-50"
-          >
-            <ArrowRightIcon className="w-6 h-6" />
-          </motion.button>
-        )}
-      </motion.div>
     </div>
   );
 }

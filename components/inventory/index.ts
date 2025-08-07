@@ -1,9 +1,9 @@
 export { default as InventoryManager } from './InventoryManager';
-export { default as ProductManager } from './ProductManager';
-export { default as StockManager } from './StockManager';
-export { default as ProductModal } from './ProductModal';
-export { default as StockModal } from './StockModal';
+export { default as ProductManager } from './products/ProductManager';
+export { default as StockManager } from './stock/StockManager';
+export { default as ProductModal } from './products/ProductModal';
+export { default as StockModal } from './stock/StockModal';
 export { default as InventoryFilters } from './InventoryFilters';
 export { default as InventoryAlerts } from './InventoryAlerts';
 export { default as InventoryReports } from './InventoryReports';
-export { default as SupplierManager } from './SupplierManager';
+export { default as SupplierManager } from './suppliers/SupplierManager';

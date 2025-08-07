@@ -125,6 +125,7 @@ export class InventoryService {
 
       // Create movement record
       const movementResult = await MovementRepository.create({
+        movement_id: `MOV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         product_id: params.productId,
         movement_type: params.quantity > 0 ? 'IN' : 'OUT',
         from_location: params.quantity < 0 ? params.locationId : undefined,
@@ -234,6 +235,7 @@ export class InventoryService {
 
       // Create movement records
       const outMovementResult = await MovementRepository.create({
+        movement_id: `MOV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-OUT`,
         product_id: params.productId,
         movement_type: 'TRANSFER_OUT',
         from_location: params.fromLocationId,
@@ -248,6 +250,7 @@ export class InventoryService {
       });
 
       const inMovementResult = await MovementRepository.create({
+        movement_id: `MOV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-IN`,
         product_id: params.productId,
         movement_type: 'TRANSFER_IN',
         from_location: params.fromLocationId,
@@ -360,6 +363,7 @@ export class InventoryService {
 
       // Create movement record
       const movementResult = await MovementRepository.create({
+        movement_id: `MOV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         product_id: params.productId,
         movement_type: 'OUT',
         from_location: params.locationId,

@@ -20,12 +20,12 @@ import {
   NordicButton,
   nordicTokens 
 } from "@/components/ui/nordic"
-import ProductManagerNordic from "./ProductManagerNordic"
-import StockManagerNordic from "./StockManagerNordic"
-import SupplierManagerNordic from "./SupplierManagerNordic"
-import InventoryReportsNordic from "./InventoryReportsNordic"
-import InventoryAlertsNordic from "./InventoryAlertsNordic"
-import PurchaseOrderManagerNordic from "./PurchaseOrderManagerNordic"
+import ProductManager from "./products/ProductManager"
+import StockManager from "./stock/StockManager"
+import SupplierManager from "./suppliers/SupplierManager"
+import InventoryReports from "./InventoryReports"
+import InventoryAlerts from "./InventoryAlerts"
+import PurchaseOrderManager from "./purchase-orders/PurchaseOrderManager"
 
 export default function InventoryManagerNordic() {
   const { role, isAdmin, isGerente } = useRole()
@@ -184,7 +184,7 @@ export default function InventoryManagerNordic() {
             }
           >
             <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-              <ProductManagerNordic searchQuery={searchQuery} />
+              <ProductManager />
             </div>
           </Tab>
           
@@ -198,7 +198,7 @@ export default function InventoryManagerNordic() {
             }
           >
             <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-              <StockManagerNordic />
+              <StockManager />
             </div>
           </Tab>
 
@@ -213,7 +213,7 @@ export default function InventoryManagerNordic() {
               }
             >
               <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-                <SupplierManagerNordic />
+                <SupplierManager />
               </div>
             </Tab>
           )}
@@ -228,7 +228,7 @@ export default function InventoryManagerNordic() {
             }
           >
             <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-              <PurchaseOrderManagerNordic />
+              <PurchaseOrderManager />
             </div>
           </Tab>
 
@@ -257,7 +257,7 @@ export default function InventoryManagerNordic() {
             }
           >
             <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-              <InventoryAlertsNordic />
+              <InventoryAlerts />
             </div>
           </Tab>
 
@@ -272,7 +272,7 @@ export default function InventoryManagerNordic() {
               }
             >
               <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-                <InventoryReportsNordic />
+                <InventoryReports />
               </div>
             </Tab>
           )}

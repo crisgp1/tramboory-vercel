@@ -264,7 +264,7 @@ export default function PurchaseOrderManager() {
       key: "status",
       label: "Estado",
       render: (value: any, order: PurchaseOrder) => (
-        <StatusChip status={order.status.toLowerCase()} text={getStatusLabel(order.status)} />
+        <StatusChip status={order.status.toLowerCase()} />
       )
     },
     {

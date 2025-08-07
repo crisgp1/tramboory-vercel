@@ -206,10 +206,14 @@ export default function SupplierManager() {
             <p className="font-medium text-gray-900 truncate">{item.name}</p>
             <div className="flex items-center gap-1 flex-wrap">
               {item.penaltyData && (item.penaltyData.totalPoints || 0) > 0 && (
-                <StatusChip 
-                  status={(item.penaltyData.totalPoints || 0) > 50 ? 'danger' : (item.penaltyData.totalPoints || 0) > 30 ? 'warning' : 'default'}
-                  text={`${item.penaltyData.totalPoints || 0} pts`}
-                />
+                <div className="flex items-center gap-1">
+                  <StatusChip
+                    status={(item.penaltyData.totalPoints || 0) > 50 ? 'danger' : (item.penaltyData.totalPoints || 0) > 30 ? 'warning' : 'default'}
+                  />
+                  <span className="text-xs text-gray-600">
+                    {item.penaltyData.totalPoints || 0} pts
+                  </span>
+                </div>
               )}
             </div>
             <p className="text-xs text-gray-500 truncate">

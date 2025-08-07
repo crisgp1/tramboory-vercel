@@ -14,6 +14,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
+import { Spinner } from '@heroui/react'
 import toast from "react-hot-toast"
 import NordicTable from "@/components/ui/NordicTable"
 

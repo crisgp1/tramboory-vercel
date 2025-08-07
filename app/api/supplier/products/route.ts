@@ -94,10 +94,10 @@ export async function POST(request: NextRequest) {
 
     await product.save();
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: "Product created successfully",
-      productId: product.productId
+      productId: (product as any).productId
     });
 
   } catch (error) {
@@ -133,19 +133,20 @@ export async function GET(request: NextRequest) {
 
     // Transform the data
     const transformedProducts = products.map(product => {
-      const supplierData = product.suppliers.find((s: any) => s.supplierId === supplierId);
+      const productData = product as any;
+      const supplierData = productData.suppliers.find((s: any) => s.supplierId === supplierId);
       
       return {
         _id: product._id.toString(),
-        productId: product.productId,
-        name: product.name,
-        description: product.description,
-        category: product.category,
-        subcategory: product.subcategory,
-        sku: product.sku,
-        brand: product.brand,
-        images: product.images,
-        isActive: product.isActive,
+        productId: productData.productId,
+        name: productData.name,
+        description: productData.description,
+        category: productData.category,
+        subcategory: productData.subcategory,
+        sku: productData.sku,
+        brand: productData.brand,
+        images: productData.images,
+        isActive: productData.isActive,
         supplier: supplierData ? {
           price: supplierData.price,
           minQuantity: supplierData.minQuantity,
@@ -154,8 +155,8 @@ export async function GET(request: NextRequest) {
           leadTime: supplierData.leadTime,
           isActive: supplierData.isActive
         } : null,
-        createdAt: product.createdAt,
-        updatedAt: product.updatedAt
+        createdAt: productData.createdAt,
+        updatedAt: productData.updatedAt
       };
     });
 

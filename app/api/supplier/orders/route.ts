@@ -27,37 +27,40 @@ export async function GET(request: NextRequest) {
       .lean();
 
     // Transform the orders to match the expected format
-    const transformedOrders = orders.map(order => ({
-      _id: (order._id as any).toString(),
-      purchaseOrderId: order.purchaseOrderId,
-      status: order.status,
-      createdAt: order.createdAt.toISOString(),
-      expectedDeliveryDate: order.expectedDeliveryDate?.toISOString(),
-      items: order.items.map((item: any) => ({
-        productId: item.productId,
-        productName: item.productName || "Producto",
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        total: item.total
-      })),
-      subtotal: order.subtotal,
-      tax: order.tax || 0,
-      shipping: order.shipping || 0,
-      total: order.total,
-      notes: order.notes,
-      buyer: order.buyer ? {
-        name: order.buyer.name || "N/A",
-        email: order.buyer.email || "N/A",
-        phone: order.buyer.phone || "N/A",
-        department: order.buyer.department || "N/A"
-      } : undefined,
-      deliveryAddress: order.deliveryAddress ? {
-        street: order.deliveryAddress.street || "",
-        city: order.deliveryAddress.city || "",
-        state: order.deliveryAddress.state || "",
-        zipCode: order.deliveryAddress.zipCode || ""
-      } : undefined
-    }));
+    const transformedOrders = orders.map(order => {
+      const orderData = order as any;
+      return {
+        _id: (order._id as any).toString(),
+        purchaseOrderId: orderData.purchaseOrderId,
+        status: orderData.status,
+        createdAt: orderData.createdAt.toISOString(),
+        expectedDeliveryDate: orderData.expectedDeliveryDate?.toISOString(),
+        items: orderData.items.map((item: any) => ({
+          productId: item.productId,
+          productName: item.productName || "Producto",
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.total
+        })),
+        subtotal: orderData.subtotal,
+        tax: orderData.tax || 0,
+        shipping: orderData.shipping || 0,
+        total: orderData.total,
+        notes: orderData.notes,
+        buyer: orderData.buyer ? {
+          name: orderData.buyer.name || "N/A",
+          email: orderData.buyer.email || "N/A",
+          phone: orderData.buyer.phone || "N/A",
+          department: orderData.buyer.department || "N/A"
+        } : undefined,
+        deliveryAddress: orderData.deliveryAddress ? {
+          street: orderData.deliveryAddress.street || "",
+          city: orderData.deliveryAddress.city || "",
+          state: orderData.deliveryAddress.state || "",
+          zipCode: orderData.deliveryAddress.zipCode || ""
+        } : undefined
+      };
+    });
 
     return NextResponse.json(transformedOrders);
   } catch (error) {

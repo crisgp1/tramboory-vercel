@@ -140,7 +140,7 @@ export default function TimeBlocksManager({
     // Validate the time block configuration
     const validation = validateTimeBlock(blockForm);
     if (!validation.valid) {
-      toast.error(validation.error);
+      toast.error(validation.error || 'Error de validación');
       return;
     }
 

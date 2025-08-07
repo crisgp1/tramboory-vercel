@@ -50,10 +50,10 @@ export class InventoryRepository extends BaseRepository {
       const transformedData: StockItem[] = data?.map(item => ({
         id: item.id,
         product: {
-          id: item.products.id,
-          name: item.products.name,
-          sku: item.products.sku,
-          category: item.products.category
+          id: (item.products as any).id,
+          name: (item.products as any).name,
+          sku: (item.products as any).sku,
+          category: (item.products as any).category
         },
         location_id: item.location_id,
         available_quantity: item.total_available,

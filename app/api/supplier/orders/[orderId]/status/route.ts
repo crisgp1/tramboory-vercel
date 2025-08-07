@@ -42,14 +42,14 @@ export async function PUT(
 
     // Update the status
     order.status = status;
-    order.updatedAt = new Date();
+    (order as any).updatedAt = new Date();
 
     // Add status change history
-    if (!order.statusHistory) {
-      order.statusHistory = [];
+    if (!(order as any).statusHistory) {
+      (order as any).statusHistory = [];
     }
     
-    order.statusHistory.push({
+    (order as any).statusHistory.push({
       status,
       timestamp: new Date(),
       userId,

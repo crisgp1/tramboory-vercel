@@ -84,13 +84,13 @@ export default function SupplierPenaltyModal({
   const [loading, setLoading] = useState(false)
 
   // Get concept configuration
-  const conceptConfig: PenaltyConceptConfig | undefined = selectedConcept ? PENALTY_CONCEPTS[selectedConcept] : undefined
-  const severityConfig = selectedSeverity ? SEVERITY_CONFIG[selectedSeverity] : undefined
+  const conceptConfig = selectedConcept ? (PENALTY_CONCEPTS as any)[selectedConcept] : undefined
+  const severityConfig = selectedSeverity ? (SEVERITY_CONFIG as any)[selectedSeverity] : undefined
 
   // Calculate penalty points
   const calculatePenaltyPoints = (): number => {
     if (!conceptConfig || !severityConfig) return 0
-    return conceptConfig.basePoints * severityConfig.multiplier
+    return (conceptConfig?.basePoints || 0) * (severityConfig?.multiplier || 1)
   }
 
   const handleSubmit = async () => {
@@ -243,7 +243,7 @@ export default function SupplierPenaltyModal({
                     const IconComponent = iconMap[config.icon] || DocumentTextIcon
                     return (
                       <option key={key} value={key}>
-                        {config.label} ({config.basePoints} pts base)
+                        {config.label} ({(config as any).basePoints || 0} pts base)
                       </option>
                     )
                   })}
@@ -262,7 +262,7 @@ export default function SupplierPenaltyModal({
                   <option value="">Selecciona la severidad</option>
                   {Object.entries(SEVERITY_CONFIG).map(([key, config]) => (
                     <option key={key} value={key}>
-                      {config.label} (x{config.multiplier})
+                      {config.label} (x{(config as any).multiplier || 1})
                     </option>
                   ))}
                 </select>
@@ -281,7 +281,7 @@ export default function SupplierPenaltyModal({
                 </div>
                 <p className="text-orange-700 text-sm mb-2">{conceptConfig.description}</p>
                 <div className="text-xs text-orange-600">
-                  <span className="font-medium">Puntos base:</span> {conceptConfig.basePoints} • 
+                  <span className="font-medium">Puntos base:</span> {(conceptConfig as any)?.basePoints || 0} •
                   <span className="font-medium ml-2">Categoría:</span> {conceptConfig.category}
                 </div>
               </div>
@@ -369,11 +369,11 @@ export default function SupplierPenaltyModal({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-red-700">Puntos base del concepto:</span>
-                <span className="font-semibold text-red-800">{conceptConfig?.basePoints || 0}</span>
+                <span className="font-semibold text-red-800">{(conceptConfig as any)?.basePoints || 0}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-red-700">Multiplicador de severidad:</span>
-                <span className="font-semibold text-red-800">x{severityConfig?.multiplier || 1}</span>
+                <span className="font-semibold text-red-800">x{(severityConfig as any)?.multiplier || 1}</span>
               </div>
               <div className="border-t border-red-200 pt-3">
                 <div className="flex justify-between items-center">
@@ -383,7 +383,7 @@ export default function SupplierPenaltyModal({
               </div>
               
               {severityConfig && (
-                <div className={`text-center py-2 px-4 rounded-lg text-sm font-medium ${severityConfig.bgColor} ${severityConfig.textColor}`}>
+                <div className={`text-center py-2 px-4 rounded-lg text-sm font-medium ${(severityConfig as any)?.bgColor || ''} ${(severityConfig as any)?.textColor || ''}`}>
                   Severidad: {severityConfig.label}
                 </div>
               )}

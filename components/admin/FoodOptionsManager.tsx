@@ -555,10 +555,10 @@ export default function FoodOptionsManager() {
                         trigger: "form-input"
                       }}
                     >
-                      <SelectItem key="main" value="main">Plato Principal</SelectItem>
-                      <SelectItem key="appetizer" value="appetizer">Entrada</SelectItem>
-                      <SelectItem key="dessert" value="dessert">Postre</SelectItem>
-                      <SelectItem key="beverage" value="beverage">Bebida</SelectItem>
+                      <SelectItem key="main">Plato Principal</SelectItem>
+                      <SelectItem key="appetizer">Entrada</SelectItem>
+                      <SelectItem key="dessert">Postre</SelectItem>
+                      <SelectItem key="beverage">Bebida</SelectItem>
                     </Select>
                   </div>
 

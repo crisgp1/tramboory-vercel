@@ -256,7 +256,7 @@ ProductSchema.methods.canFulfillOrder = function(quantity: number): boolean {
 };
 
 ProductSchema.methods.addSupplier = function(supplier: any) {
-  const existingIndex = this.suppliers.findIndex(s => s.supplierId === supplier.supplierId);
+  const existingIndex = this.suppliers.findIndex((s: any) => s.supplierId === supplier.supplierId);
   
   if (existingIndex >= 0) {
     // Update existing supplier
@@ -270,7 +270,7 @@ ProductSchema.methods.addSupplier = function(supplier: any) {
 };
 
 ProductSchema.methods.removeSupplier = function(supplierId: string) {
-  this.suppliers = this.suppliers.filter(s => s.supplierId !== supplierId);
+  this.suppliers = this.suppliers.filter((s: any) => s.supplierId !== supplierId);
   return this.save();
 };
 

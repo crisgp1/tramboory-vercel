@@ -56,7 +56,7 @@ export async function GET(
       const supplier = await SupabaseInventoryService.getSupplierById(params.id);
       return NextResponse.json(supplier);
     } catch (error) {
-      if (error.message?.includes('No rows found')) {
+      if (error instanceof Error && error.message?.includes('No rows found')) {
         return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
       }
       throw error;
@@ -144,11 +144,10 @@ export async function PUT(
             contact_phone: supplierData.contactInfo?.phone,
             contact_address: supplierData.contactInfo?.address,
             contact_person: supplierData.contactInfo?.contactPerson,
-            credit_days: supplierData.paymentTerms?.creditDays || 0,
+            payment_credit_days: supplierData.paymentTerms?.creditDays || 0,
             rating_quality: supplierData.rating?.quality || 3,
-            rating_delivery: supplierData.rating?.delivery || 3,
-            rating_service: supplierData.rating?.service || 3,
-            rating_price: supplierData.rating?.price || 3,
+            rating_reliability: supplierData.rating?.delivery || 3,
+            rating_pricing: supplierData.rating?.price || 3,
             rating_overall: 3,
             is_active: supplierData.isActive
           }
@@ -165,6 +164,7 @@ export async function PUT(
 
       const supplier = await SupabaseInventoryService.createSupplier({
         supplier_id: supplierId,
+        code: supplierData.code,
         name: supplierData.name,
         description: supplierData.description,
         user_id: realUserId,
@@ -172,16 +172,18 @@ export async function PUT(
         contact_phone: supplierData.contactInfo?.phone,
         contact_address: supplierData.contactInfo?.address,
         contact_person: supplierData.contactInfo?.contactPerson,
-        credit_days: supplierData.paymentTerms?.creditDays || 0,
+        payment_credit_days: supplierData.paymentTerms?.creditDays || 0,
         payment_method: supplierData.paymentTerms?.paymentMethod || 'cash',
-        currency: supplierData.paymentTerms?.currency || 'MXN',
+        payment_currency: supplierData.paymentTerms?.currency || 'MXN',
+        delivery_lead_time_days: 0,
         rating_quality: supplierData.rating?.quality || 3,
-        rating_delivery: supplierData.rating?.delivery || 3,
-        rating_service: supplierData.rating?.service || 3,
-        rating_price: supplierData.rating?.price || 3,
+        rating_reliability: supplierData.rating?.delivery || 3,
+        rating_pricing: supplierData.rating?.price || 3,
         rating_overall: 3,
         is_active: supplierData.isActive,
-        is_preferred: false
+        is_preferred: false,
+        created_by: userId,
+        updated_by: userId
       });
 
       console.log("✅ User converted to supplier successfully:", {
@@ -208,20 +210,19 @@ export async function PUT(
             contact_phone: body.contactInfo?.phone,
             contact_address: body.contactInfo?.address,
             contact_person: body.contactInfo?.contactPerson,
-            credit_days: body.paymentTerms?.creditDays,
+            payment_credit_days: body.paymentTerms?.creditDays,
             payment_method: body.paymentTerms?.paymentMethod,
-            currency: body.paymentTerms?.currency,
+            payment_currency: body.paymentTerms?.currency,
             rating_quality: body.rating?.quality,
-            rating_delivery: body.rating?.delivery,
-            rating_service: body.rating?.service,
-            rating_price: body.rating?.price,
+            rating_reliability: body.rating?.delivery,
+            rating_pricing: body.rating?.price,
             is_active: body.isActive
           }
         );
 
         return NextResponse.json(updatedSupplier);
       } catch (error) {
-        if (error.message?.includes('No rows found')) {
+        if (error instanceof Error && error.message?.includes('No rows found')) {
           return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
         }
         throw error;
@@ -271,7 +272,7 @@ export async function DELETE(
         supplier: deletedSupplier
       });
     } catch (error) {
-      if (error.message?.includes('No rows found')) {
+      if (error instanceof Error && error.message?.includes('No rows found')) {
         return NextResponse.json({ error: 'Proveedor no encontrado' }, { status: 404 });
       }
       throw error;

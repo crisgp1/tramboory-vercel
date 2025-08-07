@@ -295,7 +295,7 @@ export class SupabaseInventoryService {
       reserved_quantity: item.total_reserved,
       quarantine_quantity: item.total_quarantine,
       unit: item.total_unit,
-      batches: item.inventory_batches?.map(batch => ({
+      batches: item.inventory_batches?.map((batch: any) => ({
         batch_id: batch.batch_id,
         quantity: batch.quantity,
         unit: batch.unit,
@@ -359,17 +359,17 @@ export class SupabaseInventoryService {
     return data?.map(item => ({
       id: item.id,
       product: {
-        id: item.products.id,
-        name: item.products.name,
-        sku: item.products.sku,
-        category: item.products.category
+        id: (item.products as any).id,
+        name: (item.products as any).name,
+        sku: (item.products as any).sku,
+        category: (item.products as any).category
       },
       location_id: item.location_id,
       available_quantity: item.total_available,
       reserved_quantity: item.total_reserved,
       quarantine_quantity: item.total_quarantine,
       unit: item.total_unit,
-      batches: item.inventory_batches?.map(batch => ({
+      batches: item.inventory_batches?.map((batch: any) => ({
         batch_id: batch.batch_id,
         quantity: batch.quantity,
         unit: batch.unit,
@@ -521,7 +521,7 @@ export class SupabaseInventoryService {
     return data;
   }
 
-  static async createPurchaseOrderItems(items: Tables['purchase_order_items']['Insert'][]) {
+  static async createPurchaseOrderItems(items: any[]) {
     const { data, error } = await supabaseAdmin
       .from('purchase_order_items')
       .insert(items)
@@ -651,6 +651,7 @@ export class SupabaseInventoryService {
 
       // Create movement record
       const movement = await this.createInventoryMovement({
+        movement_id: `MOV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         product_id: params.productId,
         movement_type: params.quantity > 0 ? 'ENTRADA' : 'SALIDA',
         from_location: params.quantity < 0 ? params.locationId : undefined,
@@ -757,6 +758,7 @@ export class SupabaseInventoryService {
 
       // Create movement records
       const outMovement = await this.createInventoryMovement({
+        movement_id: `MOV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-OUT`,
         product_id: params.productId,
         movement_type: 'TRANSFERENCIA',
         from_location: params.fromLocationId,
@@ -771,6 +773,7 @@ export class SupabaseInventoryService {
       });
 
       const inMovement = await this.createInventoryMovement({
+        movement_id: `MOV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-IN`,
         product_id: params.productId,
         movement_type: 'TRANSFERENCIA',
         from_location: params.fromLocationId,
@@ -885,6 +888,7 @@ export class SupabaseInventoryService {
 
       // Create movement record
       const movement = await this.createInventoryMovement({
+        movement_id: `MOV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         product_id: params.productId,
         movement_type: 'SALIDA',
         from_location: params.locationId,

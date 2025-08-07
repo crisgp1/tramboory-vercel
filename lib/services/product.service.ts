@@ -154,7 +154,10 @@ export class ProductService {
       const productsResult = await ProductRepository.findAll({ activeOnly: true });
       
       if (!productsResult.success) {
-        return productsResult as ServiceResponse<string[]>;
+        return {
+          success: false,
+          error: productsResult.error
+        };
       }
 
       const categories = Array.from(
@@ -181,7 +184,10 @@ export class ProductService {
       const searchResult = await ProductRepository.search(sku);
       
       if (!searchResult.success) {
-        return searchResult as ServiceResponse<boolean>;
+        return {
+          success: false,
+          error: searchResult.error
+        };
       }
 
       const existingProducts = searchResult.data?.filter(product => 
