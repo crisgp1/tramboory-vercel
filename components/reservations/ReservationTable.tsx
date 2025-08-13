@@ -3,29 +3,28 @@
 import React, { useState } from 'react';
 import {
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
+  ScrollArea,
   Button,
-  Chip,
+  Badge,
   Tooltip,
   Card,
-  CardBody
-} from '@heroui/react';
+  ActionIcon,
+  Group,
+  Stack,
+  Text
+} from '@mantine/core';
 import {
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  CalendarIcon,
-  ClockIcon,
-  UserIcon,
-  CurrencyDollarIcon,
-  CakeIcon,
-  Squares2X2Icon,
-  TableCellsIcon
-} from '@heroicons/react/24/outline';
+  IconEye,
+  IconEdit,
+  IconTrash,
+  IconCalendar,
+  IconClock,
+  IconUser,
+  IconCurrencyDollar,
+  IconCake,
+  IconGrid3x3,
+  IconTable
+} from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Reservation } from '@/types/reservation';
@@ -39,10 +38,10 @@ interface ReservationTableProps {
 }
 
 const statusColorMap = {
-  pending: 'warning',
-  confirmed: 'success',
-  cancelled: 'danger',
-  completed: 'primary'
+  pending: 'orange',
+  confirmed: 'green',
+  cancelled: 'red',
+  completed: 'blue'
 } as const;
 
 const statusLabels = {
@@ -92,87 +91,101 @@ export default function ReservationTable({
   const GridView = () => (
     <div className="w-full">
       {reservations.length === 0 ? (
-        <div className="text-center py-20">
-          <CalendarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 text-sm">No hay reservas disponibles</p>
-        </div>
+        <Stack align="center" py="xl" gap="md">
+          <IconCalendar size={48} color="gray" />
+          <Text c="dimmed" size="sm">No hay reservas disponibles</Text>
+        </Stack>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {reservations.map((reservation) => (
             <Card 
               key={reservation._id} 
-              className="border border-gray-200 hover:border-gray-300 transition-colors duration-200 bg-white shadow-none hover:shadow-sm"
+              withBorder
+              p="md"
+              style={{ cursor: 'pointer' }}
+              className="hover:shadow-sm transition-shadow"
             >
-              <CardBody className="p-4">
                 {/* Header con estado */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className="w-2 h-2 rounded-full bg-gray-900 flex-shrink-0"></div>
-                    <span className="font-medium text-gray-900 text-sm truncate">
+                <Group justify="space-between" mb="sm">
+                  <Group gap="xs" style={{ minWidth: 0, flex: 1 }}>
+                    <div 
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--mantine-color-dark-9)',
+                        flexShrink: 0
+                      }}
+                    />
+                    <Text size="sm" fw={500} truncate style={{ flex: 1 }}>
                       {reservation.customer.name}
-                    </span>
-                  </div>
-                  <Chip
+                    </Text>
+                  </Group>
+                  <Badge
                     color={statusColorMap[reservation.status]}
-                    variant="flat"
+                    variant="light"
                     size="sm"
-                    className="text-xs"
                   >
                     {statusLabels[reservation.status]}
-                  </Chip>
-                </div>
+                  </Badge>
+                </Group>
 
                 {/* Información principal */}
-                <div className="space-y-2 mb-4">
-                  <div className="text-xs text-gray-600">
+                <Stack gap="xs" mb="md">
+                  <Text size="xs" c="dimmed">
                     {reservation.child.name} • {reservation.child.age} años
-                  </div>
-                  <div className="text-xs text-gray-600 truncate">
+                  </Text>
+                  <Text size="xs" c="dimmed" truncate>
                     {reservation.package.name}
-                  </div>
-                  <div className="text-xs text-gray-600">
+                  </Text>
+                  <Text size="xs" c="dimmed">
                     {formatDate(reservation.eventDate)} • {reservation.eventTime}
-                  </div>
-                </div>
+                  </Text>
+                </Stack>
 
                 {/* Total */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-semibold text-gray-900 text-sm">
+                <Group justify="space-between" mb="sm">
+                  <Text size="sm" fw={600}>
                     {formatCurrency(reservation.pricing.total)}
-                  </span>
-                </div>
+                  </Text>
+                </Group>
 
                 {/* Acciones */}
-                <div className="flex items-center gap-1">
-                  <Button
-                    isIconOnly
-                    variant="light"
-                    size="sm"
-                    className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 flex-1"
-                    onPress={() => onView(reservation)}
-                  >
-                    <EyeIcon className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    isIconOnly
-                    variant="light"
-                    size="sm"
-                    className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 flex-1"
-                    onPress={() => onEdit(reservation)}
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    isIconOnly
-                    variant="light"
-                    size="sm"
-                    className="text-gray-600 hover:text-red-600 hover:bg-red-50 flex-1"
-                    onPress={() => onDelete(reservation._id)}
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardBody>
+                <Group gap="xs">
+                  <Tooltip label="Ver detalles">
+                    <ActionIcon
+                      variant="light"
+                      size="sm"
+                      color="gray"
+                      onClick={() => onView(reservation)}
+                      style={{ flex: 1 }}
+                    >
+                      <IconEye size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label="Editar">
+                    <ActionIcon
+                      variant="light"
+                      size="sm"
+                      color="gray"
+                      onClick={() => onEdit(reservation)}
+                      style={{ flex: 1 }}
+                    >
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label="Eliminar">
+                    <ActionIcon
+                      variant="light"
+                      size="sm"
+                      color="red"
+                      onClick={() => onDelete(reservation._id)}
+                      style={{ flex: 1 }}
+                    >
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
             </Card>
           ))}
         </div>
@@ -182,195 +195,162 @@ export default function ReservationTable({
 
   // Vista de tabla minimalista
   const TableView = () => {
-    const columns = [
-      { key: 'customer', label: 'Cliente' },
-      { key: 'child', label: 'Niño/a' },
-      { key: 'package', label: 'Paquete' },
-      { key: 'date', label: 'Fecha' },
-      { key: 'time', label: 'Hora' },
-      { key: 'total', label: 'Total' },
-      { key: 'status', label: 'Estado' },
-      { key: 'actions', label: '' }
-    ];
+    if (reservations.length === 0) {
+      return (
+        <Stack align="center" py="xl" gap="md">
+          <IconCalendar size={48} color="gray" />
+          <Text c="dimmed" size="sm">No hay reservas disponibles</Text>
+        </Stack>
+      );
+    }
 
     return (
-      <div className="w-full overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table 
-            aria-label="Tabla de reservas"
-            classNames={{
-              wrapper: "shadow-none border border-gray-200 rounded-lg",
-              th: "bg-gray-50 text-gray-700 font-medium text-xs uppercase tracking-wide",
-              td: "py-3 border-b border-gray-100 last:border-b-0 text-sm"
-            }}
-          >
-            <TableHeader columns={columns}>
-              {(column) => (
-                <TableColumn key={column.key} className="text-left px-4">
-                  {column.label}
-                </TableColumn>
-              )}
-            </TableHeader>
-            <TableBody 
-              items={reservations}
-              isLoading={loading}
-              loadingContent={
-                <div className="flex justify-center items-center p-8">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                    <p className="text-gray-600 text-sm">Cargando...</p>
-                  </div>
-                </div>
-              }
-              emptyContent={
-                <div className="text-center py-12">
-                  <CalendarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 text-sm">No hay reservas disponibles</p>
-                </div>
-              }
-            >
-              {(reservation) => (
-                <TableRow key={reservation._id} className="hover:bg-gray-50 transition-colors">
-                  <TableCell className="px-4">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-gray-900 text-sm">
-                        {reservation.customer.name}
-                      </span>
-                      <span className="text-xs text-gray-600">
-                        {reservation.customer.email}
-                      </span>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <div className="flex flex-col">
-                      <span className="text-gray-900 text-sm">
-                        {reservation.child.name}
-                      </span>
-                      <span className="text-xs text-gray-600">
-                        {reservation.child.age} años
-                      </span>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <div className="flex flex-col">
-                      <span className="text-gray-900 text-sm">
-                        {reservation.package.name}
-                      </span>
-                      <span className="text-xs text-gray-600">
-                        {reservation.package.maxGuests} invitados
-                      </span>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <span className="text-gray-900 text-sm">
-                      {formatDate(reservation.eventDate)}
-                    </span>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <span className="text-gray-900 text-sm">
-                      {reservation.eventTime}
-                    </span>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <span className="font-semibold text-gray-900 text-sm">
-                      {formatCurrency(reservation.pricing.total)}
-                    </span>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <Chip
-                      color={statusColorMap[reservation.status]}
-                      variant="flat"
-                      size="sm"
-                      className="text-xs"
-                    >
-                      {statusLabels[reservation.status]}
-                    </Chip>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <div className="flex items-center gap-1">
-                      <Button
-                        isIconOnly
+      <ScrollArea>
+        <Table>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Cliente</Table.Th>
+              <Table.Th>Niño/a</Table.Th>
+              <Table.Th>Paquete</Table.Th>
+              <Table.Th>Fecha</Table.Th>
+              <Table.Th>Hora</Table.Th>
+              <Table.Th>Total</Table.Th>
+              <Table.Th>Estado</Table.Th>
+              <Table.Th>Acciones</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {reservations.map((reservation) => (
+              <Table.Tr key={reservation._id}>
+                <Table.Td>
+                  <Stack gap={0}>
+                    <Text size="sm" fw={500}>
+                      {reservation.customer.name}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {reservation.customer.email}
+                    </Text>
+                  </Stack>
+                </Table.Td>
+                
+                <Table.Td>
+                  <Stack gap={0}>
+                    <Text size="sm">
+                      {reservation.child.name}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {reservation.child.age} años
+                    </Text>
+                  </Stack>
+                </Table.Td>
+                
+                <Table.Td>
+                  <Stack gap={0}>
+                    <Text size="sm">
+                      {reservation.package.name}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {reservation.package.maxGuests} invitados
+                    </Text>
+                  </Stack>
+                </Table.Td>
+                
+                <Table.Td>
+                  <Text size="sm">
+                    {formatDate(reservation.eventDate)}
+                  </Text>
+                </Table.Td>
+                
+                <Table.Td>
+                  <Text size="sm">
+                    {reservation.eventTime}
+                  </Text>
+                </Table.Td>
+                
+                <Table.Td>
+                  <Text size="sm" fw={600}>
+                    {formatCurrency(reservation.pricing.total)}
+                  </Text>
+                </Table.Td>
+                
+                <Table.Td>
+                  <Badge
+                    color={statusColorMap[reservation.status]}
+                    variant="light"
+                    size="sm"
+                  >
+                    {statusLabels[reservation.status]}
+                  </Badge>
+                </Table.Td>
+                
+                <Table.Td>
+                  <Group gap="xs">
+                    <Tooltip label="Ver">
+                      <ActionIcon
                         variant="light"
                         size="sm"
-                        className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                        onPress={() => onView(reservation)}
+                        color="gray"
+                        onClick={() => onView(reservation)}
                       >
-                        <EyeIcon className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        isIconOnly
+                        <IconEye size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Editar">
+                      <ActionIcon
                         variant="light"
                         size="sm"
-                        className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                        onPress={() => onEdit(reservation)}
+                        color="gray"
+                        onClick={() => onEdit(reservation)}
                       >
-                        <PencilIcon className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        isIconOnly
+                        <IconEdit size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Eliminar">
+                      <ActionIcon
                         variant="light"
                         size="sm"
-                        className="text-gray-600 hover:text-red-600 hover:bg-red-50"
-                        onPress={() => onDelete(reservation._id)}
+                        color="red"
+                        onClick={() => onDelete(reservation._id)}
                       >
-                        <TrashIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </ScrollArea>
     );
   };
 
   return (
-    <div className="w-full">
-      {/* Toggle de vista minimalista */}
-      <div className="hidden lg:flex justify-end mb-4">
-        <div className="flex items-center border border-gray-200 rounded-lg p-1 bg-white">
+    <Stack gap="md">
+      {/* Toggle de vista */}
+      <Group justify="flex-end" className="hidden lg:flex">
+        <Button.Group>
           <Button
             size="sm"
-            variant="light"
-            className={`px-3 py-1 text-xs rounded-md transition-colors ${
-              viewMode === 'grid' 
-                ? 'bg-gray-900 text-white' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-            onPress={() => setViewMode('grid')}
-            startContent={<Squares2X2Icon className="w-3 h-3" />}
+            variant={viewMode === 'grid' ? 'filled' : 'light'}
+            leftSection={<IconGrid3x3 size={16} />}
+            onClick={() => setViewMode('grid')}
           >
             Grid
           </Button>
           <Button
             size="sm"
-            variant="light"
-            className={`px-3 py-1 text-xs rounded-md transition-colors ${
-              viewMode === 'table' 
-                ? 'bg-gray-900 text-white' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-            onPress={() => setViewMode('table')}
-            startContent={<TableCellsIcon className="w-3 h-3" />}
+            variant={viewMode === 'table' ? 'filled' : 'light'}
+            leftSection={<IconTable size={16} />}
+            onClick={() => setViewMode('table')}
           >
             Tabla
           </Button>
-        </div>
-      </div>
+        </Button.Group>
+      </Group>
 
-      {/* Contenido principal */}
-      <div className="w-full">
-        {viewMode === 'grid' ? <GridView /> : <TableView />}
-      </div>
-    </div>
+      {/* Vista actual */}
+      {viewMode === 'grid' ? <GridView /> : <TableView />}
+    </Stack>
   );
 }

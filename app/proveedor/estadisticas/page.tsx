@@ -1,8 +1,7 @@
 import { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import dbConnect from "@/lib/mongodb";
-import Supplier from "@/lib/models/inventory/Supplier";
+import { SupabaseInventoryService } from "@/lib/supabase/inventory";
 import SupplierStatsDashboard from "@/components/supplier/SupplierStatsDashboard";
 
 export const metadata: Metadata = {
@@ -11,29 +10,28 @@ export const metadata: Metadata = {
 };
 
 async function getSupplierByUserId(userId: string, userRole: string) {
-  await dbConnect();
-  
-  // Si es admin o gerente, intentar encontrar cualquier proveedor activo
-  if (userRole === "admin" || userRole === "gerente") {
-    // Primero intentar buscar por userId vinculado
-    let supplier = await Supplier.findOne({
-      userId: userId
-    });
-    
-    // Si no hay coincidencia, buscar cualquier proveedor activo para mostrar vista de ejemplo
-    if (!supplier) {
-      supplier = await Supplier.findOne({ isActive: true });
+  try {
+    // Si es admin o gerente, intentar encontrar cualquier proveedor activo
+    if (userRole === "admin" || userRole === "gerente") {
+      // Primero intentar buscar por userId vinculado
+      let supplier = await SupabaseInventoryService.getSupplierByUserId(userId);
+      
+      // Si no hay coincidencia, buscar cualquier proveedor activo para mostrar vista de ejemplo
+      if (!supplier) {
+        const suppliers = await SupabaseInventoryService.getAllSuppliers(true);
+        supplier = suppliers[0] || null;
+      }
+      
+      return supplier;
     }
     
+    // Para usuarios con rol proveedor, buscar por userId vinculado
+    const supplier = await SupabaseInventoryService.getSupplierByUserId(userId);
     return supplier;
+  } catch (error) {
+    console.error('Error getting supplier by user ID:', error);
+    return null;
   }
-  
-  // Para usuarios con rol proveedor, buscar por userId vinculado
-  const supplier = await Supplier.findOne({
-    userId: userId
-  });
-  
-  return supplier;
 }
 
 async function getUserRole(userId: string): Promise<string> {
@@ -57,7 +55,7 @@ export default async function SupplierStatsPage() {
   
   // Si es admin o gerente, permitir acceso incluso sin proveedor
   if (userRole === "admin" || userRole === "gerente") {
-    const supplierId = supplier?.supplierId || "default-admin-supplier";
+    const supplierId = supplier?.supplier_id || supplier?.id || "default-admin-supplier";
     return <SupplierStatsDashboard supplierId={supplierId} />;
   }
   
@@ -73,5 +71,5 @@ export default async function SupplierStatsPage() {
     );
   }
 
-  return <SupplierStatsDashboard supplierId={supplier.supplierId} />;
+  return <SupplierStatsDashboard supplierId={supplier.supplier_id || supplier.id} />;
 }

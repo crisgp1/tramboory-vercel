@@ -1,34 +1,31 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { 
-  Card, 
-  CardBody, 
-  Button, 
+import {
+  Paper,
+  Button,
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Input,
-  Chip,
+  TextInput,
+  Badge,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
   Pagination,
-  Spinner,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
+  Loader,
+  Menu,
   Textarea,
-  DatePicker
-} from "@heroui/react"
-import { DateValue } from "@internationalized/date"
+  Group,
+  Stack,
+  Text,
+  Title,
+  Grid,
+  ActionIcon,
+  Select,
+  NumberInput,
+  Center,
+  Divider,
+  ScrollArea
+} from "@mantine/core"
+import { DateInput } from "@mantine/dates"
+import { useDisclosure } from "@mantine/hooks"
 import {
   MagnifyingGlassIcon,
   EyeIcon,
@@ -66,7 +63,7 @@ interface PurchaseOrderItem {
 }
 
 interface PurchaseOrder {
-  _id: string;
+  id: string;
   purchaseOrderId: string;
   supplierId: string;
   supplierName: string;
@@ -96,22 +93,20 @@ export default function SupplierOrdersPanel() {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [deliveryNote, setDeliveryNote] = useState<OrderDeliveryNote>({ note: "" });
-  const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | "">("");
-  const [dateRangeFilter, setDateRangeFilter] = useState<{start?: DateValue, end?: DateValue}>({});
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [dateRangeFilter, setDateRangeFilter] = useState<{start?: Date, end?: Date}>({});
   const [amountFilter, setAmountFilter] = useState<{min?: number, max?: number}>({});
   const [showFilters, setShowFilters] = useState(false);
   
-  const { 
-    isOpen: isDetailModalOpen, 
-    onOpen: onDetailModalOpen, 
-    onClose: onDetailModalClose 
-  } = useDisclosure();
+  const [
+    detailModalOpened, 
+    { open: openDetailModal, close: closeDetailModal }
+  ] = useDisclosure(false);
   
-  const { 
-    isOpen: isConfirmDeliveryModalOpen, 
-    onOpen: onConfirmDeliveryModalOpen, 
-    onClose: onConfirmDeliveryModalClose 
-  } = useDisclosure();
+  const [
+    deliveryModalOpened, 
+    { open: openDeliveryModal, close: closeDeliveryModal }
+  ] = useDisclosure(false);
 
   const itemsPerPage = 10;
 
@@ -128,17 +123,17 @@ export default function SupplierOrdersPanel() {
         ...(searchTerm && { search: searchTerm }),
         ...(statusFilter && { status: statusFilter }),
         ...(dateRangeFilter.start && { 
-          startDate: new Date(dateRangeFilter.start.toString()).toISOString() 
+          startDate: dateRangeFilter.start.toISOString()
         }),
         ...(dateRangeFilter.end && { 
-          endDate: new Date(dateRangeFilter.end.toString()).toISOString() 
+          endDate: dateRangeFilter.end.toISOString()
         }),
         ...(amountFilter.min && { minAmount: amountFilter.min.toString() }),
         ...(amountFilter.max && { maxAmount: amountFilter.max.toString() })
       });
 
-      // En producción, esta API debe filtrar automáticamente por el proveedor actual
-      const response = await fetch(`/api/inventory/purchase-orders?${queryParams}`);
+      // API específica para proveedor que filtra automáticamente por el proveedor actual
+      const response = await fetch(`/api/supplier/orders?${queryParams}`);
       if (response.ok) {
         const data = await response.json();
         setOrders(data.orders || []);
@@ -156,20 +151,20 @@ export default function SupplierOrdersPanel() {
 
   const handleViewOrder = (order: PurchaseOrder) => {
     setSelectedOrder(order);
-    onDetailModalOpen();
+    openDetailModal();
   };
 
   const handleConfirmDelivery = (order: PurchaseOrder) => {
     setSelectedOrder(order);
     setDeliveryNote({ note: "" });
-    onConfirmDeliveryModalOpen();
+    openDeliveryModal();
   };
 
   const submitDeliveryConfirmation = async () => {
     if (!selectedOrder) return;
 
     try {
-      const response = await fetch(`/api/inventory/purchase-orders/${selectedOrder._id}`, {
+      const response = await fetch(`/api/supplier/orders/${selectedOrder.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -183,7 +178,7 @@ export default function SupplierOrdersPanel() {
 
       if (response.ok) {
         toast.success("Entrega confirmada correctamente");
-        onConfirmDeliveryModalClose();
+        closeDeliveryModal();
         fetchOrders();
       } else {
         toast.error("Error al confirmar la entrega");
@@ -215,19 +210,19 @@ export default function SupplierOrdersPanel() {
   const getStatusColor = (status: PurchaseOrderStatus) => {
     switch (status) {
       case PurchaseOrderStatus.DRAFT:
-        return "default";
+        return "gray";
       case PurchaseOrderStatus.PENDING:
-        return "warning";
+        return "yellow";
       case PurchaseOrderStatus.APPROVED:
-        return "primary";
+        return "blue";
       case PurchaseOrderStatus.ORDERED:
-        return "secondary";
+        return "grape";
       case PurchaseOrderStatus.RECEIVED:
-        return "success";
+        return "green";
       case PurchaseOrderStatus.CANCELLED:
-        return "danger";
+        return "red";
       default:
-        return "default";
+        return "gray";
     }
   };
 
@@ -278,496 +273,490 @@ export default function SupplierOrdersPanel() {
     return new Date(order.expectedDeliveryDate) < new Date() && order.status === PurchaseOrderStatus.ORDERED;
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header y controles */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex-1 max-w-md">
-          <Input
-            placeholder="Buscar órdenes por ID o productos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
-            className="w-full"
-          />
-        </div>
+  const statusOptions = [
+    { value: "", label: "Todos los estados" },
+    { value: PurchaseOrderStatus.PENDING, label: "Pendiente" },
+    { value: PurchaseOrderStatus.APPROVED, label: "Aprobada" },
+    { value: PurchaseOrderStatus.ORDERED, label: "En Proceso" },
+    { value: PurchaseOrderStatus.RECEIVED, label: "Completada" },
+  ];
 
-        <div className="flex gap-2">
+  return (
+    <Stack gap="lg">
+      {/* Header y controles */}
+      <Group justify="space-between" align="flex-start">
+        <TextInput
+          placeholder="Buscar órdenes por ID o productos..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.currentTarget.value)}
+          leftSection={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
+          style={{ maxWidth: 400, flex: 1 }}
+        />
+
+        <Group>
           <Button
-            variant="flat"
-            color="default"
-            startContent={<FunnelIcon className="w-4 h-4" />}
-            onPress={() => setShowFilters(!showFilters)}
+            variant="light"
+            leftSection={<FunnelIcon className="w-4 h-4" />}
+            onClick={() => setShowFilters(!showFilters)}
           >
             Filtros
             {(statusFilter || dateRangeFilter.start || amountFilter.min) && (
-              <span className="ml-1 px-1.5 py-0.5 text-xs bg-gray-200 text-gray-700 rounded-full">
+              <Badge size="xs" color="blue" ml="xs">
                 {[
                   statusFilter && "1",
                   (dateRangeFilter.start || dateRangeFilter.end) && "1",
                   (amountFilter.min || amountFilter.max) && "1"
                 ].filter(Boolean).length}
-              </span>
+              </Badge>
             )}
           </Button>
-        </div>
-      </div>
+        </Group>
+      </Group>
 
       {/* Panel de filtros */}
       {showFilters && (
-        <Card className="border border-gray-200">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-700">Filtros Avanzados</h3>
-              <Button
-                isIconOnly
-                size="sm"
-                variant="light"
-                onPress={() => setShowFilters(false)}
-              >
-                <XMarkIcon className="w-4 h-4" />
-              </Button>
-            </div>
+        <Paper withBorder p="md">
+          <Group justify="space-between" mb="md">
+            <Text fw={500} c="dimmed">Filtros Avanzados</Text>
+            <ActionIcon
+              size="sm"
+              variant="subtle"
+              onClick={() => setShowFilters(false)}
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </ActionIcon>
+          </Group>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as PurchaseOrderStatus | "")}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Todos los estados</option>
-                  <option value={PurchaseOrderStatus.PENDING}>Pendiente</option>
-                  <option value={PurchaseOrderStatus.APPROVED}>Aprobada</option>
-                  <option value={PurchaseOrderStatus.ORDERED}>En Proceso</option>
-                  <option value={PurchaseOrderStatus.RECEIVED}>Completada</option>
-                </select>
-              </div>
+          <Grid>
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Text size="sm" fw={500} mb="xs">Estado</Text>
+              <Select
+                value={statusFilter}
+                onChange={(value) => setStatusFilter(value || "")}
+                data={statusOptions}
+                placeholder="Seleccionar estado"
+              />
+            </Grid.Col>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rango de Fechas</label>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="sr-only">Desde</label>
-                    <DatePicker
-                      value={dateRangeFilter.start}
-                      onChange={(date) => setDateRangeFilter(prev => ({ ...prev, start: date || undefined }))}
-                      className="w-full"
-                      aria-label="Fecha inicial"
-                      classNames={{
-                        base: "bg-gray-50 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 py-2 px-3 w-full"
-                      }}
-                    />
-                    <span className="text-xs text-gray-500 mt-1">Desde</span>
-                  </div>
-                  <div className="flex-1">
-                    <label className="sr-only">Hasta</label>
-                    <DatePicker
-                      value={dateRangeFilter.end}
-                      onChange={(date) => setDateRangeFilter(prev => ({ ...prev, end: date || undefined }))}
-                      className="w-full"
-                      aria-label="Fecha final"
-                      classNames={{
-                        base: "bg-gray-50 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 py-2 px-3 w-full"
-                      }}
-                    />
-                    <span className="text-xs text-gray-500 mt-1">Hasta</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Monto Total</label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Mínimo"
-                    value={amountFilter.min?.toString() || ""}
-                    onChange={(e) => setAmountFilter(prev => ({ ...prev, min: e.target.value ? Number(e.target.value) : undefined }))}
-                    startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Text size="sm" fw={500} mb="xs">Rango de Fechas</Text>
+              <Group grow>
+                <Stack gap="xs">
+                  <DateInput
+                    value={dateRangeFilter.start ? dateRangeFilter.start.toISOString().split('T')[0] : null}
+                    onChange={(value: string | null) => setDateRangeFilter(prev => ({ ...prev, start: value ? new Date(value) : undefined }))}
+                    placeholder="Desde"
+                    size="sm"
                   />
-                  <Input
-                    type="number"
-                    placeholder="Máximo"
-                    value={amountFilter.max?.toString() || ""}
-                    onChange={(e) => setAmountFilter(prev => ({ ...prev, max: e.target.value ? Number(e.target.value) : undefined }))}
-                    startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
+                  <Text size="xs" c="dimmed">Desde</Text>
+                </Stack>
+                <Stack gap="xs">
+                  <DateInput
+                    value={dateRangeFilter.end ? dateRangeFilter.end.toISOString().split('T')[0] : null}
+                    onChange={(value: string | null) => setDateRangeFilter(prev => ({ ...prev, end: value ? new Date(value) : undefined }))}
+                    placeholder="Hasta"
+                    size="sm"
                   />
-                </div>
-              </div>
-            </div>
+                  <Text size="xs" c="dimmed">Hasta</Text>
+                </Stack>
+              </Group>
+            </Grid.Col>
 
-            <div className="flex justify-end mt-4 gap-2">
-              <Button
-                variant="light"
-                size="sm"
-                onPress={clearFilters}
-              >
-                Limpiar Filtros
-              </Button>
-              <Button
-                color="primary"
-                size="sm"
-                onPress={() => fetchOrders()}
-              >
-                Aplicar Filtros
-              </Button>
-            </div>
-          </CardBody>
-        </Card>
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Text size="sm" fw={500} mb="xs">Monto Total</Text>
+              <Group grow>
+                <NumberInput
+                  placeholder="Mínimo"
+                  value={amountFilter.min || ""}
+                  onChange={(val) => setAmountFilter(prev => ({ ...prev, min: typeof val === 'number' ? val : undefined }))}
+                  leftSection={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
+                />
+                <NumberInput
+                  placeholder="Máximo"
+                  value={amountFilter.max || ""}
+                  onChange={(val) => setAmountFilter(prev => ({ ...prev, max: typeof val === 'number' ? val : undefined }))}
+                  leftSection={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
+                />
+              </Group>
+            </Grid.Col>
+          </Grid>
+
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="light"
+              size="sm"
+              onClick={clearFilters}
+            >
+              Limpiar Filtros
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => fetchOrders()}
+            >
+              Aplicar Filtros
+            </Button>
+          </Group>
+        </Paper>
       )}
 
       {/* Tabla de órdenes */}
-      <Card className="border border-gray-200">
-        <CardBody className="p-0">
-          <Table
-            aria-label="Tabla de órdenes de compra"
-            classNames={{
-              wrapper: "min-h-[400px]",
-            }}
-          >
-            <TableHeader>
-              <TableColumn>ORDEN ID</TableColumn>
-              <TableColumn>FECHA</TableColumn>
-              <TableColumn>PRODUCTOS</TableColumn>
-              <TableColumn>MONTO</TableColumn>
-              <TableColumn>ENTREGA</TableColumn>
-              <TableColumn>ESTADO</TableColumn>
-              <TableColumn>ACCIONES</TableColumn>
-            </TableHeader>
-            <TableBody
-              items={orders}
-              isLoading={loading}
-              loadingContent={<Spinner label="Cargando órdenes..." />}
-              emptyContent="No se encontraron órdenes"
-            >
-              {(order) => (
-                <TableRow 
-                  key={order._id}
-                  className={isOrderLate(order) ? "bg-red-50" : undefined}
-                >
-                  <TableCell>
-                    <div>
-                      <p className="font-medium text-gray-900">{order.purchaseOrderId}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p className="text-gray-900">{formatDate(order.createdAt)}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{order.items.length} productos</p>
-                      <p className="text-xs text-gray-500 truncate max-w-[180px]">
-                        {order.items.map(item => item.productName).join(", ")}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <p className="font-medium">{formatCurrency(order.total)}</p>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="text-sm">
-                        {order.expectedDeliveryDate 
-                          ? formatDate(order.expectedDeliveryDate)
-                          : "No programada"}
-                      </p>
-                      {isOrderLate(order) && (
-                        <Chip 
-                          size="sm" 
-                          color="danger" 
-                          variant="flat"
-                          startContent={<ExclamationTriangleIcon className="w-3 h-3" />}
-                        >
-                          Retrasada
-                        </Chip>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="sm"
-                      color={getStatusColor(order.status)}
-                      startContent={getStatusIcon(order.status)}
-                    >
-                      {getStatusLabel(order.status)}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        isIconOnly
+      <Paper withBorder>
+        <ScrollArea>
+          <Table striped highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>ORDEN ID</Table.Th>
+                <Table.Th>FECHA</Table.Th>
+                <Table.Th>PRODUCTOS</Table.Th>
+                <Table.Th>MONTO</Table.Th>
+                <Table.Th>ENTREGA</Table.Th>
+                <Table.Th>ESTADO</Table.Th>
+                <Table.Th>ACCIONES</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {loading ? (
+                <Table.Tr>
+                  <Table.Td colSpan={7}>
+                    <Center py="xl">
+                      <Loader size="md" />
+                    </Center>
+                  </Table.Td>
+                </Table.Tr>
+              ) : orders.length === 0 ? (
+                <Table.Tr>
+                  <Table.Td colSpan={7}>
+                    <Center py="xl">
+                      <Text c="dimmed">No se encontraron órdenes</Text>
+                    </Center>
+                  </Table.Td>
+                </Table.Tr>
+              ) : (
+                orders.map((order) => (
+                  <Table.Tr
+                    key={order.id}
+                    bg={isOrderLate(order) ? "red.0" : undefined}
+                  >
+                    <Table.Td>
+                      <Stack gap="xs">
+                        <Text fw={500}>{order.purchaseOrderId}</Text>
+                        <Text size="xs" c="dimmed">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </Text>
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">{formatDate(order.createdAt)}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Stack gap="xs">
+                        <Text fw={500}>{order.items.length} productos</Text>
+                        <Text size="xs" c="dimmed" style={{ maxWidth: 180 }} truncate>
+                          {order.items.map(item => item.productName).join(", ")}
+                        </Text>
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text fw={500}>{formatCurrency(order.total)}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Stack gap="xs">
+                        <Text size="sm">
+                          {order.expectedDeliveryDate 
+                            ? formatDate(order.expectedDeliveryDate)
+                            : "No programada"}
+                        </Text>
+                        {isOrderLate(order) && (
+                          <Badge 
+                            size="xs" 
+                            color="red" 
+                            variant="light"
+                            leftSection={<ExclamationTriangleIcon className="w-3 h-3" />}
+                          >
+                            Retrasada
+                          </Badge>
+                        )}
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge
                         size="sm"
-                        variant="light"
-                        onPress={() => handleViewOrder(order)}
+                        color={getStatusColor(order.status)}
+                        leftSection={getStatusIcon(order.status)}
                       >
-                        <EyeIcon className="w-4 h-4" />
-                      </Button>
-                      
-                      {canConfirmDelivery(order) && (
-                        <Button
-                          isIconOnly
+                        {getStatusLabel(order.status)}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Group gap="xs">
+                        <ActionIcon
                           size="sm"
                           variant="light"
-                          color="success"
-                          onPress={() => handleConfirmDelivery(order)}
+                          onClick={() => handleViewOrder(order)}
                         >
-                          <CheckCircleIcon className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                          <EyeIcon className="w-4 h-4" />
+                        </ActionIcon>
+                        
+                        {canConfirmDelivery(order) && (
+                          <ActionIcon
+                            size="sm"
+                            variant="light"
+                            color="green"
+                            onClick={() => handleConfirmDelivery(order)}
+                          >
+                            <CheckCircleIcon className="w-4 h-4" />
+                          </ActionIcon>
+                        )}
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))
               )}
-            </TableBody>
+            </Table.Tbody>
           </Table>
-          
-          {/* Paginación */}
-          {totalPages > 1 && (
-            <div className="flex justify-center p-4">
-              <Pagination
-                total={totalPages}
-                page={currentPage}
-                onChange={setCurrentPage}
-                showControls
-                showShadow
-                color="primary"
-              />
-            </div>
-          )}
-        </CardBody>
-      </Card>
+        </ScrollArea>
+        
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <Group justify="center" p="md">
+            <Pagination
+              total={totalPages}
+              value={currentPage}
+              onChange={setCurrentPage}
+              withEdges
+            />
+          </Group>
+        )}
+      </Paper>
 
       {/* Modal de detalle de orden */}
       <Modal
-        isOpen={isDetailModalOpen}
-        onClose={onDetailModalClose}
-        size="3xl"
-        scrollBehavior="inside"
+        opened={detailModalOpened}
+        onClose={closeDetailModal}
+        size="xl"
+        title={selectedOrder && (
+          <Group justify="space-between">
+            <Title order={4}>Orden de Compra: {selectedOrder.purchaseOrderId}</Title>
+            <Badge 
+              color={getStatusColor(selectedOrder.status)}
+              size="sm"
+            >
+              {getStatusLabel(selectedOrder.status)}
+            </Badge>
+          </Group>
+        )}
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">
-                    Orden de Compra: {selectedOrder?.purchaseOrderId}
-                  </h3>
-                  <Chip 
-                    color={selectedOrder ? getStatusColor(selectedOrder.status) : "default"}
-                    size="sm"
-                  >
-                    {selectedOrder ? getStatusLabel(selectedOrder.status) : ""}
-                  </Chip>
-                </div>
-              </ModalHeader>
-              <ModalBody>
-                {selectedOrder && (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-1">Información General</h4>
-                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Fecha de Creación:</span>
-                            <span className="text-sm font-medium">{formatDate(selectedOrder.createdAt)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Última Actualización:</span>
-                            <span className="text-sm font-medium">{formatDate(selectedOrder.updatedAt)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Total:</span>
-                            <span className="text-sm font-medium">{formatCurrency(selectedOrder.total)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-1">Entrega</h4>
-                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Fecha Esperada:</span>
-                            <span className="text-sm font-medium">
-                              {selectedOrder.expectedDeliveryDate 
-                                ? formatDate(selectedOrder.expectedDeliveryDate)
-                                : "No especificada"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Fecha Real:</span>
-                            <span className="text-sm font-medium">
-                              {selectedOrder.actualDeliveryDate 
-                                ? formatDate(selectedOrder.actualDeliveryDate)
-                                : "Pendiente"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Ubicación:</span>
-                            <span className="text-sm font-medium">{selectedOrder.deliveryLocation}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+        {selectedOrder && (
+          <Stack gap="lg">
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Text size="sm" fw={500} c="dimmed" mb="xs">Información General</Text>
+                <Paper bg="gray.0" p="sm">
+                  <Stack gap="xs">
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Fecha de Creación:</Text>
+                      <Text size="sm" fw={500}>{formatDate(selectedOrder.createdAt)}</Text>
+                    </Group>
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Última Actualización:</Text>
+                      <Text size="sm" fw={500}>{formatDate(selectedOrder.updatedAt)}</Text>
+                    </Group>
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Total:</Text>
+                      <Text size="sm" fw={500}>{formatCurrency(selectedOrder.total)}</Text>
+                    </Group>
+                  </Stack>
+                </Paper>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Text size="sm" fw={500} c="dimmed" mb="xs">Entrega</Text>
+                <Paper bg="gray.0" p="sm">
+                  <Stack gap="xs">
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Fecha Esperada:</Text>
+                      <Text size="sm" fw={500}>
+                        {selectedOrder.expectedDeliveryDate 
+                          ? formatDate(selectedOrder.expectedDeliveryDate)
+                          : "No especificada"}
+                      </Text>
+                    </Group>
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Fecha Real:</Text>
+                      <Text size="sm" fw={500}>
+                        {selectedOrder.actualDeliveryDate 
+                          ? formatDate(selectedOrder.actualDeliveryDate)
+                          : "Pendiente"}
+                      </Text>
+                    </Group>
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Ubicación:</Text>
+                      <Text size="sm" fw={500}>{selectedOrder.deliveryLocation}</Text>
+                    </Group>
+                  </Stack>
+                </Paper>
+              </Grid.Col>
+            </Grid>
 
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Productos</h4>
-                      <div className="bg-gray-50 rounded-lg overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-100">
-                            <tr>
-                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                              <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                              <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unitario</th>
-                              <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {selectedOrder.items.map((item, index) => (
-                              <tr key={index}>
-                                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{item.productName}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-right">{item.quantity} {item.unit}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(item.unitPrice)}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-medium">{formatCurrency(item.totalPrice)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                          <tfoot className="bg-gray-50">
-                            <tr>
-                              <td colSpan={2} className="px-3 py-2"></td>
-                              <td className="px-3 py-2 text-sm font-medium text-gray-500 text-right">Subtotal:</td>
-                              <td className="px-3 py-2 text-sm font-medium text-gray-900 text-right">{formatCurrency(selectedOrder.subtotal)}</td>
-                            </tr>
-                            <tr>
-                              <td colSpan={2} className="px-3 py-2"></td>
-                              <td className="px-3 py-2 text-sm font-medium text-gray-500 text-right">Impuestos:</td>
-                              <td className="px-3 py-2 text-sm font-medium text-gray-900 text-right">{formatCurrency(selectedOrder.tax)}</td>
-                            </tr>
-                            <tr>
-                              <td colSpan={2} className="px-3 py-2"></td>
-                              <td className="px-3 py-2 text-sm font-bold text-gray-700 text-right">Total:</td>
-                              <td className="px-3 py-2 text-sm font-bold text-gray-900 text-right">{formatCurrency(selectedOrder.total)}</td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
-                    </div>
+            <div>
+              <Text size="sm" fw={500} c="dimmed" mb="xs">Productos</Text>
+              <Paper bg="gray.0">
+                <Table>
+                  <Table.Thead bg="gray.1">
+                    <Table.Tr>
+                      <Table.Th>Producto</Table.Th>
+                      <Table.Th ta="right">Cantidad</Table.Th>
+                      <Table.Th ta="right">Precio Unitario</Table.Th>
+                      <Table.Th ta="right">Total</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {selectedOrder.items.map((item, index) => (
+                      <Table.Tr key={index}>
+                        <Table.Td>
+                          <Text fw={500}>{item.productName}</Text>
+                        </Table.Td>
+                        <Table.Td ta="right">
+                          <Text c="dimmed">{item.quantity} {item.unit}</Text>
+                        </Table.Td>
+                        <Table.Td ta="right">
+                          <Text c="dimmed">{formatCurrency(item.unitPrice)}</Text>
+                        </Table.Td>
+                        <Table.Td ta="right">
+                          <Text fw={500}>{formatCurrency(item.totalPrice)}</Text>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                  <Table.Tbody bg="gray.0">
+                    <Table.Tr>
+                      <Table.Td colSpan={2}></Table.Td>
+                      <Table.Td ta="right">
+                        <Text fw={500} c="dimmed">Subtotal:</Text>
+                      </Table.Td>
+                      <Table.Td ta="right">
+                        <Text fw={500}>{formatCurrency(selectedOrder.subtotal)}</Text>
+                      </Table.Td>
+                    </Table.Tr>
+                    <Table.Tr>
+                      <Table.Td colSpan={2}></Table.Td>
+                      <Table.Td ta="right">
+                        <Text fw={500} c="dimmed">Impuestos:</Text>
+                      </Table.Td>
+                      <Table.Td ta="right">
+                        <Text fw={500}>{formatCurrency(selectedOrder.tax)}</Text>
+                      </Table.Td>
+                    </Table.Tr>
+                    <Table.Tr>
+                      <Table.Td colSpan={2}></Table.Td>
+                      <Table.Td ta="right">
+                        <Text fw={700}>Total:</Text>
+                      </Table.Td>
+                      <Table.Td ta="right">
+                        <Text fw={700}>{formatCurrency(selectedOrder.total)}</Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  </Table.Tbody>
+                </Table>
+              </Paper>
+            </div>
 
-                    {selectedOrder.notes && (
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-1">Notas</h4>
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <p className="text-sm text-gray-700">{selectedOrder.notes}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </ModalBody>
-              <ModalFooter>
-                <Button 
-                  color="default" 
-                  variant="light" 
-                  onPress={onClose}
+            {selectedOrder.notes && (
+              <div>
+                <Text size="sm" fw={500} c="dimmed" mb="xs">Notas</Text>
+                <Paper bg="gray.0" p="sm">
+                  <Text size="sm">{selectedOrder.notes}</Text>
+                </Paper>
+              </div>
+            )}
+
+            <Group justify="flex-end" mt="lg">
+              <Button 
+                variant="light" 
+                onClick={closeDetailModal}
+              >
+                Cerrar
+              </Button>
+              {canConfirmDelivery(selectedOrder) && (
+                <Button
+                  color="green"
+                  leftSection={<CheckCircleIcon className="w-4 h-4" />}
+                  onClick={() => {
+                    closeDetailModal();
+                    handleConfirmDelivery(selectedOrder);
+                  }}
                 >
-                  Cerrar
+                  Confirmar Entrega
                 </Button>
-                {selectedOrder && canConfirmDelivery(selectedOrder) && (
-                  <Button
-                    color="success"
-                    startContent={<CheckCircleIcon className="w-4 h-4" />}
-                    onPress={() => {
-                      onClose();
-                      handleConfirmDelivery(selectedOrder);
-                    }}
-                  >
-                    Confirmar Entrega
-                  </Button>
-                )}
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+              )}
+            </Group>
+          </Stack>
+        )}
       </Modal>
 
       {/* Modal de confirmación de entrega */}
       <Modal
-        isOpen={isConfirmDeliveryModalOpen}
-        onClose={onConfirmDeliveryModalClose}
-        size="md"
+        opened={deliveryModalOpened}
+        onClose={closeDeliveryModal}
+        title={
+          <Group>
+            <TruckIcon className="w-5 h-5 text-green-600" />
+            <Title order={4}>Confirmar Entrega</Title>
+          </Group>
+        }
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <TruckIcon className="w-5 h-5 text-green-600" />
-                  <h3 className="text-lg font-semibold">Confirmar Entrega</h3>
-                </div>
-              </ModalHeader>
-              <ModalBody>
-                <div className="space-y-4">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p className="text-sm text-green-800">
-                      Estás a punto de confirmar la entrega de la orden: <strong>{selectedOrder?.purchaseOrderId}</strong>
-                    </p>
-                  </div>
+        <Stack gap="md">
+          <Paper bg="green.0" withBorder p="sm">
+            <Text size="sm" c="green.8">
+              Estás a punto de confirmar la entrega de la orden: <strong>{selectedOrder?.purchaseOrderId}</strong>
+            </Text>
+          </Paper>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Notas de Entrega (opcional)
-                    </label>
-                    <Textarea
-                      placeholder="Agregar notas sobre la entrega..."
-                      value={deliveryNote.note}
-                      onChange={(e) => setDeliveryNote({ note: e.target.value })}
-                      minRows={3}
-                    />
-                  </div>
+          <div>
+            <Text size="sm" fw={500} mb="xs">
+              Notas de Entrega (opcional)
+            </Text>
+            <Textarea
+              placeholder="Agregar notas sobre la entrega..."
+              value={deliveryNote.note}
+              onChange={(e) => setDeliveryNote({ note: e.currentTarget.value })}
+              minRows={3}
+            />
+          </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Adjuntar Documentos (opcional)
-                    </label>
-                    <Button
-                      startContent={<ArrowDownTrayIcon className="w-4 h-4" />}
-                      variant="flat"
-                      size="sm"
-                      className="w-full justify-start"
-                    >
-                      Subir documentos
-                    </Button>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Puedes adjuntar remisiones, fotos u otros documentos relacionados.
-                    </p>
-                  </div>
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button 
-                  color="default" 
-                  variant="light" 
-                  onPress={onClose}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  color="success"
-                  startContent={<CheckCircleIcon className="w-4 h-4" />}
-                  onPress={submitDeliveryConfirmation}
-                >
-                  Confirmar Entrega
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+          <div>
+            <Text size="sm" fw={500} mb="xs">
+              Adjuntar Documentos (opcional)
+            </Text>
+            <Button
+              leftSection={<ArrowDownTrayIcon className="w-4 h-4" />}
+              variant="light"
+              size="sm"
+              fullWidth
+            >
+              Subir documentos
+            </Button>
+            <Text size="xs" c="dimmed" mt="xs">
+              Puedes adjuntar remisiones, fotos u otros documentos relacionados.
+            </Text>
+          </div>
+
+          <Group justify="flex-end" mt="lg">
+            <Button 
+              variant="light" 
+              onClick={closeDeliveryModal}
+            >
+              Cancelar
+            </Button>
+            <Button
+              color="green"
+              leftSection={<CheckCircleIcon className="w-4 h-4" />}
+              onClick={submitDeliveryConfirmation}
+            >
+              Confirmar Entrega
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
-    </div>
+    </Stack>
   );
 }

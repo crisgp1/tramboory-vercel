@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  XMarkIcon, 
-  PlusIcon, 
-  TrashIcon, 
-  BuildingOffice2Icon, 
-  CubeIcon, 
-  CalculatorIcon, 
-  DocumentTextIcon, 
-  ExclamationCircleIcon 
-} from '@heroicons/react/24/outline';
-import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals';
+  IconX, 
+  IconPlus, 
+  IconTrash, 
+  IconBuilding, 
+  IconCube, 
+  IconCalculator, 
+  IconFileText, 
+  IconExclamationCircle 
+} from '@tabler/icons-react';
+import { Modal, Stack, Card, TextInput, Textarea, Select, Button, Group, Text, Title, NumberInput } from '@mantine/core';
 
 // Types
 interface PurchaseOrderItem {
@@ -102,6 +102,10 @@ export default function PurchaseOrderModal({
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
+
+  // Ensure data arrays are never undefined
+  const safeSuppliers = suppliers || [];
+  const safeProducts = products || [];
 
   // Computed values
   const isReadOnly = mode === 'view';
@@ -198,7 +202,7 @@ export default function PurchaseOrderModal({
   };
 
   const handleSupplierChange = (supplierId: string) => {
-    const selectedSupplier = suppliers.find(s => s._id === supplierId);
+    const selectedSupplier = safeSuppliers.find(s => s._id === supplierId);
     if (selectedSupplier) {
       setFormData(prev => ({
         ...prev,
@@ -311,312 +315,250 @@ export default function PurchaseOrderModal({
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={isOpen}
       onClose={onClose}
-      title={getTitle()}
-      subtitle={getSubtitle()}
-      icon={DocumentTextIcon}
-      size="lg"
-      footer={
-        <ModalFooter>
-          <div>
-            {!isReadOnly && formData.items.length === 0 && (
-              <p className="text-red-600 text-sm">Agrega al menos un producto</p>
-            )}
-          </div>
-          
-          <ModalActions>
-            <ModalButton
-              onClick={onClose}
-              variant="secondary"
-            >
-              {isReadOnly ? 'Cerrar' : 'Cancelar'}
-            </ModalButton>
-            
-            {!isReadOnly && (
-              <ModalButton
-                onClick={handleSubmit}
-                disabled={loading || !formData.supplier_id || formData.items.length === 0}
-                loading={loading}
-                variant="primary"
-              >
-                {mode === 'create' ? 'Crear Orden' : 'Actualizar Orden'}
-              </ModalButton>
-            )}
-          </ModalActions>
-        </ModalFooter>
+      title={
+        <Stack gap="xs">
+          <Title order={3}>{getTitle()}</Title>
+          {getSubtitle() && <Text c="dimmed" size="sm">{getSubtitle()}</Text>}
+        </Stack>
       }
+      size="xl"
+      styles={{
+        content: {
+          maxHeight: '95vh',
+          overflow: 'hidden'
+        },
+        body: {
+          maxHeight: 'calc(95vh - 120px)',
+          overflow: 'auto',
+          padding: '1rem'
+        }
+      }}
     >
-      <div className="space-y-6">
+      <Stack gap="lg">
         
         {/* Información del Proveedor */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <BuildingOffice2Icon className="w-5 h-5 text-blue-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Información del Proveedor</h4>
-          </div>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconBuilding size={20} />
+              Información del Proveedor
+            </Group>
+          </Title>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Proveedor *
-              </label>
-              <select
-                value={formData.supplier_id}
-                onChange={(e) => handleSupplierChange(e.target.value)}
-                disabled={isReadOnly || loadingSuppliers}
-                className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-              >
-                <option value="">
-                  {loadingSuppliers ? "Cargando proveedores..." : "Seleccione un proveedor"}
-                </option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier._id} value={supplier._id}>
-                    {supplier.name} ({supplier.code})
-                  </option>
-                ))}
-              </select>
-            </div>
+          <Group grow align="flex-start">
+            <Select
+              label="Proveedor"
+              placeholder={loadingSuppliers ? "Cargando proveedores..." : "Seleccione un proveedor"}
+              value={formData.supplier_id}
+              onChange={(value) => handleSupplierChange(value || '')}
+              disabled={isReadOnly || loadingSuppliers}
+              data={safeSuppliers.map((supplier) => ({
+                value: supplier._id || '',
+                label: `${supplier.name || 'Sin nombre'} (${supplier.code || 'Sin código'})`
+              }))}
+              required
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Estado
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                disabled={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-              >
-                {Object.entries(statusConfig).map(([key, config]) => (
-                  <option key={key} value={key}>
-                    {config.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
+            <Select
+              label="Estado"
+              value={formData.status}
+              onChange={(value) => handleInputChange('status', value)}
+              disabled={isReadOnly}
+              data={Object.entries(statusConfig).map(([key, config]) => ({
+                value: key || '',
+                label: config.label || ''
+              }))}
+            />
+          </Group>
+        </Card>
 
         {/* Productos */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <CubeIcon className="w-5 h-5 text-green-600" />
-              </div>
-              <h4 className="font-semibold text-slate-800">Productos</h4>
-            </div>
+        <Card withBorder p="lg">
+          <Group justify="space-between" mb="md">
+            <Title order={4}>
+              <Group gap="xs">
+                <IconCube size={20} />
+                Productos
+              </Group>
+            </Title>
             
             {!isReadOnly && (
-              <ModalButton
+              <Button
                 onClick={handleAddItem}
                 size="sm"
-                variant="primary"
+                leftSection={<IconPlus size={16} />}
               >
-                <PlusIcon className="w-4 h-4" />
                 Agregar Producto
-              </ModalButton>
+              </Button>
             )}
-          </div>
+          </Group>
 
-          <div className="space-y-4">
+          <Stack gap="md">
             {formData.items.map((item, index) => (
-              <div key={index} className="glass-card p-4 border border-slate-200/50">
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Producto
-                    </label>
-                    <select
+              <Card key={index} withBorder p="md">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'end' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <Select
+                      label="Producto"
                       value={item.product_id}
-                      onChange={(e) => handleItemChange(index, 'product_id', e.target.value)}
+                      onChange={(value) => handleItemChange(index, 'product_id', value || '')}
                       disabled={isReadOnly}
-                      className={`glass-input w-full px-3 py-2 text-slate-800 appearance-none cursor-pointer ${
-                        isReadOnly ? 'opacity-60' : ''
-                      }`}
+                      data={safeProducts.map((product) => ({
+                        value: product.id || '',
+                        label: `${product.name || 'Sin nombre'} (${product.sku || 'Sin SKU'})`
+                      }))}
+                      placeholder="Seleccionar producto"
+                    />
+                  </div>
+
+                  <NumberInput
+                    label="Cantidad"
+                    min={0}
+                    step={0.01}
+                    value={item.quantity}
+                    onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
+                    readOnly={isReadOnly}
+                  />
+
+                  <NumberInput
+                    label="Precio Unit."
+                    min={0}
+                    step={0.01}
+                    value={item.unit_price}
+                    onChange={(value) => handleItemChange(index, 'unit_price', value || 0)}
+                    readOnly={isReadOnly}
+                  />
+
+                  <TextInput
+                    label="Total"
+                    value={`$${item.total_price.toFixed(2)}`}
+                    readOnly
+                  />
+
+                  {!isReadOnly && (
+                    <Button
+                      onClick={() => handleRemoveItem(index)}
+                      color="red"
+                      size="sm"
+                      style={{ alignSelf: 'flex-end' }}
                     >
-                      <option value="">Seleccionar producto</option>
-                      {products.map((product) => (
-                        <option key={product.id} value={product.id}>
-                          {product.name} ({product.sku})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Cantidad
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={item.quantity}
-                      onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                      readOnly={isReadOnly}
-                      className={`glass-input w-full px-3 py-2 text-slate-800 ${
-                        isReadOnly ? 'opacity-60' : ''
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Precio Unit.
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={item.unit_price}
-                      onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                      readOnly={isReadOnly}
-                      className={`glass-input w-full px-3 py-2 text-slate-800 ${
-                        isReadOnly ? 'opacity-60' : ''
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Total
-                    </label>
-                    <input
-                      type="text"
-                      value={`$${item.total_price.toFixed(2)}`}
-                      readOnly
-                      className="glass-input w-full px-3 py-2 text-slate-800 opacity-60"
-                    />
-                  </div>
-
-                  <div className="flex items-end">
-                    {!isReadOnly && (
-                      <ModalButton
-                        onClick={() => handleRemoveItem(index)}
-                        variant="danger"
-                        size="sm"
-                        className="w-full"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </ModalButton>
-                    )}
-                  </div>
+                      <IconTrash size={16} />
+                    </Button>
+                  )}
                 </div>
-              </div>
+              </Card>
             ))}
 
             {formData.items.length === 0 && (
-              <div className="text-center py-8 text-slate-500">
+              <Text ta="center" py="xl" c="dimmed">
                 {isReadOnly ? 'No hay productos en esta orden' : 'Haz clic en "Agregar Producto" para comenzar'}
-              </div>
+              </Text>
             )}
-          </div>
-        </div>
+          </Stack>
+        </Card>
 
         {/* Totales */}
         {formData.items.length > 0 && (
-          <div className="glass-card p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                <CalculatorIcon className="w-5 h-5 text-purple-600" />
-              </div>
-              <h4 className="font-semibold text-slate-800">Totales</h4>
-            </div>
+          <Card withBorder p="lg">
+            <Title order={4} mb="md">
+              <Group gap="xs">
+                <IconCalculator size={20} />
+                Totales
+              </Group>
+            </Title>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Subtotal:</span>
-                <span className="font-semibold text-slate-800">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Text c="dimmed">Subtotal:</Text>
+                <Text fw={600}>
                   ${calculatedSubtotal.toFixed(2)} {formData.currency}
-                </span>
-              </div>
+                </Text>
+              </Group>
               
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">IVA ({formData.tax_rate}%):</span>
-                <span className="font-semibold text-slate-800">
+              <Group justify="space-between">
+                <Text c="dimmed">IVA ({formData.tax_rate}%):</Text>
+                <Text fw={600}>
                   ${calculatedTax.toFixed(2)} {formData.currency}
-                </span>
-              </div>
+                </Text>
+              </Group>
               
-              <div className="border-t border-slate-200 pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-slate-800">Total:</span>
-                  <span className="text-xl font-bold text-blue-600">
-                    ${calculatedTotal.toFixed(2)} {formData.currency}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+              <Group justify="space-between" pt="md" style={{ borderTop: '1px solid #e9ecef' }}>
+                <Text size="lg" fw={600}>Total:</Text>
+                <Text size="xl" fw={700} c="blue">
+                  ${calculatedTotal.toFixed(2)} {formData.currency}
+                </Text>
+              </Group>
+            </Stack>
+          </Card>
         )}
 
         {/* Información Adicional */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-              <DocumentTextIcon className="w-5 h-5 text-orange-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Información Adicional</h4>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconFileText size={20} />
+              Información Adicional
+            </Group>
+          </Title>
+
+          <Group grow align="flex-start" mb="md">
+            <TextInput
+              type="date"
+              label="Fecha de Entrega Esperada"
+              value={formData.expected_delivery_date || ''}
+              onChange={(e) => handleInputChange('expected_delivery_date', e.currentTarget.value)}
+              readOnly={isReadOnly}
+            />
+
+            <TextInput
+              label="Ubicación de Entrega"
+              value={formData.delivery_location}
+              onChange={(e) => handleInputChange('delivery_location', e.currentTarget.value)}
+              readOnly={isReadOnly}
+              placeholder="Ubicación de entrega"
+            />
+          </Group>
+
+          <Textarea
+            label="Notas"
+            value={formData.notes || ''}
+            onChange={(e) => handleInputChange('notes', e.currentTarget.value)}
+            readOnly={isReadOnly}
+            rows={3}
+            placeholder="Notas adicionales..."
+          />
+        </Card>
+
+        {/* Footer Buttons */}
+        <Group justify="space-between" pt="lg">
+          <div>
+            {!isReadOnly && formData.items.length === 0 && (
+              <Text c="red" size="sm">Agrega al menos un producto</Text>
+            )}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Fecha de Entrega Esperada
-              </label>
-              <input
-                type="date"
-                value={formData.expected_delivery_date || ''}
-                onChange={(e) => handleInputChange('expected_delivery_date', e.target.value)}
-                readOnly={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Ubicación de Entrega
-              </label>
-              <input
-                type="text"
-                value={formData.delivery_location}
-                onChange={(e) => handleInputChange('delivery_location', e.target.value)}
-                readOnly={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-                placeholder="Ubicación de entrega"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Notas
-              </label>
-              <textarea
-                value={formData.notes || ''}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                readOnly={isReadOnly}
-                rows={3}
-                className={`glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-                placeholder="Notas adicionales..."
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+          
+          <Group>
+            <Button
+              variant="default"
+              onClick={onClose}
+            >
+              {isReadOnly ? 'Cerrar' : 'Cancelar'}
+            </Button>
+            
+            {!isReadOnly && (
+              <Button
+                onClick={handleSubmit}
+                disabled={loading || !formData.supplier_id || formData.items.length === 0}
+                loading={loading}
+              >
+                {mode === 'create' ? 'Crear Orden' : 'Actualizar Orden'}
+              </Button>
+            )}
+          </Group>
+        </Group>
+      </Stack>
     </Modal>
   );
 }

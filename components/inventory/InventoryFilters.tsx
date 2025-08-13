@@ -3,11 +3,12 @@
 import React from "react"
 import { 
   Select,
-  SelectItem,
   Card,
-  CardBody,
-  Chip
-} from "@heroui/react"
+  Badge,
+  Stack,
+  Text,
+  Group
+} from "@mantine/core"
 import { PRODUCT_CATEGORIES } from "@/types/inventory"
 
 interface InventoryFiltersProps {
@@ -41,72 +42,60 @@ export default function InventoryFilters({
   ]
 
   return (
-    <div className="space-y-4">
-      <Card className="border border-gray-200">
-        <CardBody className="p-4">
-          <h4 className="font-medium mb-4">Filtros de Inventario</h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Stack gap="md">
+      <Card withBorder p="md">
+        <Text fw={500} mb="md">Filtros de Inventario</Text>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--mantine-spacing-md)' }}>
             {/* Filtro por ubicación */}
-            <div>
-              <Select
-                label="Ubicación"
-                placeholder="Selecciona una ubicación"
-                selectedKeys={[selectedLocation]}
-                onSelectionChange={(keys) => onLocationChange(Array.from(keys)[0] as string)}
-              >
-                {locations.map((location) => (
-                  <SelectItem key={location.key}>
-                    {location.label}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
+            <Select
+              label="Ubicación"
+              placeholder="Selecciona una ubicación"
+              value={selectedLocation}
+              onChange={(value) => onLocationChange(value || 'all')}
+              data={locations.map((location) => ({
+                value: location.key,
+                label: location.label
+              }))}
+            />
 
             {/* Filtro por categoría */}
-            <div>
-              <Select
-                label="Categoría"
-                placeholder="Selecciona una categoría"
-                selectedKeys={[selectedCategory]}
-                onSelectionChange={(keys) => onCategoryChange(Array.from(keys)[0] as string)}
-              >
-                {categories.map((category) => (
-                  <SelectItem key={category.key}>
-                    {category.label}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
+            <Select
+              label="Categoría"
+              placeholder="Selecciona una categoría"
+              value={selectedCategory}
+              onChange={(value) => onCategoryChange(value || 'all')}
+              data={categories.map((category) => ({
+                value: category.key,
+                label: category.label
+              }))}
+            />
           </div>
 
           {/* Filtros activos */}
-          <div className="mt-4">
-            <div className="flex flex-wrap gap-2">
+          {(selectedLocation !== "all" || selectedCategory !== "all") && (
+            <Group gap="xs" mt="md">
               {selectedLocation !== "all" && (
-                <Chip
+                <Badge
                   size="sm"
-                  variant="flat"
-                  color="primary"
-                  onClose={() => onLocationChange("all")}
+                  variant="light"
+                  color="blue"
                 >
                   Ubicación: {locations.find(l => l.key === selectedLocation)?.label}
-                </Chip>
+                </Badge>
               )}
               {selectedCategory !== "all" && (
-                <Chip
+                <Badge
                   size="sm"
-                  variant="flat"
-                  color="secondary"
-                  onClose={() => onCategoryChange("all")}
+                  variant="light" 
+                  color="green"
                 >
                   Categoría: {categories.find(c => c.key === selectedCategory)?.label}
-                </Chip>
+                </Badge>
               )}
-            </div>
-          </div>
-        </CardBody>
+            </Group>
+          )}
       </Card>
-    </div>
+    </Stack>
   )
 }

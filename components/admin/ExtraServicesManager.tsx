@@ -3,39 +3,31 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card,
-  CardBody,
-  CardHeader,
   Button,
-  Input,
+  TextInput,
   Textarea,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Chip,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Spinner,
-  Switch
-} from '@heroui/react';
+  Badge,
+  Loader,
+  Switch,
+  Group,
+  Stack,
+  Text,
+  Title,
+  ActionIcon,
+  ScrollArea,
+  Select
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
-  PlusIcon,
-  SparklesIcon,
-  PencilIcon,
-  TrashIcon,
-  EyeIcon,
-  CurrencyDollarIcon
-} from '@heroicons/react/24/outline';
+  IconPlus,
+  IconSparkles,
+  IconPencil,
+  IconTrash,
+  IconEye,
+  IconCurrencyDollar
+} from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 
 interface ExtraService {
@@ -72,7 +64,7 @@ export default function ExtraServicesManager() {
   const [submitting, setSubmitting] = useState(false);
   const [editingService, setEditingService] = useState<ExtraService | null>(null);
   
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [opened, { open, close }] = useDisclosure(false);
   
   const [formData, setFormData] = useState<ExtraServiceFormData>({
     name: '',
@@ -118,7 +110,7 @@ export default function ExtraServicesManager() {
 
   const handleCreate = () => {
     resetForm();
-    onOpen();
+    open();
   };
 
   const handleEdit = (service: ExtraService) => {
@@ -130,7 +122,7 @@ export default function ExtraServicesManager() {
       category: service.category,
       isActive: service.isActive
     });
-    onOpen();
+    open();
   };
 
   const handleSubmit = async () => {
@@ -169,7 +161,7 @@ export default function ExtraServicesManager() {
       if (response.ok && data.success) {
         toast.success(editingService ? 'Servicio extra actualizado exitosamente' : 'Servicio extra creado exitosamente');
         fetchExtraServices();
-        onClose();
+        close();
         resetForm();
       } else {
         toast.error(data.error || 'Error al guardar el servicio extra');
@@ -230,315 +222,266 @@ export default function ExtraServicesManager() {
   };
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 btn-primary rounded-lg flex items-center justify-center">
-            <SparklesIcon className="w-6 h-6 text-white" />
+      <Group justify="space-between">
+        <Group gap="md">
+          <div style={{ 
+            width: 48, 
+            height: 48, 
+            backgroundColor: 'var(--mantine-primary-color-6)', 
+            borderRadius: 8, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}>
+            <IconSparkles size={24} color="white" />
           </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground">
-              Servicios Extras
-            </h2>
-            <p className="text-sm text-neutral-600 mt-1">
+          <Stack gap={0}>
+            <Title order={2}>Servicios Extras</Title>
+            <Text size="sm" c="dimmed">
               Gestiona los servicios adicionales disponibles
-            </p>
-          </div>
-        </div>
+            </Text>
+          </Stack>
+        </Group>
         <Button
-          startContent={<PlusIcon className="w-4 h-4" />}
-          onPress={handleCreate}
-          className="btn-primary"
+          leftSection={<IconPlus size={16} />}
+          onClick={handleCreate}
           size="lg"
         >
           Nuevo Servicio
         </Button>
-      </div>
+      </Group>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-foreground mb-2">
-              {extraServices.length}
-            </div>
-            <div className="text-sm text-neutral-600">Total de Servicios</div>
-          </CardBody>
+      <Group grow>
+        <Card withBorder p="lg" style={{ textAlign: 'center' }}>
+          <Text size="xl" fw={700} mb="sm">
+            {extraServices.length}
+          </Text>
+          <Text size="sm" c="dimmed">Total de Servicios</Text>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-green-600 mb-2">
-              {extraServices.filter(s => s.isActive).length}
-            </div>
-            <div className="text-sm text-neutral-600">Servicios Activos</div>
-          </CardBody>
+        <Card withBorder p="lg" style={{ textAlign: 'center' }}>
+          <Text size="xl" fw={700} mb="sm" c="green">
+            {extraServices.filter(s => s.isActive).length}
+          </Text>
+          <Text size="sm" c="dimmed">Servicios Activos</Text>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-blue-600 mb-2">
-              {new Set(extraServices.map(s => s.category)).size}
-            </div>
-            <div className="text-sm text-neutral-600">Categorías</div>
-          </CardBody>
+        <Card withBorder p="lg" style={{ textAlign: 'center' }}>
+          <Text size="xl" fw={700} mb="sm" c="blue">
+            {new Set(extraServices.map(s => s.category)).size}
+          </Text>
+          <Text size="sm" c="dimmed">Categorías</Text>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-orange-600 mb-2">
-              {extraServices.length > 0 ? formatCurrency(extraServices.reduce((sum, s) => sum + s.price, 0) / extraServices.length) : '$0'}
-            </div>
-            <div className="text-sm text-neutral-600">Precio Promedio</div>
-          </CardBody>
+        <Card withBorder p="lg" style={{ textAlign: 'center' }}>
+          <Text size="xl" fw={700} mb="sm" c="orange">
+            {extraServices.length > 0 ? formatCurrency(extraServices.reduce((sum, s) => sum + s.price, 0) / extraServices.length) : '$0'}
+          </Text>
+          <Text size="sm" c="dimmed">Precio Promedio</Text>
         </Card>
-      </div>
+      </Group>
 
       {/* Extra Services Table */}
-      <Card className="border border-gray-200 shadow-sm">
-        <CardBody className="p-0">
-          {loading ? (
-            <div className="flex flex-col justify-center items-center py-12">
-              <Spinner size="lg" className="text-foreground" />
-              <p className="text-neutral-500 mt-4">Cargando servicios extras...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table 
-                aria-label="Tabla de servicios extras"
-                classNames={{
-                  wrapper: "shadow-none",
-                  th: "surface-elevated text-neutral-700 font-semibold",
-                  td: "py-4"
-                }}
-              >
-                <TableHeader>
-                  <TableColumn>SERVICIO</TableColumn>
-                  <TableColumn className="hidden md:table-cell">CATEGORÍA</TableColumn>
-                  <TableColumn className="hidden lg:table-cell">PRECIO</TableColumn>
-                  <TableColumn>ESTADO</TableColumn>
-                  <TableColumn>ACCIONES</TableColumn>
-                </TableHeader>
-                <TableBody emptyContent="No hay servicios extras registrados">
-                  {extraServices.map((service) => (
-                    <TableRow key={service._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <SparklesIcon className="w-5 h-5 text-neutral-600" />
+      <Card withBorder>
+        {loading ? (
+          <Stack align="center" gap="sm" py="xl">
+            <Loader size="lg" />
+            <Text c="dimmed">Cargando servicios extras...</Text>
+          </Stack>
+        ) : (
+          <ScrollArea>
+            <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>SERVICIO</Table.Th>
+                  <Table.Th visibleFrom="md">CATEGORÍA</Table.Th>
+                  <Table.Th visibleFrom="lg">PRECIO</Table.Th>
+                  <Table.Th>ESTADO</Table.Th>
+                  <Table.Th>ACCIONES</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {extraServices.length === 0 ? (
+                  <Table.Tr>
+                    <Table.Td colSpan={5}>
+                      <Text ta="center" c="dimmed" py="lg">
+                        No hay servicios extras registrados
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                ) : (
+                  extraServices.map((service) => (
+                    <Table.Tr key={service._id}>
+                      <Table.Td>
+                        <Group gap="sm">
+                          <div style={{ 
+                            width: 40, 
+                            height: 40, 
+                            backgroundColor: 'var(--mantine-color-gray-1)', 
+                            borderRadius: 8, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center' 
+                          }}>
+                            <IconSparkles size={20} color="gray" />
                           </div>
-                          <div>
-                            <div className="font-semibold text-foreground">{service.name}</div>
+                          <Stack gap={2}>
+                            <Text fw={600}>{service.name}</Text>
                             {service.description && (
-                              <div className="text-sm text-neutral-500 mt-1 max-w-xs truncate">
+                              <Text size="sm" c="dimmed" lineClamp={1} maw={300}>
                                 {service.description}
-                              </div>
+                              </Text>
                             )}
-                            <div className="lg:hidden text-xs text-neutral-500 mt-1 flex items-center gap-1">
-                              <CurrencyDollarIcon className="w-3 h-3" />
-                              {formatCurrency(service.price)}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Chip
+                            <Group gap="xs" hiddenFrom="lg">
+                              <IconCurrencyDollar size={12} />
+                              <Text size="xs" c="dimmed">
+                                {formatCurrency(service.price)}
+                              </Text>
+                            </Group>
+                          </Stack>
+                        </Group>
+                      </Table.Td>
+                      <Table.Td visibleFrom="md">
+                        <Badge
                           size="sm"
-                          variant="flat"
-                          className={getCategoryColor(service.category)}
+                          variant="light"
+                          color={service.category === 'animacion' ? 'blue' : 
+                                 service.category === 'decoracion' ? 'purple' :
+                                 service.category === 'fotografia' ? 'green' :
+                                 service.category === 'sonido' ? 'yellow' :
+                                 service.category === 'transporte' ? 'red' : 'gray'}
                         >
                           {getCategoryLabel(service.category)}
-                        </Chip>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="flex items-center gap-2">
-                          <CurrencyDollarIcon className="w-4 h-4 text-neutral-500" />
-                          <span className="font-medium">{formatCurrency(service.price)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          color={service.isActive ? 'success' : 'default'}
-                          variant="flat"
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td visibleFrom="lg">
+                        <Group gap="xs">
+                          <IconCurrencyDollar size={16} color="gray" />
+                          <Text fw={500}>{formatCurrency(service.price)}</Text>
+                        </Group>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge
+                          color={service.isActive ? 'green' : 'gray'}
+                          variant="light"
                           size="sm"
                         >
                           {service.isActive ? 'Activo' : 'Inactivo'}
-                        </Chip>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            isIconOnly
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap="xs">
+                          <ActionIcon
                             variant="light"
                             size="sm"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            onPress={() => {/* TODO: Implementar vista detallada */}}
+                            color="blue"
+                            onClick={() => {/* TODO: Implementar vista detallada */}}
                           >
-                            <EyeIcon className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            isIconOnly
+                            <IconEye size={16} />
+                          </ActionIcon>
+                          <ActionIcon
                             variant="light"
                             size="sm"
-                            className="text-neutral-600 hover:text-neutral-700 hover:bg-neutral-50"
-                            onPress={() => handleEdit(service)}
+                            color="gray"
+                            onClick={() => handleEdit(service)}
                           >
-                            <PencilIcon className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            isIconOnly
+                            <IconPencil size={16} />
+                          </ActionIcon>
+                          <ActionIcon
                             variant="light"
                             size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onPress={() => handleDelete(service._id)}
+                            color="red"
+                            onClick={() => handleDelete(service._id)}
                           >
-                            <TrashIcon className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardBody>
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))
+                )}
+              </Table.Tbody>
+            </Table>
+          </ScrollArea>
+        )}
       </Card>
 
       {/* Create/Edit Modal */}
       <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size="2xl"
-        scrollBehavior="inside"
-        isDismissable={!submitting}
-        backdrop="opaque"
-        classNames={{
-          backdrop: "surface-overlay",
-          base: "bg-white shadow-2xl border-0",
-          wrapper: "z-[1001] items-center justify-center p-4",
-          header: "border-b border-gray-200 bg-white",
-          body: "py-6",
-          footer: "border-t border-gray-200 bg-gray-50"
-        }}
+        opened={opened}
+        onClose={close}
+        title={editingService ? 'Editar servicio' : 'Nuevo servicio'}
+        size="lg"
+        closeOnEscape={!submitting}
+        closeOnClickOutside={!submitting}
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="px-6 py-4">
-                <h3 className="text-lg font-medium text-foreground">
-                  {editingService ? 'Editar servicio' : 'Nuevo servicio'}
-                </h3>
-              </ModalHeader>
+        <Stack gap="lg">
+          <TextInput
+            label="Nombre del servicio"
+            placeholder="Ej: Fotografía profesional, DJ, Animador"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            withAsterisk
+          />
+          
+          <Group grow>
+            <TextInput
+              label="Precio"
+              placeholder="500"
+              type="number"
+              value={formData.price}
+              onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+              leftSection={<IconCurrencyDollar size={16} />}
+              withAsterisk
+            />
+            
+            <Select
+              label="Categoría"
+              placeholder="Selecciona categoría"
+              value={formData.category}
+              onChange={(value) => setFormData(prev => ({ ...prev, category: value || 'otros' }))}
+              data={categories.map(cat => ({ value: cat.key, label: cat.label }))}
+              withAsterisk
+            />
+          </Group>
+          
+          <Textarea
+            label="Descripción"
+            placeholder="Describe qué incluye este servicio..."
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            minRows={2}
+          />
 
-              <ModalBody>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Nombre del servicio *
-                    </label>
-                    <Input
-                      placeholder="Ej: Fotografía profesional, DJ, Animador"
-                      value={formData.name}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-                      variant="flat"
-                      classNames={{
-                        input: "text-foreground",
-                        inputWrapper: "form-input"
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Precio *
-                      </label>
-                      <Input
-                        placeholder="500"
-                        type="number"
-                        step="0.01"
-                        value={formData.price}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, price: value }))}
-                        variant="flat"
-                        startContent={<span className="text-neutral-400">$</span>}
-                        classNames={{
-                          input: "text-foreground",
-                          inputWrapper: "form-input"
-                        }}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Categoría *
-                      </label>
-                      <select
-                        value={formData.category}
-                        onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                        className="w-full px-3 py-2 bg-gray-50 border-0 rounded-lg focus:outline-none focus:ring-1 focus-ring focus:bg-white text-foreground"
-                      >
-                        {categories.map((category) => (
-                          <option key={category.key} value={category.key}>
-                            {category.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Descripción
-                    </label>
-                    <Textarea
-                      placeholder="Describe qué incluye este servicio..."
-                      value={formData.description}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-                      minRows={2}
-                      variant="flat"
-                      classNames={{
-                        input: "text-foreground",
-                        inputWrapper: "form-input"
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      isSelected={formData.isActive}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, isActive: value }))}
-                      size="sm"
-                    />
-                    <span className="text-sm text-neutral-700">Servicio activo</span>
-                  </div>
-                </div>
-              </ModalBody>
-
-              <ModalFooter className="px-6 py-3">
-                <Button
-                  variant="light"
-                  onPress={onClose}
-                  isDisabled={submitting}
-                  size="sm"
-                  className="text-neutral-600"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onPress={handleSubmit}
-                  isLoading={submitting}
-                  size="sm"
-                  className="btn-primary text-white"
-                >
-                  {submitting ? 'Guardando...' : (editingService ? 'Actualizar' : 'Crear')}
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+          <Group>
+            <Switch
+              label="Servicio activo"
+              checked={formData.isActive}
+              onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.currentTarget.checked }))}
+              size="sm"
+            />
+          </Group>
+          
+          <Group justify="flex-end" mt="lg">
+            <Button
+              variant="light"
+              onClick={close}
+              disabled={submitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              loading={submitting}
+            >
+              {submitting ? 'Guardando...' : (editingService ? 'Actualizar' : 'Crear')}
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
-    </div>
+    </Stack>
   );
 }

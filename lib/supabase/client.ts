@@ -15,17 +15,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Create Supabase client with service role for server-side operations
-export const supabaseAdmin = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
 
 // Database types for TypeScript
 export type Database = {
@@ -149,6 +138,12 @@ export type Database = {
           expiry_has_expiry?: boolean;
           expiry_shelf_life_days?: number;
           expiry_warning_days?: number;
+          approval_status?: string;
+          rejection_reason?: string;
+          approved_by?: string;
+          approved_at?: string;
+          rejected_by?: string;
+          rejected_at?: string;
           images?: string[];
           tags?: string[];
           created_by: string;
@@ -184,6 +179,12 @@ export type Database = {
           expiry_has_expiry?: boolean;
           expiry_shelf_life_days?: number;
           expiry_warning_days?: number;
+          approval_status?: string;
+          rejection_reason?: string;
+          approved_by?: string;
+          approved_at?: string;
+          rejected_by?: string;
+          rejected_at?: string;
           images?: string[];
           tags?: string[];
           created_by: string;
@@ -219,6 +220,12 @@ export type Database = {
           expiry_has_expiry?: boolean;
           expiry_shelf_life_days?: number;
           expiry_warning_days?: number;
+          approval_status?: string;
+          rejection_reason?: string;
+          approved_by?: string;
+          approved_at?: string;
+          rejected_by?: string;
+          rejected_at?: string;
           images?: string[];
           tags?: string[];
           created_by?: string;

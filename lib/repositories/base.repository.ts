@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '@/lib/supabase/client';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { ServiceResponse } from '@/lib/types/inventory.types';
 
 /**

@@ -1,4 +1,12 @@
-import { supabase, supabaseAdmin, Database } from './client';
+import { supabase, Database } from './client';
+import { supabaseAdmin } from './admin';
+import {
+  UnifiedSupplier,
+  SupplierStatus,
+  SupplierType,
+  SupplierFilters,
+  SupplierStats
+} from '@/lib/types/supplier.types';
 
 // Helper function to get location name
 function getLocationName(locationId: string): string {
@@ -93,7 +101,7 @@ export class SupabaseInventoryService {
   }
 
   // ================================================================================================
-  // SUPPLIER LINKING (For Surtinet Portal)
+  // UNIFIED SUPPLIER MANAGEMENT
   // ================================================================================================
 
   static async getUnlinkedSuppliers() {
@@ -146,6 +154,224 @@ export class SupabaseInventoryService {
       throw error;
     }
     return data;
+  }
+
+  // 🚀 NUEVOS MÉTODOS PARA SISTEMA UNIFICADO
+
+  /**
+   * Obtiene todos los proveedores con filtros unificados y enriquecimiento
+   */
+  static async getAllSuppliersUnified(filters?: SupplierFilters): Promise<UnifiedSupplier[]> {
+    try {
+      let query = supabase.from('suppliers').select('*');
+      
+      // Aplicar filtros
+      if (filters?.is_active !== undefined) {
+        query = query.eq('is_active', filters.is_active);
+      }
+
+      if (filters?.status && filters.status.length > 0) {
+        query = query.in('status', filters.status);
+      }
+
+      if (filters?.type && filters.type.length > 0) {
+        query = query.in('type', filters.type);
+      }
+
+      if (filters?.has_user !== undefined) {
+        if (filters.has_user) {
+          query = query.not('user_id', 'is', null);
+        } else {
+          query = query.or('user_id.is.null,user_id.eq.');
+        }
+      }
+
+      if (filters?.search) {
+        query = query.or(`name.ilike.%${filters.search}%,business_name.ilike.%${filters.search}%,code.ilike.%${filters.search}%,contact_email.ilike.%${filters.search}%`);
+      }
+
+      if (filters?.rating_min) {
+        // Calculamos rating promedio in-database si es posible
+        query = query.gte('rating_quality', filters.rating_min);
+      }
+
+      if (filters?.created_after) {
+        query = query.gte('created_at', filters.created_after);
+      }
+
+      if (filters?.created_before) {
+        query = query.lte('created_at', filters.created_before);
+      }
+
+      query = query.order('name');
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      // Enriquecer datos con información de usuarios
+      const enrichedSuppliers = await Promise.all(
+        (data || []).map(supplier => this.enrichSupplierData(supplier))
+      );
+
+      return enrichedSuppliers;
+    } catch (error) {
+      console.error('Error getting unified suppliers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene estadísticas de proveedores unificadas
+   */
+  static async getSupplierStats(): Promise<SupplierStats> {
+    try {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('status, type, user_id, rating_quality, rating_reliability, rating_pricing');
+
+      if (error) throw error;
+
+      const stats: SupplierStats = {
+        total_suppliers: data?.length || 0,
+        by_status: {
+          [SupplierStatus.EXTERNAL]: 0,
+          [SupplierStatus.INVITED]: 0,
+          [SupplierStatus.ACTIVE]: 0,
+          [SupplierStatus.INACTIVE]: 0,
+          [SupplierStatus.SUSPENDED]: 0
+        },
+        by_type: {
+          [SupplierType.EXTERNAL]: 0,
+          [SupplierType.INTERNAL]: 0,
+          [SupplierType.HYBRID]: 0
+        },
+        with_portal_access: 0,
+        without_portal_access: 0,
+        average_rating: 0,
+        pending_invitations: 0
+      };
+
+      if (data && data.length > 0) {
+        let totalRating = 0;
+        let ratingCount = 0;
+
+        for (const supplier of data) {
+          // Contar por estado
+          const status = (supplier.status as SupplierStatus) || SupplierStatus.EXTERNAL;
+          if (stats.by_status[status] !== undefined) {
+            stats.by_status[status]++;
+          }
+
+          // Contar por tipo
+          const type = (supplier.type as SupplierType) || SupplierType.EXTERNAL;
+          if (stats.by_type[type] !== undefined) {
+            stats.by_type[type]++;
+          }
+
+          // Acceso al portal
+          if (supplier.user_id) {
+            stats.with_portal_access++;
+          } else {
+            stats.without_portal_access++;
+          }
+
+          // Invitaciones pendientes
+          if (status === SupplierStatus.INVITED) {
+            stats.pending_invitations++;
+          }
+
+          // Calificación promedio
+          if (supplier.rating_quality && supplier.rating_reliability && supplier.rating_pricing) {
+            const avgRating = (supplier.rating_quality + supplier.rating_reliability + supplier.rating_pricing) / 3;
+            totalRating += avgRating;
+            ratingCount++;
+          }
+        }
+
+        if (ratingCount > 0) {
+          stats.average_rating = Math.round((totalRating / ratingCount) * 10) / 10;
+        }
+      }
+
+      return stats;
+    } catch (error) {
+      console.error('Error getting supplier stats:', error);
+      return {
+        total_suppliers: 0,
+        by_status: {
+          [SupplierStatus.EXTERNAL]: 0,
+          [SupplierStatus.INVITED]: 0,
+          [SupplierStatus.ACTIVE]: 0,
+          [SupplierStatus.INACTIVE]: 0,
+          [SupplierStatus.SUSPENDED]: 0
+        },
+        by_type: {
+          [SupplierType.EXTERNAL]: 0,
+          [SupplierType.INTERNAL]: 0,
+          [SupplierType.HYBRID]: 0
+        },
+        with_portal_access: 0,
+        without_portal_access: 0,
+        average_rating: 0,
+        pending_invitations: 0
+      };
+    }
+  }
+
+  /**
+   * Enriquece datos de proveedor con información adicional (sin datos de usuario)
+   * Para datos de usuario, usar enrichSupplierWithUserData en servidor
+   */
+  private static async enrichSupplierData(supplier: any): Promise<UnifiedSupplier> {
+    try {
+      // Calcular calificación general
+      if (supplier.rating_quality && supplier.rating_reliability && supplier.rating_pricing) {
+        const weighted = (supplier.rating_quality * 0.4) + (supplier.rating_reliability * 0.35) + (supplier.rating_pricing * 0.25);
+        supplier.overall_rating = Math.round(weighted * 10) / 10;
+      }
+
+      // Asegurar estados por defecto
+      if (!supplier.status) {
+        supplier.status = supplier.user_id ? SupplierStatus.ACTIVE : SupplierStatus.EXTERNAL;
+      }
+      
+      if (!supplier.type) {
+        supplier.type = supplier.user_id ? SupplierType.INTERNAL : SupplierType.EXTERNAL;
+      }
+
+      // Asegurar arrays por defecto
+      if (!supplier.delivery_zones) {
+        supplier.delivery_zones = [];
+      }
+
+      // Datos de usuario se obtienen en servidor si es necesario
+      // Para componentes cliente, user_email y user_name pueden ser undefined
+      
+      return supplier as UnifiedSupplier;
+    } catch (error) {
+      console.error('Error enriching supplier data:', error);
+      return supplier as UnifiedSupplier;
+    }
+  }
+
+  /**
+   * Obtiene proveedores que necesitan migración al nuevo sistema
+   */
+  static async getSuppliersNeedingMigration(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .or('status.is.null,type.is.null')
+        .order('created_at');
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting suppliers needing migration:', error);
+      return [];
+    }
   }
 
   // ================================================================================================

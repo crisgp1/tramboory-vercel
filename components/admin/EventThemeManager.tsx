@@ -3,42 +3,34 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card,
-  CardBody,
-  CardHeader,
   Button,
-  Input,
+  TextInput,
   Textarea,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Chip,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Spinner,
+  Badge,
+  Loader,
   Switch,
-  Divider
-} from '@heroui/react';
+  Divider,
+  Group,
+  Stack,
+  Text,
+  Title,
+  ActionIcon,
+  ScrollArea
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
-  PlusIcon,
-  BuildingStorefrontIcon,
-  PencilIcon,
-  TrashIcon,
-  EllipsisVerticalIcon,
-  CurrencyDollarIcon,
-  XMarkIcon,
-  SparklesIcon
-} from '@heroicons/react/24/outline';
+  IconPlus,
+  IconBuilding,
+  IconBuildingStore as BuildingStorefrontIcon,
+  IconPencil,
+  IconTrash,
+  IconDots,
+  IconCurrencyDollar,
+  IconX,
+  IconSparkles
+} from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 
 interface ThemePackage {
@@ -72,7 +64,7 @@ export default function EventThemeManager() {
   const [submitting, setSubmitting] = useState(false);
   const [editingTheme, setEditingTheme] = useState<EventTheme | null>(null);
   
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [opened, { open, close }] = useDisclosure(false);
   
   const [formData, setFormData] = useState<EventThemeFormData>({
     name: '',
@@ -126,7 +118,7 @@ export default function EventThemeManager() {
 
   const handleCreate = () => {
     resetForm();
-    onOpen();
+    open();
   };
 
   const handleEdit = (theme: EventTheme) => {
@@ -138,7 +130,7 @@ export default function EventThemeManager() {
       themes: [...(theme.themes || [])],
       isActive: theme.isActive
     });
-    onOpen();
+    open();
   };
 
   const addPackage = () => {
@@ -230,7 +222,7 @@ export default function EventThemeManager() {
       if (response.ok && data.success) {
         toast.success(editingTheme ? 'Tema de evento actualizado exitosamente' : 'Tema de evento creado exitosamente');
         fetchEventThemes();
-        onClose();
+        close();
         resetForm();
       } else {
         toast.error(data.error || 'Error al guardar el tema de evento');
@@ -292,8 +284,8 @@ export default function EventThemeManager() {
           </div>
         </div>
         <Button
-          startContent={<PlusIcon className="w-4 h-4" />}
-          onPress={handleCreate}
+          leftSection={<PlusIcon className="w-4 h-4" />}
+          onClick={handleCreate}
           className="btn-primary text-white hover:bg-gray-800"
           size="lg"
         >
@@ -464,7 +456,7 @@ export default function EventThemeManager() {
       {/* Create/Edit Modal */}
       <Modal
         isOpen={isOpen}
-        onClose={onClose}
+        close={close}
         size="3xl"
         scrollBehavior="inside"
         isDismissable={!submitting}
@@ -479,7 +471,7 @@ export default function EventThemeManager() {
         }}
       >
         <ModalContent>
-          {(onClose) => (
+          {(close) => (
             <>
               <ModalHeader className="px-6 py-4">
                 <h3 className="text-lg font-medium text-gray-900">
@@ -676,7 +668,7 @@ export default function EventThemeManager() {
               <ModalFooter className="px-6 py-3">
                 <Button
                   variant="light"
-                  onPress={onClose}
+                  onPress={close}
                   isDisabled={submitting}
                   size="sm"
                   className="text-gray-600"

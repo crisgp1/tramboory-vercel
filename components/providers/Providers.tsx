@@ -1,7 +1,9 @@
 "use client"
 
 import { ClerkProvider } from "@clerk/nextjs"
-import { HeroUIProvider } from "@heroui/react"
+import { MantineProvider } from "@mantine/core"
+import { Notifications } from "@mantine/notifications"
+import { ModalsProvider } from "@mantine/modals"
 import { Toaster } from "react-hot-toast"
 import SignUpRedirectHandler from "@/components/auth/SignUpRedirectHandler"
 
@@ -12,11 +14,14 @@ interface ProvidersProps {
 export default function Providers({ children }: ProvidersProps) {
   return (
     <ClerkProvider>
-      <HeroUIProvider>
-        <SignUpRedirectHandler />
-        {children}
-        <Toaster position="top-right" />
-      </HeroUIProvider>
+      <MantineProvider>
+        <ModalsProvider>
+          <SignUpRedirectHandler />
+          {children}
+          <Notifications position="top-right" />
+          <Toaster position="top-right" />
+        </ModalsProvider>
+      </MantineProvider>
     </ClerkProvider>
   )
 }

@@ -3,42 +3,39 @@
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Button,
-  Input,
+  TextInput,
   Select,
-  SelectItem,
   Textarea,
   Card,
-  CardBody,
-  Chip,
-  Autocomplete,
-  AutocompleteItem,
+  Badge,
   Divider,
   Tabs,
-  Tab
-} from '@heroui/react';
+  Group,
+  Stack,
+  Text,
+  Title,
+  ActionIcon,
+  Autocomplete
+} from '@mantine/core';
 import {
-  XMarkIcon,
-  CurrencyDollarIcon,
-  CalendarIcon,
-  TagIcon,
-  DocumentTextIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  UserIcon,
-  BuildingOfficeIcon,
-  PencilIcon,
-  EyeIcon,
-  ClockIcon,
-  PlusIcon,
-  ListBulletIcon,
-  TrashIcon,
-  CogIcon
-} from '@heroicons/react/24/outline';
+  IconX,
+  IconCurrencyDollar,
+  IconCalendar,
+  IconTag,
+  IconFileText,
+  IconTrendingUp,
+  IconTrendingDown,
+  IconUser,
+  IconBuilding,
+  IconEdit,
+  IconEye,
+  IconClock,
+  IconPlus,
+  IconList,
+  IconTrash,
+  IconSettings
+} from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -232,142 +229,146 @@ export default function FinanceModal({
   if (!finance) return null;
 
   const typeColorMap = {
-    income: 'success',
-    expense: 'danger'
+    income: 'green',
+    expense: 'red'
   } as const;
 
   const statusColorMap = {
-    pending: 'warning',
-    completed: 'success',
-    cancelled: 'danger'
+    pending: 'orange',
+    completed: 'green',
+    cancelled: 'red'
   } as const;
 
   const categoryColorMap = {
-    reservation: 'primary',
-    operational: 'secondary',
-    salary: 'warning',
-    other: 'default'
+    reservation: 'blue',
+    operational: 'gray',
+    salary: 'orange',
+    other: 'gray'
   } as const;
 
   const renderDetailsTab = () => (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Header con tipo y estado */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${
-            finance.type === 'income' ? 'bg-green-500' : 'bg-red-500'
-          }`}></div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+      <Group justify="space-between">
+        <Group gap="md">
+          <div 
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: '50%',
+              backgroundColor: finance.type === 'income' ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-red-5)'
+            }}
+          />
+          <Stack gap={0}>
+            <Title order={3} size="md">
               {finance.description}
-            </h3>
-            <p className="text-sm text-gray-600">
+            </Title>
+            <Text size="sm" c="dimmed">
               {formatDate(finance.date)}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Chip
+            </Text>
+          </Stack>
+        </Group>
+        <Group gap="xs">
+          <Badge
             color={typeColorMap[finance.type]}
-            variant="flat"
-            startContent={finance.type === 'income' ? 
-              <ArrowTrendingUpIcon className="w-4 h-4" /> : 
-              <ArrowTrendingDownIcon className="w-4 h-4" />
+            variant="light"
+            leftSection={finance.type === 'income' ? 
+              <IconTrendingUp size={12} /> : 
+              <IconTrendingDown size={12} />
             }
           >
             {FINANCE_TYPE_LABELS[finance.type as keyof typeof FINANCE_TYPE_LABELS]}
-          </Chip>
-          <Chip
+          </Badge>
+          <Badge
             color={statusColorMap[finance.status]}
-            variant="flat"
+            variant="light"
           >
             {FINANCE_STATUS_LABELS[finance.status as keyof typeof FINANCE_STATUS_LABELS]}
-          </Chip>
-        </div>
-      </div>
+          </Badge>
+        </Group>
+      </Group>
 
       {/* Monto destacado */}
-      <Card className="border border-gray-200 bg-gray-50">
-        <CardBody className="p-6 text-center">
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">Monto</p>
-            <p className={`text-3xl font-bold ${
-              finance.type === 'income' ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {finance.type === 'income' ? '+' : '-'}{formatCurrency(finance.amount)}
-            </p>
-          </div>
-        </CardBody>
+      <Card withBorder p="xl" style={{ textAlign: 'center', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+        <Stack gap="xs">
+          <Text size="sm" c="dimmed">Monto</Text>
+          <Text 
+            size="xl" 
+            fw={700}
+            c={finance.type === 'income' ? 'green' : 'red'}
+            style={{ fontSize: '2rem' }}
+          >
+            {finance.type === 'income' ? '+' : '-'}{formatCurrency(finance.amount)}
+          </Text>
+        </Stack>
       </Card>
 
       {/* Información principal */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--mantine-spacing-lg)' }}>
+        <Stack gap="md">
           <div>
-            <label className="text-sm font-medium text-gray-700">Categoría</label>
-            <div className="mt-1">
-              <Chip
+            <Text size="sm" fw={500} c="dark">Categoría</Text>
+            <div style={{ marginTop: '4px' }}>
+              <Badge
                 color={categoryColorMap[finance.category]}
-                variant="flat"
+                variant="light"
               >
                 {FINANCE_CATEGORY_LABELS[finance.category as keyof typeof FINANCE_CATEGORY_LABELS]}
-              </Chip>
+              </Badge>
             </div>
           </div>
 
           {finance.subcategory && (
             <div>
-              <label className="text-sm font-medium text-gray-700">Subcategoría</label>
-              <p className="mt-1 text-sm text-gray-900">{finance.subcategory}</p>
+              <Text size="sm" fw={500} c="dark">Subcategoría</Text>
+              <Text size="sm" mt={4}>{finance.subcategory}</Text>
             </div>
           )}
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Método de pago</label>
-            <p className="mt-1 text-sm text-gray-900">
+            <Text size="sm" fw={500} c="dark">Método de pago</Text>
+            <Text size="sm" mt={4}>
               {PAYMENT_METHOD_LABELS[finance.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS]}
-            </p>
+            </Text>
           </div>
-        </div>
+        </Stack>
 
-        <div className="space-y-4">
+        <Stack gap="md">
           <div>
-            <label className="text-sm font-medium text-gray-700">Fecha</label>
-            <p className="mt-1 text-sm text-gray-900">{formatDate(finance.date)}</p>
+            <Text size="sm" fw={500} c="dark">Fecha</Text>
+            <Text size="sm" mt={4}>{formatDate(finance.date)}</Text>
           </div>
 
           {finance.reference && (
             <div>
-              <label className="text-sm font-medium text-gray-700">Referencia</label>
-              <p className="mt-1 text-sm text-gray-900">{finance.reference}</p>
+              <Text size="sm" fw={500} c="dark">Referencia</Text>
+              <Text size="sm" mt={4}>{finance.reference}</Text>
             </div>
           )}
 
           {finance.createdBy && (
             <div>
-              <label className="text-sm font-medium text-gray-700">Creado por</label>
-              <p className="mt-1 text-sm text-gray-900">{finance.createdBy}</p>
+              <Text size="sm" fw={500} c="dark">Creado por</Text>
+              <Text size="sm" mt={4}>{finance.createdBy}</Text>
             </div>
           )}
-        </div>
+        </Stack>
       </div>
 
       {/* Reserva vinculada */}
       {finance.reservation && (
         <div>
-          <label className="text-sm font-medium text-gray-700">Reserva vinculada</label>
-          <Card className="mt-2 border border-gray-200">
-            <CardBody className="p-4">
-              <div className="flex items-center gap-3">
-                <UserIcon className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="font-medium text-gray-900">{finance.reservation.customerName}</p>
-                  <p className="text-sm text-gray-600">
-                    {formatDate(finance.reservation.eventDate)}
-                  </p>
-                </div>
-              </div>
-            </CardBody>
+          <Text size="sm" fw={500} c="dark">Reserva vinculada</Text>
+          <Card withBorder mt="xs">
+            <Group gap="md">
+              <IconUser size={20} color="gray" />
+              <Stack gap={0}>
+                <Text fw={500}>{finance.reservation.customerName}</Text>
+                <Text size="sm" c="dimmed">
+                  {formatDate(finance.reservation.eventDate)}
+                </Text>
+              </Stack>
+            </Group>
           </Card>
         </div>
       )}
@@ -375,677 +376,715 @@ export default function FinanceModal({
       {/* Etiquetas */}
       {finance.tags && finance.tags.length > 0 && (
         <div>
-          <label className="text-sm font-medium text-gray-700">Etiquetas</label>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <Text size="sm" fw={500} c="dark">Etiquetas</Text>
+          <Group gap="xs" mt="xs">
             {finance.tags.map((tag: string) => (
-              <Chip
+              <Badge
                 key={tag}
-                variant="flat"
-                color="primary"
+                variant="outline"
+                color="blue"
                 size="sm"
-                startContent={<TagIcon className="w-3 h-3" />}
+                leftSection={<IconTag size={12} />}
               >
                 {tag}
-              </Chip>
+              </Badge>
             ))}
-          </div>
+          </Group>
         </div>
       )}
 
       {/* Notas */}
       {finance.notes && (
         <div>
-          <label className="text-sm font-medium text-gray-700">Notas</label>
-          <Card className="mt-2 border border-gray-200">
-            <CardBody className="p-4">
-              <p className="text-sm text-gray-900 whitespace-pre-wrap">{finance.notes}</p>
-            </CardBody>
+          <Text size="sm" fw={500} c="dark">Notas</Text>
+          <Card withBorder mt="xs">
+            <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>{finance.notes}</Text>
           </Card>
         </div>
       )}
-    </div>
+    </Stack>
   );
 
   const renderEditTab = () => (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <CogIcon className="w-5 h-5 text-blue-500" />
-            <div>
-              <h4 className="text-sm font-medium text-blue-900">Finanza Generada Automáticamente</h4>
-              <p className="text-xs text-blue-700 mt-1">
+        <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-blue-0)' }}>
+          <Group gap="sm">
+            <IconSettings size={20} color="var(--mantine-color-blue-5)" />
+            <Stack gap="xs">
+              <Text size="sm" fw={500} c="blue">Finanza Generada Automáticamente</Text>
+              <Text size="xs" c="blue">
                 Esta finanza fue generada automáticamente desde una reservación y no puede ser editada.
                 Puedes agregar gastos o ingresos relacionados en la pestaña "Relacionados".
-              </p>
-            </div>
-          </div>
-        </div>
+              </Text>
+            </Stack>
+          </Group>
+        </Card>
       )}
       {/* Información básica */}
-      <div className="space-y-4">
+      <Stack gap="md">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Text size="sm" fw={500} mb="xs">
             Descripción *
-          </label>
-          <Input
+          </Text>
+          <TextInput
             placeholder="Descripción de la transacción"
             value={formData.description || ''}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-            isInvalid={!!errors.description}
-            errorMessage={errors.description}
-            startContent={<DocumentTextIcon className="w-4 h-4 text-gray-400" />}
-            variant="flat"
-            aria-label="Descripción de la transacción"
-            isReadOnly={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-            classNames={{
-              input: "text-gray-900",
-              inputWrapper: `${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            error={errors.description}
+            leftSection={<IconFileText size={16} />}
+            disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+            style={{
+              input: {
+                backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                  ? 'var(--mantine-color-gray-1)' 
+                  : undefined,
+                opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                  ? 0.6 
+                  : undefined
+              }
             }}
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--mantine-spacing-md)' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Monto *
-            </label>
-            <Input
+            </Text>
+            <TextInput
               type="number"
               placeholder="0.00"
               value={formData.amount?.toString() || ''}
-              onValueChange={(value) => {
-                const num = parseFloat(value) || 0;
+              onChange={(e) => {
+                const num = parseFloat(e.target.value) || 0;
                 setFormData(prev => ({ ...prev, amount: num }));
               }}
-              isInvalid={!!errors.amount}
-              errorMessage={errors.amount}
-              startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-              variant="flat"
-              aria-label="Monto de la transacción"
-              isReadOnly={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: `${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+              error={errors.amount}
+              leftSection={<IconCurrencyDollar size={16} />}
+              disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+              style={{
+                input: {
+                  backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 'var(--mantine-color-gray-1)' 
+                    : undefined,
+                  opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 0.6 
+                    : undefined
+                }
               }}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Fecha *
-            </label>
-            <Input
+            </Text>
+            <TextInput
               type="date"
               value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''}
               onChange={(e) => {
                 const date = new Date(e.target.value);
                 setFormData(prev => ({ ...prev, date }));
               }}
-              startContent={<CalendarIcon className="w-4 h-4 text-gray-400" />}
-              variant="flat"
-              aria-label="Fecha de la transacción"
-              isReadOnly={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: `${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+              leftSection={<IconCalendar size={16} />}
+              disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+              style={{
+                input: {
+                  backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 'var(--mantine-color-gray-1)' 
+                    : undefined,
+                  opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 0.6 
+                    : undefined
+                }
               }}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--mantine-spacing-md)' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Categoría *
-            </label>
+            </Text>
             <Select
               placeholder="Selecciona una categoría"
-              selectedKeys={formData.category ? [formData.category] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0] as string;
-                setFormData(prev => ({ ...prev, category: value as FinanceCategory }));
+              value={formData.category || ''}
+              onChange={(value) => setFormData(prev => ({ ...prev, category: value as FinanceCategory }))}
+              data={FINANCE_CATEGORIES.map((category) => ({
+                value: category,
+                label: FINANCE_CATEGORY_LABELS[category]
+              }))}
+              disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+              style={{
+                input: {
+                  backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 'var(--mantine-color-gray-1)' 
+                    : undefined,
+                  opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 0.6 
+                    : undefined
+                }
               }}
-              variant="flat"
-              aria-label="Categoría de la transacción"
-              isDisabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-              classNames={{
-                trigger: `${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`,
-                value: "text-gray-900",
-                listboxWrapper: "bg-white",
-                popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-              }}
-            >
-              {FINANCE_CATEGORIES.map((category) => (
-                <SelectItem key={category}>
-                  {FINANCE_CATEGORY_LABELS[category]}
-                </SelectItem>
-              ))}
-            </Select>
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Estado *
-            </label>
+            </Text>
             <Select
               placeholder="Selecciona un estado"
-              selectedKeys={formData.status ? [formData.status] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0] as string;
-                setFormData(prev => ({ ...prev, status: value as FinanceStatus }));
+              value={formData.status || ''}
+              onChange={(value) => setFormData(prev => ({ ...prev, status: value as FinanceStatus }))}
+              data={FINANCE_STATUSES.map((status) => ({
+                value: status,
+                label: FINANCE_STATUS_LABELS[status]
+              }))}
+              disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+              style={{
+                input: {
+                  backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 'var(--mantine-color-gray-1)' 
+                    : undefined,
+                  opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 0.6 
+                    : undefined
+                }
               }}
-              variant="flat"
-              aria-label="Estado de la transacción"
-              isDisabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-              classNames={{
-                trigger: `${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`,
-                value: "text-gray-900",
-                listboxWrapper: "bg-white",
-                popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-              }}
-            >
-              {FINANCE_STATUSES.map((status) => (
-                <SelectItem key={status}>
-                  {FINANCE_STATUS_LABELS[status]}
-                </SelectItem>
-              ))}
-            </Select>
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Método de pago *
-            </label>
+            </Text>
             <Select
               placeholder="Selecciona un método"
-              selectedKeys={formData.paymentMethod ? [formData.paymentMethod] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0] as string;
-                setFormData(prev => ({ ...prev, paymentMethod: value as PaymentMethod }));
+              value={formData.paymentMethod || ''}
+              onChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as PaymentMethod }))}
+              data={PAYMENT_METHODS.map((method) => ({
+                value: method,
+                label: PAYMENT_METHOD_LABELS[method]
+              }))}
+              disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+              style={{
+                input: {
+                  backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 'var(--mantine-color-gray-1)' 
+                    : undefined,
+                  opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 0.6 
+                    : undefined
+                }
               }}
-              variant="flat"
-              aria-label="Método de pago"
-              isDisabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-              classNames={{
-                trigger: `${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`,
-                value: "text-gray-900",
-                listboxWrapper: "bg-white",
-                popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-              }}
-            >
-              {PAYMENT_METHODS.map((method) => (
-                <SelectItem key={method}>
-                  {PAYMENT_METHOD_LABELS[method]}
-                </SelectItem>
-              ))}
-            </Select>
+            />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--mantine-spacing-md)' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Subcategoría
-            </label>
-            <Input
+            </Text>
+            <TextInput
               placeholder="Subcategoría específica"
               value={formData.subcategory || ''}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, subcategory: value }))}
-              startContent={<BuildingOfficeIcon className="w-4 h-4 text-gray-400" />}
-              variant="flat"
-              aria-label="Subcategoría"
-              isReadOnly={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: `${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+              onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
+              leftSection={<IconBuilding size={16} />}
+              disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+              style={{
+                input: {
+                  backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 'var(--mantine-color-gray-1)' 
+                    : undefined,
+                  opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 0.6 
+                    : undefined
+                }
               }}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Referencia
-            </label>
-            <Input
+            </Text>
+            <TextInput
               placeholder="Número de referencia o folio"
               value={formData.reference || ''}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, reference: value }))}
-              variant="flat"
-              aria-label="Referencia"
-              isReadOnly={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: `${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+              onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value }))}
+              disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+              style={{
+                input: {
+                  backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 'var(--mantine-color-gray-1)' 
+                    : undefined,
+                  opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                    ? 0.6 
+                    : undefined
+                }
               }}
             />
           </div>
         </div>
-      </div>
+      </Stack>
 
       {/* Tags */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <Stack gap="sm">
+        <Text size="sm" fw={500}>
           Etiquetas
-        </label>
+        </Text>
         
-        <div className="flex gap-2">
+        <Group>
           <Autocomplete
             placeholder="Agregar etiqueta..."
             value={tagInput}
-            onInputChange={setTagInput}
-            onSelectionChange={(key) => {
-              if (key) {
-                handleTagAdd(key as string);
-              }
+            onChange={setTagInput}
+            onOptionSubmit={(value) => {
+              handleTagAdd(value);
             }}
             onKeyDown={handleTagInputKeyDown}
-            startContent={<TagIcon className="w-4 h-4 text-gray-400" />}
-            variant="flat"
-            aria-label="Agregar etiqueta"
-            isDisabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-            classNames={{
-              base: `flex-1 ${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`,
-              listboxWrapper: "bg-white",
-              popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+            leftSection={<IconTag size={16} />}
+            data={availableTags || []}
+            disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+            style={{
+              flex: 1,
+              input: {
+                backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                  ? 'var(--mantine-color-gray-1)' 
+                  : undefined,
+                opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                  ? 0.6 
+                  : undefined
+              }
             }}
-          >
-            {(availableTags || []).map((tag) => (
-              <AutocompleteItem key={tag}>
-                {tag}
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
+          />
           
           <Button
             size="sm"
-            variant="flat"
-            onPress={() => handleTagAdd(tagInput.trim())}
-            isDisabled={(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) || !tagInput.trim() || (formData.tags || []).includes(tagInput.trim())}
-            className={`${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 hover:bg-gray-100'} text-gray-700 border-0`}
+            variant="light"
+            onClick={() => handleTagAdd(tagInput.trim())}
+            disabled={(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) || !tagInput.trim() || (formData.tags || []).includes(tagInput.trim())}
+            style={{
+              backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                ? 'var(--mantine-color-gray-1)' 
+                : undefined,
+              opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                ? 0.6 
+                : undefined
+            }}
           >
             Agregar
           </Button>
-        </div>
+        </Group>
 
         {formData.tags && formData.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <Group gap="xs">
             {formData.tags.map((tag: string) => (
-              <Chip
+              <Badge
                 key={tag}
-                variant="flat"
-                color="primary"
+                variant="outline"
+                color="blue"
                 size="sm"
-                onClose={() => handleTagRemove(tag)}
-                startContent={<TagIcon className="w-3 h-3" />}
+                rightSection={<ActionIcon size="xs" variant="transparent" onClick={() => handleTagRemove(tag)}><IconX size={10} /></ActionIcon>}
+                leftSection={<IconTag size={10} />}
               >
                 {tag}
-              </Chip>
+              </Badge>
             ))}
-          </div>
+          </Group>
         )}
-      </div>
+      </Stack>
 
       {/* Notas */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <Text size="sm" fw={500} mb="xs">
           Notas adicionales
-        </label>
+        </Text>
         <Textarea
           placeholder="Información adicional sobre la transacción..."
           value={formData.notes || ''}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, notes: value }))}
+          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
           minRows={3}
-          variant="flat"
-          aria-label="Notas adicionales"
-          isReadOnly={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
-          classNames={{
-            input: "text-gray-900",
-            inputWrapper: `${(finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) ? 'bg-gray-100 opacity-60' : 'bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900'}`
+          disabled={finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation}
+          style={{
+            input: {
+              backgroundColor: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                ? 'var(--mantine-color-gray-1)' 
+                : undefined,
+              opacity: (finance?.isSystemGenerated || finance?.isEditable === false || !!finance?.reservation) 
+                ? 0.6 
+                : undefined
+            }
           }}
         />
       </div>
-    </div>
+    </Stack>
   );
 
   const renderChildrenTab = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <ListBulletIcon className="w-4 h-4" />
-          <span>Gastos e ingresos relacionados</span>
-        </div>
+    <Stack gap="md">
+      <Group justify="space-between">
+        <Group gap="sm" c="dimmed">
+          <IconList size={16} />
+          <Text size="sm">Gastos e ingresos relacionados</Text>
+        </Group>
         {finance && (finance.isSystemGenerated || !!finance.reservation) && (
           <Button
             size="sm"
-            startContent={<PlusIcon className="w-4 h-4" />}
-            onPress={() => setShowAddChildModal(true)}
-            className="bg-gray-900 text-white hover:bg-gray-800"
+            leftSection={<IconPlus size={16} />}
+            onClick={() => setShowAddChildModal(true)}
+            color="dark"
           >
             Agregar
           </Button>
         )}
-      </div>
+      </Group>
 
       {/* Resumen de totales */}
       {finance && (
-        <Card className="border border-gray-200 bg-gray-50">
-          <CardBody className="p-4">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-sm text-gray-600">Monto Original</p>
-                <p className={`text-lg font-semibold ${
-                  finance.type === 'income' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatCurrency(finance.amount)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Relacionados</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {formatCurrency(children.reduce((sum, child) => {
-                    return child.type === 'income' ? sum + child.amount : sum - child.amount;
-                  }, 0))}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Total</p>
-                <p className={`text-lg font-semibold ${
-                  (finance.amount + children.reduce((sum, child) => {
-                    return child.type === 'income' ? sum + child.amount : sum - child.amount;
-                  }, 0)) >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatCurrency(finance.amount + children.reduce((sum, child) => {
-                    return child.type === 'income' ? sum + child.amount : sum - child.amount;
-                  }, 0))}
-                </p>
-              </div>
-            </div>
-          </CardBody>
+        <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--mantine-spacing-md)', textAlign: 'center' }}>
+            <Stack gap="xs">
+              <Text size="sm" c="dimmed">Monto Original</Text>
+              <Text 
+                size="lg" 
+                fw={600}
+                c={finance.type === 'income' ? 'green' : 'red'}
+              >
+                {formatCurrency(finance.amount)}
+              </Text>
+            </Stack>
+            <Stack gap="xs">
+              <Text size="sm" c="dimmed">Relacionados</Text>
+              <Text size="lg" fw={600}>
+                {formatCurrency(children.reduce((sum, child) => {
+                  return child.type === 'income' ? sum + child.amount : sum - child.amount;
+                }, 0))}
+              </Text>
+            </Stack>
+            <Stack gap="xs">
+              <Text size="sm" c="dimmed">Total</Text>
+              <Text 
+                size="lg" 
+                fw={600}
+                c={(finance.amount + children.reduce((sum, child) => {
+                  return child.type === 'income' ? sum + child.amount : sum - child.amount;
+                }, 0)) >= 0 ? 'green' : 'red'}
+              >
+                {formatCurrency(finance.amount + children.reduce((sum, child) => {
+                  return child.type === 'income' ? sum + child.amount : sum - child.amount;
+                }, 0))}
+              </Text>
+            </Stack>
+          </div>
         </Card>
       )}
 
       {/* Lista de children */}
       {loadingChildren ? (
-        <div className="flex justify-center py-8">
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}>
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
         </div>
       ) : children.length > 0 ? (
-        <div className="space-y-3">
+        <Stack gap="sm">
           {children.map((child) => (
-            <Card key={child._id} className="border border-gray-200">
-              <CardBody className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      child.type === 'income' ? 'bg-green-500' : 'bg-red-500'
-                    }`}></div>
-                    <div>
-                      <p className="font-medium text-gray-900">{child.description}</p>
-                      <p className="text-sm text-gray-600">
-                        {formatDate(child.date)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className={`font-semibold ${
-                        child.type === 'income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {child.type === 'income' ? '+' : '-'}{formatCurrency(child.amount)}
-                      </p>
-                      <div className="flex gap-1">
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          color={child.type === 'income' ? 'success' : 'danger'}
-                        >
-                          {child.type === 'income' ? 'Ingreso' : 'Gasto'}
-                        </Chip>
-                        {child.tags && child.tags.length > 0 && (
-                          <Chip size="sm" variant="flat" color="default">
-                            {child.tags[0]}
-                          </Chip>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {child.notes && (
-                  <p className="text-sm text-gray-600 mt-2 pl-6">{child.notes}</p>
-                )}
-              </CardBody>
+            <Card key={child._id} withBorder>
+              <Group justify="space-between">
+                <Group gap="md">
+                  <div 
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      backgroundColor: child.type === 'income' ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-red-5)'
+                    }}
+                  />
+                  <Stack gap={0}>
+                    <Text fw={500}>{child.description}</Text>
+                    <Text size="sm" c="dimmed">
+                      {formatDate(child.date)}
+                    </Text>
+                  </Stack>
+                </Group>
+                <Group gap="md">
+                  <Stack gap="xs" align="flex-end">
+                    <Text 
+                      fw={600}
+                      c={child.type === 'income' ? 'green' : 'red'}
+                    >
+                      {child.type === 'income' ? '+' : '-'}{formatCurrency(child.amount)}
+                    </Text>
+                    <Group gap="xs">
+                      <Badge
+                        size="sm"
+                        variant="light"
+                        color={child.type === 'income' ? 'green' : 'red'}
+                      >
+                        {child.type === 'income' ? 'Ingreso' : 'Gasto'}
+                      </Badge>
+                      {child.tags && child.tags.length > 0 && (
+                        <Badge size="sm" variant="light" color="gray">
+                          {child.tags[0]}
+                        </Badge>
+                      )}
+                    </Group>
+                  </Stack>
+                </Group>
+              </Group>
+              {child.notes && (
+                <Text size="sm" c="dimmed" mt="sm" pl="lg">{child.notes}</Text>
+              )}
             </Card>
           ))}
-        </div>
+        </Stack>
       ) : (
-        <div className="text-center py-8 text-gray-500">
-          <ListBulletIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p>No hay gastos o ingresos relacionados</p>
+        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+          <IconList size={48} color="var(--mantine-color-gray-4)" style={{ margin: '0 auto 1rem' }} />
+          <Text c="dimmed">No hay gastos o ingresos relacionados</Text>
           {finance && (finance.isSystemGenerated || !!finance.reservation) && (
-            <p className="text-sm mt-1">Puedes agregar gastos o ingresos adicionales relacionados a esta transacción</p>
+            <Text size="sm" c="dimmed" mt="xs">Puedes agregar gastos o ingresos adicionales relacionados a esta transacción</Text>
           )}
         </div>
       )}
-    </div>
+    </Stack>
   );
 
   const renderHistoryTab = () => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-gray-600">
-        <ClockIcon className="w-4 h-4" />
-        <span>Historial de cambios</span>
-      </div>
+    <Stack gap="md">
+      <Group gap="sm" c="dimmed">
+        <IconClock size={16} />
+        <Text size="sm">Historial de cambios</Text>
+      </Group>
       
-      <div className="space-y-3">
-        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-          <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">Transacción creada</p>
-            <p className="text-xs text-gray-600">
+      <Stack gap="sm">
+        <Group gap="md" p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: 'var(--mantine-radius-sm)' }}>
+          <div 
+            style={{
+              width: 8,
+              height: 8,
+              backgroundColor: 'var(--mantine-color-green-5)',
+              borderRadius: '50%',
+              marginTop: 2
+            }}
+          />
+          <Stack gap={0} style={{ flex: 1 }}>
+            <Text size="sm" fw={500}>Transacción creada</Text>
+            <Text size="xs" c="dimmed">
               {formatDate(finance.createdAt || finance.date)}
               {finance.createdBy && ` por ${finance.createdBy}`}
-            </p>
-          </div>
-        </div>
+            </Text>
+          </Stack>
+        </Group>
 
         {finance.updatedAt && finance.updatedAt !== finance.createdAt && (
-          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Última actualización</p>
-              <p className="text-xs text-gray-600">
+          <Group gap="md" p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: 'var(--mantine-radius-sm)' }}>
+            <div 
+              style={{
+                width: 8,
+                height: 8,
+                backgroundColor: 'var(--mantine-color-blue-5)',
+                borderRadius: '50%',
+                marginTop: 2
+              }}
+            />
+            <Stack gap={0} style={{ flex: 1 }}>
+              <Text size="sm" fw={500}>Última actualización</Text>
+              <Text size="xs" c="dimmed">
                 {formatDate(finance.updatedAt)}
-              </p>
-            </div>
-          </div>
+              </Text>
+            </Stack>
+          </Group>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 
   return (
     <>
       <Modal
-        isOpen={isOpen}
+        opened={isOpen}
         onClose={onClose}
-        size="3xl"
-        scrollBehavior="inside"
-        backdrop="opaque"
-        placement="center"
-        classNames={{
-          backdrop: "bg-gray-900/20",
-          base: `bg-white border border-gray-200 max-h-[90vh] my-4 ${showAddChildModal ? 'brightness-75' : ''}`,
-          wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto",
-          header: "border-b border-gray-100 flex-shrink-0",
-          body: "p-0 overflow-y-auto max-h-[calc(90vh-140px)]",
-          footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
+        size="xl"
+        title={null}
+        styles={{
+          content: {
+            maxHeight: '95vh',
+            overflow: 'hidden',
+            opacity: showAddChildModal ? 0.75 : 1
+          },
+          body: {
+            padding: 0,
+            maxHeight: 'calc(95vh - 140px)',
+            overflowY: 'auto'
+          }
         }}
       >
-        <ModalContent>
           {/* Header */}
-          <ModalHeader className="px-6 py-4">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <CurrencyDollarIcon className="w-5 h-5 text-gray-600" />
+          <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group justify="space-between" w="100%">
+              <Group gap="md">
+                <div 
+                  style={{
+                    width: 40,
+                    height: 40,
+                    backgroundColor: 'var(--mantine-color-gray-1)',
+                    borderRadius: 'var(--mantine-radius-sm)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <IconCurrencyDollar size={20} color="var(--mantine-color-gray-6)" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                <Stack gap={0}>
+                  <Title order={3} size="lg">
                     {mode === 'edit' ? 'Editar Transacción' : 'Detalles de Transacción'}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Chip
+                  </Title>
+                  <Group gap="sm" mt={4}>
+                    <Badge
                       color={typeColorMap[finance.type]}
-                      variant="flat"
+                      variant="light"
                       size="sm"
-                      className="text-xs"
                     >
                       {FINANCE_TYPE_LABELS[finance.type as keyof typeof FINANCE_TYPE_LABELS]}
-                    </Chip>
-                    <span className="text-sm text-gray-500">
+                    </Badge>
+                    <Text size="sm" c="dimmed">
                       ID: {finance._id.slice(-6).toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
+                    </Text>
+                  </Group>
+                </Stack>
+              </Group>
+              <Group gap="xs">
                 {mode === 'view' && onUpdate && !finance.isSystemGenerated && finance.isEditable !== false && !finance.reservation && (
                   <Button
                     size="sm"
-                    variant="flat"
-                    onPress={() => setMode('edit')}
-                    startContent={<PencilIcon className="w-4 h-4" />}
-                    className="bg-gray-50 text-gray-700 hover:bg-gray-100 border-0"
+                    variant="light"
+                    onClick={() => setMode('edit')}
+                    leftSection={<IconEdit size={16} />}
                   >
                     Editar
                   </Button>
                 )}
-              </div>
-            </div>
-          </ModalHeader>
+              </Group>
+            </Group>
+          </div>
 
           {/* Navigation Tabs */}
-          <div className="border-b border-gray-100 bg-white">
-            <div className="flex px-6">
-              {[
-                { key: 'details', label: mode === 'edit' ? 'Editar' : 'Detalles', icon: mode === 'edit' ? PencilIcon : EyeIcon },
-                { key: 'children', label: `Relacionados (${children.length})`, icon: ListBulletIcon },
-                { key: 'history', label: 'Historial', icon: ClockIcon }
-              ].map((tab) => {
-                const TabIcon = tab.icon;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-medium transition-colors ${
-                      activeTab === tab.key
-                        ? 'border-gray-900 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    <TabIcon className="w-4 h-4" />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
+          <div style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', backgroundColor: 'white' }}>
+            <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'details')} variant="outline">
+              <Tabs.List style={{ borderBottom: 'none', padding: '0 1.5rem' }}>
+                <Tabs.Tab value="details" leftSection={mode === 'edit' ? <IconEdit size={16} /> : <IconEye size={16} />}>
+                  {mode === 'edit' ? 'Editar' : 'Detalles'}
+                </Tabs.Tab>
+                <Tabs.Tab value="children" leftSection={<IconList size={16} />}>
+                  Relacionados ({children.length})
+                </Tabs.Tab>
+                <Tabs.Tab value="history" leftSection={<IconClock size={16} />}>
+                  Historial
+                </Tabs.Tab>
+              </Tabs.List>
+            </Tabs>
           </div>
 
           {/* Content */}
-          <ModalBody className="p-6 overflow-y-auto">
+          <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
             {activeTab === 'details' && (mode === 'view' ? renderDetailsTab() : renderEditTab())}
             {activeTab === 'children' && renderChildrenTab()}
             {activeTab === 'history' && renderHistoryTab()}
-          </ModalBody>
+          </div>
 
           {/* Footer */}
-          <ModalFooter className="px-6 py-4">
-            <div className="flex gap-3 justify-between items-center w-full">
-              <div className="flex gap-3">
+          <div style={{ 
+            padding: '1.5rem', 
+            borderTop: '1px solid var(--mantine-color-gray-2)', 
+            backgroundColor: 'var(--mantine-color-gray-0)' 
+          }}>
+            <Group justify="space-between" w="100%">
+              <Group gap="sm">
                 {mode === 'edit' && (
                   <Button
                     variant="light"
-                    onPress={handleCancel}
+                    onClick={handleCancel}
                     size="sm"
-                    className="text-gray-600 hover:bg-gray-100"
+                    c="dimmed"
                   >
                     Cancelar
                   </Button>
                 )}
-              </div>
+              </Group>
               
-              <div className="flex gap-3">
+              <Group gap="sm">
                 <Button
                   variant="light"
-                  onPress={onClose}
+                  onClick={onClose}
                   size="sm"
-                  className="text-gray-600 hover:bg-gray-100"
+                  c="dimmed"
                 >
                   Cerrar
                 </Button>
                 
                 {mode === 'edit' && onUpdate && !finance.isSystemGenerated && finance.isEditable !== false && !finance.reservation && (
                   <Button
-                    color="primary"
-                    onPress={handleSave}
-                    isLoading={loading}
+                    onClick={handleSave}
+                    loading={loading}
                     size="sm"
-                    className="bg-gray-900 text-white hover:bg-gray-800"
+                    color="dark"
                   >
                     Guardar Cambios
                   </Button>
                 )}
-              </div>
-            </div>
-          </ModalFooter>
-        </ModalContent>
+              </Group>
+            </Group>
+          </div>
       </Modal>
-
-      {/* Overlay para oscurecer el modal padre */}
-      {showAddChildModal && (
-        <div className="fixed inset-0 bg-black/30 z-[1001]" />
-      )}
 
       {/* Modal para agregar child */}
       <Modal
-        isOpen={showAddChildModal}
+        opened={showAddChildModal}
         onClose={() => setShowAddChildModal(false)}
         size="md"
-        backdrop="transparent"
-        placement="center"
-        scrollBehavior="inside"
-        classNames={{
-          backdrop: "bg-transparent",
-          base: "bg-white border border-gray-200 shadow-2xl",
-          wrapper: "z-[1002] items-center justify-center p-4",
-          header: "border-b border-gray-100 flex-shrink-0",
-          body: "p-0 overflow-y-auto",
-          footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
+        styles={{
+          content: {
+            maxHeight: '90vh',
+            overflow: 'hidden'
+          },
+          body: {
+            maxHeight: 'calc(90vh - 120px)',
+            overflow: 'auto'
+          }
         }}
-      >
-        <ModalContent>
-          <ModalHeader className="px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                <PlusIcon className="w-4 h-4 text-gray-600" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">Agregar Relacionado</h3>
-                <p className="text-xs text-gray-600 mt-1">
-                  {finance?.description}
-                </p>
-              </div>
+        title={
+          <Group gap="md">
+            <div 
+              style={{
+                width: 32,
+                height: 32,
+                backgroundColor: 'var(--mantine-color-gray-1)',
+                borderRadius: 'var(--mantine-radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <IconPlus size={16} color="var(--mantine-color-gray-6)" />
             </div>
-          </ModalHeader>
-          <ModalBody className="p-6">
-            <AddChildForm
-              onSubmit={handleAddChild}
-              onCancel={() => setShowAddChildModal(false)}
-              parentFinance={finance}
-            />
-          </ModalBody>
-        </ModalContent>
+            <Stack gap={0}>
+              <Text fw={600}>Agregar Relacionado</Text>
+              <Text size="xs" c="dimmed">
+                {finance?.description}
+              </Text>
+            </Stack>
+          </Group>
+        }
+      >
+        <AddChildForm
+          onSubmit={handleAddChild}
+          onCancel={() => setShowAddChildModal(false)}
+          parentFinance={finance}
+        />
       </Modal>
     </>
   );
@@ -1083,124 +1122,113 @@ function AddChildForm({
   };
 
   return (
-    <div className="space-y-4">
+    <Stack gap="md">
       {/* Selector de tipo */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <Text size="sm" fw={500} mb="xs">
           Tipo *
-        </label>
-        <div className="grid grid-cols-2 gap-2">
+        </Text>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--mantine-spacing-xs)' }}>
           <Card
-            isPressable
-            className={`border-2 transition-all duration-200 cursor-pointer ${
-              formData.type === 'income'
-                ? 'border-green-500 bg-green-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-            onPress={() => setFormData(prev => ({ ...prev, type: 'income' }))}
+            withBorder
+            p="sm"
+            style={{
+              cursor: 'pointer',
+              borderColor: formData.type === 'income' ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-gray-3)',
+              backgroundColor: formData.type === 'income' ? 'var(--mantine-color-green-0)' : 'transparent',
+              textAlign: 'center'
+            }}
+            onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
           >
-            <CardBody className="p-3 text-center">
-              <ArrowTrendingUpIcon className="w-6 h-6 text-green-500 mx-auto mb-1" />
-              <span className="text-sm font-medium text-gray-900">Ingreso</span>
-            </CardBody>
+            <Stack gap="xs" align="center">
+              <IconTrendingUp size={24} color="var(--mantine-color-green-5)" />
+              <Text size="sm" fw={500}>Ingreso</Text>
+            </Stack>
           </Card>
           
           <Card
-            isPressable
-            className={`border-2 transition-all duration-200 cursor-pointer ${
-              formData.type === 'expense'
-                ? 'border-red-500 bg-red-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-            onPress={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
+            withBorder
+            p="sm"
+            style={{
+              cursor: 'pointer',
+              borderColor: formData.type === 'expense' ? 'var(--mantine-color-red-5)' : 'var(--mantine-color-gray-3)',
+              backgroundColor: formData.type === 'expense' ? 'var(--mantine-color-red-0)' : 'transparent',
+              textAlign: 'center'
+            }}
+            onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
           >
-            <CardBody className="p-3 text-center">
-              <ArrowTrendingDownIcon className="w-6 h-6 text-red-500 mx-auto mb-1" />
-              <span className="text-sm font-medium text-gray-900">Gasto</span>
-            </CardBody>
+            <Stack gap="xs" align="center">
+              <IconTrendingDown size={24} color="var(--mantine-color-red-5)" />
+              <Text size="sm" fw={500}>Gasto</Text>
+            </Stack>
           </Card>
         </div>
       </div>
 
       {/* Descripción */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <Text size="sm" fw={500} mb="xs">
           Descripción *
-        </label>
-        <Input
+        </Text>
+        <TextInput
           placeholder="Ej: Gasto adicional de materiales..."
           value={formData.description}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-          variant="flat"
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
           size="sm"
-          startContent={<DocumentTextIcon className="w-4 h-4 text-gray-400" />}
-          classNames={{
-            input: "text-gray-900",
-            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-          }}
+          leftSection={<IconFileText size={16} />}
         />
       </div>
       
       {/* Monto */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <Text size="sm" fw={500} mb="xs">
           Monto *
-        </label>
-        <Input
+        </Text>
+        <TextInput
           type="number"
           placeholder="0.00"
           value={formData.amount.toString()}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, amount: parseFloat(value) || 0 }))}
-          startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-          variant="flat"
+          onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+          leftSection={<IconCurrencyDollar size={16} />}
           size="sm"
-          classNames={{
-            input: "text-gray-900",
-            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-          }}
         />
       </div>
 
       {/* Notas */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <Text size="sm" fw={500} mb="xs">
           Notas (opcional)
-        </label>
+        </Text>
         <Textarea
           placeholder="Información adicional..."
           value={formData.notes}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, notes: value }))}
+          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
           minRows={2}
-          variant="flat"
           size="sm"
-          classNames={{
-            input: "text-gray-900",
-            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-          }}
         />
       </div>
 
       {/* Botones */}
-      <div className="flex gap-2 justify-end pt-3 border-t border-gray-100">
+      <Group justify="flex-end" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
         <Button
           variant="light"
-          onPress={onCancel}
+          onClick={onCancel}
           size="sm"
-          className="text-gray-600 hover:bg-gray-100"
+          c="dimmed"
         >
           Cancelar
         </Button>
         <Button
-          onPress={handleSubmit}
-          isLoading={loading}
-          isDisabled={!formData.description.trim() || formData.amount <= 0}
+          onClick={handleSubmit}
+          loading={loading}
+          disabled={!formData.description.trim() || formData.amount <= 0}
           size="sm"
-          className="bg-gray-900 text-white hover:bg-gray-800"
-          startContent={!loading && <PlusIcon className="w-4 h-4" />}
+          color="dark"
+          leftSection={!loading && <IconPlus size={16} />}
         >
           {loading ? 'Agregando...' : 'Agregar'}
         </Button>
-      </div>
-    </div>
+      </Group>
+    </Stack>
   );
 }

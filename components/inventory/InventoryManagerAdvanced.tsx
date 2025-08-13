@@ -1,17 +1,17 @@
 "use client"
 
 import React, { useState } from "react"
-import { Tabs, Tab, Input } from "@heroui/react"
+import { Tabs, TextInput, Card, Group, Stack, Title, Text, Badge, Button, Grid, Loader } from "@mantine/core"
 import {
-  ArchiveBoxIcon,
-  CubeIcon,
-  TruckIcon,
-  ChartBarIcon,
-  ExclamationTriangleIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  AdjustmentsHorizontalIcon
-} from "@heroicons/react/24/outline"
+  IconArchive,
+  IconCube,
+  IconTruck,
+  IconChartBar,
+  IconAlertTriangle,
+  IconSearch,
+  IconPlus,
+  IconAdjustments
+} from "@tabler/icons-react"
 import { useRole } from "@/hooks/useRole"
 import { useInventoryStats } from "@/hooks/useInventoryStats"
 import { 
@@ -21,7 +21,7 @@ import {
   nordicTokens 
 } from "@/components/ui/nordic"
 import ProductManager from "./products/ProductManager"
-import StockManager from "./stock/StockManager"
+import StockManagerMantine from "./stock/StockManagerMantine"
 import SupplierManager from "./suppliers/SupplierManager"
 import InventoryReports from "./InventoryReports"
 import InventoryAlerts from "./InventoryAlerts"
@@ -44,240 +44,153 @@ export default function InventoryManagerNordic() {
   }
 
   return (
-    <div className="w-full space-y-8 p-6">
+    <Stack spacing="xl" p="xl">
       {/* Header Section */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
+      <Stack spacing="lg">
+        <Group position="apart">
           <div>
-            <h1 className={`
-              text-[${nordicTokens.typography.fontSize['4xl']}]
-              font-[${nordicTokens.typography.fontWeight.bold}]
-              text-[${nordicTokens.colors.text.primary}]
-              leading-[${nordicTokens.typography.lineHeight.tight}]
-              mb-2
-            `}>
-              Inventario
-            </h1>
-            <p className={`
-              text-[${nordicTokens.typography.fontSize.lg}]
-              text-[${nordicTokens.colors.text.secondary}]
-            `}>
+            <Title order={1}>Inventario</Title>
+            <Text size="lg" color="dimmed">
               Gestiona tu inventario, productos y proveedores
-            </p>
+            </Text>
           </div>
           
           {/* Quick Actions */}
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Input
-                placeholder="Buscar productos..."
-                value={searchQuery}
-                onValueChange={setSearchQuery}
-                startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
-                className="w-80"
-                classNames={{
-                  inputWrapper: `
-                    bg-[${nordicTokens.colors.background.primary}]
-                    border border-[${nordicTokens.colors.border.primary}]
-                    rounded-[${nordicTokens.radius.lg}]
-                    hover:border-[${nordicTokens.colors.text.secondary}]
-                    focus-within:border-[${nordicTokens.colors.border.focus}]
-                    h-12
-                  `,
-                  input: `
-                    text-[${nordicTokens.colors.text.primary}]
-                    placeholder:text-[${nordicTokens.colors.text.tertiary}]
-                  `
-                }}
-              />
-            </div>
-            <NordicButton variant="ghost" size="md">
-              <AdjustmentsHorizontalIcon className="w-5 h-5" />
-            </NordicButton>
-            <NordicButton variant="primary" size="md">
-              <PlusIcon className="w-5 h-5 mr-2" />
+          <Group>
+            <TextInput
+              placeholder="Buscar productos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.currentTarget.value)}
+              icon={<IconSearch size={16} />}
+              style={{ width: 320 }}
+            />
+            <Button variant="light" size="md">
+              <IconAdjustments size={20} />
+            </Button>
+            <Button size="md" leftIcon={<IconPlus size={20} />}>
               Nuevo Producto
-            </NordicButton>
-          </div>
-        </div>
+            </Button>
+          </Group>
+        </Group>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <NordicStatsCard
-            title="Total Productos"
-            value={statsLoading ? "..." : totalProducts.toString()}
-            change={statsLoading ? "" : "+12% vs mes anterior"}
-            trend="up"
-            icon={<CubeIcon className="w-6 h-6" />}
-          />
-          <NordicStatsCard
-            title="Stock Bajo"
-            value={statsLoading ? "..." : lowStockItems.toString()}
-            change={statsLoading ? "" : "4 productos críticos"}
-            trend="down"
-            icon={<ExclamationTriangleIcon className="w-6 h-6" />}
-          />
-          <NordicStatsCard
-            title="Valor Inventario"
-            value={statsLoading ? "..." : formatCurrency(totalValue)}
-            change={statsLoading ? "" : "+8.5% vs mes anterior"}
-            trend="up"
-            icon={<ChartBarIcon className="w-6 h-6" />}
-          />
-          <NordicStatsCard
-            title="Proveedores"
-            value={statsLoading ? "..." : suppliersCount.toString()}
-            change={statsLoading ? "" : "3 activos"}
-            trend="neutral"
-            icon={<TruckIcon className="w-6 h-6" />}
-          />
-        </div>
-      </div>
+        <Grid>
+          <Grid.Col span={12} sm={6} lg={3}>
+            <Card>
+              <Group position="apart">
+                <div>
+                  <Text size="sm" color="dimmed">Total Productos</Text>
+                  <Title order={3}>{statsLoading ? <Loader size="sm" /> : totalProducts}</Title>
+                  {!statsLoading && <Text size="xs" color="green">+12% vs mes anterior</Text>}
+                </div>
+                <IconCube size={24} className="text-blue-600" />
+              </Group>
+            </Card>
+          </Grid.Col>
+          <Grid.Col span={12} sm={6} lg={3}>
+            <Card>
+              <Group position="apart">
+                <div>
+                  <Text size="sm" color="dimmed">Stock Bajo</Text>
+                  <Title order={3}>{statsLoading ? <Loader size="sm" /> : lowStockItems}</Title>
+                  {!statsLoading && <Text size="xs" color="red">4 productos críticos</Text>}
+                </div>
+                <IconAlertTriangle size={24} className="text-red-600" />
+              </Group>
+            </Card>
+          </Grid.Col>
+          <Grid.Col span={12} sm={6} lg={3}>
+            <Card>
+              <Group position="apart">
+                <div>
+                  <Text size="sm" color="dimmed">Valor Inventario</Text>
+                  <Title order={3}>{statsLoading ? <Loader size="sm" /> : formatCurrency(totalValue)}</Title>
+                  {!statsLoading && <Text size="xs" color="green">+8.5% vs mes anterior</Text>}
+                </div>
+                <IconChartBar size={24} className="text-green-600" />
+              </Group>
+            </Card>
+          </Grid.Col>
+          <Grid.Col span={12} sm={6} lg={3}>
+            <Card>
+              <Group position="apart">
+                <div>
+                  <Text size="sm" color="dimmed">Proveedores</Text>
+                  <Title order={3}>{statsLoading ? <Loader size="sm" /> : suppliersCount}</Title>
+                  {!statsLoading && <Text size="xs" color="dimmed">3 activos</Text>}
+                </div>
+                <IconTruck size={24} className="text-purple-600" />
+              </Group>
+            </Card>
+          </Grid.Col>
+        </Grid>
+      </Stack>
 
       {/* Main Content */}
-      <NordicCard variant="default" padding="none">
+      <Card>
         <Tabs 
-          selectedKey={activeTab} 
-          onSelectionChange={(key) => setActiveTab(key as string)}
-          variant="underlined"
-          className="w-full"
-          classNames={{
-            base: "w-full",
-            tabList: `
-              gap-8
-              w-full
-              relative
-              rounded-none
-              p-0
-              bg-transparent
-              border-b border-[${nordicTokens.colors.border.secondary}]
-              px-[${nordicTokens.spacing['3xl']}]
-              pt-[${nordicTokens.spacing['2xl']}]
-            `,
-            cursor: `
-              w-full 
-              bg-[${nordicTokens.colors.text.primary}] 
-              h-0.5
-              rounded-none
-            `,
-            tab: `
-              max-w-fit 
-              px-0 
-              h-12 
-              text-[${nordicTokens.colors.text.secondary}]
-              font-[${nordicTokens.typography.fontWeight.medium}]
-              text-[${nordicTokens.typography.fontSize.sm}]
-              hover:text-[${nordicTokens.colors.text.primary}]
-              data-[selected=true]:text-[${nordicTokens.colors.text.primary}]
-              transition-colors
-            `,
-            tabContent: "group-data-[selected=true]:text-inherit"
-          }}
+          value={activeTab} 
+          onTabChange={setActiveTab}
         >
-          <Tab 
-            key="products" 
-            title={
-              <div className="flex items-center gap-2">
-                <CubeIcon className="w-4 h-4" />
-                <span>Productos</span>
-              </div>
-            }
-          >
-            <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-              <ProductManager />
-            </div>
-          </Tab>
+          <Tabs.List>
+            <Tabs.Tab value="products" icon={<IconCube size={16} />}>
+              Productos
+            </Tabs.Tab>
+            <Tabs.Tab value="stock" icon={<IconArchive size={16} />}>
+              Stock
+            </Tabs.Tab>
+            {canManageSuppliers && (
+              <Tabs.Tab value="suppliers" icon={<IconTruck size={16} />}>
+                Proveedores
+              </Tabs.Tab>
+            )}
+            <Tabs.Tab value="purchase-orders" icon={<IconTruck size={16} />}>
+              Órdenes de Compra
+            </Tabs.Tab>
+            <Tabs.Tab value="alerts" icon={<IconAlertTriangle size={16} />}>
+              Alertas
+              {lowStockItems > 0 && (
+                <Badge size="xs" color="red" ml="xs">
+                  {lowStockItems}
+                </Badge>
+              )}
+            </Tabs.Tab>
+            {canViewReports && (
+              <Tabs.Tab value="reports" icon={<IconChartBar size={16} />}>
+                Reportes
+              </Tabs.Tab>
+            )}
+          </Tabs.List>
+
+          <Tabs.Panel value="products" pt="xl">
+            <ProductManager />
+          </Tabs.Panel>
           
-          <Tab 
-            key="stock" 
-            title={
-              <div className="flex items-center gap-2">
-                <ArchiveBoxIcon className="w-4 h-4" />
-                <span>Stock</span>
-              </div>
-            }
-          >
-            <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-              <StockManager />
-            </div>
-          </Tab>
+          <Tabs.Panel value="stock" pt="xl">
+            <StockManagerMantine />
+          </Tabs.Panel>
 
           {canManageSuppliers && (
-            <Tab 
-              key="suppliers" 
-              title={
-                <div className="flex items-center gap-2">
-                  <TruckIcon className="w-4 h-4" />
-                  <span>Proveedores</span>
-                </div>
-              }
-            >
-              <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-                <SupplierManager />
-              </div>
-            </Tab>
+            <Tabs.Panel value="suppliers" pt="xl">
+              <SupplierManager />
+            </Tabs.Panel>
           )}
 
-          <Tab 
-            key="purchase-orders" 
-            title={
-              <div className="flex items-center gap-2">
-                <TruckIcon className="w-4 h-4" />
-                <span>Órdenes de Compra</span>
-              </div>
-            }
-          >
-            <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-              <PurchaseOrderManager />
-            </div>
-          </Tab>
+          <Tabs.Panel value="purchase-orders" pt="xl">
+            <PurchaseOrderManager />
+          </Tabs.Panel>
 
-          <Tab 
-            key="alerts" 
-            title={
-              <div className="flex items-center gap-2">
-                <ExclamationTriangleIcon className="w-4 h-4" />
-                <span>Alertas</span>
-                {lowStockItems > 0 && (
-                  <span className={`
-                    bg-[${nordicTokens.colors.action.danger}]
-                    text-white
-                    text-[${nordicTokens.typography.fontSize.xs}]
-                    px-2 py-1
-                    rounded-[${nordicTokens.radius.full}]
-                    min-w-[20px]
-                    h-5
-                    flex items-center justify-center
-                    font-[${nordicTokens.typography.fontWeight.medium}]
-                  `}>
-                    {lowStockItems}
-                  </span>
-                )}
-              </div>
-            }
-          >
-            <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-              <InventoryAlerts />
-            </div>
-          </Tab>
+          <Tabs.Panel value="alerts" pt="xl">
+            <InventoryAlerts />
+          </Tabs.Panel>
 
           {canViewReports && (
-            <Tab 
-              key="reports" 
-              title={
-                <div className="flex items-center gap-2">
-                  <ChartBarIcon className="w-4 h-4" />
-                  <span>Reportes</span>
-                </div>
-              }
-            >
-              <div className={`p-[${nordicTokens.spacing['3xl']}] pt-[${nordicTokens.spacing['2xl']}]`}>
-                <InventoryReports />
-              </div>
-            </Tab>
+            <Tabs.Panel value="reports" pt="xl">
+              <InventoryReports />
+            </Tabs.Panel>
           )}
         </Tabs>
-      </NordicCard>
-    </div>
+      </Card>
+    </Stack>
   )
 }

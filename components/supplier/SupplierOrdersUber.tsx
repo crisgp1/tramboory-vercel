@@ -2,27 +2,28 @@
 
 import { useState, useEffect } from "react";
 import {
-  Card,
-  CardBody,
+  Paper,
   Button,
-  Chip,
-  Input,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-  Tabs,
-  Tab,
   Badge,
+  TextInput,
+  Menu,
+  Modal,
   Avatar,
-  Textarea
-} from "@heroui/react";
+  Textarea,
+  Group,
+  Stack,
+  Text,
+  Title,
+  Grid,
+  Divider,
+  Card,
+  Skeleton,
+  Center,
+  ScrollArea,
+  ActionIcon,
+  Flex
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import {
   FunnelIcon,
   MagnifyingGlassIcon,
@@ -90,7 +91,7 @@ export default function SupplierOrdersUber({ supplierId }: SupplierOrdersUberPro
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [opened, { open, close }] = useDisclosure(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
@@ -145,7 +146,7 @@ export default function SupplierOrdersUber({ supplierId }: SupplierOrdersUberPro
 
       if (response.ok) {
         await fetchOrders();
-        onClose();
+        close();
       }
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -171,20 +172,20 @@ export default function SupplierOrdersUber({ supplierId }: SupplierOrdersUberPro
     }
   };
 
-  const getStatusColor = (status: PurchaseOrderStatus): "warning" | "success" | "primary" | "danger" | "default" => {
+  const getStatusColor = (status: PurchaseOrderStatus) => {
     switch (status) {
       case PurchaseOrderStatus.PENDING:
-        return "warning";
+        return "yellow";
       case PurchaseOrderStatus.APPROVED:
-        return "success";
+        return "green";
       case PurchaseOrderStatus.ORDERED:
-        return "primary";
+        return "blue";
       case PurchaseOrderStatus.RECEIVED:
-        return "success";
+        return "green";
       case PurchaseOrderStatus.CANCELLED:
-        return "danger";
+        return "red";
       default:
-        return "default";
+        return "gray";
     }
   };
 
@@ -221,366 +222,362 @@ export default function SupplierOrdersUber({ supplierId }: SupplierOrdersUberPro
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header móvil estilo Uber */}
-      <div className="bg-white sticky top-0 z-40 shadow-sm">
-        <div className="p-4">
-          <h1 className="text-2xl font-bold mb-2">Órdenes de Compra</h1>
-          
-          {/* Barra de búsqueda */}
-          <div className="relative">
-            <Input
-              placeholder="Buscar por número de orden o producto..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              startContent={<MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />}
-              className="w-full"
-              size="lg"
-            />
-          </div>
-        </div>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+      {/* Header */}
+      <Paper pos="sticky" top={0} style={{ zIndex: 40 }} withBorder p="md">
+        <Title order={2} mb="md">Órdenes de Compra</Title>
+        
+        {/* Search Bar */}
+        <TextInput
+          placeholder="Buscar por número de orden o producto..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.currentTarget.value)}
+          leftSection={<MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />}
+          size="md"
+          mb="md"
+        />
 
-        {/* Tabs de estado */}
-        <div className="px-4 pb-2 overflow-x-auto">
-          <div className="flex gap-2 min-w-max">
+        {/* Status Filter Buttons */}
+        <ScrollArea>
+          <Flex gap="xs" style={{ minWidth: 'max-content' }}>
             <Button
               size="sm"
-              color={selectedStatus === "all" ? "primary" : "default"}
-              variant={selectedStatus === "all" ? "solid" : "flat"}
+              variant={selectedStatus === "all" ? "filled" : "light"}
+              color={selectedStatus === "all" ? "blue" : "gray"}
               onClick={() => setSelectedStatus("all")}
-              className="whitespace-nowrap"
             >
               Todas ({orderCounts.all})
             </Button>
             <Button
               size="sm"
-              color={selectedStatus === PurchaseOrderStatus.PENDING ? "warning" : "default"}
-              variant={selectedStatus === PurchaseOrderStatus.PENDING ? "solid" : "flat"}
+              variant={selectedStatus === PurchaseOrderStatus.PENDING ? "filled" : "light"}
+              color={selectedStatus === PurchaseOrderStatus.PENDING ? "yellow" : "gray"}
               onClick={() => setSelectedStatus(PurchaseOrderStatus.PENDING)}
-              className="whitespace-nowrap"
+              leftSection={<ClockIcon className="w-4 h-4" />}
             >
-              <ClockIcon className="w-4 h-4 mr-1" />
               Pendientes ({orderCounts[PurchaseOrderStatus.PENDING]})
             </Button>
             <Button
               size="sm"
-              color={selectedStatus === PurchaseOrderStatus.APPROVED ? "success" : "default"}
-              variant={selectedStatus === PurchaseOrderStatus.APPROVED ? "solid" : "flat"}
+              variant={selectedStatus === PurchaseOrderStatus.APPROVED ? "filled" : "light"}
+              color={selectedStatus === PurchaseOrderStatus.APPROVED ? "green" : "gray"}
               onClick={() => setSelectedStatus(PurchaseOrderStatus.APPROVED)}
-              className="whitespace-nowrap"
+              leftSection={<CheckCircleIcon className="w-4 h-4" />}
             >
-              <CheckCircleIcon className="w-4 h-4 mr-1" />
               Aprobadas ({orderCounts[PurchaseOrderStatus.APPROVED]})
             </Button>
             <Button
               size="sm"
-              color={selectedStatus === PurchaseOrderStatus.ORDERED ? "primary" : "default"}
-              variant={selectedStatus === PurchaseOrderStatus.ORDERED ? "solid" : "flat"}
+              variant={selectedStatus === PurchaseOrderStatus.ORDERED ? "filled" : "light"}
+              color={selectedStatus === PurchaseOrderStatus.ORDERED ? "blue" : "gray"}
               onClick={() => setSelectedStatus(PurchaseOrderStatus.ORDERED)}
-              className="whitespace-nowrap"
+              leftSection={<TruckIcon className="w-4 h-4" />}
             >
-              <TruckIcon className="w-4 h-4 mr-1" />
               En proceso ({orderCounts[PurchaseOrderStatus.ORDERED]})
             </Button>
-          </div>
-        </div>
-      </div>
+          </Flex>
+        </ScrollArea>
+      </Paper>
 
-      {/* Lista de órdenes */}
-      <div className="p-4 space-y-4">
+      {/* Orders List */}
+      <Stack gap="md" p="md">
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-pulse">
-              <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
-              <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
-              <div className="h-32 bg-gray-200 rounded-lg"></div>
-            </div>
-          </div>
+          <Center py="xl">
+            <Stack>
+              <Skeleton height={120} />
+              <Skeleton height={120} />
+              <Skeleton height={120} />
+            </Stack>
+          </Center>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-12">
-            <TruckIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No hay órdenes para mostrar</p>
-          </div>
+          <Center py="xl">
+            <Stack align="center">
+              <TruckIcon className="w-16 h-16 text-gray-300" />
+              <Text c="dimmed">No hay órdenes para mostrar</Text>
+            </Stack>
+          </Center>
         ) : (
           filteredOrders.map((order) => (
-            <Card 
+            <Paper 
               key={order._id} 
-              className="shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              isPressable
-              onPress={() => {
+              withBorder 
+              p="md" 
+              shadow="sm"
+              style={{ cursor: 'pointer', transition: 'box-shadow 0.2s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-md)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)'; }}
+              onClick={() => {
                 setSelectedOrder(order);
-                onOpen();
+                open();
               }}
             >
-              <CardBody className="p-4">
-                {/* Header de la orden */}
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-lg">#{order.purchaseOrderId}</h3>
-                      <Chip
-                        size="sm"
-                        color={getStatusColor(order.status)}
-                        variant="flat"
-                        startContent={getStatusIcon(order.status)}
-                      >
-                        {getStatusLabel(order.status)}
-                      </Chip>
-                    </div>
-                    <p className="text-sm text-gray-500">{formatTimeAgo(order.createdAt)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold">${order.total.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500">{order.items.length} productos</p>
-                  </div>
-                </div>
+              {/* Order Header */}
+              <Group justify="space-between" mb="md">
+                <Stack gap="xs">
+                  <Group gap="sm">
+                    <Title order={4}>#{order.purchaseOrderId}</Title>
+                    <Badge
+                      size="sm"
+                      color={getStatusColor(order.status)}
+                      variant="light"
+                      leftSection={getStatusIcon(order.status)}
+                    >
+                      {getStatusLabel(order.status)}
+                    </Badge>
+                  </Group>
+                  <Text size="sm" c="dimmed">{formatTimeAgo(order.createdAt)}</Text>
+                </Stack>
+                <Stack gap={0} align="flex-end">
+                  <Text size="xl" fw={700}>${order.total.toLocaleString()}</Text>
+                  <Text size="xs" c="dimmed">{order.items.length} productos</Text>
+                </Stack>
+              </Group>
 
-                {/* Productos de la orden */}
-                <div className="space-y-2 mb-3">
-                  {order.items.slice(0, 2).map((item, index) => (
-                    <div key={index} className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">{item.productName}</span>
-                      <span className="font-medium">{item.quantity} unidades</span>
-                    </div>
-                  ))}
-                  {order.items.length > 2 && (
-                    <p className="text-sm text-gray-400">
-                      +{order.items.length - 2} productos más
-                    </p>
-                  )}
-                </div>
-
-                {/* Footer con acciones */}
-                <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                  {order.buyer && (
-                    <div className="flex items-center gap-2">
-                      <Avatar
-                        size="sm"
-                        name={order.buyer.name}
-                        className="bg-gray-200"
-                      />
-                      <div>
-                        <p className="text-sm font-medium">{order.buyer.name}</p>
-                        <p className="text-xs text-gray-500">{order.buyer.department}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {order.expectedDeliveryDate && (
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>Entrega: {new Date(order.expectedDeliveryDate).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Alertas especiales */}
-                {order.status === PurchaseOrderStatus.PENDING && (
-                  <div className="mt-3 p-2 bg-yellow-50 rounded-lg flex items-center gap-2">
-                    <ExclamationTriangleIcon className="w-4 h-4 text-yellow-600" />
-                    <p className="text-sm text-yellow-700">Requiere tu respuesta</p>
-                  </div>
+              {/* Order Items */}
+              <Stack gap="xs" mb="md">
+                {order.items.slice(0, 2).map((item, index) => (
+                  <Group key={index} justify="space-between">
+                    <Text size="sm" c="dimmed">{item.productName}</Text>
+                    <Text size="sm" fw={500}>{item.quantity} unidades</Text>
+                  </Group>
+                ))}
+                {order.items.length > 2 && (
+                  <Text size="sm" c="dimmed">
+                    +{order.items.length - 2} productos más
+                  </Text>
                 )}
-              </CardBody>
-            </Card>
+              </Stack>
+
+              {/* Footer */}
+              <Group justify="space-between" pt="sm" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
+                {order.buyer && (
+                  <Group gap="sm">
+                    <Avatar
+                      size="sm"
+                      name={order.buyer.name}
+                    />
+                    <Stack gap={0}>
+                      <Text size="sm" fw={500}>{order.buyer.name}</Text>
+                      <Text size="xs" c="dimmed">{order.buyer.department}</Text>
+                    </Stack>
+                  </Group>
+                )}
+                
+                {order.expectedDeliveryDate && (
+                  <Group gap="xs">
+                    <CalendarIcon className="w-4 h-4 text-gray-500" />
+                    <Text size="sm" c="dimmed">
+                      Entrega: {new Date(order.expectedDeliveryDate).toLocaleDateString()}
+                    </Text>
+                  </Group>
+                )}
+              </Group>
+
+              {/* Special Alerts */}
+              {order.status === PurchaseOrderStatus.PENDING && (
+                <Paper mt="sm" p="sm" bg="yellow.0" withBorder>
+                  <Group gap="sm">
+                    <ExclamationTriangleIcon className="w-4 h-4 text-yellow-600" />
+                    <Text size="sm" c="yellow.7">Requiere tu respuesta</Text>
+                  </Group>
+                </Paper>
+              )}
+            </Paper>
           ))
         )}
-      </div>
+      </Stack>
 
-      {/* Modal de detalle de orden */}
+      {/* Order Detail Modal */}
       <Modal 
-        isOpen={isOpen} 
-        onClose={onClose}
-        size="full"
-        scrollBehavior="inside"
-        className="max-w-4xl"
+        opened={opened} 
+        onClose={close}
+        size="xl"
+        title={selectedOrder && (
+          <Group justify="space-between">
+            <Stack gap="xs">
+              <Title order={3}>Orden #{selectedOrder.purchaseOrderId}</Title>
+              <Text size="sm" c="dimmed">{formatTimeAgo(selectedOrder.createdAt)}</Text>
+            </Stack>
+            <Badge
+              size="lg"
+              color={getStatusColor(selectedOrder.status)}
+              variant="light"
+              leftSection={getStatusIcon(selectedOrder.status)}
+            >
+              {getStatusLabel(selectedOrder.status)}
+            </Badge>
+          </Group>
+        )}
+        scrollAreaComponent={ScrollArea.Autosize}
       >
-        <ModalContent>
-          {(onClose) => selectedOrder && (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-2xl font-bold">Orden #{selectedOrder.purchaseOrderId}</h2>
-                    <p className="text-sm text-gray-500">{formatTimeAgo(selectedOrder.createdAt)}</p>
-                  </div>
-                  <Chip
-                    size="lg"
-                    color={getStatusColor(selectedOrder.status)}
-                    variant="flat"
-                    startContent={getStatusIcon(selectedOrder.status)}
-                  >
-                    {getStatusLabel(selectedOrder.status)}
-                  </Chip>
-                </div>
-              </ModalHeader>
-              <ModalBody>
-                {/* Información del comprador */}
-                {selectedOrder.buyer && (
-                  <Card className="mb-4">
-                    <CardBody className="p-4">
-                      <h3 className="font-semibold mb-3">Información del Comprador</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center gap-2">
-                          <Avatar name={selectedOrder.buyer.name} size="lg" />
-                          <div>
-                            <p className="font-medium">{selectedOrder.buyer.name}</p>
-                            <p className="text-sm text-gray-500">{selectedOrder.buyer.department}</p>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <EnvelopeIcon className="w-4 h-4 text-gray-400" />
-                            <span>{selectedOrder.buyer.email}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <PhoneIcon className="w-4 h-4 text-gray-400" />
-                            <span>{selectedOrder.buyer.phone}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardBody>
-                  </Card>
-                )}
+        {selectedOrder && (
+          <Stack gap="md">
+            {/* Buyer Information */}
+            {selectedOrder.buyer && (
+              <Paper withBorder p="md">
+                <Title order={4} mb="md">Información del Comprador</Title>
+                <Grid>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Group>
+                      <Avatar name={selectedOrder.buyer.name} size="lg" />
+                      <Stack gap="xs">
+                        <Text fw={500}>{selectedOrder.buyer.name}</Text>
+                        <Text size="sm" c="dimmed">{selectedOrder.buyer.department}</Text>
+                      </Stack>
+                    </Group>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Stack gap="sm">
+                      <Group gap="sm">
+                        <EnvelopeIcon className="w-4 h-4 text-gray-400" />
+                        <Text size="sm">{selectedOrder.buyer.email}</Text>
+                      </Group>
+                      <Group gap="sm">
+                        <PhoneIcon className="w-4 h-4 text-gray-400" />
+                        <Text size="sm">{selectedOrder.buyer.phone}</Text>
+                      </Group>
+                    </Stack>
+                  </Grid.Col>
+                </Grid>
+              </Paper>
+            )}
 
-                {/* Dirección de entrega */}
-                {selectedOrder.deliveryAddress && (
-                  <Card className="mb-4">
-                    <CardBody className="p-4">
-                      <h3 className="font-semibold mb-3 flex items-center gap-2">
-                        <MapPinIcon className="w-5 h-5" />
-                        Dirección de Entrega
-                      </h3>
-                      <p className="text-sm">
-                        {selectedOrder.deliveryAddress.street}<br />
-                        {selectedOrder.deliveryAddress.city}, {selectedOrder.deliveryAddress.state} {selectedOrder.deliveryAddress.zipCode}
-                      </p>
-                      {selectedOrder.expectedDeliveryDate && (
-                        <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-                          <CalendarIcon className="w-4 h-4" />
-                          <span>Fecha esperada: {new Date(selectedOrder.expectedDeliveryDate).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                    </CardBody>
-                  </Card>
+            {/* Delivery Address */}
+            {selectedOrder.deliveryAddress && (
+              <Paper withBorder p="md">
+                <Group mb="md">
+                  <MapPinIcon className="w-5 h-5" />
+                  <Title order={4}>Dirección de Entrega</Title>
+                </Group>
+                <Text size="sm" mb="sm">
+                  {selectedOrder.deliveryAddress.street}<br />
+                  {selectedOrder.deliveryAddress.city}, {selectedOrder.deliveryAddress.state} {selectedOrder.deliveryAddress.zipCode}
+                </Text>
+                {selectedOrder.expectedDeliveryDate && (
+                  <Group gap="sm">
+                    <CalendarIcon className="w-4 h-4 text-gray-500" />
+                    <Text size="sm" c="dimmed">
+                      Fecha esperada: {new Date(selectedOrder.expectedDeliveryDate).toLocaleDateString()}
+                    </Text>
+                  </Group>
                 )}
+              </Paper>
+            )}
 
-                {/* Productos */}
-                <Card className="mb-4">
-                  <CardBody className="p-4">
-                    <h3 className="font-semibold mb-3">Productos ({selectedOrder.items.length})</h3>
-                    <div className="space-y-3">
-                      {selectedOrder.items.map((item, index) => (
-                        <div key={index} className="border-b border-gray-100 pb-3 last:border-0">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium">{item.productName}</p>
-                              <p className="text-sm text-gray-500">
-                                {item.quantity} unidades × ${item.unitPrice.toLocaleString()}
-                              </p>
-                            </div>
-                            <p className="font-semibold">${item.total.toLocaleString()}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+            {/* Products */}
+            <Paper withBorder p="md">
+              <Title order={4} mb="md">Productos ({selectedOrder.items.length})</Title>
+              <Stack gap="md">
+                {selectedOrder.items.map((item, index) => (
+                  <Group key={index} justify="space-between" p="sm" style={{ borderBottom: index < selectedOrder.items.length - 1 ? '1px solid var(--mantine-color-gray-2)' : 'none' }}>
+                    <Stack gap="xs">
+                      <Text fw={500}>{item.productName}</Text>
+                      <Text size="sm" c="dimmed">
+                        {item.quantity} unidades × ${item.unitPrice.toLocaleString()}
+                      </Text>
+                    </Stack>
+                    <Text fw={600}>${item.total.toLocaleString()}</Text>
+                  </Group>
+                ))}
 
-                    {/* Totales */}
-                    <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Subtotal</span>
-                        <span>${selectedOrder.subtotal.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Impuestos</span>
-                        <span>${selectedOrder.tax.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Envío</span>
-                        <span>${selectedOrder.shipping.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                        <span>Total</span>
-                        <span>${selectedOrder.total.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </CardBody>
-                </Card>
+                {/* Totals */}
+                <Stack gap="xs" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+                  <Group justify="space-between">
+                    <Text size="sm">Subtotal</Text>
+                    <Text size="sm">${selectedOrder.subtotal.toLocaleString()}</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm">Impuestos</Text>
+                    <Text size="sm">${selectedOrder.tax.toLocaleString()}</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm">Envío</Text>
+                    <Text size="sm">${selectedOrder.shipping.toLocaleString()}</Text>
+                  </Group>
+                  <Group justify="space-between" pt="sm" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+                    <Text fw={700}>Total</Text>
+                    <Text fw={700} size="lg">${selectedOrder.total.toLocaleString()}</Text>
+                  </Group>
+                </Stack>
+              </Stack>
+            </Paper>
 
-                {/* Notas */}
-                {selectedOrder.notes && (
-                  <Card className="mb-4">
-                    <CardBody className="p-4">
-                      <h3 className="font-semibold mb-3">Notas de la Orden</h3>
-                      <p className="text-sm text-gray-600 whitespace-pre-wrap">{selectedOrder.notes}</p>
-                    </CardBody>
-                  </Card>
-                )}
+            {/* Notes */}
+            {selectedOrder.notes && (
+              <Paper withBorder p="md">
+                <Title order={4} mb="md">Notas de la Orden</Title>
+                <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>{selectedOrder.notes}</Text>
+              </Paper>
+            )}
 
-                {/* Acciones rápidas */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <Button
-                    color="primary"
-                    variant="flat"
-                    startContent={<ChatBubbleLeftIcon className="w-5 h-5" />}
-                    className="w-full"
-                  >
-                    Enviar Mensaje al Comprador
-                  </Button>
-                  <Button
-                    variant="flat"
-                    startContent={<ArrowDownTrayIcon className="w-5 h-5" />}
-                    className="w-full"
-                  >
-                    Descargar Orden PDF
-                  </Button>
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                {selectedOrder.status === PurchaseOrderStatus.PENDING && (
-                  <>
-                    <Button
-                      color="danger"
-                      variant="flat"
-                      onPress={() => handleStatusUpdate(selectedOrder._id, PurchaseOrderStatus.CANCELLED)}
-                      isLoading={actionLoading}
-                    >
-                      Rechazar
-                    </Button>
-                    <Button
-                      color="success"
-                      onPress={() => handleStatusUpdate(selectedOrder._id, PurchaseOrderStatus.APPROVED)}
-                      isLoading={actionLoading}
-                    >
-                      Aceptar Orden
-                    </Button>
-                  </>
-                )}
-                {selectedOrder.status === PurchaseOrderStatus.APPROVED && (
-                  <Button
-                    color="primary"
-                    onPress={() => handleStatusUpdate(selectedOrder._id, PurchaseOrderStatus.ORDERED)}
-                    isLoading={actionLoading}
-                  >
-                    Marcar como En Proceso
-                  </Button>
-                )}
-                {selectedOrder.status === PurchaseOrderStatus.ORDERED && (
-                  <Button
-                    color="success"
-                    onPress={() => handleStatusUpdate(selectedOrder._id, PurchaseOrderStatus.RECEIVED)}
-                    isLoading={actionLoading}
-                  >
-                    Confirmar Entrega
-                  </Button>
-                )}
-                <Button color="default" variant="light" onPress={onClose}>
-                  Cerrar
+            {/* Quick Actions */}
+            <Grid>
+              <Grid.Col span={6}>
+                <Button
+                  color="blue"
+                  variant="light"
+                  leftSection={<ChatBubbleLeftIcon className="w-5 h-5" />}
+                  fullWidth
+                >
+                  Enviar Mensaje al Comprador
                 </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Button
+                  variant="light"
+                  leftSection={<ArrowDownTrayIcon className="w-5 h-5" />}
+                  fullWidth
+                >
+                  Descargar Orden PDF
+                </Button>
+              </Grid.Col>
+            </Grid>
+
+            {/* Action Buttons */}
+            <Group justify="flex-end" gap="sm" pt="md">
+              {selectedOrder.status === PurchaseOrderStatus.PENDING && (
+                <>
+                  <Button
+                    color="red"
+                    variant="light"
+                    onClick={() => handleStatusUpdate(selectedOrder._id, PurchaseOrderStatus.CANCELLED)}
+                    loading={actionLoading}
+                  >
+                    Rechazar
+                  </Button>
+                  <Button
+                    color="green"
+                    onClick={() => handleStatusUpdate(selectedOrder._id, PurchaseOrderStatus.APPROVED)}
+                    loading={actionLoading}
+                  >
+                    Aceptar Orden
+                  </Button>
+                </>
+              )}
+              {selectedOrder.status === PurchaseOrderStatus.APPROVED && (
+                <Button
+                  color="blue"
+                  onClick={() => handleStatusUpdate(selectedOrder._id, PurchaseOrderStatus.ORDERED)}
+                  loading={actionLoading}
+                >
+                  Marcar como En Proceso
+                </Button>
+              )}
+              {selectedOrder.status === PurchaseOrderStatus.ORDERED && (
+                <Button
+                  color="green"
+                  onClick={() => handleStatusUpdate(selectedOrder._id, PurchaseOrderStatus.RECEIVED)}
+                  loading={actionLoading}
+                >
+                  Confirmar Entrega
+                </Button>
+              )}
+              <Button variant="light" onClick={close}>
+                Cerrar
+              </Button>
+            </Group>
+          </Stack>
+        )}
       </Modal>
     </div>
   );

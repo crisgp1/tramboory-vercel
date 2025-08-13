@@ -2,18 +2,18 @@
 
 import React, { useState } from "react"
 import {
-  MapPinIcon,
-  PlusIcon,
-  HashtagIcon,
-  CurrencyDollarIcon,
-  CalendarIcon,
-  TagIcon,
-  ExclamationTriangleIcon,
-  CheckIcon,
-  XMarkIcon
-} from "@heroicons/react/24/outline"
+  IconMapPin,
+  IconPlus,
+  IconHash,
+  IconCurrencyDollar,
+  IconCalendar,
+  IconTag,
+  IconExclamationTriangle,
+  IconCheck,
+  IconX
+} from "@tabler/icons-react"
 import toast from "react-hot-toast"
-import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
+import { Modal, Stack, Card, TextInput, Textarea, Select, Button, Group, Text, Title, NumberInput, Alert } from '@mantine/core'
 
 interface Product {
   id: string
@@ -38,7 +38,7 @@ const AVAILABLE_LOCATIONS = [
   { id: 'recepcion', name: 'Recepción' }
 ]
 
-export default function InitiateMovementModalGlass({ isOpen, onClose, product, onSuccess }: InitiateMovementModalProps) {
+export default function InitiateMovementModal({ isOpen, onClose, product, onSuccess }: InitiateMovementModalProps) {
   const [selectedLocation, setSelectedLocation] = useState("")
   const [quantity, setQuantity] = useState("")
   const [reason, setReason] = useState("Stock inicial")
@@ -122,250 +122,208 @@ export default function InitiateMovementModalGlass({ isOpen, onClose, product, o
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={isOpen}
       onClose={handleClose}
-      title={getTitle()}
-      subtitle={getSubtitle()}
-      icon={PlusIcon}
-      size="lg"
-      footer={
-        <ModalFooter>
-          <div></div>
-          
-          <ModalActions>
-            <ModalButton
-              onClick={handleClose}
-              disabled={loading}
-              variant="secondary"
-            >
-              Cancelar
-            </ModalButton>
-            
-            <ModalButton
-              onClick={handleSubmit}
-              disabled={loading || !selectedLocation || !quantity}
-              loading={loading}
-              variant="primary"
-            >
-              Inicializar Stock
-            </ModalButton>
-          </ModalActions>
-        </ModalFooter>
+      title={
+        <Stack gap="xs">
+          <Title order={3}>{getTitle()}</Title>
+          <Text c="dimmed" size="sm">{getSubtitle()}</Text>
+        </Stack>
       }
+      size="xl"
+      styles={{
+        content: {
+          maxHeight: '95vh',
+          overflow: 'hidden'
+        },
+        body: {
+          maxHeight: 'calc(95vh - 120px)',
+          overflow: 'auto',
+          padding: '1rem'
+        }
+      }}
     >
       {/* Success Message */}
       {showSuccess && (
-        <div className="glass-card p-4 bg-green-50/80 border border-green-200/50 mb-6">
-          <div className="flex items-center">
-            <CheckIcon className="w-5 h-5 text-green-500 mr-3" />
-            <p className="text-green-700 font-medium">
-              Stock inicializado exitosamente
-            </p>
-          </div>
-        </div>
+        <Alert 
+          icon={<IconCheck size={16} />} 
+          title="¡Éxito!" 
+          color="green"
+          mb="lg"
+        >
+          Stock inicializado exitosamente
+        </Alert>
       )}
 
-      <div className="space-y-6">
+      <Stack gap="lg">
         
         {/* Información del Producto */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <TagIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Información del Producto</h4>
-          </div>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconTag size={20} />
+              Información del Producto
+            </Group>
+          </Title>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="glass-stat p-4">
-              <span className="text-slate-600 block text-sm mb-1 font-medium">Producto</span>
-              <p className="font-semibold text-slate-800">{product?.name}</p>
-            </div>
-            <div className="glass-stat p-4">
-              <span className="text-slate-600 block text-sm mb-1 font-medium">SKU</span>
-              <p className="font-semibold text-slate-800">{product?.sku}</p>
-            </div>
-            <div className="glass-stat p-4">
-              <span className="text-slate-600 block text-sm mb-1 font-medium">Categoría</span>
-              <p className="font-semibold text-slate-800">{product?.category}</p>
-            </div>
-            <div className="glass-stat p-4">
-              <span className="text-slate-600 block text-sm mb-1 font-medium">Unidad Base</span>
-              <p className="font-semibold text-slate-800">{product?.base_unit}</p>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <Card withBorder p="md">
+              <Text size="sm" c="dimmed" mb="xs">Producto</Text>
+              <Text fw={600}>{product?.name}</Text>
+            </Card>
+            <Card withBorder p="md">
+              <Text size="sm" c="dimmed" mb="xs">SKU</Text>
+              <Text fw={600}>{product?.sku}</Text>
+            </Card>
+            <Card withBorder p="md">
+              <Text size="sm" c="dimmed" mb="xs">Categoría</Text>
+              <Text fw={600}>{product?.category}</Text>
+            </Card>
+            <Card withBorder p="md">
+              <Text size="sm" c="dimmed" mb="xs">Unidad Base</Text>
+              <Text fw={600}>{product?.base_unit}</Text>
+            </Card>
           </div>
-        </div>
+        </Card>
 
         {/* Configuración del Stock */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-              <PlusIcon className="w-5 h-5 text-green-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Configuración del Stock Inicial</h4>
-          </div>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconPlus size={20} />
+              Configuración del Stock Inicial
+            </Group>
+          </Title>
 
-          <div className="space-y-6">
+          <Stack gap="md">
             {/* Ubicación y Cantidad */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Ubicación *
-                </label>
-                <div className="relative">
-                  <MapPinIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                  <select
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    className="glass-input w-full pl-12 pr-4 py-3 text-slate-800 appearance-none cursor-pointer"
-                  >
-                    <option value="">Selecciona una ubicación</option>
-                    {AVAILABLE_LOCATIONS.map((location) => (
-                      <option key={location.id} value={location.id}>
-                        {location.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+              <Select
+                label="Ubicación"
+                placeholder="Selecciona una ubicación"
+                value={selectedLocation}
+                onChange={(value) => setSelectedLocation(value || '')}
+                data={AVAILABLE_LOCATIONS.map((location) => ({
+                  value: location.id,
+                  label: location.name
+                }))}
+                leftSection={<IconMapPin size={16} />}
+                required
+              />
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Cantidad Inicial *
-                </label>
-                <div className="relative">
-                  <HashtagIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="glass-input w-full pl-12 pr-16 py-3 text-slate-800 placeholder-slate-500"
-                    placeholder="0.00"
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm font-medium">
-                    {product?.base_unit}
-                  </span>
-                </div>
-              </div>
+              <NumberInput
+                label="Cantidad Inicial"
+                placeholder="0.00"
+                min={0}
+                step={0.01}
+                value={quantity ? parseFloat(quantity) : ''}
+                onChange={(value) => setQuantity(value?.toString() || '')}
+                leftSection={<IconHash size={16} />}
+                suffix={` ${product?.base_unit}`}
+                required
+              />
             </div>
 
             {/* Razón */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Razón
-              </label>
-              <input
-                type="text"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500"
-                placeholder="Razón del movimiento"
-              />
-            </div>
+            <TextInput
+              label="Razón"
+              value={reason}
+              onChange={(e) => setReason(e.currentTarget.value)}
+              placeholder="Razón del movimiento"
+            />
 
             {/* Notas */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Notas Adicionales
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none"
-                placeholder="Notas adicionales sobre el stock inicial..."
-              />
-            </div>
-          </div>
-        </div>
+            <Textarea
+              label="Notas Adicionales"
+              value={notes}
+              onChange={(e) => setNotes(e.currentTarget.value)}
+              rows={3}
+              placeholder="Notas adicionales sobre el stock inicial..."
+            />
+          </Stack>
+        </Card>
 
         {/* Información Adicional */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-              <TagIcon className="w-5 h-5 text-purple-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Información Adicional (Opcional)</h4>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconTag size={20} />
+              Información Adicional (Opcional)
+            </Group>
+          </Title>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <NumberInput
+              label="Costo por Unidad"
+              placeholder="0.00"
+              min={0}
+              step={0.01}
+              value={costPerUnit ? parseFloat(costPerUnit) : ''}
+              onChange={(value) => setCostPerUnit(value?.toString() || '')}
+              leftSection={<IconCurrencyDollar size={16} />}
+            />
+
+            <TextInput
+              label="ID del Lote"
+              value={batchId}
+              onChange={(e) => setBatchId(e.currentTarget.value)}
+              placeholder="Lote opcional"
+              leftSection={<IconTag size={16} />}
+            />
+
+            <TextInput
+              type="date"
+              label="Fecha de Vencimiento"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.currentTarget.value)}
+              leftSection={<IconCalendar size={16} />}
+            />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Costo por Unidad
-              </label>
-              <div className="relative">
-                <CurrencyDollarIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={costPerUnit}
-                  onChange={(e) => setCostPerUnit(e.target.value)}
-                  className="glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                ID del Lote
-              </label>
-              <div className="relative">
-                <TagIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="text"
-                  value={batchId}
-                  onChange={(e) => setBatchId(e.target.value)}
-                  className="glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500"
-                  placeholder="Lote opcional"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Fecha de Vencimiento
-              </label>
-              <div className="relative">
-                <CalendarIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="date"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                  className="glass-input w-full pl-12 pr-4 py-3 text-slate-800"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        </Card>
 
         {/* Resumen */}
         {selectedLocation && quantity && (
-          <div className="glass-card bg-blue-50/80 border border-blue-200/50 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <CheckIcon className="w-5 h-5 text-blue-600" />
-              </div>
-              <h4 className="font-semibold text-blue-800">Resumen</h4>
-            </div>
+          <Card withBorder p="lg" style={{ backgroundColor: '#eff6ff' }}>
+            <Title order={4} mb="md" c="blue">
+              <Group gap="xs">
+                <IconCheck size={20} />
+                Resumen
+              </Group>
+            </Title>
             
-            <div className="text-blue-700">
-              <p className="mb-2">
-                <span className="font-medium">Se iniciará stock de:</span> {quantity} {product?.base_unit}
-              </p>
-              <p className="mb-2">
-                <span className="font-medium">Producto:</span> {product?.name}
-              </p>
-              <p>
-                <span className="font-medium">Ubicación:</span> {AVAILABLE_LOCATIONS.find(l => l.id === selectedLocation)?.name}
-              </p>
-            </div>
-          </div>
+            <Stack gap="xs" c="blue.7">
+              <Text>
+                <Text component="span" fw={500}>Se iniciará stock de:</Text> {quantity} {product?.base_unit}
+              </Text>
+              <Text>
+                <Text component="span" fw={500}>Producto:</Text> {product?.name}
+              </Text>
+              <Text>
+                <Text component="span" fw={500}>Ubicación:</Text> {AVAILABLE_LOCATIONS.find(l => l.id === selectedLocation)?.name}
+              </Text>
+            </Stack>
+          </Card>
         )}
-      </div>
+
+        {/* Footer Buttons */}
+        <Group justify="flex-end" gap="sm" pt="lg" style={{ flexWrap: 'wrap' }}>
+          <Button
+            variant="default"
+            onClick={handleClose}
+            disabled={loading}
+          >
+            Cancelar
+          </Button>
+          
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !selectedLocation || !quantity}
+            loading={loading}
+          >
+            Inicializar Stock
+          </Button>
+        </Group>
+      </Stack>
     </Modal>
   )
 }

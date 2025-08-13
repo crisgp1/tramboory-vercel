@@ -2,25 +2,21 @@
 
 import { useState, useEffect } from "react";
 import {
-  Card,
-  CardBody,
+  Paper,
   Button,
-  Chip,
   Badge,
   Avatar,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
+  Menu,
   Tabs,
-  Tab,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure
-} from "@heroui/react";
+  Group,
+  Stack,
+  Text,
+  ActionIcon,
+  Indicator,
+  Divider
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import {
   BellIcon,
   CheckIcon,
@@ -38,6 +34,7 @@ import {
 import { BellIcon as BellIconSolid } from "@heroicons/react/24/solid";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { mapHeroUIColorToMantine } from "@/lib/migration-utils";
 
 interface Notification {
   id: string;
@@ -65,8 +62,7 @@ export default function SupplierNotificationCenter({ supplierId, className }: Su
   const [selectedTab, setSelectedTab] = useState("all");
   const [loading, setLoading] = useState(true);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [opened, { open, close }] = useDisclosure(false);
 
   useEffect(() => {
     fetchNotifications();
@@ -156,16 +152,16 @@ export default function SupplierNotificationCenter({ supplierId, className }: Su
     }
   };
 
-  const getPriorityColor = (priority: string): "danger" | "warning" | "primary" | "default" => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "urgent":
-        return "danger";
+        return "red";
       case "high":
-        return "warning";
+        return "orange";
       case "medium":
-        return "primary";
+        return "blue";
       default:
-        return "default";
+        return "gray";
     }
   };
 
@@ -186,234 +182,241 @@ export default function SupplierNotificationCenter({ supplierId, className }: Su
 
   return (
     <>
-      <div className={`relative ${className}`}>
-        <Dropdown isOpen={showDropdown} onOpenChange={setShowDropdown}>
-          <DropdownTrigger>
-            <Button
-              isIconOnly
-              variant="light"
-              className="relative"
-              aria-label="Notificaciones"
-            >
-              <BellIcon className="w-6 h-6" />
-              {unreadCount > 0 && (
-                <Badge
-                  color="danger"
-                  className="absolute -top-1 -right-1"
-                >
-                  {unreadCount > 99 ? "99+" : unreadCount.toString()}
-                </Badge>
-              )}
-            </Button>
-          </DropdownTrigger>
-          
-          <DropdownMenu 
-            aria-label="Notificaciones"
-            className="w-80 max-w-screen-sm"
-            closeOnSelect={false}
-          >
-            <DropdownItem key="header" className="p-0">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold">Notificaciones</h3>
-                  <div className="flex gap-2">
-                    {unreadCount > 0 && (
-                      <Button
-                        size="sm"
-                        variant="light"
-                        onClick={markAllAsRead}
-                      >
-                        Marcar todas como leídas
-                      </Button>
-                    )}
+      <div className={`relative ${className || ''}`}>
+        <Menu shadow="md" width={320}>
+          <Menu.Target>
+            <ActionIcon variant="subtle" size="lg" aria-label="Notificaciones">
+              <Indicator 
+                size={16} 
+                color="red" 
+                label={unreadCount > 99 ? "99+" : unreadCount.toString()}
+                disabled={unreadCount === 0}
+              >
+                <BellIcon className="w-6 h-6" />
+              </Indicator>
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>
+              <Group justify="space-between" mb="sm">
+                <Text fw={600}>Notificaciones</Text>
+                <Group gap="xs">
+                  {unreadCount > 0 && (
                     <Button
-                      size="sm"
-                      variant="light"
-                      onClick={onOpen}
+                      size="xs"
+                      variant="subtle"
+                      onClick={markAllAsRead}
                     >
-                      Ver todas
+                      Marcar todas
                     </Button>
-                  </div>
-                </div>
-                
-                <Tabs
-                  selectedKey={selectedTab}
-                  onSelectionChange={(key) => setSelectedTab(key as string)}
-                  size="sm"
-                  className="w-full"
-                >
-                  <Tab key="all" title="Todas" />
-                  <Tab key="unread" title={`No leídas (${unreadCount})`} />
-                  <Tab key="order" title="Órdenes" />
-                  <Tab key="payment" title="Pagos" />
-                </Tabs>
-              </div>
-            </DropdownItem>
+                  )}
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    onClick={open}
+                  >
+                    Ver todas
+                  </Button>
+                </Group>
+              </Group>
+            </Menu.Label>
             
-            <DropdownItem key="notifications-info">
-              <div className="p-3 text-center text-gray-500">
-                {filteredNotifications.length} notificaciones disponibles
-              </div>
-            </DropdownItem>
+            <Tabs value={selectedTab} onChange={(value) => setSelectedTab(value || "all")}>
+              <Tabs.List>
+                <Tabs.Tab value="all">Todas</Tabs.Tab>
+                <Tabs.Tab value="unread">No leídas ({unreadCount})</Tabs.Tab>
+                <Tabs.Tab value="order">Órdenes</Tabs.Tab>
+                <Tabs.Tab value="payment">Pagos</Tabs.Tab>
+              </Tabs.List>
+            </Tabs>
+            
+            <Divider my="sm" />
             
             {filteredNotifications.length === 0 ? (
-              <DropdownItem key="empty" className="p-4 text-center text-gray-500">
-                No hay notificaciones
-              </DropdownItem>
-            ) : null}
-          </DropdownMenu>
-        </Dropdown>
+              <Menu.Item>
+                <Text ta="center" c="dimmed" py="md">
+                  No hay notificaciones
+                </Text>
+              </Menu.Item>
+            ) : (
+              <>
+                {filteredNotifications.slice(0, 5).map((notification) => (
+                  <Menu.Item key={notification.id} p="sm">
+                    <Group gap="sm" align="flex-start">
+                      <div style={{ marginTop: 4 }}>
+                        {getNotificationIcon(notification.type, notification.priority)}
+                      </div>
+                      <Stack gap={2} style={{ flex: 1 }}>
+                        <Group justify="space-between" align="flex-start">
+                          <Text size="sm" fw={notification.isRead ? 400 : 600} lineClamp={1}>
+                            {notification.title}
+                          </Text>
+                          <Badge size="xs" color={getPriorityColor(notification.priority)} variant="light">
+                            {notification.priority}
+                          </Badge>
+                        </Group>
+                        <Text size="xs" c="dimmed" lineClamp={2}>
+                          {notification.message}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {formatTimeAgo(notification.timestamp)}
+                        </Text>
+                      </Stack>
+                    </Group>
+                  </Menu.Item>
+                ))}
+                
+                {filteredNotifications.length > 5 && (
+                  <Menu.Item onClick={open}>
+                    <Text ta="center" c="blue" size="sm">
+                      Ver más notificaciones...
+                    </Text>
+                  </Menu.Item>
+                )}
+              </>
+            )}
+          </Menu.Dropdown>
+        </Menu>
       </div>
 
-      {/* Modal de notificaciones completo */}
+      {/* Full notifications modal */}
       <Modal 
-        isOpen={isOpen} 
-        onClose={onClose}
-        size="2xl"
-        scrollBehavior="inside"
+        opened={opened} 
+        onClose={close}
+        title="Centro de Notificaciones"
+        size="xl"
+        scrollAreaComponent={() => null}
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-bold">Centro de Notificaciones</h2>
-                  <div className="flex gap-2">
-                    {unreadCount > 0 && (
-                      <Button
-                        size="sm"
-                        color="primary"
-                        variant="flat"
-                        onClick={markAllAsRead}
-                      >
-                        Marcar todas como leídas
-                      </Button>
-                    )}
+        <Stack gap="md">
+          <Group justify="space-between">
+            <Text fw={600}>Centro de Notificaciones</Text>
+            {unreadCount > 0 && (
+              <Button
+                size="sm"
+                color="blue"
+                variant="light"
+                onClick={markAllAsRead}
+              >
+                Marcar todas como leídas
+              </Button>
+            )}
+          </Group>
+          
+          <Tabs value={selectedTab} onChange={(value) => setSelectedTab(value || "all")}>
+            <Tabs.List>
+              <Tabs.Tab value="all">Todas ({notifications.length})</Tabs.Tab>
+              <Tabs.Tab value="unread">No leídas ({unreadCount})</Tabs.Tab>
+              <Tabs.Tab value="order">Órdenes</Tabs.Tab>
+              <Tabs.Tab value="payment">Pagos</Tabs.Tab>
+              <Tabs.Tab value="product">Productos</Tabs.Tab>
+              <Tabs.Tab value="system">Sistema</Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
+          
+          <Stack gap="sm" mah={400} style={{ overflow: 'auto' }}>
+            {filteredNotifications.map((notification) => (
+              <Paper 
+                key={notification.id}
+                p="md"
+                withBorder
+                bg={!notification.isRead ? 'blue.0' : 'white'}
+                style={{ 
+                  borderLeft: !notification.isRead ? '4px solid var(--mantine-color-blue-6)' : undefined
+                }}
+              >
+                <Group gap="sm" align="flex-start">
+                  <div style={{ marginTop: 4 }}>
+                    {getNotificationIcon(notification.type, notification.priority)}
                   </div>
-                </div>
-                
-                <Tabs
-                  selectedKey={selectedTab}
-                  onSelectionChange={(key) => setSelectedTab(key as string)}
-                  className="w-full"
-                >
-                  <Tab key="all" title={`Todas (${notifications.length})`} />
-                  <Tab key="unread" title={`No leídas (${unreadCount})`} />
-                  <Tab key="order" title="Órdenes" />
-                  <Tab key="payment" title="Pagos" />
-                  <Tab key="product" title="Productos" />
-                  <Tab key="system" title="Sistema" />
-                </Tabs>
-              </ModalHeader>
-              
-              <ModalBody>
-                <div className="space-y-3">
-                  {filteredNotifications.map((notification) => (
-                    <Card 
-                      key={notification.id}
-                      className={`${!notification.isRead ? 'border-l-4 border-blue-500 bg-blue-50' : 'border-gray-200'} hover:shadow-md transition-shadow`}
-                    >
-                      <CardBody className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 mt-1">
-                            {getNotificationIcon(notification.type, notification.priority)}
-                          </div>
-                          
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className={`font-semibold ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
-                                {notification.title}
-                              </h4>
-                              <div className="flex items-center gap-2">
-                                <Chip
-                                  size="sm"
-                                  color={getPriorityColor(notification.priority)}
-                                  variant="flat"
-                                >
-                                  {notification.priority}
-                                </Chip>
-                                
-                                <Dropdown>
-                                  <DropdownTrigger>
-                                    <Button
-                                      isIconOnly
-                                      size="sm"
-                                      variant="light"
-                                      aria-label="Acciones"
-                                    >
-                                      <EllipsisVerticalIcon className="w-4 h-4" />
-                                    </Button>
-                                  </DropdownTrigger>
-                                  <DropdownMenu aria-label="Acciones de notificación">
-                                    {!notification.isRead ? (
-                                      <DropdownItem
-                                        key="mark-read"
-                                        startContent={<CheckIcon className="w-4 h-4" />}
-                                        onPress={() => markAsRead(notification.id)}
-                                      >
-                                        Marcar como leída
-                                      </DropdownItem>
-                                    ) : null}
-                                    <DropdownItem
-                                      key="delete"
-                                      className="text-danger"
-                                      color="danger"
-                                      startContent={<TrashIcon className="w-4 h-4" />}
-                                      onClick={() => deleteNotification(notification.id)}
-                                    >
-                                      Eliminar
-                                    </DropdownItem>
-                                  </DropdownMenu>
-                                </Dropdown>
-                              </div>
-                            </div>
-                            
-                            <p className="text-sm text-gray-600 mb-3">
-                              {notification.message}
-                            </p>
-                            
-                            <div className="flex justify-between items-center">
-                              <p className="text-xs text-gray-500">
-                                {formatTimeAgo(notification.timestamp)}
-                              </p>
-                              
-                              {notification.data?.orderId && (
-                                <Button
-                                  size="sm"
-                                  color="primary"
-                                  variant="flat"
-                                  onClick={() => {
-                                    // Redirect to order details
-                                    window.location.href = `/proveedor/ordenes?id=${notification.data?.orderId}`;
-                                  }}
-                                >
-                                  Ver Orden
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  ))}
                   
-                  {filteredNotifications.length === 0 && (
-                    <div className="text-center py-12">
-                      <BellIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No hay notificaciones para mostrar</p>
-                    </div>
-                  )}
-                </div>
-              </ModalBody>
-              
-              <ModalFooter>
-                <Button color="default" variant="light" onPress={onClose}>
-                  Cerrar
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+                  <Stack gap="xs" style={{ flex: 1 }}>
+                    <Group justify="space-between" align="flex-start">
+                      <Text fw={notification.isRead ? 500 : 600} size="sm">
+                        {notification.title}
+                      </Text>
+                      <Group gap="xs" align="center">
+                        <Badge
+                          size="sm"
+                          color={getPriorityColor(notification.priority)}
+                          variant="light"
+                        >
+                          {notification.priority}
+                        </Badge>
+                        
+                        <Menu>
+                          <Menu.Target>
+                            <ActionIcon
+                              size="sm"
+                              variant="subtle"
+                              aria-label="Acciones"
+                            >
+                              <EllipsisVerticalIcon className="w-4 h-4" />
+                            </ActionIcon>
+                          </Menu.Target>
+                          <Menu.Dropdown>
+                            {!notification.isRead && (
+                              <Menu.Item
+                                leftSection={<CheckIcon className="w-4 h-4" />}
+                                onClick={() => markAsRead(notification.id)}
+                              >
+                                Marcar como leída
+                              </Menu.Item>
+                            )}
+                            <Menu.Item
+                              color="red"
+                              leftSection={<TrashIcon className="w-4 h-4" />}
+                              onClick={() => deleteNotification(notification.id)}
+                            >
+                              Eliminar
+                            </Menu.Item>
+                          </Menu.Dropdown>
+                        </Menu>
+                      </Group>
+                    </Group>
+                    
+                    <Text size="sm" c="dimmed">
+                      {notification.message}
+                    </Text>
+                    
+                    <Group justify="space-between" align="center">
+                      <Text size="xs" c="dimmed">
+                        {formatTimeAgo(notification.timestamp)}
+                      </Text>
+                      
+                      {notification.data?.orderId && (
+                        <Button
+                          size="xs"
+                          color="blue"
+                          variant="light"
+                          onClick={() => {
+                            // Redirect to order details
+                            window.location.href = `/proveedor/ordenes?id=${notification.data?.orderId}`;
+                          }}
+                        >
+                          Ver Orden
+                        </Button>
+                      )}
+                    </Group>
+                  </Stack>
+                </Group>
+              </Paper>
+            ))}
+            
+            {filteredNotifications.length === 0 && (
+              <Stack align="center" py="xl">
+                <BellIcon className="w-16 h-16 text-gray-300" />
+                <Text c="dimmed">No hay notificaciones para mostrar</Text>
+              </Stack>
+            )}
+          </Stack>
+        </Stack>
+
+        <Group justify="flex-end" mt="md">
+          <Button variant="light" onClick={close}>
+            Cerrar
+          </Button>
+        </Group>
       </Modal>
     </>
   );

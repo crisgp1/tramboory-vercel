@@ -2,19 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Card,
-  CardBody,
-  CardHeader,
+  Paper,
   Button,
-  useDisclosure,
-  Spinner
-} from '@heroui/react';
+  Loader,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Grid,
+  Card,
+  ThemeIcon,
+  Center
+} from '@mantine/core';
 import {
-  PlusIcon,
-  CalendarDaysIcon
-} from '@heroicons/react/24/outline';
-import { CalendarDate } from '@internationalized/date';
-import toast from 'react-hot-toast';
+  IconPlus,
+  IconCalendarEvent
+} from '@tabler/icons-react';
+// import { CalendarDate } from '@internationalized/date'; // Not needed anymore
+import { notifications } from '@mantine/notifications';
+import { useDisclosure } from '@mantine/hooks';
 import ReservationTable from './ReservationTable';
 import ReservationModal from './ReservationModal';
 import NewReservationModal from './NewReservationModal';
@@ -30,11 +36,11 @@ export default function ReservationManager() {
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [startDate, setStartDate] = useState<CalendarDate | undefined>();
-  const [endDate, setEndDate] = useState<CalendarDate | undefined>();
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
   
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isOpen: isNewModalOpen, onOpen: onNewModalOpen, onClose: onNewModalClose } = useDisclosure();
+  const [isOpen, { open: onOpen, close: onClose }] = useDisclosure();
+  const [isNewModalOpen, { open: onNewModalOpen, close: onNewModalClose }] = useDisclosure();
 
   useEffect(() => {
     fetchReservations();
@@ -54,11 +60,19 @@ export default function ReservationManager() {
       if (data.success) {
         setReservations(data.data);
       } else {
-        toast.error('Error al cargar las reservas');
+        notifications.show({
+          title: 'Error',
+          message: 'Error al cargar las reservas',
+          color: 'red'
+        });
       }
     } catch (error) {
       console.error('Error fetching reservations:', error);
-      toast.error('Error al cargar las reservas');
+      notifications.show({
+        title: 'Error',
+        message: 'Error al cargar las reservas',
+        color: 'red'
+      });
     } finally {
       setLoading(false);
     }
@@ -86,16 +100,14 @@ export default function ReservationManager() {
     if (startDate) {
       filtered = filtered.filter(reservation => {
         const eventDate = new Date(reservation.eventDate);
-        const filterDate = new Date(startDate.year, startDate.month - 1, startDate.day);
-        return eventDate >= filterDate;
+        return eventDate >= startDate;
       });
     }
 
     if (endDate) {
       filtered = filtered.filter(reservation => {
         const eventDate = new Date(reservation.eventDate);
-        const filterDate = new Date(endDate.year, endDate.month - 1, endDate.day);
-        return eventDate <= filterDate;
+        return eventDate <= endDate;
       });
     }
 
@@ -109,7 +121,11 @@ export default function ReservationManager() {
 
   const handleEdit = (reservation: Reservation) => {
     // TODO: Implementar edición de reserva
-    toast.success('Función de edición en desarrollo');
+    notifications.show({
+      title: 'Info',
+      message: 'Función de edición en desarrollo',
+      color: 'blue'
+    });
   };
 
   const handleDelete = async (id: string) => {
@@ -125,14 +141,26 @@ export default function ReservationManager() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Reserva eliminada correctamente');
+        notifications.show({
+          title: 'Éxito',
+          message: 'Reserva eliminada correctamente',
+          color: 'green'
+        });
         fetchReservations();
       } else {
-        toast.error('Error al eliminar la reserva');
+        notifications.show({
+          title: 'Error',
+          message: 'Error al eliminar la reserva',
+          color: 'red'
+        });
       }
     } catch (error) {
       console.error('Error deleting reservation:', error);
-      toast.error('Error al eliminar la reserva');
+      notifications.show({
+        title: 'Error',
+        message: 'Error al eliminar la reserva',
+        color: 'red'
+      });
     }
   };
 
@@ -149,15 +177,27 @@ export default function ReservationManager() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Estado actualizado correctamente');
+        notifications.show({
+          title: 'Éxito',
+          message: 'Estado actualizado correctamente',
+          color: 'green'
+        });
         fetchReservations();
         onClose();
       } else {
-        toast.error('Error al actualizar el estado');
+        notifications.show({
+          title: 'Error',
+          message: 'Error al actualizar el estado',
+          color: 'red'
+        });
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error('Error al actualizar el estado');
+      notifications.show({
+        title: 'Error',
+        message: 'Error al actualizar el estado',
+        color: 'red'
+      });
     }
   };
 
@@ -177,33 +217,24 @@ export default function ReservationManager() {
   };
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--space-8)'}}>
-      {/* Professional Header */}
-      <div className="surface-card">
-        <div className="flex items-center justify-between" style={{padding: 'var(--space-6)'}}>
-          <div>
-            <h1 style={{
-              fontSize: 'var(--text-xl)',
-              fontWeight: '600',
-              marginBottom: 'var(--space-1)'
-            }}>
-              Reservas
-            </h1>
-            <p className="text-neutral-600" style={{
-              fontSize: 'var(--text-sm)'
-            }}>
+    <Stack gap="lg">
+      {/* Header */}
+      <Paper p="lg" withBorder>
+        <Group justify="space-between">
+          <Stack gap="xs">
+            <Title order={2}>Reservas</Title>
+            <Text c="dimmed" size="sm">
               {reservations.length} reservas en total
-            </p>
-          </div>
-          <button
-            className="btn-primary"
+            </Text>
+          </Stack>
+          <Button
+            leftSection={<IconPlus size={16} />}
             onClick={handleCreateReservation}
           >
-            <PlusIcon className="icon-base" />
             Nueva Reserva
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Group>
+      </Paper>
 
       {/* Filtros */}
       <ReservationFilters
@@ -212,160 +243,110 @@ export default function ReservationManager() {
         filterStatus={filterStatus}
         onStatusChange={setFilterStatus}
         startDate={startDate}
-        onStartDateChange={(date) => setStartDate(date || undefined)}
+        onStartDateChange={(date: Date | null) => setStartDate(date || undefined)}
         endDate={endDate}
-        onEndDateChange={(date) => setEndDate(date || undefined)}
+        onEndDateChange={(date: Date | null) => setEndDate(date || undefined)}
         onClearFilters={handleClearFilters}
       />
 
-      {/* Professional Statistics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4" style={{gap: 'var(--space-4)'}}>
-        <div className="metric-card status-neutral">
-          <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-            <div style={{
-              width: 'var(--space-8)',
-              height: 'var(--space-8)',
-              backgroundColor: 'var(--surface-elevated)',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <CalendarDaysIcon className="icon-base text-neutral-600" />
-            </div>
-            <div>
-              <div style={{
-                fontSize: 'var(--text-lg)',
-                fontWeight: '500',
-                marginBottom: 'var(--space-1)'
-              }}>
-                {reservations.length}
-              </div>
-              <div className="text-neutral-600" style={{
-                fontSize: 'var(--text-xs)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>Total</div>
-            </div>
-          </div>
-        </div>
+      {/* Statistics */}
+      <Grid>
+        <Grid.Col span={{ base: 6, lg: 3 }}>
+          <Card withBorder p="md">
+            <Group>
+              <ThemeIcon size="lg" radius="md" color="gray">
+                <IconCalendarEvent size={24} />
+              </ThemeIcon>
+              <Stack gap={0}>
+                <Text size="xl" fw={600}>
+                  {reservations.length}
+                </Text>
+                <Text size="xs" c="dimmed" tt="uppercase">
+                  Total
+                </Text>
+              </Stack>
+            </Group>
+          </Card>
+        </Grid.Col>
         
-        <div className="metric-card status-warning">
-          <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-            <div style={{
-              width: 'var(--space-8)',
-              height: 'var(--space-8)',
-              backgroundColor: '#fef3c7',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <CalendarDaysIcon className="icon-base text-orange-600" />
-            </div>
-            <div>
-              <div style={{
-                fontSize: 'var(--text-lg)',
-                fontWeight: '500',
-                marginBottom: 'var(--space-1)'
-              }}>
-                {reservations.filter(r => r.status === 'pending').length}
-              </div>
-              <div className="text-neutral-600" style={{
-                fontSize: 'var(--text-xs)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>Pendientes</div>
-            </div>
-          </div>
-        </div>
+        <Grid.Col span={{ base: 6, lg: 3 }}>
+          <Card withBorder p="md">
+            <Group>
+              <ThemeIcon size="lg" radius="md" color="orange">
+                <IconCalendarEvent size={24} />
+              </ThemeIcon>
+              <Stack gap={0}>
+                <Text size="xl" fw={600}>
+                  {reservations.filter(r => r.status === 'pending').length}
+                </Text>
+                <Text size="xs" c="dimmed" tt="uppercase">
+                  Pendientes
+                </Text>
+              </Stack>
+            </Group>
+          </Card>
+        </Grid.Col>
         
-        <div className="metric-card status-info">
-          <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-            <div style={{
-              width: 'var(--space-8)',
-              height: 'var(--space-8)',
-              backgroundColor: '#dbeafe',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <CalendarDaysIcon className="icon-base text-blue-600" />
-            </div>
-            <div>
-              <div style={{
-                fontSize: 'var(--text-lg)',
-                fontWeight: '500',
-                marginBottom: 'var(--space-1)'
-              }}>
-                {reservations.filter(r => r.status === 'confirmed').length}
-              </div>
-              <div className="text-neutral-600" style={{
-                fontSize: 'var(--text-xs)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>Confirmadas</div>
-            </div>
-          </div>
-        </div>
+        <Grid.Col span={{ base: 6, lg: 3 }}>
+          <Card withBorder p="md">
+            <Group>
+              <ThemeIcon size="lg" radius="md" color="blue">
+                <IconCalendarEvent size={24} />
+              </ThemeIcon>
+              <Stack gap={0}>
+                <Text size="xl" fw={600}>
+                  {reservations.filter(r => r.status === 'confirmed').length}
+                </Text>
+                <Text size="xs" c="dimmed" tt="uppercase">
+                  Confirmadas
+                </Text>
+              </Stack>
+            </Group>
+          </Card>
+        </Grid.Col>
         
-        <div className="metric-card status-success">
-          <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-            <div style={{
-              width: 'var(--space-8)',
-              height: 'var(--space-8)',
-              backgroundColor: '#dcfce7',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <CalendarDaysIcon className="icon-base text-green-600" />
-            </div>
-            <div>
-              <div style={{
-                fontSize: 'var(--text-lg)',
-                fontWeight: '500',
-                marginBottom: 'var(--space-1)'
-              }}>
-                {reservations.filter(r => r.status === 'completed').length}
-              </div>
-              <div className="text-neutral-600" style={{
-                fontSize: 'var(--text-xs)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-              }}>Completadas</div>
-            </div>
-          </div>
-        </div>
-      </div>
+        <Grid.Col span={{ base: 6, lg: 3 }}>
+          <Card withBorder p="md">
+            <Group>
+              <ThemeIcon size="lg" radius="md" color="green">
+                <IconCalendarEvent size={24} />
+              </ThemeIcon>
+              <Stack gap={0}>
+                <Text size="xl" fw={600}>
+                  {reservations.filter(r => r.status === 'completed').length}
+                </Text>
+                <Text size="xs" c="dimmed" tt="uppercase">
+                  Completadas
+                </Text>
+              </Stack>
+            </Group>
+          </Card>
+        </Grid.Col>
+      </Grid>
 
-      {/* Professional Main Content */}
-      <div className="surface-card">
-        <div style={{padding: 'var(--space-6)'}}>
-          {loading ? (
-            <div className="flex flex-col justify-center items-center" style={{
-              padding: 'var(--space-16) 0'
-            }}>
-              <div className="loading-spinner" style={{marginBottom: 'var(--space-4)'}}></div>
-              <p className="text-neutral-600" style={{fontSize: 'var(--text-sm)'}}>Cargando reservas...</p>
-            </div>
-          ) : (
-            <ReservationTable
-              reservations={filteredReservations}
-              loading={loading}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          )}
-        </div>
-      </div>
+      {/* Main Content */}
+      <Paper withBorder>
+        {loading ? (
+          <Center p="xl" style={{ minHeight: 200 }}>
+            <Stack align="center" gap="sm">
+              <Loader size="lg" />
+              <Text c="dimmed">Cargando reservas...</Text>
+            </Stack>
+          </Center>
+        ) : (
+          <ReservationTable
+            reservations={filteredReservations}
+            loading={loading}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
+      </Paper>
 
       {/* Modal de detalles */}
       <ReservationModal
-        isOpen={isOpen}
+        opened={isOpen}
         onClose={onClose}
         reservation={selectedReservation}
         onStatusChange={handleStatusChange}
@@ -373,10 +354,10 @@ export default function ReservationManager() {
 
       {/* Modal de nueva reserva */}
       <NewReservationModal
-        isOpen={isNewModalOpen}
+        opened={isNewModalOpen}
         onClose={onNewModalClose}
         onSuccess={handleNewReservationSuccess}
       />
-    </div>
+    </Stack>
   );
 }

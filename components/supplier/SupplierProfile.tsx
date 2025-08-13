@@ -2,26 +2,29 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  Card,
-  CardBody,
+  Paper,
   Button,
-  Input,
+  TextInput,
   Textarea,
   Tabs,
-  Tab,
   Select,
-  SelectItem,
   Divider,
-  Chip,
+  Badge,
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
   Switch,
-  Spinner
-} from "@heroui/react"
+  Loader,
+  Group,
+  Stack,
+  Text,
+  Title,
+  Grid,
+  ActionIcon,
+  Center,
+  NumberInput,
+  Alert,
+  Progress,
+  Card
+} from "@mantine/core"
 import {
   BuildingOfficeIcon,
   UserIcon,
@@ -282,60 +285,65 @@ export default function SupplierProfile() {
 
   const renderStarRating = (rating: number) => {
     return (
-      <div className="flex">
+      <Group gap="xs">
         {[1, 2, 3, 4, 5].map((star) => (
           <StarIcon
             key={star}
-            className={`w-5 h-5 ${
-              star <= Math.round(rating) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-            }`}
+            style={{
+              width: '1.25rem',
+              height: '1.25rem',
+              color: star <= Math.round(rating) ? '#fbbf24' : '#d1d5db',
+              fill: star <= Math.round(rating) ? '#fbbf24' : 'transparent'
+            }}
           />
         ))}
-        <span className="ml-2 text-sm font-medium">{rating.toFixed(1)}</span>
-      </div>
+        <Text size="sm" fw={500}>{rating.toFixed(1)}</Text>
+      </Group>
     );
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner size="lg" color="primary" label="Cargando perfil..." />
-      </div>
+      <Center h={400}>
+        <Stack align="center" gap="md">
+          <Loader size="lg" />
+          <Text>Cargando perfil...</Text>
+        </Stack>
+      </Center>
     );
   }
 
   if (!supplier) {
     return (
-      <div className="text-center p-8">
-        <p className="text-gray-600">No se pudo cargar la información del proveedor</p>
-        <Button 
-          color="primary" 
-          variant="light"
-          startContent={<ArrowPathIcon className="w-4 h-4" />}
-          onPress={fetchSupplierData}
-          className="mt-4"
-        >
-          Reintentar
-        </Button>
-      </div>
+      <Center>
+        <Stack align="center" gap="md" p="xl">
+          <Text c="dimmed">No se pudo cargar la información del proveedor</Text>
+          <Button 
+            variant="light"
+            leftSection={<ArrowPathIcon className="w-4 h-4" />}
+            onClick={fetchSupplierData}
+          >
+            Reintentar
+          </Button>
+        </Stack>
+      </Center>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Header con acciones */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <Group justify="space-between" align="flex-start">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Perfil de Proveedor</h1>
-          <p className="text-gray-600">Administra tu información y términos comerciales</p>
+          <Title order={2}>Perfil de Proveedor</Title>
+          <Text c="dimmed">Administra tu información y términos comerciales</Text>
         </div>
-        <div className="flex gap-2">
+        <Group>
           {editMode ? (
             <>
               <Button
-                color="default"
                 variant="light"
-                onPress={() => {
+                onClick={() => {
                   setEditMode(false);
                   setEditedSupplier(supplier);
                 }}
@@ -343,230 +351,250 @@ export default function SupplierProfile() {
                 Cancelar
               </Button>
               <Button
-                color="primary"
-                isLoading={savingChanges}
-                onPress={handleSaveChanges}
+                loading={savingChanges}
+                onClick={handleSaveChanges}
               >
                 Guardar Cambios
               </Button>
             </>
           ) : (
             <Button
-              color="primary"
-              startContent={<PencilIcon className="w-4 h-4" />}
-              onPress={() => setEditMode(true)}
+              leftSection={<PencilIcon className="w-4 h-4" />}
+              onClick={() => setEditMode(true)}
             >
               Editar Perfil
             </Button>
           )}
-        </div>
-      </div>
+        </Group>
+      </Group>
 
       {/* Contenido principal */}
-      <Tabs aria-label="Secciones del perfil" variant="underlined">
-        <Tab key="info" title={
-          <div className="flex items-center gap-2">
-            <BuildingOfficeIcon className="w-4 h-4" />
-            <span>Información Básica</span>
-          </div>
-        }>
-          <Card className="mt-4">
-            <CardBody className="p-6">
-              {editMode ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <Input
+      <Tabs defaultValue="info">
+        <Tabs.List>
+          <Tabs.Tab 
+            value="info" 
+            leftSection={<BuildingOfficeIcon className="w-4 h-4" />}
+          >
+            Información Básica
+          </Tabs.Tab>
+          <Tabs.Tab 
+            value="contact" 
+            leftSection={<UserIcon className="w-4 h-4" />}
+          >
+            Información de Contacto
+          </Tabs.Tab>
+          <Tabs.Tab 
+            value="business" 
+            leftSection={<DocumentTextIcon className="w-4 h-4" />}
+          >
+            Términos Comerciales
+          </Tabs.Tab>
+          <Tabs.Tab 
+            value="performance" 
+            leftSection={<ChartBarIcon className="w-4 h-4" />}
+          >
+            Desempeño
+          </Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="info">
+          <Paper withBorder p="xl" mt="md">
+            {editMode ? (
+              <Grid>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Stack gap="md">
+                    <TextInput
                       label="Nombre Comercial"
                       placeholder="Nombre comercial"
                       value={editedSupplier?.name || ""}
-                      onChange={(e) => setEditedSupplier(prev => prev ? {...prev, name: e.target.value} : null)}
+                      onChange={(e) => setEditedSupplier(prev => prev ? {...prev, name: e.currentTarget.value} : null)}
                     />
                     
-                    <Input
+                    <TextInput
                       label="Razón Social"
                       placeholder="Razón social completa"
                       value={editedSupplier?.businessName || ""}
-                      onChange={(e) => setEditedSupplier(prev => prev ? {...prev, businessName: e.target.value} : null)}
+                      onChange={(e) => setEditedSupplier(prev => prev ? {...prev, businessName: e.currentTarget.value} : null)}
                     />
                     
-                    <Input
+                    <TextInput
                       label="RFC / Identificación Fiscal"
                       placeholder="RFC o número de identificación fiscal"
                       value={editedSupplier?.taxId || ""}
-                      onChange={(e) => setEditedSupplier(prev => prev ? {...prev, taxId: e.target.value} : null)}
+                      onChange={(e) => setEditedSupplier(prev => prev ? {...prev, taxId: e.currentTarget.value} : null)}
                     />
                     
                     <Switch
-                      isSelected={editedSupplier?.isActive}
-                      onValueChange={(value) => setEditedSupplier(prev => prev ? {...prev, isActive: value} : null)}
-                    >
-                      Estado Activo
-                    </Switch>
-                  </div>
-                  
-                  <div className="space-y-4">
+                      checked={editedSupplier?.isActive}
+                      onChange={(event) => setEditedSupplier(prev => prev ? {...prev, isActive: event.currentTarget.checked} : null)}
+                      label="Estado Activo"
+                    />
+                  </Stack>
+                </Grid.Col>
+                
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Stack gap="md">
                     <Textarea
                       label="Descripción"
                       placeholder="Descripción de la empresa o negocio"
                       value={editedSupplier?.description || ""}
-                      onChange={(e) => setEditedSupplier(prev => prev ? {...prev, description: e.target.value} : null)}
+                      onChange={(e) => setEditedSupplier(prev => prev ? {...prev, description: e.currentTarget.value} : null)}
                       minRows={5}
                     />
                     
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-500">Código de Proveedor</p>
-                      <p className="text-sm font-medium">{editedSupplier?.code}</p>
-                    </div>
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Código de Proveedor</Text>
+                      <Text size="sm" fw={500}>{editedSupplier?.code}</Text>
+                    </Group>
                     
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-500">Fecha de Registro</p>
-                      <p className="text-sm font-medium">
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Fecha de Registro</Text>
+                      <Text size="sm" fw={500}>
                         {new Date(editedSupplier?.createdAt || "").toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
+                      </Text>
+                    </Group>
+                  </Stack>
+                </Grid.Col>
+              </Grid>
+            ) : (
+              <Grid>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Stack gap="md">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{supplier.name}</h3>
-                      <p className="text-sm text-gray-500">Nombre Comercial</p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium text-gray-900">{supplier.businessName}</h4>
-                      <p className="text-sm text-gray-500">Razón Social</p>
+                      <Title order={3}>{supplier.name}</Title>
+                      <Text size="sm" c="dimmed">Nombre Comercial</Text>
                     </div>
                     
                     <div>
-                      <h4 className="font-medium text-gray-900">{supplier.taxId}</h4>
-                      <p className="text-sm text-gray-500">RFC / Identificación Fiscal</p>
+                      <Text fw={500}>{supplier.businessName}</Text>
+                      <Text size="sm" c="dimmed">Razón Social</Text>
                     </div>
                     
                     <div>
-                      <Chip 
-                        color={supplier.isActive ? "success" : "danger"}
-                        variant="flat"
-                        startContent={supplier.isActive ? <CheckCircleIcon className="w-4 h-4" /> : <XCircleIcon className="w-4 h-4" />}
+                      <Text fw={500}>{supplier.taxId}</Text>
+                      <Text size="sm" c="dimmed">RFC / Identificación Fiscal</Text>
+                    </div>
+                    
+                    <div>
+                      <Badge 
+                        color={supplier.isActive ? "green" : "red"}
+                        variant="light"
+                        leftSection={supplier.isActive ? <CheckCircleIcon className="w-4 h-4" /> : <XCircleIcon className="w-4 h-4" />}
                       >
                         {supplier.isActive ? "Activo" : "Inactivo"}
-                      </Chip>
+                      </Badge>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-4">
+                  </Stack>
+                </Grid.Col>
+                
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Stack gap="md">
                     <div>
-                      <p className="text-gray-700">{supplier.description}</p>
-                      <p className="text-sm text-gray-500 mt-1">Descripción</p>
+                      <Text>{supplier.description}</Text>
+                      <Text size="sm" c="dimmed" mt="xs">Descripción</Text>
                     </div>
                     
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex justify-between items-center mb-2">
-                        <p className="text-sm text-gray-500">Código de Proveedor</p>
-                        <p className="text-sm font-medium">{supplier.code}</p>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm text-gray-500">Fecha de Registro</p>
-                        <p className="text-sm font-medium">
-                          {new Date(supplier.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardBody>
-          </Card>
-        </Tab>
+                    <Divider />
+                    
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Código de Proveedor</Text>
+                      <Text size="sm" fw={500}>{supplier.code}</Text>
+                    </Group>
+                    
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Fecha de Registro</Text>
+                      <Text size="sm" fw={500}>
+                        {new Date(supplier.createdAt).toLocaleDateString()}
+                      </Text>
+                    </Group>
+                  </Stack>
+                </Grid.Col>
+              </Grid>
+            )}
+          </Paper>
+        </Tabs.Panel>
         
-        <Tab key="contact" title={
-          <div className="flex items-center gap-2">
-            <UserIcon className="w-4 h-4" />
-            <span>Información de Contacto</span>
-          </div>
-        }>
-          <Card className="mt-4">
-            <CardBody className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Información principal de contacto */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Contacto Principal</h3>
-                  
-                  {editMode ? (
-                    <div className="space-y-4">
-                      <Input
-                        label="Correo Electrónico"
-                        placeholder="Correo electrónico de contacto"
-                        value={editedSupplier?.contactInfo.email || ""}
-                        onChange={(e) => setEditedSupplier(prev => 
-                          prev ? {
-                            ...prev, 
-                            contactInfo: {
-                              ...prev.contactInfo,
-                              email: e.target.value
+        <Tabs.Panel value="contact">
+          <Paper withBorder p="xl" mt="md">
+            <Grid>
+              {/* Información principal de contacto */}
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Title order={4} mb="md">Contacto Principal</Title>
+                
+                {editMode ? (
+                  <Stack gap="md">
+                    <TextInput
+                      label="Correo Electrónico"
+                      placeholder="Correo electrónico de contacto"
+                      value={editedSupplier?.contactInfo.email || ""}
+                      onChange={(e) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          contactInfo: {
+                            ...prev.contactInfo,
+                            email: e.currentTarget.value
+                          }
+                        } : null
+                      )}
+                      leftSection={<AtSymbolIcon className="w-4 h-4" />}
+                    />
+                    
+                    <TextInput
+                      label="Teléfono"
+                      placeholder="Teléfono de contacto"
+                      value={editedSupplier?.contactInfo.phone || ""}
+                      onChange={(e) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          contactInfo: {
+                            ...prev.contactInfo,
+                            phone: e.currentTarget.value
+                          }
+                        } : null
+                      )}
+                      leftSection={<PhoneIcon className="w-4 h-4" />}
+                    />
+                    
+                    <TextInput
+                      label="Sitio Web"
+                      placeholder="Sitio web (opcional)"
+                      value={editedSupplier?.contactInfo.website || ""}
+                      onChange={(e) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          contactInfo: {
+                            ...prev.contactInfo,
+                            website: e.currentTarget.value
+                          }
+                        } : null
+                      )}
+                    />
+                    
+                    <Divider my="md" />
+                    
+                    <Text fw={500} mb="sm">Dirección</Text>
+                    
+                    <TextInput
+                      label="Calle y Número"
+                      placeholder="Calle y número"
+                      value={editedSupplier?.contactInfo.address.street || ""}
+                      onChange={(e) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          contactInfo: {
+                            ...prev.contactInfo,
+                            address: {
+                              ...prev.contactInfo.address,
+                              street: e.currentTarget.value
                             }
-                          } : null
-                        )}
-                        startContent={<AtSymbolIcon className="w-4 h-4 text-gray-400" />}
-                      />
-                      
-                      <Input
-                        label="Teléfono"
-                        placeholder="Teléfono de contacto"
-                        value={editedSupplier?.contactInfo.phone || ""}
-                        onChange={(e) => setEditedSupplier(prev => 
-                          prev ? {
-                            ...prev, 
-                            contactInfo: {
-                              ...prev.contactInfo,
-                              phone: e.target.value
-                            }
-                          } : null
-                        )}
-                        startContent={<PhoneIcon className="w-4 h-4 text-gray-400" />}
-                      />
-                      
-                      <Input
-                        label="Sitio Web"
-                        placeholder="Sitio web (opcional)"
-                        value={editedSupplier?.contactInfo.website || ""}
-                        onChange={(e) => setEditedSupplier(prev => 
-                          prev ? {
-                            ...prev, 
-                            contactInfo: {
-                              ...prev.contactInfo,
-                              website: e.target.value
-                            }
-                          } : null
-                        )}
-                      />
-                      
-                      <Divider className="my-4" />
-                      
-                      <h4 className="font-medium text-gray-900 mb-2">Dirección</h4>
-                      
-                      <Input
-                        label="Calle y Número"
-                        placeholder="Calle y número"
-                        value={editedSupplier?.contactInfo.address.street || ""}
-                        onChange={(e) => setEditedSupplier(prev => 
-                          prev ? {
-                            ...prev, 
-                            contactInfo: {
-                              ...prev.contactInfo,
-                              address: {
-                                ...prev.contactInfo.address,
-                                street: e.target.value
-                              }
-                            }
-                          } : null
-                        )}
-                      />
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <Input
+                          }
+                        } : null
+                      )}
+                    />
+                    
+                    <Grid>
+                      <Grid.Col span={6}>
+                        <TextInput
                           label="Ciudad"
                           placeholder="Ciudad"
                           value={editedSupplier?.contactInfo.address.city || ""}
@@ -577,14 +605,16 @@ export default function SupplierProfile() {
                                 ...prev.contactInfo,
                                 address: {
                                   ...prev.contactInfo.address,
-                                  city: e.target.value
+                                  city: e.currentTarget.value
                                 }
                               }
                             } : null
                           )}
                         />
-                        
-                        <Input
+                      </Grid.Col>
+                      
+                      <Grid.Col span={6}>
+                        <TextInput
                           label="Estado"
                           placeholder="Estado/Provincia"
                           value={editedSupplier?.contactInfo.address.state || ""}
@@ -595,16 +625,18 @@ export default function SupplierProfile() {
                                 ...prev.contactInfo,
                                 address: {
                                   ...prev.contactInfo.address,
-                                  state: e.target.value
+                                  state: e.currentTarget.value
                                 }
                               }
                             } : null
                           )}
                         />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <Input
+                      </Grid.Col>
+                    </Grid>
+                    
+                    <Grid>
+                      <Grid.Col span={6}>
+                        <TextInput
                           label="Código Postal"
                           placeholder="Código Postal"
                           value={editedSupplier?.contactInfo.address.postalCode || ""}
@@ -615,14 +647,16 @@ export default function SupplierProfile() {
                                 ...prev.contactInfo,
                                 address: {
                                   ...prev.contactInfo.address,
-                                  postalCode: e.target.value
+                                  postalCode: e.currentTarget.value
                                 }
                               }
                             } : null
                           )}
                         />
-                        
-                        <Input
+                      </Grid.Col>
+                      
+                      <Grid.Col span={6}>
+                        <TextInput
                           label="País"
                           placeholder="País"
                           value={editedSupplier?.contactInfo.address.country || ""}
@@ -633,730 +667,682 @@ export default function SupplierProfile() {
                                 ...prev.contactInfo,
                                 address: {
                                   ...prev.contactInfo.address,
-                                  country: e.target.value
+                                  country: e.currentTarget.value
                                 }
                               }
                             } : null
                           )}
                         />
+                      </Grid.Col>
+                    </Grid>
+                  </Stack>
+                ) : (
+                  <Stack gap="md">
+                    <Group>
+                      <AtSymbolIcon className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <Text fw={500}>{supplier.contactInfo.email}</Text>
+                        <Text size="sm" c="dimmed">Correo Electrónico</Text>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3">
-                        <AtSymbolIcon className="w-5 h-5 text-gray-400 mt-0.5" />
+                    </Group>
+                    
+                    <Group>
+                      <PhoneIcon className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <Text fw={500}>{supplier.contactInfo.phone}</Text>
+                        <Text size="sm" c="dimmed">Teléfono</Text>
+                      </div>
+                    </Group>
+                    
+                    {supplier.contactInfo.website && (
+                      <Group>
+                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
                         <div>
-                          <p className="font-medium text-gray-900">{supplier.contactInfo.email}</p>
-                          <p className="text-sm text-gray-500">Correo Electrónico</p>
+                          <Text fw={500}>{supplier.contactInfo.website}</Text>
+                          <Text size="sm" c="dimmed">Sitio Web</Text>
                         </div>
+                      </Group>
+                    )}
+                    
+                    <Divider my="md" />
+                    
+                    <Group align="flex-start">
+                      <MapPinIcon className="w-5 h-5 text-gray-400 mt-1" />
+                      <div>
+                        <Stack gap="xs">
+                          <Text fw={500}>{supplier.contactInfo.address.street}</Text>
+                          <Text fw={500}>{supplier.contactInfo.address.city}, {supplier.contactInfo.address.state}</Text>
+                          <Text fw={500}>{supplier.contactInfo.address.postalCode}, {supplier.contactInfo.address.country}</Text>
+                        </Stack>
+                        <Text size="sm" c="dimmed" mt="xs">Dirección</Text>
                       </div>
-                      
-                      <div className="flex items-start gap-3">
-                        <PhoneIcon className="w-5 h-5 text-gray-400 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-gray-900">{supplier.contactInfo.phone}</p>
-                          <p className="text-sm text-gray-500">Teléfono</p>
-                        </div>
-                      </div>
-                      
-                      {supplier.contactInfo.website && (
-                        <div className="flex items-start gap-3">
-                          <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                          </svg>
-                          <div>
-                            <p className="font-medium text-gray-900">{supplier.contactInfo.website}</p>
-                            <p className="text-sm text-gray-500">Sitio Web</p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <Divider className="my-4" />
-                      
-                      <div className="flex items-start gap-3">
-                        <MapPinIcon className="w-5 h-5 text-gray-400 mt-0.5" />
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            <p>{supplier.contactInfo.address.street}</p>
-                            <p>{supplier.contactInfo.address.city}, {supplier.contactInfo.address.state}</p>
-                            <p>{supplier.contactInfo.address.postalCode}, {supplier.contactInfo.address.country}</p>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">Dirección</p>
-                        </div>
-                      </div>
-                    </div>
+                    </Group>
+                  </Stack>
+                )}
+              </Grid.Col>
+              
+              {/* Lista de contactos adicionales */}
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Group justify="space-between" mb="md">
+                  <Title order={4}>Contactos Adicionales</Title>
+                  {editMode && (
+                    <Button
+                      size="sm"
+                      variant="light"
+                      leftSection={<UserIcon className="w-4 h-4" />}
+                    >
+                      Agregar Contacto
+                    </Button>
                   )}
-                </div>
+                </Group>
                 
-                {/* Lista de contactos adicionales */}
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Contactos Adicionales</h3>
-                    {editMode && (
+                {supplier.contacts.length === 0 ? (
+                  <Paper bg="gray.0" p="md">
+                    <Text c="dimmed" ta="center">No hay contactos adicionales registrados</Text>
+                  </Paper>
+                ) : (
+                  <Stack gap="md">
+                    {(editMode ? editedSupplier?.contacts || [] : supplier.contacts).map((contact, index) => (
+                      <Paper key={index} withBorder p="sm">
+                        <Group justify="space-between">
+                          <div>
+                            <Group gap="xs">
+                              <Text fw={500}>{contact.name}</Text>
+                              {contact.isPrimary && (
+                                <Badge size="sm" variant="light">Principal</Badge>
+                              )}
+                            </Group>
+                            <Text size="sm" c="dimmed">{contact.position}</Text>
+                          </div>
+                          
+                          {editMode && (
+                            <ActionIcon
+                              size="sm"
+                              variant="light"
+                              color="red"
+                              onClick={() => handleRemoveContact(index)}
+                            >
+                              <XCircleIcon className="w-4 h-4" />
+                            </ActionIcon>
+                          )}
+                        </Group>
+                        
+                        <Stack gap="xs" mt="sm">
+                          <Group gap="xs">
+                            <AtSymbolIcon className="w-4 h-4 text-gray-400" />
+                            <Text size="sm">{contact.email}</Text>
+                          </Group>
+                          <Group gap="xs">
+                            <PhoneIcon className="w-4 h-4 text-gray-400" />
+                            <Text size="sm">{contact.phone}</Text>
+                          </Group>
+                        </Stack>
+                      </Paper>
+                    ))}
+                  </Stack>
+                )}
+                
+                {editMode && (
+                  <Paper withBorder p="md" mt="md">
+                    <Text fw={500} mb="md">Agregar Nuevo Contacto</Text>
+                    <Stack gap="sm">
+                      <TextInput
+                        label="Nombre"
+                        placeholder="Nombre completo"
+                        value={newContact.name}
+                        onChange={(e) => setNewContact({...newContact, name: e.currentTarget.value})}
+                        size="sm"
+                      />
+                      
+                      <TextInput
+                        label="Cargo"
+                        placeholder="Cargo o posición"
+                        value={newContact.position}
+                        onChange={(e) => setNewContact({...newContact, position: e.currentTarget.value})}
+                        size="sm"
+                      />
+                      
+                      <TextInput
+                        label="Correo Electrónico"
+                        placeholder="Correo electrónico"
+                        value={newContact.email}
+                        onChange={(e) => setNewContact({...newContact, email: e.currentTarget.value})}
+                        size="sm"
+                      />
+                      
+                      <TextInput
+                        label="Teléfono"
+                        placeholder="Teléfono"
+                        value={newContact.phone}
+                        onChange={(e) => setNewContact({...newContact, phone: e.currentTarget.value})}
+                        size="sm"
+                      />
+                      
+                      <Switch
+                        checked={newContact.isPrimary}
+                        onChange={(event) => setNewContact({...newContact, isPrimary: event.currentTarget.checked})}
+                        label="Definir como contacto principal"
+                        size="sm"
+                      />
+                      
                       <Button
                         size="sm"
-                        color="primary"
-                        variant="flat"
-                        startContent={<UserIcon className="w-4 h-4" />}
+                        fullWidth
+                        onClick={handleAddContact}
+                        mt="sm"
                       >
                         Agregar Contacto
                       </Button>
+                    </Stack>
+                  </Paper>
+                )}
+              </Grid.Col>
+            </Grid>
+          </Paper>
+        </Tabs.Panel>
+        
+        <Tabs.Panel value="business">
+          <Paper withBorder p="xl" mt="md">
+            <Grid>
+              {/* Términos de pago */}
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Title order={4} mb="md">Términos de Pago</Title>
+                
+                {editMode ? (
+                  <Stack gap="md">
+                    <Select
+                      label="Método de Pago Preferido"
+                      placeholder="Seleccionar método"
+                      value={editedSupplier?.businessTerms.paymentTerms.method || ""}
+                      onChange={(value) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          businessTerms: {
+                            ...prev.businessTerms,
+                            paymentTerms: {
+                              ...prev.businessTerms.paymentTerms,
+                              method: value || ""
+                            }
+                          }
+                        } : null
+                      )}
+                      data={[
+                        { value: "transfer", label: "Transferencia Bancaria" },
+                        { value: "check", label: "Cheque" },
+                        { value: "cash", label: "Efectivo" },
+                        { value: "credit", label: "Crédito" }
+                      ]}
+                    />
+                    
+                    <NumberInput
+                      label="Días de Crédito"
+                      placeholder="Número de días"
+                      value={editedSupplier?.businessTerms.paymentTerms.creditDays || 0}
+                      onChange={(value) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          businessTerms: {
+                            ...prev.businessTerms,
+                            paymentTerms: {
+                              ...prev.businessTerms.paymentTerms,
+                              creditDays: typeof value === 'number' ? value : 0
+                            }
+                          }
+                        } : null
+                      )}
+                    />
+                    
+                    <TextInput
+                      label="Cuenta Bancaria"
+                      placeholder="Número de cuenta (opcional)"
+                      value={editedSupplier?.businessTerms.paymentTerms.bankAccount || ""}
+                      onChange={(e) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          businessTerms: {
+                            ...prev.businessTerms,
+                            paymentTerms: {
+                              ...prev.businessTerms.paymentTerms,
+                              bankAccount: e.currentTarget.value
+                            }
+                          }
+                        } : null
+                      )}
+                    />
+                    
+                    <Select
+                      label="Moneda"
+                      placeholder="Seleccionar moneda"
+                      value={editedSupplier?.businessTerms.paymentTerms.currency || "MXN"}
+                      onChange={(value) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          businessTerms: {
+                            ...prev.businessTerms,
+                            paymentTerms: {
+                              ...prev.businessTerms.paymentTerms,
+                              currency: value || "MXN"
+                            }
+                          }
+                        } : null
+                      )}
+                      data={[
+                        { value: "MXN", label: "Peso Mexicano (MXN)" },
+                        { value: "USD", label: "Dólar Estadounidense (USD)" },
+                        { value: "EUR", label: "Euro (EUR)" }
+                      ]}
+                    />
+                  </Stack>
+                ) : (
+                  <Stack gap="md">
+                    <Group>
+                      <CreditCardIcon className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <Text fw={500}>
+                          {supplier.businessTerms.paymentTerms.method === "transfer" && "Transferencia Bancaria"}
+                          {supplier.businessTerms.paymentTerms.method === "check" && "Cheque"}
+                          {supplier.businessTerms.paymentTerms.method === "cash" && "Efectivo"}
+                          {supplier.businessTerms.paymentTerms.method === "credit" && "Crédito"}
+                        </Text>
+                        <Text size="sm" c="dimmed">Método de Pago Preferido</Text>
+                      </div>
+                    </Group>
+                    
+                    <Group>
+                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <div>
+                        <Text fw={500}>{supplier.businessTerms.paymentTerms.creditDays} días</Text>
+                        <Text size="sm" c="dimmed">Días de Crédito</Text>
+                      </div>
+                    </Group>
+                    
+                    {supplier.businessTerms.paymentTerms.bankAccount && (
+                      <Group>
+                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <div>
+                          <Text fw={500}>{supplier.businessTerms.paymentTerms.bankAccount}</Text>
+                          <Text size="sm" c="dimmed">Cuenta Bancaria</Text>
+                        </div>
+                      </Group>
                     )}
-                  </div>
-                  
-                  {supplier.contacts.length === 0 ? (
-                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <p className="text-gray-500">No hay contactos adicionales registrados</p>
-                    </div>
+                    
+                    <Group>
+                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <Text fw={500}>{supplier.businessTerms.paymentTerms.currency}</Text>
+                        <Text size="sm" c="dimmed">Moneda</Text>
+                      </div>
+                    </Group>
+                  </Stack>
+                )}
+                
+                <Divider my="xl" />
+                
+                <Title order={4} mb="md">Certificaciones</Title>
+                
+                <Stack gap="sm">
+                  {(editMode ? editedSupplier?.businessTerms.certifications || [] : supplier.businessTerms.certifications).length === 0 ? (
+                    <Paper bg="gray.0" p="md">
+                      <Text c="dimmed" ta="center">No hay certificaciones registradas</Text>
+                    </Paper>
                   ) : (
-                    <div className="space-y-4">
-                      {(editMode ? editedSupplier?.contacts || [] : supplier.contacts).map((contact, index) => (
-                        <Card key={index} className="border border-gray-200">
-                          <CardBody className="p-3">
-                            <div className="flex justify-between">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="font-medium text-gray-900">{contact.name}</p>
-                                  {contact.isPrimary && (
-                                    <Chip size="sm" color="primary" variant="flat">Principal</Chip>
-                                  )}
-                                </div>
-                                <p className="text-sm text-gray-500">{contact.position}</p>
-                              </div>
-                              
-                              {editMode && (
-                                <Button
-                                  isIconOnly
-                                  size="sm"
-                                  variant="light"
-                                  color="danger"
-                                  onPress={() => handleRemoveContact(index)}
-                                >
-                                  <XCircleIcon className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                            
-                            <div className="mt-2 text-sm">
-                              <div className="flex items-center gap-2 mb-1">
-                                <AtSymbolIcon className="w-4 h-4 text-gray-400" />
-                                <span>{contact.email}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <PhoneIcon className="w-4 h-4 text-gray-400" />
-                                <span>{contact.phone}</span>
-                              </div>
-                            </div>
-                          </CardBody>
-                        </Card>
+                    <Group gap="xs">
+                      {(editMode ? editedSupplier?.businessTerms.certifications || [] : supplier.businessTerms.certifications).map((cert, index) => (
+                        <Badge 
+                          key={index}
+                          variant="light"
+                          style={{ cursor: editMode ? 'pointer' : 'default' }}
+                          onClick={editMode ? () => handleRemoveCertification(index) : undefined}
+                        >
+                          {cert} {editMode && '×'}
+                        </Badge>
                       ))}
-                    </div>
+                    </Group>
                   )}
                   
                   {editMode && (
-                    <div className="mt-4 border border-gray-200 rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-3">Agregar Nuevo Contacto</h4>
-                      <div className="space-y-3">
-                        <Input
-                          label="Nombre"
-                          placeholder="Nombre completo"
-                          value={newContact.name}
-                          onChange={(e) => setNewContact({...newContact, name: e.target.value})}
-                          size="sm"
-                        />
-                        
-                        <Input
-                          label="Cargo"
-                          placeholder="Cargo o posición"
-                          value={newContact.position}
-                          onChange={(e) => setNewContact({...newContact, position: e.target.value})}
-                          size="sm"
-                        />
-                        
-                        <Input
-                          label="Correo Electrónico"
-                          placeholder="Correo electrónico"
-                          value={newContact.email}
-                          onChange={(e) => setNewContact({...newContact, email: e.target.value})}
-                          size="sm"
-                        />
-                        
-                        <Input
-                          label="Teléfono"
-                          placeholder="Teléfono"
-                          value={newContact.phone}
-                          onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
-                          size="sm"
-                        />
-                        
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            isSelected={newContact.isPrimary}
-                            onValueChange={(value) => setNewContact({...newContact, isPrimary: value})}
-                            size="sm"
-                          />
-                          <span className="text-sm">Definir como contacto principal</span>
-                        </div>
-                        
-                        <Button
-                          color="primary"
-                          size="sm"
-                          className="w-full mt-2"
-                          onPress={handleAddContact}
-                        >
-                          Agregar Contacto
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </Tab>
-        
-        <Tab key="business" title={
-          <div className="flex items-center gap-2">
-            <DocumentTextIcon className="w-4 h-4" />
-            <span>Términos Comerciales</span>
-          </div>
-        }>
-          <Card className="mt-4">
-            <CardBody className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Términos de pago */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Términos de Pago</h3>
-                  
-                  {editMode ? (
-                    <div className="space-y-4">
-                      <Select
-                        label="Método de Pago Preferido"
-                        placeholder="Seleccionar método"
-                        selectedKeys={[editedSupplier?.businessTerms.paymentTerms.method || ""]}
-                        onChange={(keys: any) => {
-                          const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                          setEditedSupplier(prev => 
-                            prev ? {
-                              ...prev, 
-                              businessTerms: {
-                                ...prev.businessTerms,
-                                paymentTerms: {
-                                  ...prev.businessTerms.paymentTerms,
-                                  method: selectedKey.toString()
-                                }
-                              }
-                            } : null
-                          );
-                        }}
-                      >
-                        <SelectItem key="transfer">Transferencia Bancaria</SelectItem>
-                        <SelectItem key="check">Cheque</SelectItem>
-                        <SelectItem key="cash">Efectivo</SelectItem>
-                        <SelectItem key="credit">Crédito</SelectItem>
-                      </Select>
-                      
-                      <Input
-                        type="number"
-                        label="Días de Crédito"
-                        placeholder="Número de días"
-                        value={editedSupplier?.businessTerms.paymentTerms.creditDays.toString() || "0"}
-                        onChange={(e) => setEditedSupplier(prev => 
-                          prev ? {
-                            ...prev, 
-                            businessTerms: {
-                              ...prev.businessTerms,
-                              paymentTerms: {
-                                ...prev.businessTerms.paymentTerms,
-                                creditDays: parseInt(e.target.value) || 0
-                              }
-                            }
-                          } : null
-                        )}
+                    <Group mt="sm">
+                      <TextInput
+                        placeholder="Agregar certificación"
+                        value={newCertification}
+                        onChange={(e) => setNewCertification(e.currentTarget.value)}
+                        style={{ flex: 1 }}
                       />
-                      
-                      <Input
-                        label="Cuenta Bancaria"
-                        placeholder="Número de cuenta (opcional)"
-                        value={editedSupplier?.businessTerms.paymentTerms.bankAccount || ""}
-                        onChange={(e) => setEditedSupplier(prev => 
-                          prev ? {
-                            ...prev, 
-                            businessTerms: {
-                              ...prev.businessTerms,
-                              paymentTerms: {
-                                ...prev.businessTerms.paymentTerms,
-                                bankAccount: e.target.value
-                              }
-                            }
-                          } : null
-                        )}
-                      />
-                      
-                      <Select
-                        label="Moneda"
-                        placeholder="Seleccionar moneda"
-                        selectedKeys={[editedSupplier?.businessTerms.paymentTerms.currency || "MXN"]}
-                        onChange={(keys: any) => {
-                          const selectedKey = keys.target?.value || Array.from(keys || [])[0] || 'MXN';
-                          setEditedSupplier(prev => 
-                            prev ? {
-                              ...prev, 
-                              businessTerms: {
-                                ...prev.businessTerms,
-                                paymentTerms: {
-                                  ...prev.businessTerms.paymentTerms,
-                                  currency: selectedKey.toString()
-                                }
-                              }
-                            } : null
-                          );
-                        }}
-                      >
-                        <SelectItem key="MXN">Peso Mexicano (MXN)</SelectItem>
-                        <SelectItem key="USD">Dólar Estadounidense (USD)</SelectItem>
-                        <SelectItem key="EUR">Euro (EUR)</SelectItem>
-                      </Select>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3">
-                        <CreditCardIcon className="w-5 h-5 text-gray-400 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {supplier.businessTerms.paymentTerms.method === "transfer" && "Transferencia Bancaria"}
-                            {supplier.businessTerms.paymentTerms.method === "check" && "Cheque"}
-                            {supplier.businessTerms.paymentTerms.method === "cash" && "Efectivo"}
-                            {supplier.businessTerms.paymentTerms.method === "credit" && "Crédito"}
-                          </p>
-                          <p className="text-sm text-gray-500">Método de Pago Preferido</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <div>
-                          <p className="font-medium text-gray-900">{supplier.businessTerms.paymentTerms.creditDays} días</p>
-                          <p className="text-sm text-gray-500">Días de Crédito</p>
-                        </div>
-                      </div>
-                      
-                      {supplier.businessTerms.paymentTerms.bankAccount && (
-                        <div className="flex items-start gap-3">
-                          <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                          </svg>
-                          <div>
-                            <p className="font-medium text-gray-900">{supplier.businessTerms.paymentTerms.bankAccount}</p>
-                            <p className="text-sm text-gray-500">Cuenta Bancaria</p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div>
-                          <p className="font-medium text-gray-900">{supplier.businessTerms.paymentTerms.currency}</p>
-                          <p className="text-sm text-gray-500">Moneda</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <Divider className="my-6" />
-                  
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Certificaciones</h3>
-                  
-                  <div className="space-y-3">
-                    {(editMode ? editedSupplier?.businessTerms.certifications || [] : supplier.businessTerms.certifications).length === 0 ? (
-                      <div className="bg-gray-50 rounded-lg p-4 text-center">
-                        <p className="text-gray-500">No hay certificaciones registradas</p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {(editMode ? editedSupplier?.businessTerms.certifications || [] : supplier.businessTerms.certifications).map((cert, index) => (
-                          <Chip 
-                            key={index}
-                            variant="flat"
-                            color="primary"
-                            onClose={editMode ? () => handleRemoveCertification(index) : undefined}
-                          >
-                            {cert}
-                          </Chip>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {editMode && (
-                      <div className="flex gap-2 mt-3">
-                        <Input
-                          placeholder="Agregar certificación"
-                          value={newCertification}
-                          onChange={(e) => setNewCertification(e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button 
-                          color="primary"
-                          onPress={handleAddCertification}
-                        >
-                          Agregar
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Información de entrega */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Información de Entrega</h3>
-                  
-                  {editMode ? (
-                    <div className="space-y-4">
-                      <Input
-                        type="number"
-                        label="Tiempo Promedio de Entrega (días)"
-                        placeholder="Días"
-                        value={editedSupplier?.businessTerms.deliveryInfo.averageLeadTimeDays.toString() || ""}
-                        onChange={(e) => setEditedSupplier(prev => 
-                          prev ? {
-                            ...prev, 
-                            businessTerms: {
-                              ...prev.businessTerms,
-                              deliveryInfo: {
-                                ...prev.businessTerms.deliveryInfo,
-                                averageLeadTimeDays: parseInt(e.target.value) || 0
-                              }
-                            }
-                          } : null
-                        )}
-                      />
-                      
-                      <Input
-                        type="number"
-                        label="Monto Mínimo de Pedido (opcional)"
-                        placeholder="Monto"
-                        value={editedSupplier?.businessTerms.deliveryInfo.minimumOrderValue?.toString() || ""}
-                        onChange={(e) => setEditedSupplier(prev => 
-                          prev ? {
-                            ...prev, 
-                            businessTerms: {
-                              ...prev.businessTerms,
-                              deliveryInfo: {
-                                ...prev.businessTerms.deliveryInfo,
-                                minimumOrderValue: e.target.value ? parseFloat(e.target.value) : undefined
-                              }
-                            }
-                          } : null
-                        )}
-                        startContent={
-                          <div className="pointer-events-none flex items-center">
-                            <span className="text-default-400 text-small">$</span>
-                          </div>
-                        }
-                      />
-                      
-                      <Select
-                        label="Términos de Envío"
-                        placeholder="Seleccionar términos"
-                        selectedKeys={[editedSupplier?.businessTerms.deliveryInfo.shippingTerms || ""]}
-                        onChange={(keys: any) => {
-                          const selectedKey = keys.target?.value || Array.from(keys || [])[0] || '';
-                          setEditedSupplier(prev => 
-                            prev ? {
-                              ...prev, 
-                              businessTerms: {
-                                ...prev.businessTerms,
-                                deliveryInfo: {
-                                  ...prev.businessTerms.deliveryInfo,
-                                  shippingTerms: selectedKey.toString()
-                                }
-                              }
-                            } : null
-                          );
-                        }}
-                      >
-                        <SelectItem key="FOB">FOB - Free On Board</SelectItem>
-                        <SelectItem key="CIF">CIF - Cost, Insurance, Freight</SelectItem>
-                        <SelectItem key="EXW">EXW - Ex Works</SelectItem>
-                        <SelectItem key="DAP">DAP - Delivered At Place</SelectItem>
-                        <SelectItem key="DDP">DDP - Delivered Duty Paid</SelectItem>
-                      </Select>
-                      
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          isSelected={editedSupplier?.businessTerms.deliveryInfo.internationalShipping}
-                          onValueChange={(value) => setEditedSupplier(prev => 
-                            prev ? {
-                              ...prev, 
-                              businessTerms: {
-                                ...prev.businessTerms,
-                                deliveryInfo: {
-                                  ...prev.businessTerms.deliveryInfo,
-                                  internationalShipping: value
-                                }
-                              }
-                            } : null
-                          )}
-                        />
-                        <span>Envíos Internacionales</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3">
-                        <TruckIcon className="w-5 h-5 text-gray-400 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-gray-900">{supplier.businessTerms.deliveryInfo.averageLeadTimeDays} días</p>
-                          <p className="text-sm text-gray-500">Tiempo Promedio de Entrega</p>
-                        </div>
-                      </div>
-                      
-                      {supplier.businessTerms.deliveryInfo.minimumOrderValue && (
-                        <div className="flex items-start gap-3">
-                          <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {formatCurrency(supplier.businessTerms.deliveryInfo.minimumOrderValue)}
-                            </p>
-                            <p className="text-sm text-gray-500">Monto Mínimo de Pedido</p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <div>
-                          <p className="font-medium text-gray-900">{supplier.businessTerms.deliveryInfo.shippingTerms}</p>
-                          <p className="text-sm text-gray-500">Términos de Envío</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div>
-                          <Chip 
-                            color={supplier.businessTerms.deliveryInfo.internationalShipping ? "success" : "default"}
-                            variant="flat"
-                          >
-                            {supplier.businessTerms.deliveryInfo.internationalShipping ? "Disponible" : "No Disponible"}
-                          </Chip>
-                          <p className="text-sm text-gray-500 mt-1">Envíos Internacionales</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </Tab>
-        
-        <Tab key="performance" title={
-          <div className="flex items-center gap-2">
-            <ChartBarIcon className="w-4 h-4" />
-            <span>Desempeño</span>
-          </div>
-        }>
-          <Card className="mt-4">
-            <CardBody className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Calificaciones */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Calificaciones</h3>
-                  
-                  <div className="space-y-5">
-                    <div className="flex justify-between items-center">
-                      <p className="font-medium">Calificación General</p>
-                      {renderStarRating(supplier.performance.rating.overall)}
-                    </div>
-                    
-                    <Divider />
-                    
-                    <div className="flex justify-between items-center">
-                      <p>Calidad de Productos</p>
-                      {renderStarRating(supplier.performance.rating.quality)}
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <p>Precio</p>
-                      {renderStarRating(supplier.performance.rating.price)}
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <p>Entrega</p>
-                      {renderStarRating(supplier.performance.rating.delivery)}
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <p>Servicio</p>
-                      {renderStarRating(supplier.performance.rating.service)}
-                    </div>
-                    
-                    <div className="text-xs text-gray-500 italic">
-                      Última actualización: {new Date(supplier.performance.rating.lastUpdated).toLocaleDateString()}
-                    </div>
-                  </div>
-                  
-                  <Divider className="my-6" />
-                  
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Métricas de Desempeño</h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <p>Problemas de Calidad</p>
-                      <p className="font-medium">
-                        {supplier.performance.metrics.qualityIssues} reportados
-                      </p>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <p>Tasa de Devolución</p>
-                      <p className="font-medium">
-                        {supplier.performance.metrics.returnRate}%
-                      </p>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <p>Tiempo de Respuesta Promedio</p>
-                      <p className="font-medium">
-                        {supplier.performance.metrics.responseTime} horas
-                      </p>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <p>Días Promedio de Procesamiento</p>
-                      <p className="font-medium">
-                        {supplier.performance.metrics.avgProcessingDays} días
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Historial de órdenes */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Historial de Órdenes</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <Card className="border border-gray-200">
-                        <CardBody className="p-3">
-                          <div className="text-center">
-                            <p className="text-xs text-gray-500">Total de Órdenes</p>
-                            <p className="text-2xl font-bold text-gray-900">
-                              {supplier.performance.orderHistory.totalOrders}
-                            </p>
-                          </div>
-                        </CardBody>
-                      </Card>
-                      
-                      <Card className="border border-gray-200">
-                        <CardBody className="p-3">
-                          <div className="text-center">
-                            <p className="text-xs text-gray-500">Valor Promedio</p>
-                            <p className="text-2xl font-bold text-gray-900">
-                              {formatCurrency(supplier.performance.orderHistory.averageOrderValue)}
-                            </p>
-                          </div>
-                        </CardBody>
-                      </Card>
-                    </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-3">Cumplimiento de Entregas</h4>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            <span>A tiempo</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">{supplier.performance.orderHistory.completedOnTime}</span>
-                            <span className="text-sm text-gray-500">
-                              ({Math.round((supplier.performance.orderHistory.completedOnTime / supplier.performance.orderHistory.totalOrders) * 100)}%)
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                            <span>Con retraso</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">{supplier.performance.orderHistory.completedLate}</span>
-                            <span className="text-sm text-gray-500">
-                              ({Math.round((supplier.performance.orderHistory.completedLate / supplier.performance.orderHistory.totalOrders) * 100)}%)
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                            <span>Canceladas</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">{supplier.performance.orderHistory.cancelled}</span>
-                            <span className="text-sm text-gray-500">
-                              ({Math.round((supplier.performance.orderHistory.cancelled / supplier.performance.orderHistory.totalOrders) * 100)}%)
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Barra de progreso visual */}
-                      <div className="mt-4 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div className="flex h-full">
-                          <div 
-                            className="bg-green-500 h-full" 
-                            style={{ 
-                              width: `${Math.round((supplier.performance.orderHistory.completedOnTime / supplier.performance.orderHistory.totalOrders) * 100)}%` 
-                            }}
-                          ></div>
-                          <div 
-                            className="bg-yellow-500 h-full" 
-                            style={{ 
-                              width: `${Math.round((supplier.performance.orderHistory.completedLate / supplier.performance.orderHistory.totalOrders) * 100)}%` 
-                            }}
-                          ></div>
-                          <div 
-                            className="bg-red-500 h-full" 
-                            style={{ 
-                              width: `${Math.round((supplier.performance.orderHistory.cancelled / supplier.performance.orderHistory.totalOrders) * 100)}%` 
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4">
-                      <Button
-                        variant="flat"
-                        color="primary"
-                        className="w-full"
-                        startContent={<ClipboardDocumentListIcon className="w-4 h-4" />}
-                      >
-                        Ver Historial Detallado
+                      <Button onClick={handleAddCertification}>
+                        Agregar
                       </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </Tab>
+                    </Group>
+                  )}
+                </Stack>
+              </Grid.Col>
+              
+              {/* Información de entrega */}
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Title order={4} mb="md">Información de Entrega</Title>
+                
+                {editMode ? (
+                  <Stack gap="md">
+                    <NumberInput
+                      label="Tiempo Promedio de Entrega (días)"
+                      placeholder="Días"
+                      value={editedSupplier?.businessTerms.deliveryInfo.averageLeadTimeDays || 0}
+                      onChange={(value) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          businessTerms: {
+                            ...prev.businessTerms,
+                            deliveryInfo: {
+                              ...prev.businessTerms.deliveryInfo,
+                              averageLeadTimeDays: typeof value === 'number' ? value : 0
+                            }
+                          }
+                        } : null
+                      )}
+                    />
+                    
+                    <NumberInput
+                      label="Monto Mínimo de Pedido (opcional)"
+                      placeholder="Monto"
+                      leftSection="$"
+                      decimalScale={2}
+                      value={editedSupplier?.businessTerms.deliveryInfo.minimumOrderValue || 0}
+                      onChange={(value) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          businessTerms: {
+                            ...prev.businessTerms,
+                            deliveryInfo: {
+                              ...prev.businessTerms.deliveryInfo,
+                              minimumOrderValue: typeof value === 'number' ? value : undefined
+                            }
+                          }
+                        } : null
+                      )}
+                    />
+                    
+                    <Select
+                      label="Términos de Envío"
+                      placeholder="Seleccionar términos"
+                      value={editedSupplier?.businessTerms.deliveryInfo.shippingTerms || ""}
+                      onChange={(value) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          businessTerms: {
+                            ...prev.businessTerms,
+                            deliveryInfo: {
+                              ...prev.businessTerms.deliveryInfo,
+                              shippingTerms: value || ""
+                            }
+                          }
+                        } : null
+                      )}
+                      data={[
+                        { value: "FOB", label: "FOB - Free On Board" },
+                        { value: "CIF", label: "CIF - Cost, Insurance, Freight" },
+                        { value: "EXW", label: "EXW - Ex Works" },
+                        { value: "DAP", label: "DAP - Delivered At Place" },
+                        { value: "DDP", label: "DDP - Delivered Duty Paid" }
+                      ]}
+                    />
+                    
+                    <Switch
+                      checked={editedSupplier?.businessTerms.deliveryInfo.internationalShipping}
+                      onChange={(event) => setEditedSupplier(prev => 
+                        prev ? {
+                          ...prev, 
+                          businessTerms: {
+                            ...prev.businessTerms,
+                            deliveryInfo: {
+                              ...prev.businessTerms.deliveryInfo,
+                              internationalShipping: event.currentTarget.checked
+                            }
+                          }
+                        } : null
+                      )}
+                      label="Envíos Internacionales"
+                    />
+                  </Stack>
+                ) : (
+                  <Stack gap="md">
+                    <Group>
+                      <TruckIcon className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <Text fw={500}>{supplier.businessTerms.deliveryInfo.averageLeadTimeDays} días</Text>
+                        <Text size="sm" c="dimmed">Tiempo Promedio de Entrega</Text>
+                      </div>
+                    </Group>
+                    
+                    {supplier.businessTerms.deliveryInfo.minimumOrderValue && (
+                      <Group>
+                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <div>
+                          <Text fw={500}>
+                            {formatCurrency(supplier.businessTerms.deliveryInfo.minimumOrderValue)}
+                          </Text>
+                          <Text size="sm" c="dimmed">Monto Mínimo de Pedido</Text>
+                        </div>
+                      </Group>
+                    )}
+                    
+                    <Group>
+                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <div>
+                        <Text fw={500}>{supplier.businessTerms.deliveryInfo.shippingTerms}</Text>
+                        <Text size="sm" c="dimmed">Términos de Envío</Text>
+                      </div>
+                    </Group>
+                    
+                    <Group>
+                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <Badge 
+                          color={supplier.businessTerms.deliveryInfo.internationalShipping ? "green" : "gray"}
+                          variant="light"
+                        >
+                          {supplier.businessTerms.deliveryInfo.internationalShipping ? "Disponible" : "No Disponible"}
+                        </Badge>
+                        <Text size="sm" c="dimmed" mt="xs">Envíos Internacionales</Text>
+                      </div>
+                    </Group>
+                  </Stack>
+                )}
+              </Grid.Col>
+            </Grid>
+          </Paper>
+        </Tabs.Panel>
+        
+        <Tabs.Panel value="performance">
+          <Paper withBorder p="xl" mt="md">
+            <Grid>
+              {/* Calificaciones */}
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Title order={4} mb="md">Calificaciones</Title>
+                
+                <Stack gap="lg">
+                  <Group justify="space-between">
+                    <Text fw={500}>Calificación General</Text>
+                    {renderStarRating(supplier.performance.rating.overall)}
+                  </Group>
+                  
+                  <Divider />
+                  
+                  <Group justify="space-between">
+                    <Text>Calidad de Productos</Text>
+                    {renderStarRating(supplier.performance.rating.quality)}
+                  </Group>
+                  
+                  <Group justify="space-between">
+                    <Text>Precio</Text>
+                    {renderStarRating(supplier.performance.rating.price)}
+                  </Group>
+                  
+                  <Group justify="space-between">
+                    <Text>Entrega</Text>
+                    {renderStarRating(supplier.performance.rating.delivery)}
+                  </Group>
+                  
+                  <Group justify="space-between">
+                    <Text>Servicio</Text>
+                    {renderStarRating(supplier.performance.rating.service)}
+                  </Group>
+                  
+                  <Text size="xs" c="dimmed" fs="italic">
+                    Última actualización: {new Date(supplier.performance.rating.lastUpdated).toLocaleDateString()}
+                  </Text>
+                </Stack>
+                
+                <Divider my="xl" />
+                
+                <Title order={4} mb="md">Métricas de Desempeño</Title>
+                
+                <Stack gap="sm">
+                  <Group justify="space-between">
+                    <Text>Problemas de Calidad</Text>
+                    <Text fw={500}>
+                      {supplier.performance.metrics.qualityIssues} reportados
+                    </Text>
+                  </Group>
+                  
+                  <Group justify="space-between">
+                    <Text>Tasa de Devolución</Text>
+                    <Text fw={500}>
+                      {supplier.performance.metrics.returnRate}%
+                    </Text>
+                  </Group>
+                  
+                  <Group justify="space-between">
+                    <Text>Tiempo de Respuesta Promedio</Text>
+                    <Text fw={500}>
+                      {supplier.performance.metrics.responseTime} horas
+                    </Text>
+                  </Group>
+                  
+                  <Group justify="space-between">
+                    <Text>Días Promedio de Procesamiento</Text>
+                    <Text fw={500}>
+                      {supplier.performance.metrics.avgProcessingDays} días
+                    </Text>
+                  </Group>
+                </Stack>
+              </Grid.Col>
+              
+              {/* Historial de órdenes */}
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Title order={4} mb="md">Historial de Órdenes</Title>
+                
+                <Stack gap="md">
+                  <Grid>
+                    <Grid.Col span={6}>
+                      <Card withBorder>
+                        <Text ta="center">
+                          <Text size="xs" c="dimmed">Total de Órdenes</Text>
+                          <Title order={2}>
+                            {supplier.performance.orderHistory.totalOrders}
+                          </Title>
+                        </Text>
+                      </Card>
+                    </Grid.Col>
+                    
+                    <Grid.Col span={6}>
+                      <Card withBorder>
+                        <Text ta="center">
+                          <Text size="xs" c="dimmed">Valor Promedio</Text>
+                          <Title order={2}>
+                            {formatCurrency(supplier.performance.orderHistory.averageOrderValue)}
+                          </Title>
+                        </Text>
+                      </Card>
+                    </Grid.Col>
+                  </Grid>
+                  
+                  <Paper bg="gray.0" p="md">
+                    <Text fw={500} mb="md">Cumplimiento de Entregas</Text>
+                    
+                    <Stack gap="sm">
+                      <Group justify="space-between">
+                        <Group gap="xs">
+                          <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#22c55e' }}></div>
+                          <Text>A tiempo</Text>
+                        </Group>
+                        <Group gap="xs">
+                          <Text fw={500}>{supplier.performance.orderHistory.completedOnTime}</Text>
+                          <Text size="sm" c="dimmed">
+                            ({Math.round((supplier.performance.orderHistory.completedOnTime / supplier.performance.orderHistory.totalOrders) * 100)}%)
+                          </Text>
+                        </Group>
+                      </Group>
+                      
+                      <Group justify="space-between">
+                        <Group gap="xs">
+                          <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#eab308' }}></div>
+                          <Text>Con retraso</Text>
+                        </Group>
+                        <Group gap="xs">
+                          <Text fw={500}>{supplier.performance.orderHistory.completedLate}</Text>
+                          <Text size="sm" c="dimmed">
+                            ({Math.round((supplier.performance.orderHistory.completedLate / supplier.performance.orderHistory.totalOrders) * 100)}%)
+                          </Text>
+                        </Group>
+                      </Group>
+                      
+                      <Group justify="space-between">
+                        <Group gap="xs">
+                          <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#ef4444' }}></div>
+                          <Text>Canceladas</Text>
+                        </Group>
+                        <Group gap="xs">
+                          <Text fw={500}>{supplier.performance.orderHistory.cancelled}</Text>
+                          <Text size="sm" c="dimmed">
+                            ({Math.round((supplier.performance.orderHistory.cancelled / supplier.performance.orderHistory.totalOrders) * 100)}%)
+                          </Text>
+                        </Group>
+                      </Group>
+                    </Stack>
+                    
+                    {/* Progress bar visual */}
+                    <Progress.Root size="sm" mt="md">
+                      <Progress.Section 
+                        value={Math.round((supplier.performance.orderHistory.completedOnTime / supplier.performance.orderHistory.totalOrders) * 100)}
+                        color="green"
+                      />
+                      <Progress.Section 
+                        value={Math.round((supplier.performance.orderHistory.completedLate / supplier.performance.orderHistory.totalOrders) * 100)}
+                        color="yellow"
+                      />
+                      <Progress.Section 
+                        value={Math.round((supplier.performance.orderHistory.cancelled / supplier.performance.orderHistory.totalOrders) * 100)}
+                        color="red"
+                      />
+                    </Progress.Root>
+                  </Paper>
+                  
+                  <Button
+                    variant="light"
+                    fullWidth
+                    leftSection={<ClipboardDocumentListIcon className="w-4 h-4" />}
+                  >
+                    Ver Historial Detallado
+                  </Button>
+                </Stack>
+              </Grid.Col>
+            </Grid>
+          </Paper>
+        </Tabs.Panel>
       </Tabs>
-    </div>
+    </Stack>
   );
 }

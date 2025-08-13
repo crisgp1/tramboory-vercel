@@ -2,26 +2,34 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  Paper,
   Card,
-  CardBody,
-  CardHeader,
   Button,
-  Input,
+  TextInput,
   Select,
-  SelectItem,
   Switch,
-  Spinner,
-  Divider,
+  Loader,
   Tabs,
-  Tab
-} from '@heroui/react';
+  Group,
+  Stack,
+  Text,
+  Title,
+  Grid,
+  NumberInput,
+  Badge,
+  Alert,
+  Center,
+  ThemeIcon,
+  Divider
+} from '@mantine/core';
 import {
-  Cog6ToothIcon,
-  CurrencyDollarIcon,
-  CalendarDaysIcon,
-  ClockIcon,
-  CheckCircleIcon
-} from '@heroicons/react/24/outline';
+  IconSettings,
+  IconCurrencyDollar,
+  IconCalendar,
+  IconClock,
+  IconCheck,
+  IconAlertTriangle
+} from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import TimeBlocksManager from './TimeBlocksManager';
 
@@ -57,18 +65,18 @@ interface SystemConfig {
 }
 
 const daysOfWeek = [
-  { key: 0, label: 'Domingo' },
-  { key: 1, label: 'Lunes' },
-  { key: 2, label: 'Martes' },
-  { key: 3, label: 'Miércoles' },
-  { key: 4, label: 'Jueves' },
-  { key: 5, label: 'Viernes' },
-  { key: 6, label: 'Sábado' }
+  { value: '0', label: 'Domingo' },
+  { value: '1', label: 'Lunes' },
+  { value: '2', label: 'Martes' },
+  { value: '3', label: 'Miércoles' },
+  { value: '4', label: 'Jueves' },
+  { value: '5', label: 'Viernes' },
+  { value: '6', label: 'Sábado' }
 ];
 
 const timeSlots = Array.from({ length: 24 }, (_, i) => {
   const hour = i.toString().padStart(2, '0');
-  return { key: `${hour}:00`, label: `${hour}:00` };
+  return { value: `${hour}:00`, label: `${hour}:00` };
 });
 
 export default function SystemConfigManager() {
@@ -206,406 +214,275 @@ export default function SystemConfigManager() {
 
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center py-12">
-        <Spinner size="lg" className="text-foreground" />
-        <p className="text-neutral-500 mt-4">Cargando configuración del sistema...</p>
-      </div>
+      <Center py="xl">
+        <Stack align="center" gap="sm">
+          <Loader size="lg" />
+          <Text c="dimmed">Cargando configuración del sistema...</Text>
+        </Stack>
+      </Center>
     );
   }
 
   return (
-    <>
-      {/* Add the shimmer animation as a global style */}
-      <style>{`
-        @keyframes shimmer {
-          0% {
-            background-position: -200% 0;
-          }
-          100% {
-            background-position: 200% 0;
-          }
-        }
-        .shimmer-effect {
-          animation: shimmer 3s ease-in-out infinite;
-        }
-      `}</style>
-      
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 btn-primary rounded-lg flex items-center justify-center">
-              <Cog6ToothIcon className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground">
-                Configuración del Sistema
-              </h2>
-              <p className="text-sm text-neutral-600 mt-1">
+    <Stack gap="lg">
+      {/* Header */}
+      <Paper p="lg" withBorder>
+        <Group justify="space-between">
+          <Group gap="md">
+            <ThemeIcon size="lg" radius="md" color="blue">
+              <IconSettings size={24} />
+            </ThemeIcon>
+            <Stack gap={0}>
+              <Title order={2}>Configuración del Sistema</Title>
+              <Text size="sm" c="dimmed">
                 Ajusta los parámetros generales del sistema
-              </p>
-            </div>
-          </div>
+              </Text>
+            </Stack>
+          </Group>
           <Button
-            onPress={handleSave}
-            isLoading={saving}
-            isDisabled={!hasChanges}
-            className="btn-primary flex items-center gap-2"
-            size="lg"
+            onClick={handleSave}
+            loading={saving}
+            disabled={!hasChanges}
+            leftSection={<IconCheck size={16} />}
+            size="md"
           >
-            {!saving && <CheckCircleIcon className="w-4 h-4" />}
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </Button>
-        </div>
+        </Group>
+      </Paper>
 
-        {/* Tabs for different sections */}
-        <Tabs 
-          aria-label="Configuración"
-          classNames={{
-            tabList: "gap-6 w-full relative rounded-none p-0 border-b border-gray-200",
-            cursor: "w-full btn-primary",
-            tab: "max-w-fit px-4 h-12",
-            tabContent: "group-data-[selected=true]:text-foreground"
-          }}
-          color="primary"
-          variant="underlined"
-        >
-          <Tab key="general" title="Configuración General">
-            <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Business Hours & Days */}
-              <Card className="border border-gray-200 shadow-sm">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <CalendarDaysIcon className="w-5 h-5 text-neutral-600" />
-                    <h3 className="text-lg font-semibold">Horarios y Días</h3>
-                  </div>
-                </CardHeader>
-                <Divider />
-                <CardBody className="pt-4 space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Día de descanso</label>
+      {/* Tabs for different sections */}
+      <Tabs defaultValue="general">
+        <Tabs.List>
+          <Tabs.Tab value="general">Configuración General</Tabs.Tab>
+          <Tabs.Tab value="blocks">Bloques de Horarios</Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="general" pt="lg">
+          <Grid>
+            {/* Business Hours & Days */}
+            <Grid.Col span={{ base: 12, lg: 6 }}>
+              <Card withBorder>
+                <Card.Section p="md" withBorder>
+                  <Group gap="sm">
+                    <IconCalendar size={20} />
+                    <Title order={4}>Horarios y Días</Title>
+                  </Group>
+                </Card.Section>
+                <Card.Section p="md">
+                  <Stack gap="md">
                     <Select
+                      label="Día de descanso"
                       placeholder="Selecciona el día de descanso"
-                      selectedKeys={new Set([(config.restDay || 1).toString()])}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as string;
-                        handleConfigChange('restDay', parseInt(selected));
-                      }}
-                      variant="bordered"
-                      classNames={{
-                        trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 min-h-[40px]",
-                        value: "text-foreground",
-                        listboxWrapper: "bg-white",
-                        popoverContent: "bg-white border border-gray-200 shadow-lg",
-                        selectorIcon: "text-gray-400"
-                      }}
-                    >
-                      {daysOfWeek.map((day) => (
-                        <SelectItem key={day.key.toString()}>
-                          {day.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  </div>
+                      value={(config.restDay || 1).toString()}
+                      onChange={(value) => handleConfigChange('restDay', parseInt(value || '1'))}
+                      data={daysOfWeek}
+                    />
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Cargo por día de descanso</label>
-                    <div className="relative">
-                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
-                        <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
-                      </div>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={(config.restDayFee || 500).toString()}
-                        onValueChange={(value) => handleConfigChange('restDayFee', parseFloat(value) || 0)}
-                        variant="bordered"
-                        placeholder="500.00"
-                        classNames={{
-                          input: "text-foreground pl-8",
-                          inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                        }}
-                      />
-                    </div>
-                    <p className="text-xs text-neutral-500">Cargo adicional: {formatCurrency(config.restDayFee || 500)}</p>
-                  </div>
+                    <NumberInput
+                      label="Cargo por día de descanso"
+                      description={`Cargo adicional: ${formatCurrency(config.restDayFee || 500)}`}
+                      value={config.restDayFee || 500}
+                      onChange={(value) => handleConfigChange('restDayFee', typeof value === 'number' ? value : 0)}
+                      min={0}
+                      step={0.01}
+                      leftSection={<IconCurrencyDollar size={16} />}
+                      placeholder="500.00"
+                    />
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Hora de inicio</label>
-                      <Select
-                        placeholder="Selecciona hora de inicio"
-                        selectedKeys={new Set([config.businessHours?.start || '09:00'])}
-                        onSelectionChange={(keys) => {
-                          const selected = Array.from(keys)[0] as string;
-                          handleConfigChange('businessHours.start', selected);
-                        }}
-                        variant="bordered"
-                        classNames={{
-                          trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 min-h-[40px]",
-                          value: "text-foreground",
-                          listboxWrapper: "bg-white",
-                          popoverContent: "bg-white border border-gray-200 shadow-lg",
-                          selectorIcon: "text-gray-400"
-                        }}
-                      >
-                        {timeSlots.map((time) => (
-                          <SelectItem key={time.key}>
-                            {time.label}
-                          </SelectItem>
-                        ))}
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Hora de cierre</label>
-                      <Select
-                        placeholder="Selecciona hora de cierre"
-                        selectedKeys={new Set([config.businessHours?.end || '18:00'])}
-                        onSelectionChange={(keys) => {
-                          const selected = Array.from(keys)[0] as string;
-                          handleConfigChange('businessHours.end', selected);
-                        }}
-                        variant="bordered"
-                        classNames={{
-                          trigger: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900 min-h-[40px]",
-                          value: "text-foreground",
-                          listboxWrapper: "bg-white",
-                          popoverContent: "bg-white border border-gray-200 shadow-lg",
-                          selectorIcon: "text-gray-400"
-                        }}
-                      >
-                        {timeSlots.map((time) => (
-                          <SelectItem key={time.key}>
-                            {time.label}
-                          </SelectItem>
-                        ))}
-                      </Select>
-                    </div>
-                  </div>
-                </CardBody>
+                    <Grid>
+                      <Grid.Col span={6}>
+                        <Select
+                          label="Hora de inicio"
+                          placeholder="Selecciona hora de inicio"
+                          value={config.businessHours?.start || '09:00'}
+                          onChange={(value) => handleConfigChange('businessHours.start', value)}
+                          data={timeSlots}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <Select
+                          label="Hora de cierre"
+                          placeholder="Selecciona hora de cierre"
+                          value={config.businessHours?.end || '18:00'}
+                          onChange={(value) => handleConfigChange('businessHours.end', value)}
+                          data={timeSlots}
+                        />
+                      </Grid.Col>
+                    </Grid>
+                  </Stack>
+                </Card.Section>
               </Card>
+            </Grid.Col>
 
-              {/* Booking Settings */}
-              <Card className="border border-gray-200 shadow-sm">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <ClockIcon className="w-5 h-5 text-neutral-600" />
-                    <h3 className="text-lg font-semibold">Configuración de Reservas</h3>
-                  </div>
-                </CardHeader>
-                <Divider />
-                <CardBody className="pt-4 space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Días de anticipación mínima</label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={(config.advanceBookingDays || 7).toString()}
-                      onValueChange={(value) => handleConfigChange('advanceBookingDays', parseInt(value) || 1)}
-                      variant="bordered"
+            {/* Booking Settings */}
+            <Grid.Col span={{ base: 12, lg: 6 }}>
+              <Card withBorder>
+                <Card.Section p="md" withBorder>
+                  <Group gap="sm">
+                    <IconClock size={20} />
+                    <Title order={4}>Configuración de Reservas</Title>
+                  </Group>
+                </Card.Section>
+                <Card.Section p="md">
+                  <Stack gap="md">
+                    <NumberInput
+                      label="Días de anticipación mínima"
+                      description={`Mínimo ${config.advanceBookingDays || 7} días de anticipación`}
+                      value={config.advanceBookingDays || 7}
+                      onChange={(value) => handleConfigChange('advanceBookingDays', typeof value === 'number' ? value : 1)}
+                      min={1}
                       placeholder="7"
-                      classNames={{
-                        input: "text-foreground",
-                        inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                      }}
                     />
-                    <p className="text-xs text-neutral-500">Mínimo {config.advanceBookingDays || 7} días de anticipación</p>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Máximo de eventos simultáneos</label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={(config.maxConcurrentEvents || 3).toString()}
-                      onValueChange={(value) => handleConfigChange('maxConcurrentEvents', parseInt(value) || 1)}
-                      variant="bordered"
+                    <NumberInput
+                      label="Máximo de eventos simultáneos"
+                      description={`Máximo ${config.maxConcurrentEvents || 3} eventos al mismo tiempo`}
+                      value={config.maxConcurrentEvents || 3}
+                      onChange={(value) => handleConfigChange('maxConcurrentEvents', typeof value === 'number' ? value : 1)}
+                      min={1}
                       placeholder="3"
-                      classNames={{
-                        input: "text-foreground",
-                        inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                      }}
                     />
-                    <p className="text-xs text-neutral-500">Máximo {config.maxConcurrentEvents || 3} eventos al mismo tiempo</p>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Duración predeterminada del evento (horas)</label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="12"
-                      value={(config.defaultEventDuration || 4).toString()}
-                      onValueChange={(value) => handleConfigChange('defaultEventDuration', parseInt(value) || 4)}
-                      variant="bordered"
+                    <NumberInput
+                      label="Duración predeterminada del evento (horas)"
+                      description={`Duración estándar: ${config.defaultEventDuration || 4} horas`}
+                      value={config.defaultEventDuration || 4}
+                      onChange={(value) => handleConfigChange('defaultEventDuration', typeof value === 'number' ? value : 4)}
+                      min={1}
+                      max={12}
                       placeholder="4"
-                      classNames={{
-                        input: "text-foreground",
-                        inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-gray-900"
-                      }}
                     />
-                    <p className="text-xs text-neutral-500">Duración estándar: {config.defaultEventDuration || 4} horas</p>
-                  </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Estado del sistema</label>
-                    <div 
-                      className={`relative p-5 rounded-lg border transition-all duration-300 cursor-pointer group overflow-hidden ${
-                        config.isActive 
-                          ? 'border-emerald-200 bg-white shadow-sm' 
-                          : 'border-slate-300 bg-slate-50'
-                      }`}
-                      onClick={() => handleConfigChange('isActive', !config.isActive)}
-                    >
-                      {/* Efecto de borde iluminado progresivo */}
-                      {config.isActive && (
-                        <>
-                          <div className="absolute inset-0 rounded-lg border-2 border-emerald-400 opacity-60 animate-pulse"></div>
-                          <div className="absolute inset-0 rounded-lg">
-                            <div 
-                              className="absolute inset-0 rounded-lg border-2 border-transparent bg-gradient-to-r from-transparent via-emerald-300 to-transparent bg-[length:200%_100%] shimmer-effect border-solid"
-                              style={{
-                                backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.4) 50%, transparent 100%)',
-                                backgroundSize: '200% 100%'
-                              }}
+                    <Stack gap="sm">
+                      <Text size="sm" fw={500}>Estado del sistema</Text>
+                      <Card 
+                        withBorder
+                        p="md" 
+                        style={{ 
+                          cursor: 'pointer',
+                          backgroundColor: config.isActive ? 'var(--mantine-color-green-0)' : 'var(--mantine-color-gray-0)',
+                          borderColor: config.isActive ? 'var(--mantine-color-green-3)' : 'var(--mantine-color-gray-3)'
+                        }}
+                        onClick={() => handleConfigChange('isActive', !config.isActive)}
+                      >
+                        <Group justify="space-between">
+                          <Group gap="sm">
+                            <ThemeIcon 
+                              size="sm" 
+                              radius="xl" 
+                              color={config.isActive ? 'green' : 'gray'}
+                              variant={config.isActive ? 'filled' : 'light'}
                             >
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      
-                      <div className="relative flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {/* Indicador minimalista nórdico */}
-                          <div className="relative">
-                            <div className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                              config.isActive 
-                                ? 'bg-emerald-500 shadow-sm' 
-                                : 'bg-slate-400'
-                            }`}></div>
-                            {/* Sutil efecto de glow solo cuando está activo */}
-                            {config.isActive && (
-                              <div className="absolute inset-0 w-3 h-3 rounded-full bg-emerald-400 opacity-30 animate-ping"></div>
-                            )}
-                          </div>
-                          
-                          <div>
-                            <span className={`text-base font-medium transition-colors duration-300 ${
-                              config.isActive ? 'text-slate-900' : 'text-slate-600'
-                            }`}>
-                              {config.isActive ? 'Sistema Activo' : 'Sistema Inactivo'}
-                            </span>
-                            <p className="text-sm text-slate-500 mt-0.5">
-                              {config.isActive ? 'Permite nuevas reservas' : 'No permite nuevas reservas'}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Toggle minimalista nórdico */}
-                        <div className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                          config.isActive 
-                            ? 'bg-emerald-500' 
-                            : 'bg-slate-300'
-                        }`}>
-                          <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-300 transform ${
-                            config.isActive ? 'translate-x-6' : 'translate-x-0.5'
-                          }`}></div>
-                        </div>
-                      </div>
-                      
-                      {/* Efecto hover muy sutil */}
-                      <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-slate-50/50"></div>
-                    </div>
-                  </div>
-                </CardBody>
+                              {config.isActive ? <IconCheck size={12} /> : <IconAlertTriangle size={12} />}
+                            </ThemeIcon>
+                            <Stack gap={0}>
+                              <Text fw={500}>
+                                {config.isActive ? 'Sistema Activo' : 'Sistema Inactivo'}
+                              </Text>
+                              <Text size="xs" c="dimmed">
+                                {config.isActive ? 'Permite nuevas reservas' : 'No permite nuevas reservas'}
+                              </Text>
+                            </Stack>
+                          </Group>
+                          <Switch
+                            checked={config.isActive}
+                            onChange={(e) => handleConfigChange('isActive', e.currentTarget.checked)}
+                            size="md"
+                          />
+                        </Group>
+                      </Card>
+                    </Stack>
+                  </Stack>
+                </Card.Section>
               </Card>
-            </div>
-          </Tab>
-          
-          <Tab key="blocks" title="Bloques de Horarios">
-            <div className="mt-6">
-              <TimeBlocksManager
-                timeBlocks={config.timeBlocks || []}
-                restDays={config.restDays || []}
-                onUpdateTimeBlocks={(blocks) => {
-                  handleConfigChange('timeBlocks', blocks);
-                }}
-                onUpdateRestDays={(days) => {
-                  handleConfigChange('restDays', days);
-                }}
-              />
-            </div>
-          </Tab>
-        </Tabs>
+            </Grid.Col>
+          </Grid>
+        </Tabs.Panel>
+        
+        <Tabs.Panel value="blocks" pt="lg">
+          <TimeBlocksManager
+            timeBlocks={config.timeBlocks || []}
+            restDays={config.restDays || []}
+            onUpdateTimeBlocks={(blocks) => {
+              handleConfigChange('timeBlocks', blocks);
+            }}
+            onUpdateRestDays={(days) => {
+              handleConfigChange('restDays', days);
+            }}
+          />
+        </Tabs.Panel>
+      </Tabs>
 
-        {/* Summary Card */}
-        <Card className="border border-gray-200 shadow-sm bg-gray-50">
-          <CardHeader className="pb-3">
-            <h3 className="text-lg font-semibold">Resumen de Configuración</h3>
-          </CardHeader>
-          <Divider />
-          <CardBody className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-                <div className="text-2xl font-semibold text-orange-600 mb-1">
-                  {daysOfWeek.find(d => d.key === (config.restDay || 1))?.label}
-                </div>
-                <div className="text-sm text-neutral-600">Día de descanso</div>
-                <div className="text-xs text-neutral-500 mt-1">
+      {/* Summary Card */}
+      <Card withBorder style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+        <Card.Section p="md" withBorder>
+          <Title order={4}>Resumen de Configuración</Title>
+        </Card.Section>
+        <Card.Section p="md">
+          <Grid>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder ta="center" p="md">
+                <Text size="xl" fw={700} c="orange">
+                  {daysOfWeek.find(d => d.value === (config.restDay || 1).toString())?.label}
+                </Text>
+                <Text size="sm" c="dimmed">Día de descanso</Text>
+                <Text size="xs" c="dimmed">
                   +{formatCurrency(config.restDayFee || 500)}
-                </div>
-              </div>
+                </Text>
+              </Card>
+            </Grid.Col>
 
-              <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-                <div className="text-2xl font-semibold text-blue-600 mb-1">
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder ta="center" p="md">
+                <Text size="xl" fw={700} c="blue">
                   {config.businessHours?.start || '09:00'} - {config.businessHours?.end || '18:00'}
-                </div>
-                <div className="text-sm text-neutral-600">Horario de atención</div>
-              </div>
+                </Text>
+                <Text size="sm" c="dimmed">Horario de atención</Text>
+              </Card>
+            </Grid.Col>
 
-              <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-                <div className="text-2xl font-semibold text-green-600 mb-1">
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder ta="center" p="md">
+                <Text size="xl" fw={700} c="green">
                   {config.advanceBookingDays || 7}
-                </div>
-                <div className="text-sm text-neutral-600">Días de anticipación</div>
-              </div>
+                </Text>
+                <Text size="sm" c="dimmed">Días de anticipación</Text>
+              </Card>
+            </Grid.Col>
 
-              <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-                <div className="text-2xl font-semibold text-purple-600 mb-1">
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder ta="center" p="md">
+                <Text size="xl" fw={700} c="violet">
                   {config.maxConcurrentEvents || 3}
-                </div>
-                <div className="text-sm text-neutral-600">Eventos simultáneos</div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+                </Text>
+                <Text size="sm" c="dimmed">Eventos simultáneos</Text>
+              </Card>
+            </Grid.Col>
+          </Grid>
+        </Card.Section>
+      </Card>
 
-        {/* Changes Indicator */}
-        {hasChanges && (
-          <Card className="border-2 border-orange-200 bg-orange-50">
-            <CardBody className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
-                  <span className="text-orange-800 font-medium">
-                    Tienes cambios sin guardar
-                  </span>
-                </div>
-                <Button
-                  variant="flat"
-                  size="sm"
-                  onPress={handleSave}
-                  isLoading={saving}
-                  className="bg-orange-100 text-orange-800 hover:bg-orange-200"
-                >
-                  Guardar ahora
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-      </div>
-    </>
+      {/* Changes Indicator */}
+      {hasChanges && (
+        <Alert 
+          icon={<IconAlertTriangle size={16} />}
+          title="Cambios sin guardar"
+          color="orange"
+          action={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSave}
+              loading={saving}
+            >
+              Guardar ahora
+            </Button>
+          }
+        >
+          Tienes cambios sin guardar en la configuración del sistema.
+        </Alert>
+      )}
+    </Stack>
   );
 }

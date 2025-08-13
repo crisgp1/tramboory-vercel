@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { Lexend, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
+import '@mantine/dropzone/styles.css';
+import '@mantine/carousel/styles.css';
+import '@mantine/charts/styles.css';
+import '@mantine/notifications/styles.css';
+import '@mantine/spotlight/styles.css';
 import Providers from "@/components/providers/Providers";
 import { Analytics } from "@vercel/analytics/next"
 
@@ -32,6 +39,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

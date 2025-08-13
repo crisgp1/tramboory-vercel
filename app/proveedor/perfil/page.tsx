@@ -8,8 +8,9 @@ export const metadata: Metadata = {
 
 export default function SupplierProfilePage() {
   return (
-    <main className="container mx-auto px-4 py-6">
+    <>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Perfil de Proveedor</h1>
       <SupplierProfile />
-    </main>
+    </>
   );
 }

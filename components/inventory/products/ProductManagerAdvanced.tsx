@@ -2,21 +2,30 @@
 
 import React, { useState, useEffect } from "react"
 import { 
-  Input,
+  TextInput,
   Button,
-  useDisclosure,
-  Spinner,
-  Pagination
-} from "@heroui/react"
+  Loader,
+  Pagination,
+  Modal,
+  Group,
+  Stack,
+  Badge,
+  Card,
+  Title,
+  Text,
+  ActionIcon,
+  Menu
+} from "@mantine/core"
+import { useDisclosure } from "@mantine/hooks"
 import {
-  MagnifyingGlassIcon,
-  PlusIcon,
-  PencilIcon,
-  EyeIcon,
-  TrashIcon,
-  CubeIcon,
-  FunnelIcon
-} from "@heroicons/react/24/outline"
+  IconSearch,
+  IconPlus,
+  IconPencil,
+  IconEye,
+  IconTrash,
+  IconCube,
+  IconFilter
+} from "@tabler/icons-react"
 import { useRole } from "@/hooks/useRole"
 import { 
   NordicTable, 
@@ -55,7 +64,7 @@ interface ProductManagerProps {
 
 export default function ProductManagerNordic({ searchQuery = "" }: ProductManagerProps) {
   const { role, isAdmin, isGerente } = useRole()
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [opened, { open, close }] = useDisclosure(false)
   
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -115,19 +124,19 @@ export default function ProductManagerNordic({ searchQuery = "" }: ProductManage
   const handleView = (product: Product) => {
     setSelectedProduct(product)
     setModalMode('view')
-    onOpen()
+    open()
   }
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product)
     setModalMode('edit')
-    onOpen()
+    open()
   }
 
   const handleCreate = () => {
     setSelectedProduct(null)
     setModalMode('create')
-    onOpen()
+    open()
   }
 
   const handleDelete = async (product: Product) => {
@@ -173,14 +182,14 @@ export default function ProductManagerNordic({ searchQuery = "" }: ProductManage
     {
       key: 'view',
       label: 'Ver detalles',
-      icon: <EyeIcon className="w-4 h-4" />,
+      icon: <IconEye size={16} />,
       onClick: handleView,
       variant: 'ghost' as const
     },
     {
       key: 'edit',
       label: 'Editar',
-      icon: <PencilIcon className="w-4 h-4" />,
+      icon: <IconPencil size={16} />,
       onClick: handleEdit,
       variant: 'ghost' as const,
       isVisible: () => canEdit
@@ -188,7 +197,7 @@ export default function ProductManagerNordic({ searchQuery = "" }: ProductManage
     {
       key: 'delete',
       label: 'Eliminar',
-      icon: <TrashIcon className="w-4 h-4" />,
+      icon: <IconTrash size={16} />,
       onClick: handleDelete,
       variant: 'danger' as const,
       isVisible: () => canEdit
@@ -206,7 +215,7 @@ export default function ProductManagerNordic({ searchQuery = "" }: ProductManage
               rounded-[${nordicTokens.radius.md}]
               flex items-center justify-center
             `}>
-              <CubeIcon className="w-5 h-5 text-gray-600" />
+              <IconCube size={20} className="text-gray-600" />
             </div>
             <div>
               <p className={`
@@ -293,73 +302,64 @@ export default function ProductManagerNordic({ searchQuery = "" }: ProductManage
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Actions */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Input
-            placeholder="Buscar productos..."
-            value={localSearch}
-            onValueChange={setLocalSearch}
-            startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
-            className="w-80"
-            classNames={{
-              inputWrapper: `
-                bg-[${nordicTokens.colors.background.primary}]
-                border border-[${nordicTokens.colors.border.primary}]
-                rounded-[${nordicTokens.radius.md}]
-                hover:border-[${nordicTokens.colors.text.secondary}]
-                focus-within:border-[${nordicTokens.colors.border.focus}]
-                h-10
-              `,
-              input: `
-                text-[${nordicTokens.colors.text.primary}]
-                placeholder:text-[${nordicTokens.colors.text.tertiary}]
-              `
+    <Card>
+      <Stack spacing="md">
+        {/* Header Actions */}
+        <Group position="apart">
+          <Group>
+            <TextInput
+              placeholder="Buscar productos..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.currentTarget.value)}
+              icon={<IconSearch size={16} />}
+              style={{ width: 320 }}
+            />
+            <Button variant="light" leftIcon={<IconFilter size={16} />}>
+              Filtros
+            </Button>
+          </Group>
+
+          {canEdit && (
+            <Button
+              onClick={handleCreate}
+              leftIcon={<IconPlus size={16} />}
+            >
+              Nuevo Producto
+            </Button>
+          )}
+        </Group>
+
+        {/* Products Table */}
+        {loading ? (
+          <Group position="center" style={{ padding: 40 }}>
+            <Loader />
+          </Group>
+        ) : (
+          <NordicTable
+            columns={columns}
+            data={products}
+            renderCell={renderCell}
+            actions={actions}
+            loading={loading}
+            emptyMessage="No se encontraron productos"
+            pagination={{
+              total: totalPages * itemsPerPage,
+              current: currentPage,
+              onChange: setCurrentPage,
+              pageSize: itemsPerPage
             }}
           />
-          <NordicButton variant="ghost" size="sm">
-            <FunnelIcon className="w-4 h-4 mr-2" />
-            Filtros
-          </NordicButton>
-        </div>
-
-        {canEdit && (
-          <NordicButton 
-            variant="primary" 
-            size="md"
-            onPress={handleCreate}
-          >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Nuevo Producto
-          </NordicButton>
         )}
-      </div>
 
-      {/* Products Table */}
-      <NordicTable
-        columns={columns}
-        data={products}
-        renderCell={renderCell}
-        actions={actions}
-        loading={loading}
-        emptyMessage="No se encontraron productos"
-        pagination={{
-          total: totalPages * itemsPerPage,
-          current: currentPage,
-          onChange: setCurrentPage,
-          pageSize: itemsPerPage
-        }}
-      />
-
-      {/* Product Modal */}
-      <ProductModal
-        isOpen={isOpen}
-        onClose={onClose}
-        product={selectedProduct as any}
-        mode={modalMode}
-        onSuccess={fetchProducts}
-      />
-    </div>
+        {/* Product Modal */}
+        <ProductModal
+          isOpen={opened}
+          onClose={close}
+          product={selectedProduct as any}
+          mode={modalMode}
+          onSuccess={fetchProducts}
+        />
+      </Stack>
+    </Card>
   )
 }

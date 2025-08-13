@@ -2,27 +2,27 @@
 
 import React, { useState } from 'react';
 import {
-  Input,
+  TextInput,
   Button,
   Select,
-  SelectItem,
-  DatePicker,
   Card,
-  CardBody,
-  Chip,
+  Badge,
   Autocomplete,
-  AutocompleteItem
-} from '@heroui/react';
+  Group,
+  Stack,
+  Text,
+  ActionIcon
+} from '@mantine/core';
 import {
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  XMarkIcon,
-  CalendarIcon,
-  TagIcon,
-  CurrencyDollarIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon
-} from '@heroicons/react/24/outline';
+  IconSearch,
+  IconFilter,
+  IconX,
+  IconCalendar,
+  IconTag,
+  IconCurrencyDollar,
+  IconTrendingUp,
+  IconTrendingDown
+} from '@tabler/icons-react';
 import { 
   FINANCE_TYPES, 
   FINANCE_CATEGORIES, 
@@ -116,36 +116,33 @@ export default function FinanceFilters({
   };
 
   return (
-    <Card className="border border-gray-200 shadow-none bg-white">
-      <CardBody className="p-4">
+    <Card withBorder p="md" shadow="none" style={{ backgroundColor: 'white' }}>
         {/* Barra de búsqueda principal */}
-        <div className="flex flex-col lg:flex-row gap-3 mb-4">
-          <div className="flex-1">
-            <Input
+        <Group gap="md" mb="md" style={{ flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '300px' }}>
+            <TextInput
               placeholder="Buscar por descripción, cliente, notas..."
               value={searchTerm}
-              onValueChange={onSearchChange}
-              startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
-              classNames={{
-                input: "text-sm",
-                inputWrapper: "form-input"
-              }}
+              onChange={(e) => onSearchChange(e.target.value)}
+              leftSection={<IconSearch size={16} />}
+              size="sm"
             />
           </div>
           
-          <div className="flex gap-2">
+          <Group gap="xs">
             <Button
               variant="light"
               size="sm"
-              className={`border border-gray-200 hover:border-gray-300 ${
-                isExpanded ? 'bg-gray-100' : 'bg-white'
-              }`}
-              onPress={() => setIsExpanded(!isExpanded)}
-              startContent={<FunnelIcon className="w-4 h-4" />}
+              style={{
+                backgroundColor: isExpanded ? 'var(--mantine-color-gray-1)' : 'white',
+                border: '1px solid var(--mantine-color-gray-3)'
+              }}
+              onClick={() => setIsExpanded(!isExpanded)}
+              leftSection={<IconFilter size={16} />}
             >
               Filtros
               {hasActiveFilters && (
-                <span className="ml-1 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <Badge size="xs" color="blue" style={{ marginLeft: '4px' }}>
                   {[selectedType, selectedCategory, selectedStatus, selectedPaymentMethod]
                     .filter(Boolean).length + 
                    selectedTags.length + 
@@ -153,7 +150,7 @@ export default function FinanceFilters({
                    (endDate ? 1 : 0) +
                    (minAmount !== undefined ? 1 : 0) +
                    (maxAmount !== undefined ? 1 : 0)}
-                </span>
+                </Badge>
               )}
             </Button>
             
@@ -161,111 +158,88 @@ export default function FinanceFilters({
               <Button
                 variant="light"
                 size="sm"
-                className="border border-gray-200 hover:border-gray-300 text-gray-600 hover:text-red-600"
-                onPress={onClearFilters}
-                startContent={<XMarkIcon className="w-4 h-4" />}
+                c="red"
+                style={{
+                  border: '1px solid var(--mantine-color-gray-3)'
+                }}
+                onClick={onClearFilters}
+                leftSection={<IconX size={16} />}
               >
                 Limpiar
               </Button>
             )}
-          </div>
-        </div>
+          </Group>
+        </Group>
 
         {/* Filtros expandidos */}
         {isExpanded && (
-          <div className="space-y-4 pt-4 border-t border-gray-100">
+          <Stack gap="md" pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
             {/* Fila 1: Tipo, Categoría, Estado */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--mantine-spacing-sm)' }}>
               <Select
                 label="Tipo"
                 placeholder="Todos los tipos"
-                selectedKeys={selectedType ? [selectedType] : []}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0] as string;
-                  onTypeChange(value || '');
-                }}
-                classNames={{
-                  trigger: "form-input",
-                  label: "text-sm font-medium text-gray-700"
-                }}
-              >
-                {FINANCE_TYPES.map((type) => (
-                  <SelectItem
-                    key={type}
-                    startContent={type === 'income' ?
-                      <ArrowTrendingUpIcon className="w-4 h-4 text-green-500" /> :
-                      <ArrowTrendingDownIcon className="w-4 h-4 text-red-500" />
-                    }
-                  >
-                    {FINANCE_TYPE_LABELS[type]}
-                  </SelectItem>
-                ))}
-              </Select>
+                value={selectedType || ''}
+                onChange={(value) => onTypeChange(value || '')}
+                data={[
+                  ...FINANCE_TYPES.map((type) => ({
+                    value: type,
+                    label: FINANCE_TYPE_LABELS[type]
+                  }))
+                ]}
+                clearable
+                size="sm"
+              />
 
               <Select
                 label="Categoría"
                 placeholder="Todas las categorías"
-                selectedKeys={selectedCategory ? [selectedCategory] : []}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0] as string;
-                  onCategoryChange(value || '');
-                }}
-                classNames={{
-                  trigger: "form-input",
-                  label: "text-sm font-medium text-gray-700"
-                }}
-              >
-                {FINANCE_CATEGORIES.map((category) => (
-                  <SelectItem key={category}>
-                    {FINANCE_CATEGORY_LABELS[category]}
-                  </SelectItem>
-                ))}
-              </Select>
+                value={selectedCategory || ''}
+                onChange={(value) => onCategoryChange(value || '')}
+                data={[
+                  ...FINANCE_CATEGORIES.map((category) => ({
+                    value: category,
+                    label: FINANCE_CATEGORY_LABELS[category]
+                  }))
+                ]}
+                clearable
+                size="sm"
+              />
 
               <Select
                 label="Estado"
                 placeholder="Todos los estados"
-                selectedKeys={selectedStatus ? [selectedStatus] : []}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0] as string;
-                  onStatusChange(value || '');
-                }}
-                classNames={{
-                  trigger: "form-input",
-                  label: "text-sm font-medium text-gray-700"
-                }}
-              >
-                {FINANCE_STATUSES.map((status) => (
-                  <SelectItem key={status}>
-                    {FINANCE_STATUS_LABELS[status]}
-                  </SelectItem>
-                ))}
-              </Select>
+                value={selectedStatus || ''}
+                onChange={(value) => onStatusChange(value || '')}
+                data={[
+                  ...FINANCE_STATUSES.map((status) => ({
+                    value: status,
+                    label: FINANCE_STATUS_LABELS[status]
+                  }))
+                ]}
+                clearable
+                size="sm"
+              />
             </div>
 
             {/* Fila 2: Método de pago y rango de fechas */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--mantine-spacing-sm)' }}>
               <Select
                 label="Método de pago"
                 placeholder="Todos los métodos"
-                selectedKeys={selectedPaymentMethod ? [selectedPaymentMethod] : []}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0] as string;
-                  onPaymentMethodChange(value || '');
-                }}
-                classNames={{
-                  trigger: "form-input",
-                  label: "text-sm font-medium text-gray-700"
-                }}
-              >
-                {PAYMENT_METHODS.map((method) => (
-                  <SelectItem key={method}>
-                    {PAYMENT_METHOD_LABELS[method]}
-                  </SelectItem>
-                ))}
-              </Select>
+                value={selectedPaymentMethod || ''}
+                onChange={(value) => onPaymentMethodChange(value || '')}
+                data={[
+                  ...PAYMENT_METHODS.map((method) => ({
+                    value: method,
+                    label: PAYMENT_METHOD_LABELS[method]
+                  }))
+                ]}
+                clearable
+                size="sm"
+              />
 
-              <Input
+              <TextInput
                 type="date"
                 label="Fecha desde"
                 value={startDate ? startDate.toISOString().split('T')[0] : ''}
@@ -273,15 +247,11 @@ export default function FinanceFilters({
                   const date = e.target.value ? new Date(e.target.value) : null;
                   onStartDateChange(date);
                 }}
-                classNames={{
-                  input: "text-sm",
-                  inputWrapper: "form-input",
-                  label: "text-sm font-medium text-gray-700"
-                }}
-                startContent={<CalendarIcon className="w-4 h-4 text-gray-400" />}
+                leftSection={<IconCalendar size={16} />}
+                size="sm"
               />
 
-              <Input
+              <TextInput
                 type="date"
                 label="Fecha hasta"
                 value={endDate ? endDate.toISOString().split('T')[0] : ''}
@@ -289,111 +259,91 @@ export default function FinanceFilters({
                   const date = e.target.value ? new Date(e.target.value) : null;
                   onEndDateChange(date);
                 }}
-                classNames={{
-                  input: "text-sm",
-                  inputWrapper: "form-input",
-                  label: "text-sm font-medium text-gray-700"
-                }}
-                startContent={<CalendarIcon className="w-4 h-4 text-gray-400" />}
+                leftSection={<IconCalendar size={16} />}
+                size="sm"
               />
             </div>
 
             {/* Fila 3: Rango de montos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Input
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--mantine-spacing-sm)' }}>
+              <TextInput
                 type="number"
                 label="Monto mínimo"
                 placeholder="0.00"
                 value={minAmount?.toString() || ''}
-                onValueChange={(value) => {
-                  const num = parseFloat(value);
+                onChange={(e) => {
+                  const num = parseFloat(e.target.value);
                   onMinAmountChange(isNaN(num) ? undefined : num);
                 }}
-                startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-                classNames={{
-                  input: "text-sm",
-                  inputWrapper: "form-input",
-                  label: "text-sm font-medium text-gray-700"
-                }}
+                leftSection={<IconCurrencyDollar size={16} />}
+                size="sm"
               />
 
-              <Input
+              <TextInput
                 type="number"
                 label="Monto máximo"
                 placeholder="0.00"
                 value={maxAmount?.toString() || ''}
-                onValueChange={(value) => {
-                  const num = parseFloat(value);
+                onChange={(e) => {
+                  const num = parseFloat(e.target.value);
                   onMaxAmountChange(isNaN(num) ? undefined : num);
                 }}
-                startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-                classNames={{
-                  input: "text-sm",
-                  inputWrapper: "form-input",
-                  label: "text-sm font-medium text-gray-700"
-                }}
+                leftSection={<IconCurrencyDollar size={16} />}
+                size="sm"
               />
             </div>
 
             {/* Fila 4: Tags */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Etiquetas</label>
+            <Stack gap="sm">
+              <Text size="sm" fw={500}>Etiquetas</Text>
               
-              <div className="flex gap-2">
+              <Group gap="sm">
                 <Autocomplete
                   placeholder="Agregar etiqueta..."
                   value={tagInput}
-                  onInputChange={setTagInput}
-                  onSelectionChange={(key) => {
-                    if (key) {
-                      handleTagAdd(key as string);
-                    }
+                  onChange={setTagInput}
+                  onOptionSubmit={(value) => {
+                    handleTagAdd(value);
                   }}
                   onKeyDown={handleTagInputKeyDown}
-                  startContent={<TagIcon className="w-4 h-4 text-gray-400" />}
-                  classNames={{
-                    base: "flex-1"
-                  }}
-                  className="form-input"
-                >
-                  {availableTags.map((tag) => (
-                    <AutocompleteItem key={tag}>
-                      {tag}
-                    </AutocompleteItem>
-                  ))}
-                </Autocomplete>
+                  leftSection={<IconTag size={16} />}
+                  data={availableTags}
+                  style={{ flex: 1 }}
+                  size="sm"
+                />
                 
                 <Button
                   size="sm"
                   variant="light"
-                  className="border border-gray-200 hover:border-gray-300"
-                  onPress={() => handleTagAdd(tagInput.trim())}
-                  isDisabled={!tagInput.trim() || selectedTags.includes(tagInput.trim())}
+                  style={{
+                    border: '1px solid var(--mantine-color-gray-3)'
+                  }}
+                  onClick={() => handleTagAdd(tagInput.trim())}
+                  disabled={!tagInput.trim() || selectedTags.includes(tagInput.trim())}
                 >
                   Agregar
                 </Button>
-              </div>
+              </Group>
 
               {selectedTags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <Group gap="xs" mt="xs">
                   {selectedTags.map((tag) => (
-                    <Chip
+                    <Badge
                       key={tag}
-                      variant="flat"
-                      color="primary"
+                      variant="outline"
+                      color="blue"
                       size="sm"
-                      onClose={() => handleTagRemove(tag)}
-                      startContent={<TagIcon className="w-3 h-3" />}
+                      rightSection={<ActionIcon size="xs" variant="transparent" onClick={() => handleTagRemove(tag)}><IconX size={10} /></ActionIcon>}
+                      leftSection={<IconTag size={10} />}
                     >
                       {tag}
-                    </Chip>
+                    </Badge>
                   ))}
-                </div>
+                </Group>
               )}
-            </div>
-          </div>
+            </Stack>
+          </Stack>
         )}
-      </CardBody>
     </Card>
   );
 }

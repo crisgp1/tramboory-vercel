@@ -2,25 +2,25 @@
 
 import React, { useState } from "react"
 import {
-  ExclamationTriangleIcon,
-  CurrencyDollarIcon,
-  DocumentTextIcon,
-  CalendarIcon,
-  UserIcon,
-  ShieldExclamationIcon,
-  ClockIcon,
-  ArchiveBoxIcon,
-  ExclamationCircleIcon,
-  CalendarDaysIcon,
-  XCircleIcon,
-  DocumentMagnifyingGlassIcon,
-  CalculatorIcon,
-  ShieldCheckIcon,
-  ChatBubbleLeftRightIcon,
-  PhoneIcon,
-  ArrowPathIcon,
-  EllipsisHorizontalIcon
-} from "@heroicons/react/24/outline"
+  IconAlertTriangle,
+  IconCurrencyDollar,
+  IconFileText,
+  IconCalendar,
+  IconUser,
+  IconShieldExclamation,
+  IconClock,
+  IconArchive,
+  IconAlertCircle,
+  IconCalendarEvent,
+  IconCircleX,
+  IconFileSearch,
+  IconCalculator,
+  IconShieldCheck,
+  IconMessageCircle,
+  IconPhone,
+  IconRefresh,
+  IconDots
+} from "@tabler/icons-react"
 import { 
   PenaltyConcept, 
   PenaltySeverity, 
@@ -29,7 +29,8 @@ import {
   PenaltyConceptConfig 
 } from "@/types/supplier-penalties"
 import toast from "react-hot-toast"
-import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
+import { Modal, Button, Select, TextInput, Textarea, NumberInput, Group, Stack, Badge, Text, Divider, Paper, Avatar } from '@mantine/core'
+import { DateInput } from '@mantine/dates'
 
 interface Supplier {
   _id: string
@@ -51,22 +52,22 @@ interface SupplierPenaltyModalProps {
   onSuccess: () => void
 }
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  ClockIcon,
-  ExclamationTriangleIcon,
-  ArchiveBoxIcon,
-  ExclamationCircleIcon,
-  ShieldExclamationIcon,
-  CalendarDaysIcon,
-  XCircleIcon,
-  DocumentMagnifyingGlassIcon,
-  CalculatorIcon,
-  ShieldCheckIcon,
-  ChatBubbleLeftRightIcon,
-  PhoneIcon,
-  ArrowPathIcon,
-  DocumentTextIcon,
-  EllipsisHorizontalIcon
+const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  ClockIcon: IconClock,
+  ExclamationTriangleIcon: IconAlertTriangle,
+  ArchiveBoxIcon: IconArchive,
+  ExclamationCircleIcon: IconAlertCircle,
+  ShieldExclamationIcon: IconShieldExclamation,
+  CalendarDaysIcon: IconCalendarEvent,
+  XCircleIcon: IconCircleX,
+  DocumentMagnifyingGlassIcon: IconFileSearch,
+  CalculatorIcon: IconCalculator,
+  ShieldCheckIcon: IconShieldCheck,
+  ChatBubbleLeftRightIcon: IconMessageCircle,
+  PhoneIcon: IconPhone,
+  ArrowPathIcon: IconRefresh,
+  DocumentTextIcon: IconFileText,
+  EllipsisHorizontalIcon: IconDots
 }
 
 export default function SupplierPenaltyModal({
@@ -155,242 +156,204 @@ export default function SupplierPenaltyModal({
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={isOpen}
       onClose={handleClose}
       title={getTitle()}
-      subtitle={getSubtitle()}
-      icon={ExclamationTriangleIcon}
       size="lg"
-      footer={
-        <ModalFooter>
-          <div>
-            {!selectedConcept || !selectedSeverity || !incidentDate || !description ? (
-              <p className="text-red-600 text-sm">Completa todos los campos requeridos</p>
-            ) : null}
-          </div>
-          
-          <ModalActions>
-            <ModalButton
-              onClick={handleClose}
-              disabled={loading}
-              variant="secondary"
-            >
-              Cancelar
-            </ModalButton>
-            
-            <ModalButton
-              onClick={handleSubmit}
-              disabled={loading || !selectedConcept || !selectedSeverity || !incidentDate || !description}
-              loading={loading}
-              variant="danger"
-            >
-              Registrar Penalización
-            </ModalButton>
-          </ModalActions>
-        </ModalFooter>
-      }
     >
-      <div className="space-y-6">
+      <Stack spacing="md">
+        {/* Subtitle */}
+        {supplier && (
+          <Text size="sm" color="dimmed">{supplier.name} • {supplier.code}</Text>
+        )}
         
         {/* Información del Proveedor */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-              <UserIcon className="w-5 h-5 text-orange-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Proveedor Afectado</h4>
-          </div>
+        <Paper p="md" withBorder>
+          <Group mb="sm">
+            <IconUser size={20} className="text-orange-600" />
+            <Text weight={600}>Proveedor Afectado</Text>
+          </Group>
 
           {supplier && (
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
-                <UserIcon className="w-6 h-6 text-slate-600" />
-              </div>
+            <Group>
+              <Avatar size="lg" color="gray">
+                <IconUser size={24} />
+              </Avatar>
               <div>
-                <h5 className="font-semibold text-slate-800">{supplier.name}</h5>
-                <p className="text-sm text-slate-600">Código: {supplier.code}</p>
+                <Text weight={600}>{supplier.name}</Text>
+                <Text size="sm" color="dimmed">Código: {supplier.code}</Text>
                 {supplier.contactInfo?.contactPerson && (
-                  <p className="text-sm text-slate-600">Contacto: {supplier.contactInfo.contactPerson}</p>
+                  <Text size="sm" color="dimmed">Contacto: {supplier.contactInfo.contactPerson}</Text>
                 )}
               </div>
-            </div>
+            </Group>
           )}
-        </div>
+        </Paper>
 
         {/* Configuración de la Penalización */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-              <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Detalles de la Penalización</h4>
-          </div>
+        <Paper p="md" withBorder>
+          <Group mb="md">
+            <IconAlertTriangle size={20} className="text-red-600" />
+            <Text weight={600}>Detalles de la Penalización</Text>
+          </Group>
 
-          <div className="space-y-6">
+          <Stack>
             {/* Concepto y Severidad */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Concepto de Penalización *
-                </label>
-                <select
-                  value={selectedConcept}
-                  onChange={(e) => setSelectedConcept(e.target.value as PenaltyConcept)}
-                  className="glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer"
-                >
-                  <option value="">Selecciona un concepto</option>
-                  {Object.entries(PENALTY_CONCEPTS).map(([key, config]) => {
-                    const IconComponent = iconMap[config.icon] || DocumentTextIcon
-                    return (
-                      <option key={key} value={key}>
-                        {config.label} ({(config as any).basePoints || 0} pts base)
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
+            <Group grow>
+              <Select
+                label="Concepto de Penalización"
+                placeholder="Selecciona un concepto"
+                required
+                value={selectedConcept}
+                onChange={(value) => setSelectedConcept(value as PenaltyConcept)}
+                data={Object.entries(PENALTY_CONCEPTS).map(([key, config]) => ({
+                  value: key,
+                  label: `${config.label} (${(config as any).basePoints || 0} pts base)`
+                }))}
+              />
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Severidad *
-                </label>
-                <select
-                  value={selectedSeverity}
-                  onChange={(e) => setSelectedSeverity(e.target.value as PenaltySeverity)}
-                  className="glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer"
-                >
-                  <option value="">Selecciona la severidad</option>
-                  {Object.entries(SEVERITY_CONFIG).map(([key, config]) => (
-                    <option key={key} value={key}>
-                      {config.label} (x{(config as any).multiplier || 1})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+              <Select
+                label="Severidad"
+                placeholder="Selecciona la severidad"
+                required
+                value={selectedSeverity}
+                onChange={(value) => setSelectedSeverity(value as PenaltySeverity)}
+                data={Object.entries(SEVERITY_CONFIG).map(([key, config]) => ({
+                  value: key,
+                  label: `${config.label} (x${(config as any).multiplier || 1})`
+                }))}
+              />
+            </Group>
 
             {/* Concepto seleccionado */}
             {conceptConfig && (
-              <div className="glass-card bg-orange-50/80 border border-orange-200/50 p-4">
-                <div className="flex items-center gap-3 mb-3">
+              <Paper p="sm" withBorder style={{ backgroundColor: 'rgba(251, 146, 60, 0.1)' }}>
+                <Group mb="xs">
                   {(() => {
-                    const IconComponent = iconMap[conceptConfig.icon] || DocumentTextIcon
-                    return <IconComponent className="w-5 h-5 text-orange-600" />
+                    const IconComponent = iconMap[conceptConfig.icon] || IconFileText
+                    return <IconComponent size={20} className="text-orange-600" />
                   })()}
-                  <h5 className="font-semibold text-orange-800">{conceptConfig.label}</h5>
-                </div>
-                <p className="text-orange-700 text-sm mb-2">{conceptConfig.description}</p>
-                <div className="text-xs text-orange-600">
-                  <span className="font-medium">Puntos base:</span> {(conceptConfig as any)?.basePoints || 0} •
-                  <span className="font-medium ml-2">Categoría:</span> {conceptConfig.category}
-                </div>
-              </div>
+                  <Text weight={600} color="orange">{conceptConfig.label}</Text>
+                </Group>
+                <Text size="sm" color="orange" mb="xs">{conceptConfig.description}</Text>
+                <Group spacing="xs">
+                  <Text size="xs" color="orange">
+                    <Text span weight={500}>Puntos base:</Text> {(conceptConfig as any)?.basePoints || 0}
+                  </Text>
+                  <Text size="xs" color="orange">•</Text>
+                  <Text size="xs" color="orange">
+                    <Text span weight={500}>Categoría:</Text> {conceptConfig.category}
+                  </Text>
+                </Group>
+              </Paper>
             )}
 
             {/* Fecha del Incidente */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Fecha del Incidente *
-              </label>
-              <div className="relative">
-                <CalendarIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="date"
-                  value={incidentDate}
-                  onChange={(e) => setIncidentDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  className="glass-input w-full pl-12 pr-4 py-3 text-slate-800"
-                />
-              </div>
-            </div>
+            <DateInput
+              label="Fecha del Incidente"
+              placeholder="Selecciona la fecha"
+              required
+              value={incidentDate ? new Date(incidentDate) : null}
+              onChange={(value) => setIncidentDate(value ? value.toISOString().split('T')[0] : '')}
+              maxDate={new Date()}
+              icon={<IconCalendar size={16} />}
+            />
 
             {/* Descripción */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Descripción del Incidente *
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none"
-                placeholder="Describe detalladamente el incidente que motivó esta penalización..."
-              />
-            </div>
+            <Textarea
+              label="Descripción del Incidente"
+              placeholder="Describe detalladamente el incidente que motivó esta penalización..."
+              required
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              minRows={4}
+            />
 
             {/* Evidencia */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Evidencia y Documentación
-              </label>
-              <textarea
-                value={evidenceDescription}
-                onChange={(e) => setEvidenceDescription(e.target.value)}
-                rows={2}
-                className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none"
-                placeholder="Descripción de evidencias, documentos o referencias relacionadas..."
-              />
-            </div>
+            <Textarea
+              label="Evidencia y Documentación"
+              placeholder="Descripción de evidencias, documentos o referencias relacionadas..."
+              value={evidenceDescription}
+              onChange={(e) => setEvidenceDescription(e.target.value)}
+              minRows={2}
+            />
 
             {/* Impacto Económico */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Impacto Económico (Opcional)
-              </label>
-              <div className="relative">
-                <CurrencyDollarIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={economicImpact}
-                  onChange={(e) => setEconomicImpact(e.target.value)}
-                  className="glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500"
-                  placeholder="0.00"
-                />
-              </div>
-              <p className="text-xs text-slate-500 mt-2">
-                Monto aproximado del impacto económico causado por el incidente
-              </p>
-            </div>
-          </div>
-        </div>
+            <NumberInput
+              label="Impacto Económico (Opcional)"
+              placeholder="0.00"
+              value={economicImpact ? parseFloat(economicImpact) : ''}
+              onChange={(value) => setEconomicImpact(value ? value.toString() : '')}
+              min={0}
+              precision={2}
+              step={0.01}
+              icon={<IconCurrencyDollar size={16} />}
+              description="Monto aproximado del impacto económico causado por el incidente"
+            />
+          </Stack>
+        </Paper>
 
         {/* Resumen de Puntos */}
         {selectedConcept && selectedSeverity && (
-          <div className="glass-card bg-red-50/80 border border-red-200/50 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                <CalculatorIcon className="w-5 h-5 text-red-600" />
-              </div>
-              <h4 className="font-semibold text-red-800">Resumen de Penalización</h4>
-            </div>
+          <Paper p="md" withBorder style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
+            <Group mb="sm">
+              <IconCalculator size={20} className="text-red-600" />
+              <Text weight={600} color="red">Resumen de Penalización</Text>
+            </Group>
             
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-red-700">Puntos base del concepto:</span>
-                <span className="font-semibold text-red-800">{(conceptConfig as any)?.basePoints || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-red-700">Multiplicador de severidad:</span>
-                <span className="font-semibold text-red-800">x{(severityConfig as any)?.multiplier || 1}</span>
-              </div>
-              <div className="border-t border-red-200 pt-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-red-800">Total de puntos:</span>
-                  <span className="text-xl font-bold text-red-600">{calculatePenaltyPoints()}</span>
-                </div>
-              </div>
+            <Stack spacing="xs">
+              <Group position="apart">
+                <Text color="red">Puntos base del concepto:</Text>
+                <Text weight={600} color="red">{(conceptConfig as any)?.basePoints || 0}</Text>
+              </Group>
+              <Group position="apart">
+                <Text color="red">Multiplicador de severidad:</Text>
+                <Text weight={600} color="red">x{(severityConfig as any)?.multiplier || 1}</Text>
+              </Group>
+              <Divider color="red.2" />
+              <Group position="apart">
+                <Text size="lg" weight={600} color="red">Total de puntos:</Text>
+                <Text size="xl" weight={700} color="red">{calculatePenaltyPoints()}</Text>
+              </Group>
               
               {severityConfig && (
-                <div className={`text-center py-2 px-4 rounded-lg text-sm font-medium ${(severityConfig as any)?.bgColor || ''} ${(severityConfig as any)?.textColor || ''}`}>
+                <Badge 
+                  fullWidth 
+                  size="lg" 
+                  color={selectedSeverity === 'low' ? 'yellow' : selectedSeverity === 'medium' ? 'orange' : selectedSeverity === 'high' ? 'red' : 'gray'}
+                >
                   Severidad: {severityConfig.label}
-                </div>
+                </Badge>
               )}
-            </div>
-          </div>
+            </Stack>
+          </Paper>
         )}
-      </div>
+
+        {/* Error message */}
+        {!selectedConcept || !selectedSeverity || !incidentDate || !description ? (
+          <Text color="red" size="sm">Completa todos los campos requeridos</Text>
+        ) : null}
+
+        {/* Footer Actions */}
+        <Group position="right">
+          <Button
+            onClick={handleClose}
+            disabled={loading}
+            variant="light"
+          >
+            Cancelar
+          </Button>
+          
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !selectedConcept || !selectedSeverity || !incidentDate || !description}
+            loading={loading}
+            color="red"
+          >
+            Registrar Penalización
+          </Button>
+        </Group>
+      </Stack>
     </Modal>
   )
 }

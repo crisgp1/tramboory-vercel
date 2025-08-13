@@ -2,16 +2,20 @@
 
 import { useState, useEffect } from "react";
 import {
-  Card,
-  CardBody,
+  Paper,
   Button,
-  Chip,
+  Badge,
   Progress,
   Select,
-  SelectItem,
   Tabs,
-  Tab
-} from "@heroui/react";
+  Group,
+  Stack,
+  Text,
+  Title,
+  Grid,
+  Center,
+  Loader
+} from "@mantine/core";
 import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -25,7 +29,6 @@ import {
   ChartBarIcon,
   PresentationChartLineIcon
 } from "@heroicons/react/24/outline";
-// Using CSS-based charts instead of recharts to avoid additional dependencies
 
 interface StatsDashboardProps {
   supplierId: string;
@@ -126,319 +129,460 @@ export default function SupplierStatsDashboard({ supplierId }: StatsDashboardPro
   };
 
   const renderOverviewTab = () => (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Métricas principales */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <CurrencyDollarIcon className="w-8 h-8 text-green-600" />
-              <Chip size="sm" color="success" variant="flat">
+      <Grid>
+        <Grid.Col span={{ base: 6, lg: 3 }}>
+          <Paper 
+            withBorder 
+            p="md"
+            style={{
+              background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+              borderColor: '#bbf7d0'
+            }}
+          >
+            <Group justify="space-between" mb="xs">
+              <CurrencyDollarIcon style={{ width: '2rem', height: '2rem', color: '#059669' }} />
+              <Badge size="sm" color="green" variant="light">
                 +{statsData?.monthlyComparison.change.toFixed(1)}%
-              </Chip>
-            </div>
-            <p className="text-2xl font-bold text-green-800">
+              </Badge>
+            </Group>
+            <Text size="xl" fw={700} style={{ color: '#065f46' }}>
               {formatCurrency(statsData?.performanceMetrics.totalSales || 0)}
-            </p>
-            <p className="text-sm text-green-600">Ventas Totales</p>
-          </CardBody>
-        </Card>
+            </Text>
+            <Text size="sm" style={{ color: '#059669' }}>Ventas Totales</Text>
+          </Paper>
+        </Grid.Col>
 
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <ClipboardDocumentListIcon className="w-8 h-8 text-blue-600" />
-              <span className="text-2xl font-bold text-blue-800">
+        <Grid.Col span={{ base: 6, lg: 3 }}>
+          <Paper 
+            withBorder 
+            p="md"
+            style={{
+              background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+              borderColor: '#93c5fd'
+            }}
+          >
+            <Group justify="space-between" mb="xs">
+              <ClipboardDocumentListIcon style={{ width: '2rem', height: '2rem', color: '#2563eb' }} />
+              <Text size="xl" fw={700} style={{ color: '#1e40af' }}>
                 {statsData?.performanceMetrics.totalOrders || 0}
-              </span>
-            </div>
-            <p className="text-2xl font-bold text-blue-800">
+              </Text>
+            </Group>
+            <Text size="xl" fw={700} style={{ color: '#1e40af' }}>
               {formatCurrency(statsData?.performanceMetrics.averageOrderValue || 0)}
-            </p>
-            <p className="text-sm text-blue-600">Valor Promedio</p>
-          </CardBody>
-        </Card>
+            </Text>
+            <Text size="sm" style={{ color: '#2563eb' }}>Valor Promedio</Text>
+          </Paper>
+        </Grid.Col>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <CheckCircleIcon className="w-8 h-8 text-purple-600" />
+        <Grid.Col span={{ base: 6, lg: 3 }}>
+          <Paper 
+            withBorder 
+            p="md"
+            style={{
+              background: 'linear-gradient(135deg, #faf5ff 0%, #e9d5ff 100%)',
+              borderColor: '#c4b5fd'
+            }}
+          >
+            <Group justify="space-between" mb="xs">
+              <CheckCircleIcon style={{ width: '2rem', height: '2rem', color: '#7c3aed' }} />
               <Progress 
                 value={statsData?.performanceMetrics.completionRate || 0}
-                color="secondary"
+                color="violet"
                 size="sm"
-                className="w-16"
+                w={60}
               />
-            </div>
-            <p className="text-2xl font-bold text-purple-800">
+            </Group>
+            <Text size="xl" fw={700} style={{ color: '#5b21b6' }}>
               {statsData?.performanceMetrics.completionRate.toFixed(1)}%
-            </p>
-            <p className="text-sm text-purple-600">Tasa de Completado</p>
-          </CardBody>
-        </Card>
+            </Text>
+            <Text size="sm" style={{ color: '#7c3aed' }}>Tasa de Completado</Text>
+          </Paper>
+        </Grid.Col>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <StarIcon className="w-8 h-8 text-orange-600" />
-              <div className="flex">
+        <Grid.Col span={{ base: 6, lg: 3 }}>
+          <Paper 
+            withBorder 
+            p="md"
+            style={{
+              background: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)',
+              borderColor: '#fdba74'
+            }}
+          >
+            <Group justify="space-between" mb="xs">
+              <StarIcon style={{ width: '2rem', height: '2rem', color: '#ea580c' }} />
+              <Group gap="xs">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <StarIcon
                     key={star}
-                    className={`w-4 h-4 ${star <= Math.round(statsData?.performanceMetrics.customerSatisfaction || 0) ? 'text-orange-400 fill-current' : 'text-gray-300'}`}
+                    style={{
+                      width: '1rem',
+                      height: '1rem',
+                      color: star <= Math.round(statsData?.performanceMetrics.customerSatisfaction || 0) ? '#fb923c' : '#d1d5db',
+                      fill: star <= Math.round(statsData?.performanceMetrics.customerSatisfaction || 0) ? '#fb923c' : 'transparent'
+                    }}
                   />
                 ))}
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-orange-800">
+              </Group>
+            </Group>
+            <Text size="xl" fw={700} style={{ color: '#9a3412' }}>
               {statsData?.performanceMetrics.customerSatisfaction.toFixed(1)}
-            </p>
-            <p className="text-sm text-orange-600">Satisfacción</p>
-          </CardBody>
-        </Card>
-      </div>
+            </Text>
+            <Text size="sm" style={{ color: '#ea580c' }}>Satisfacción</Text>
+          </Paper>
+        </Grid.Col>
+      </Grid>
 
       {/* Gráfico de ventas */}
-      <Card>
-        <CardBody className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">Tendencia de Ventas</h3>
-            <Select
-              selectedKeys={[selectedPeriod]}
-              onSelectionChange={(keys) => setSelectedPeriod(Array.from(keys)[0] as string)}
-              className="w-32"
-              size="sm"
-            >
-              <SelectItem key="3months">3 meses</SelectItem>
-              <SelectItem key="6months">6 meses</SelectItem>
-              <SelectItem key="12months">12 meses</SelectItem>
-            </Select>
-          </div>
-          
-          <div className="h-80">
-            <div className="flex items-end justify-between h-full px-4 py-6 space-x-2">
-              {statsData?.salesOverTime.map((data, index) => {
-                const maxSales = Math.max(...(statsData?.salesOverTime.map(d => d.sales) || []));
-                const height = (data.sales / maxSales) * 100;
-                return (
-                  <div key={index} className="flex flex-col items-center flex-1">
-                    <div className="w-full flex flex-col items-center">
-                      <div 
-                        className="w-full bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-lg transition-all duration-500 hover:from-blue-600 hover:to-blue-400 cursor-pointer"
-                        style={{ height: `${height}%` }}
-                        title={`${data.month}: ${formatCurrency(data.sales)} (${data.orders} órdenes)`}
-                      ></div>
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p className="text-xs font-medium text-gray-700">{data.month}</p>
-                      <p className="text-xs text-gray-500">${(data.sales / 1000).toFixed(0)}k</p>
-                    </div>
+      <Paper withBorder p="xl">
+        <Group justify="space-between" mb="md">
+          <Title order={3}>Tendencia de Ventas</Title>
+          <Select
+            value={selectedPeriod}
+            onChange={(value) => setSelectedPeriod(value || "6months")}
+            data={[
+              { value: "3months", label: "3 meses" },
+              { value: "6months", label: "6 meses" },
+              { value: "12months", label: "12 meses" }
+            ]}
+            w={120}
+            size="sm"
+          />
+        </Group>
+        
+        <div style={{ height: '20rem' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'end', 
+            justifyContent: 'space-between', 
+            height: '100%', 
+            padding: '1.5rem 1rem', 
+            gap: '0.5rem' 
+          }}>
+            {statsData?.salesOverTime.map((data, index) => {
+              const maxSales = Math.max(...(statsData?.salesOverTime.map(d => d.sales) || []));
+              const height = (data.sales / maxSales) * 100;
+              return (
+                <div key={index} style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  flex: 1 
+                }}>
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div 
+                      style={{
+                        width: '100%',
+                        background: 'linear-gradient(to top, #3b82f6, #60a5fa)',
+                        borderRadius: '0.5rem 0.5rem 0 0',
+                        transition: 'all 0.5s ease',
+                        cursor: 'pointer',
+                        height: `${height}%`
+                      }}
+                      title={`${data.month}: ${formatCurrency(data.sales)} (${data.orders} órdenes)`}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'linear-gradient(to top, #2563eb, #3b82f6)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'linear-gradient(to top, #3b82f6, #60a5fa)';
+                      }}
+                    ></div>
                   </div>
-                );
-              })}
-            </div>
+                  <Stack gap="xs" mt="sm" align="center">
+                    <Text size="xs" fw={500}>{data.month}</Text>
+                    <Text size="xs" c="dimmed">${(data.sales / 1000).toFixed(0)}k</Text>
+                  </Stack>
+                </div>
+              );
+            })}
           </div>
-        </CardBody>
-      </Card>
-    </div>
+        </div>
+      </Paper>
+    </Stack>
   );
 
   const renderAnalyticsTab = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <Grid>
       {/* Distribución de órdenes por estado */}
-      <Card>
-        <CardBody className="p-6">
-          <h3 className="text-xl font-bold mb-4">Órdenes por Estado</h3>
-          <div className="h-64 flex flex-col justify-center">
-            <div className="space-y-3">
+      <Grid.Col span={{ base: 12, lg: 6 }}>
+        <Paper withBorder p="xl">
+          <Title order={3} mb="md">Órdenes por Estado</Title>
+          <div style={{ height: '16rem' }}>
+            <Stack justify="center" h="100%" gap="md">
               {statsData?.ordersByStatus.map((status, index) => {
                 const total = statsData.ordersByStatus.reduce((sum, s) => sum + s.count, 0);
                 const percentage = (status.count / total) * 100;
                 return (
-                  <div key={index} className="flex items-center space-x-3">
+                  <Group key={index} gap="md">
                     <div 
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: status.color }}
-                    ></div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium text-gray-700">{status.status}</span>
-                        <span className="text-sm text-gray-500">{status.count} ({percentage.toFixed(1)}%)</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      style={{
+                        width: '1rem',
+                        height: '1rem',
+                        borderRadius: '50%',
+                        backgroundColor: status.color
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <Group justify="space-between" mb="xs">
+                        <Text size="sm" fw={500}>{status.status}</Text>
+                        <Text size="sm" c="dimmed">{status.count} ({percentage.toFixed(1)}%)</Text>
+                      </Group>
+                      <div style={{
+                        width: '100%',
+                        height: '0.5rem',
+                        backgroundColor: 'var(--mantine-color-gray-2)',
+                        borderRadius: '0.25rem',
+                        overflow: 'hidden'
+                      }}>
                         <div
-                          className="h-2 rounded-full transition-all duration-500"
-                          style={{ 
+                          style={{
+                            height: '100%',
+                            backgroundColor: status.color,
                             width: `${percentage}%`,
-                            backgroundColor: status.color
+                            transition: 'all 0.5s ease',
+                            borderRadius: '0.25rem'
                           }}
-                        ></div>
+                        />
                       </div>
                     </div>
-                  </div>
+                  </Group>
                 );
               })}
-            </div>
+            </Stack>
           </div>
-        </CardBody>
-      </Card>
+        </Paper>
+      </Grid.Col>
 
       {/* Top productos */}
-      <Card>
-        <CardBody className="p-6">
-          <h3 className="text-xl font-bold mb-4">Productos Más Vendidos</h3>
-          <div className="h-64">
-            <div className="space-y-3">
+      <Grid.Col span={{ base: 12, lg: 6 }}>
+        <Paper withBorder p="xl">
+          <Title order={3} mb="md">Productos Más Vendidos</Title>
+          <div style={{ height: '16rem' }}>
+            <Stack gap="md">
               {statsData?.topProducts.slice(0, 5).map((product, index) => {
                 const maxSales = Math.max(...(statsData?.topProducts.map(p => p.sales) || []));
                 const percentage = (product.sales / maxSales) * 100;
                 return (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div className="w-8 text-center">
-                      <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
+                  <Group key={index} gap="md">
+                    <div style={{ width: '2rem', textAlign: 'center' }}>
+                      <Text size="lg" fw={700} c="dimmed">#{index + 1}</Text>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium text-gray-700 truncate">{product.name}</span>
-                        <span className="text-sm text-gray-900 font-semibold">{formatCurrency(product.sales)}</span>
-                      </div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs text-gray-500">{product.orders} órdenes</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div style={{ flex: 1 }}>
+                      <Group justify="space-between" mb="xs">
+                        <Text size="sm" fw={500} truncate style={{ maxWidth: '60%' }}>
+                          {product.name}
+                        </Text>
+                        <Text size="sm" fw={600}>{formatCurrency(product.sales)}</Text>
+                      </Group>
+                      <Group justify="space-between" mb="xs">
+                        <Text size="xs" c="dimmed">{product.orders} órdenes</Text>
+                      </Group>
+                      <div style={{
+                        width: '100%',
+                        height: '0.5rem',
+                        backgroundColor: 'var(--mantine-color-gray-2)',
+                        borderRadius: '0.25rem',
+                        overflow: 'hidden'
+                      }}>
                         <div
-                          className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${percentage}%` }}
-                        ></div>
+                          style={{
+                            background: 'linear-gradient(to right, #22c55e, #16a34a)',
+                            height: '100%',
+                            width: `${percentage}%`,
+                            transition: 'all 0.5s ease',
+                            borderRadius: '0.25rem'
+                          }}
+                        />
                       </div>
                     </div>
-                  </div>
+                  </Group>
                 );
               })}
-            </div>
+            </Stack>
           </div>
-        </CardBody>
-      </Card>
+        </Paper>
+      </Grid.Col>
 
       {/* Métricas de rendimiento */}
-      <Card className="lg:col-span-2">
-        <CardBody className="p-6">
-          <h3 className="text-xl font-bold mb-4">Métricas de Rendimiento</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <ClockIcon className="w-8 h-8 text-blue-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {statsData?.performanceMetrics.responseTime.toFixed(1)}h
-              </p>
-              <p className="text-sm text-gray-500">Tiempo de Respuesta</p>
-            </div>
+      <Grid.Col span={12}>
+        <Paper withBorder p="xl">
+          <Title order={3} mb="md">Métricas de Rendimiento</Title>
+          <Grid>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Center>
+                <Stack align="center" gap="sm">
+                  <div style={{
+                    width: '4rem',
+                    height: '4rem',
+                    backgroundColor: 'var(--mantine-color-blue-1)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <ClockIcon style={{ width: '2rem', height: '2rem', color: 'var(--mantine-color-blue-6)' }} />
+                  </div>
+                  <Text size="xl" fw={700}>
+                    {statsData?.performanceMetrics.responseTime.toFixed(1)}h
+                  </Text>
+                  <Text size="sm" c="dimmed">Tiempo de Respuesta</Text>
+                </Stack>
+              </Center>
+            </Grid.Col>
             
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <TruckIcon className="w-8 h-8 text-green-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {statsData?.performanceMetrics.onTimeDelivery.toFixed(1)}%
-              </p>
-              <p className="text-sm text-gray-500">Entrega a Tiempo</p>
-            </div>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Center>
+                <Stack align="center" gap="sm">
+                  <div style={{
+                    width: '4rem',
+                    height: '4rem',
+                    backgroundColor: 'var(--mantine-color-green-1)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <TruckIcon style={{ width: '2rem', height: '2rem', color: 'var(--mantine-color-green-6)' }} />
+                  </div>
+                  <Text size="xl" fw={700}>
+                    {statsData?.performanceMetrics.onTimeDelivery.toFixed(1)}%
+                  </Text>
+                  <Text size="sm" c="dimmed">Entrega a Tiempo</Text>
+                </Stack>
+              </Center>
+            </Grid.Col>
             
-            <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <ArrowTrendingUpIcon className="w-8 h-8 text-purple-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                +{statsData?.performanceMetrics.growthRate.toFixed(1)}%
-              </p>
-              <p className="text-sm text-gray-500">Crecimiento</p>
-            </div>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Center>
+                <Stack align="center" gap="sm">
+                  <div style={{
+                    width: '4rem',
+                    height: '4rem',
+                    backgroundColor: 'var(--mantine-color-violet-1)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <ArrowTrendingUpIcon style={{ width: '2rem', height: '2rem', color: 'var(--mantine-color-violet-6)' }} />
+                  </div>
+                  <Text size="xl" fw={700}>
+                    +{statsData?.performanceMetrics.growthRate.toFixed(1)}%
+                  </Text>
+                  <Text size="sm" c="dimmed">Crecimiento</Text>
+                </Stack>
+              </Center>
+            </Grid.Col>
             
-            <div className="text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <StarIcon className="w-8 h-8 text-orange-600" />
-              </div>
-              <p className="text-2xl font-bold text-gray-900">
-                {statsData?.performanceMetrics.customerSatisfaction.toFixed(1)}/5
-              </p>
-              <p className="text-sm text-gray-500">Calificación</p>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-    </div>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Center>
+                <Stack align="center" gap="sm">
+                  <div style={{
+                    width: '4rem',
+                    height: '4rem',
+                    backgroundColor: 'var(--mantine-color-orange-1)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <StarIcon style={{ width: '2rem', height: '2rem', color: 'var(--mantine-color-orange-6)' }} />
+                  </div>
+                  <Text size="xl" fw={700}>
+                    {statsData?.performanceMetrics.customerSatisfaction.toFixed(1)}/5
+                  </Text>
+                  <Text size="sm" c="dimmed">Calificación</Text>
+                </Stack>
+              </Center>
+            </Grid.Col>
+          </Grid>
+        </Paper>
+      </Grid.Col>
+    </Grid>
   );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-4 gap-4">
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)', padding: '1.5rem' }}>
+        <Stack gap="md">
+          <div style={{ 
+            height: '2rem', 
+            backgroundColor: 'var(--mantine-color-gray-2)', 
+            borderRadius: 'var(--mantine-radius-sm)', 
+            width: '25%' 
+          }} />
+          <Grid>
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              <Grid.Col key={i} span={3}>
+                <div style={{ 
+                  height: '8rem', 
+                  backgroundColor: 'var(--mantine-color-gray-2)', 
+                  borderRadius: 'var(--mantine-radius-sm)' 
+                }} />
+              </Grid.Col>
             ))}
-          </div>
-          <div className="h-80 bg-gray-200 rounded"></div>
-        </div>
+          </Grid>
+          <div style={{ 
+            height: '20rem', 
+            backgroundColor: 'var(--mantine-color-gray-2)', 
+            borderRadius: 'var(--mantine-radius-sm)' 
+          }} />
+        </Stack>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="px-6 py-4">
-          <div className="flex justify-between items-center">
+      <Paper shadow="sm" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+        <div style={{ padding: '1rem 1.5rem' }}>
+          <Group justify="space-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Panel de Estadísticas</h1>
-              <p className="text-gray-600">Analiza tu rendimiento y métricas clave</p>
+              <Title order={2}>Panel de Estadísticas</Title>
+              <Text c="dimmed">Analiza tu rendimiento y métricas clave</Text>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="flat"
-                startContent={<PresentationChartLineIcon className="w-5 h-5" />}
-                onClick={() => window.print()}
-              >
-                Exportar Reporte
-              </Button>
-            </div>
-          </div>
+            <Button
+              variant="light"
+              leftSection={<PresentationChartLineIcon className="w-5 h-5" />}
+              onClick={() => window.print()}
+            >
+              Exportar Reporte
+            </Button>
+          </Group>
         </div>
-      </div>
+      </Paper>
 
       {/* Contenido */}
-      <div className="p-6">
+      <div style={{ padding: '1.5rem' }}>
         <Tabs 
-          selectedKey={activeTab} 
-          onSelectionChange={(key) => setActiveTab(key as string)}
-          className="mb-6"
+          value={activeTab} 
+          onChange={(value) => setActiveTab(value || "overview")}
         >
-          <Tab 
-            key="overview" 
-            title={
-              <div className="flex items-center gap-2">
-                <ChartBarIcon className="w-4 h-4" />
-                Vista General
-              </div>
-            }
-          >
+          <Tabs.List mb="lg">
+            <Tabs.Tab 
+              value="overview"
+              leftSection={<ChartBarIcon className="w-4 h-4" />}
+            >
+              Vista General
+            </Tabs.Tab>
+            
+            <Tabs.Tab 
+              value="analytics"
+              leftSection={<PresentationChartLineIcon className="w-4 h-4" />}
+            >
+              Análisis Detallado
+            </Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value="overview">
             {renderOverviewTab()}
-          </Tab>
+          </Tabs.Panel>
           
-          <Tab 
-            key="analytics" 
-            title={
-              <div className="flex items-center gap-2">
-                <PresentationChartLineIcon className="w-4 h-4" />
-                Análisis Detallado
-              </div>
-            }
-          >
+          <Tabs.Panel value="analytics">
             {renderAnalyticsTab()}
-          </Tab>
+          </Tabs.Panel>
         </Tabs>
       </div>
     </div>

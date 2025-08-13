@@ -2,21 +2,21 @@
 
 import React, { useState, useEffect } from "react"
 import { 
-  Card, 
-  CardBody, 
-  CardHeader,
-  Chip,
+  Paper,
+  Badge,
   Button,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Spinner,
+  Loader,
   Progress,
   Divider,
-  Badge
-} from "@heroui/react"
+  Stack,
+  Group,
+  Text,
+  ActionIcon,
+  Title,
+  Center,
+  Indicator
+} from "@mantine/core"
 import {
   ExclamationTriangleIcon,
   ShieldExclamationIcon,
@@ -38,6 +38,7 @@ import {
 } from "@/types/supplier-penalties"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
+import { mapHeroUIColorToMantine } from "@/lib/migration-utils"
 
 interface SupplierPenaltyDisplayProps {
   supplierId: string
@@ -95,21 +96,21 @@ export default function SupplierPenaltyDisplay({ supplierId, className = "" }: S
   }
 
   const getPenaltyColor = (severity: PenaltySeverity) => {
-    return SEVERITY_CONFIG[severity].color
+    return mapHeroUIColorToMantine(SEVERITY_CONFIG[severity].color)
   }
 
   const getStatusColor = (status: PenaltyStatus) => {
     switch (status) {
       case PenaltyStatus.ACTIVE:
-        return 'danger'
+        return 'red'
       case PenaltyStatus.EXPIRED:
-        return 'default'
+        return 'gray'
       case PenaltyStatus.APPEALED:
-        return 'warning'
+        return 'yellow'
       case PenaltyStatus.REVERSED:
-        return 'success'
+        return 'green'
       default:
-        return 'default'
+        return 'gray'
     }
   }
 
@@ -136,310 +137,323 @@ export default function SupplierPenaltyDisplay({ supplierId, className = "" }: S
   }
 
   const getPenaltyRiskLevel = (points: number) => {
-    if (points <= 10) return { level: 'Bajo', color: 'success', progress: 25 }
-    if (points <= 30) return { level: 'Medio', color: 'warning', progress: 50 }
-    if (points <= 50) return { level: 'Alto', color: 'danger', progress: 75 }
-    return { level: 'Crítico', color: 'danger', progress: 100 }
+    if (points <= 10) return { level: 'Bajo', color: 'green', progress: 25 }
+    if (points <= 30) return { level: 'Medio', color: 'yellow', progress: 50 }
+    if (points <= 50) return { level: 'Alto', color: 'red', progress: 75 }
+    return { level: 'Crítico', color: 'red', progress: 100 }
   }
 
   const riskLevel = getPenaltyRiskLevel(totalPenaltyPoints)
 
   if (loading) {
     return (
-      <Card className={`${className} bg-white border-0 shadow-sm`}>
-        <CardBody className="p-6">
-          <div className="flex items-center justify-center">
-            <Spinner size="lg" color="primary" />
-            <span className="ml-2 text-gray-600">Cargando penalizaciones...</span>
-          </div>
-        </CardBody>
-      </Card>
+      <Paper className={`${className}`} withBorder p="lg" shadow="sm">
+        <Center>
+          <Group gap="sm">
+            <Loader size="lg" color="blue" />
+            <Text c="dimmed">Cargando penalizaciones...</Text>
+          </Group>
+        </Center>
+      </Paper>
     )
   }
 
   return (
     <>
-      <Card className={`${className} bg-white border-0 shadow-sm`}>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2">
-              <ShieldExclamationIcon className="w-5 h-5 text-orange-600" />
-              <h3 className="text-lg font-semibold">Penalizaciones</h3>
-            </div>
-            {penalties.length > 0 && (
-              <Badge content={penalties.length} color="danger" size="sm">
-                <ExclamationTriangleSolid className="w-5 h-5 text-red-600" />
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
+      <Paper className={`${className}`} withBorder p="lg" shadow="sm">
+        <Group justify="space-between" mb="md">
+          <Group gap="sm">
+            <ShieldExclamationIcon className="w-5 h-5 text-orange-600" />
+            <Title order={4}>Penalizaciones</Title>
+          </Group>
+          {penalties.length > 0 && (
+            <Indicator 
+              size={20} 
+              color="red" 
+              label={penalties.length}
+            >
+              <ExclamationTriangleSolid className="w-5 h-5 text-red-600" />
+            </Indicator>
+          )}
+        </Group>
         
-        <CardBody className="pt-0">
-          {error ? (
-            <div className="text-center py-8">
-              <XCircleIcon className="w-12 h-12 text-red-500 mx-auto mb-2" />
-              <p className="text-red-600 mb-4">{error}</p>
+        {error ? (
+          <Center py="xl">
+            <Stack align="center" gap="sm">
+              <XCircleIcon className="w-12 h-12 text-red-500" />
+              <Text c="red">{error}</Text>
               <Button 
                 size="sm" 
-                variant="flat" 
-                color="primary"
-                startContent={<ArrowPathIcon className="w-4 h-4" />}
-                onPress={fetchPenalties}
+                variant="light" 
+                color="blue"
+                leftSection={<ArrowPathIcon className="w-4 h-4" />}
+                onClick={fetchPenalties}
               >
                 Reintentar
               </Button>
-            </div>
-          ) : penalties.length === 0 ? (
-            <div className="text-center py-8">
-              <CheckCircleIcon className="w-12 h-12 text-green-500 mx-auto mb-2" />
-              <p className="text-green-600 font-medium">¡Sin penalizaciones!</p>
-              <p className="text-gray-500 text-sm">Tu cuenta está en buen estado</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Resumen de puntos de penalización */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Total de Puntos de Penalización</span>
-                  <span className="text-lg font-bold text-red-600">{totalPenaltyPoints} pts</span>
-                </div>
-                <Progress 
-                  value={Math.min(riskLevel.progress, 100)} 
-                  color={riskLevel.color as any}
-                  className="mb-2" 
-                />
-                <div className="flex items-center justify-between">
-                  <Chip 
-                    size="sm" 
-                    variant="flat" 
-                    color={riskLevel.color as any}
-                    className="text-xs"
+            </Stack>
+          </Center>
+        ) : penalties.length === 0 ? (
+          <Center py="xl">
+            <Stack align="center" gap="xs">
+              <CheckCircleIcon className="w-12 h-12 text-green-500" />
+              <Text c="green" fw={500}>¡Sin penalizaciones!</Text>
+              <Text c="dimmed" size="sm">Tu cuenta está en buen estado</Text>
+            </Stack>
+          </Center>
+        ) : (
+          <Stack gap="md">
+            {/* Resumen de puntos de penalización */}
+            <Paper bg="gray.0" p="md" radius="md">
+              <Group justify="space-between" mb="xs">
+                <Text size="sm" fw={500} c="dimmed">Total de Puntos de Penalización</Text>
+                <Text size="lg" fw={700} c="red.6">{totalPenaltyPoints} pts</Text>
+              </Group>
+              <Progress 
+                value={Math.min(riskLevel.progress, 100)} 
+                color={riskLevel.color}
+                mb="xs"
+              />
+              <Group justify="space-between">
+                <Badge 
+                  size="sm" 
+                  variant="light" 
+                  color={riskLevel.color}
+                >
+                  Riesgo {riskLevel.level}
+                </Badge>
+                <Text size="xs" c="dimmed">
+                  {totalPenaltyPoints > 70 ? 'Riesgo de suspensión' : 'Cuenta activa'}
+                </Text>
+              </Group>
+            </Paper>
+
+            <Divider />
+
+            {/* Lista de penalizaciones */}
+            <Stack gap="sm">
+              <Text fw={500}>Penalizaciones Activas</Text>
+              {penalties.slice(0, 5).map((penalty) => {
+                const concept = PENALTY_CONCEPTS.find(c => c.concept === penalty.concept)
+                return (
+                  <Paper
+                    key={penalty._id}
+                    p="sm"
+                    withBorder
+                    style={{
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-0)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '';
+                    }}
                   >
-                    Riesgo {riskLevel.level}
-                  </Chip>
-                  <span className="text-xs text-gray-500">
-                    {totalPenaltyPoints > 70 ? 'Riesgo de suspensión' : 'Cuenta activa'}
-                  </span>
-                </div>
-              </div>
-
-              <Divider />
-
-              {/* Lista de penalizaciones */}
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Penalizaciones Activas</h4>
-                {penalties.slice(0, 5).map((penalty) => {
-                  const concept = PENALTY_CONCEPTS.find(c => c.concept === penalty.concept)
-                  return (
-                    <div 
-                      key={penalty._id} 
-                      className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    <Group justify="space-between" align="flex-start">
+                      <Group gap="sm" align="flex-start" style={{ flex: 1 }}>
+                        <div style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: penalty.severity === PenaltySeverity.CRITICAL 
+                            ? 'var(--mantine-color-red-1)' 
+                            : penalty.severity === PenaltySeverity.MAJOR 
+                              ? 'var(--mantine-color-orange-1)' 
+                              : 'var(--mantine-color-yellow-1)'
+                        }}>
+                          <ExclamationTriangleIcon className={`w-4 h-4 ${
                             penalty.severity === PenaltySeverity.CRITICAL 
-                              ? 'bg-red-100' 
+                              ? 'text-red-600' 
                               : penalty.severity === PenaltySeverity.MAJOR 
-                                ? 'bg-orange-100' 
-                                : 'bg-yellow-100'
-                          }`}>
-                            <ExclamationTriangleIcon className={`w-4 h-4 ${
-                              penalty.severity === PenaltySeverity.CRITICAL 
-                                ? 'text-red-600' 
-                                : penalty.severity === PenaltySeverity.MAJOR 
-                                  ? 'text-orange-600' 
-                                  : 'text-yellow-600'
-                            }`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-medium text-gray-900 text-sm">
-                                {concept?.label || penalty.concept}
-                              </p>
-                              <Chip 
-                                size="sm" 
-                                variant="flat" 
-                                color={getPenaltyColor(penalty.severity)}
-                                className="text-xs"
-                              >
-                                {SEVERITY_CONFIG[penalty.severity].label}
-                              </Chip>
-                            </div>
-                            <p className="text-xs text-gray-600 line-clamp-2">
-                              {penalty.description}
-                            </p>
-                            <div className="flex items-center gap-4 mt-2">
-                              <span className="text-xs text-gray-500 flex items-center gap-1">
-                                <ClockIcon className="w-3 h-3" />
-                                {formatTimeAgo(penalty.appliedAt)}
-                              </span>
-                              <span className="text-xs font-medium text-red-600">
-                                {penalty.penaltyValue} pts
-                              </span>
-                            </div>
-                          </div>
+                                ? 'text-orange-600' 
+                                : 'text-yellow-600'
+                          }`} />
                         </div>
-                        <Button
-                          size="sm"
-                          variant="light"
-                          isIconOnly
-                          onPress={() => handleViewDetails(penalty)}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <EyeIcon className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                        <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+                          <Group gap="sm" align="center">
+                            <Text size="sm" fw={500} truncate>
+                              {concept?.label || penalty.concept}
+                            </Text>
+                            <Badge 
+                              size="xs" 
+                              variant="light" 
+                              color={getPenaltyColor(penalty.severity)}
+                            >
+                              {SEVERITY_CONFIG[penalty.severity].label}
+                            </Badge>
+                          </Group>
+                          <Text size="xs" c="dimmed" lineClamp={2}>
+                            {penalty.description}
+                          </Text>
+                          <Group gap="md">
+                            <Group gap="xs">
+                              <ClockIcon className="w-3 h-3 text-gray-400" />
+                              <Text size="xs" c="dimmed">
+                                {formatTimeAgo(penalty.appliedAt)}
+                              </Text>
+                            </Group>
+                            <Text size="xs" fw={500} c="red.6">
+                              {penalty.penaltyValue} pts
+                            </Text>
+                          </Group>
+                        </Stack>
+                      </Group>
+                      <ActionIcon
+                        variant="subtle"
+                        size="sm"
+                        onClick={() => handleViewDetails(penalty)}
+                      >
+                        <EyeIcon className="w-4 h-4" />
+                      </ActionIcon>
+                    </Group>
+                  </Paper>
+                )
+              })}
+            </Stack>
 
-              {penalties.length > 5 && (
-                <div className="text-center pt-2">
-                  <Button variant="light" size="sm" color="primary">
-                    Ver todas las penalizaciones ({penalties.length})
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </CardBody>
-      </Card>
+            {penalties.length > 5 && (
+              <Center pt="sm">
+                <Button variant="light" size="sm" color="blue">
+                  Ver todas las penalizaciones ({penalties.length})
+                </Button>
+              </Center>
+            )}
+          </Stack>
+        )}
+      </Paper>
 
       {/* Modal de detalles */}
       <Modal 
-        isOpen={showModal} 
+        opened={showModal} 
         onClose={() => setShowModal(false)}
-        size="2xl"
-        backdrop="opaque"
-        scrollBehavior="inside"
+        title="Detalles de la Penalización"
+        size="lg"
       >
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            <h3 className="text-lg font-semibold">Detalles de la Penalización</h3>
-            <p className="text-sm text-gray-600">Información completa del castigo aplicado</p>
-          </ModalHeader>
-          <ModalBody>
-            {selectedPenalty && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Concepto</label>
-                    <p className="text-sm text-gray-900 mt-1">
-                      {PENALTY_CONCEPTS.find(c => c.concept === selectedPenalty.concept)?.label || selectedPenalty.concept}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Severidad</label>
-                    <div className="mt-1">
-                      <Chip 
-                        size="sm" 
-                        variant="flat" 
-                        color={getPenaltyColor(selectedPenalty.severity)}
-                      >
-                        {SEVERITY_CONFIG[selectedPenalty.severity].label}
-                      </Chip>
-                    </div>
-                  </div>
-                </div>
+        {selectedPenalty && (
+          <Stack gap="md">
+            <Text size="sm" c="dimmed">Información completa del castigo aplicado</Text>
+            
+            <Group grow>
+              <Stack gap="xs">
+                <Text size="sm" fw={500} c="dimmed">Concepto</Text>
+                <Text size="sm">
+                  {PENALTY_CONCEPTS.find(c => c.concept === selectedPenalty.concept)?.label || selectedPenalty.concept}
+                </Text>
+              </Stack>
+              <Stack gap="xs">
+                <Text size="sm" fw={500} c="dimmed">Severidad</Text>
+                <Badge 
+                  size="sm" 
+                  variant="light" 
+                  color={getPenaltyColor(selectedPenalty.severity)}
+                >
+                  {SEVERITY_CONFIG[selectedPenalty.severity].label}
+                </Badge>
+              </Stack>
+            </Group>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Descripción</label>
-                  <p className="text-sm text-gray-900 mt-1">{selectedPenalty.description}</p>
-                </div>
+            <Stack gap="xs">
+              <Text size="sm" fw={500} c="dimmed">Descripción</Text>
+              <Text size="sm">{selectedPenalty.description}</Text>
+            </Stack>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Puntos de Penalización</label>
-                    <p className="text-sm font-bold text-red-600 mt-1">{selectedPenalty.penaltyValue} pts</p>
-                  </div>
-                  {selectedPenalty.monetaryPenalty && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Penalización Monetaria</label>
-                      <p className="text-sm font-bold text-red-600 mt-1">${selectedPenalty.monetaryPenalty}</p>
-                    </div>
-                  )}
-                </div>
+            <Group grow>
+              <Stack gap="xs">
+                <Text size="sm" fw={500} c="dimmed">Puntos de Penalización</Text>
+                <Text size="sm" fw={700} c="red.6">{selectedPenalty.penaltyValue} pts</Text>
+              </Stack>
+              {selectedPenalty.monetaryPenalty && (
+                <Stack gap="xs">
+                  <Text size="sm" fw={500} c="dimmed">Penalización Monetaria</Text>
+                  <Text size="sm" fw={700} c="red.6">${selectedPenalty.monetaryPenalty}</Text>
+                </Stack>
+              )}
+            </Group>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Fecha de Aplicación</label>
-                    <p className="text-sm text-gray-900 mt-1 flex items-center gap-1">
-                      <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
-                      {new Date(selectedPenalty.appliedAt).toLocaleDateString('es-ES', {
+            <Group grow>
+              <Stack gap="xs">
+                <Text size="sm" fw={500} c="dimmed">Fecha de Aplicación</Text>
+                <Group gap="xs">
+                  <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
+                  <Text size="sm">
+                    {new Date(selectedPenalty.appliedAt).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </Text>
+                </Group>
+              </Stack>
+              {selectedPenalty.expiresAt && (
+                <Stack gap="xs">
+                  <Text size="sm" fw={500} c="dimmed">Fecha de Expiración</Text>
+                  <Group gap="xs">
+                    <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
+                    <Text size="sm">
+                      {new Date(selectedPenalty.expiresAt).toLocaleDateString('es-ES', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
                       })}
-                    </p>
-                  </div>
-                  {selectedPenalty.expiresAt && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Fecha de Expiración</label>
-                      <p className="text-sm text-gray-900 mt-1 flex items-center gap-1">
-                        <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
-                        {new Date(selectedPenalty.expiresAt).toLocaleDateString('es-ES', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                    </Text>
+                  </Group>
+                </Stack>
+              )}
+            </Group>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Estado</label>
-                  <div className="mt-1">
-                    <Chip 
-                      size="sm" 
-                      variant="flat" 
-                      color={getStatusColor(selectedPenalty.status)}
-                    >
-                      {getStatusLabel(selectedPenalty.status)}
-                    </Chip>
-                  </div>
-                </div>
+            <Stack gap="xs">
+              <Text size="sm" fw={500} c="dimmed">Estado</Text>
+              <Badge 
+                size="sm" 
+                variant="light" 
+                color={getStatusColor(selectedPenalty.status)}
+              >
+                {getStatusLabel(selectedPenalty.status)}
+              </Badge>
+            </Stack>
 
-                {selectedPenalty.notes && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Notas Adicionales</label>
-                    <p className="text-sm text-gray-900 mt-1">{selectedPenalty.notes}</p>
-                  </div>
-                )}
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start gap-2">
-                    <InformationCircleIcon className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-blue-900">Información Importante</h4>
-                      <p className="text-sm text-blue-700 mt-1">
-                        Las penalizaciones afectan tu puntuación general y pueden impactar tu elegibilidad para recibir nuevas órdenes. 
-                        Si consideras que esta penalización es injusta, puedes contactar a nuestro equipo de soporte.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {selectedPenalty.notes && (
+              <Stack gap="xs">
+                <Text size="sm" fw={500} c="dimmed">Notas Adicionales</Text>
+                <Text size="sm">{selectedPenalty.notes}</Text>
+              </Stack>
             )}
-          </ModalBody>
-          <ModalFooter>
-            <Button 
-              variant="light" 
-              onPress={() => setShowModal(false)}
-            >
-              Cerrar
-            </Button>
-            <Button 
-              color="primary" 
-              variant="flat"
-              startContent={<InformationCircleIcon className="w-4 h-4" />}
-            >
-              Contactar Soporte
-            </Button>
-          </ModalFooter>
-        </ModalContent>
+
+            <Paper p="md" bg="blue.0" style={{ border: '1px solid var(--mantine-color-blue-3)' }}>
+              <Group gap="sm" align="flex-start">
+                <InformationCircleIcon className="w-5 h-5 text-blue-600 mt-0.5" />
+                <Stack gap="xs">
+                  <Text fw={500} c="blue.9">Información Importante</Text>
+                  <Text size="sm" c="blue.7">
+                    Las penalizaciones afectan tu puntuación general y pueden impactar tu elegibilidad para recibir nuevas órdenes. 
+                    Si consideras que esta penalización es injusta, puedes contactar a nuestro equipo de soporte.
+                  </Text>
+                </Stack>
+              </Group>
+            </Paper>
+
+            <Group justify="flex-end" gap="sm">
+              <Button 
+                variant="light" 
+                onClick={() => setShowModal(false)}
+              >
+                Cerrar
+              </Button>
+              <Button 
+                color="blue" 
+                variant="light"
+                leftSection={<InformationCircleIcon className="w-4 h-4" />}
+              >
+                Contactar Soporte
+              </Button>
+            </Group>
+          </Stack>
+        )}
       </Modal>
     </>
   )

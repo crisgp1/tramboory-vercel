@@ -15,7 +15,6 @@ import { StarIcon } from "@heroicons/react/24/outline"
 import { useRole } from "@/hooks/useRole"
 import SupplierModal from "./SupplierModal"
 import SupplierPenaltyModal from "./SupplierPenaltyModal"
-import SupplierLinkModal from "../SupplierLinkModal"
 import { DataTable, StatusChip, PrimaryButton, SecondaryButton, DangerButton } from "@/components/shared/ui"
 import { SearchInput } from "@/components/shared/forms"
 import toast from "react-hot-toast"
@@ -70,7 +69,6 @@ export default function SupplierManager() {
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isPenaltyModalOpen, setIsPenaltyModalOpen] = useState(false)
-  const [isSupplierLinkModalOpen, setIsSupplierLinkModalOpen] = useState(false)
 
   const itemsPerPage = 10
 
@@ -315,22 +313,13 @@ export default function SupplierManager() {
           
           <div className="flex gap-2">
             {(isAdmin || isGerente) && (
-              <>
-                <SecondaryButton
-                  onClick={() => setIsSupplierLinkModalOpen(true)}
-                  icon={User}
-                  size="md"
-                >
-                  Configuración Surtinet
-                </SecondaryButton>
-                <PrimaryButton
-                  onClick={handleCreateSupplier}
-                  icon={Plus}
-                  size="md"
-                >
-                  Nuevo Proveedor
-                </PrimaryButton>
-              </>
+              <PrimaryButton
+                onClick={handleCreateSupplier}
+                icon={Plus}
+                size="md"
+              >
+                Nuevo Proveedor
+              </PrimaryButton>
             )}
           </div>
         </div>
@@ -425,15 +414,6 @@ export default function SupplierManager() {
         document.body
       )}
       
-      {/* Modal de vinculación de proveedores Surtinet */}
-      <SupplierLinkModal
-        isOpen={isSupplierLinkModalOpen}
-        onClose={() => setIsSupplierLinkModalOpen(false)}
-        onSuccess={() => {
-          fetchSuppliers()
-          toast.success('Configuración actualizada correctamente')
-        }}
-      />
     </div>
   )
 }

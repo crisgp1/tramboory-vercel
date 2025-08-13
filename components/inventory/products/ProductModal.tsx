@@ -1,20 +1,38 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useMemo } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import {
-  Package,
-  Tag,
-  Settings,
-  FileText,
-  Building,
-  Save,
-  Plus,
-  Edit3,
-  Eye,
-  AlertCircle,
-  Check
-} from 'lucide-react'
-import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
+  Modal,
+  Button,
+  TextInput,
+  Textarea,
+  Select,
+  NumberInput,
+  Switch,
+  Tabs,
+  Group,
+  Stack,
+  Text,
+  Title,
+  Grid,
+  Card,
+  Badge,
+  MultiSelect
+} from "@mantine/core"
+import {
+  IconPackage,
+  IconTag,
+  IconSettings,
+  IconFileText,
+  IconBuilding,
+  IconDeviceFloppy,
+  IconPlus,
+  IconEdit,
+  IconEye,
+  IconAlertTriangle,
+  IconCheck
+} from "@tabler/icons-react"
+import toast from "react-hot-toast"
 
 // Types
 interface Product {
@@ -117,14 +135,12 @@ const validateForm = (data: Product): ValidationErrors => {
   return errors
 }
 
-export default function ProductModalGlass({ isOpen, onClose, product, mode, onSuccess }: ProductModalProps) {
+export default function ProductModal({ isOpen, onClose, product, mode, onSuccess }: ProductModalProps) {
   // State
   const [activeTab, setActiveTab] = useState('basic')
-  const [categories, setCategories] = useState<string[]>(PRODUCT_CATEGORIES)
-  const [loadingCategories, setLoadingCategories] = useState(false)
+  const [categories] = useState<string[]>(PRODUCT_CATEGORIES)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<ValidationErrors>({})
-  const [showSuccess, setShowSuccess] = useState(false)
   
   const [formData, setFormData] = useState<Product>({
     name: '',
@@ -163,7 +179,6 @@ export default function ProductModalGlass({ isOpen, onClose, product, mode, onSu
   useEffect(() => {
     if (product && (mode === 'edit' || mode === 'view')) {
       setFormData(product)
-      setActiveTab('basic')
     } else {
       setFormData({
         name: '',
@@ -189,86 +204,44 @@ export default function ProductModalGlass({ isOpen, onClose, product, mode, onSu
         images: [],
         tags: []
       })
-      setActiveTab('basic')
     }
+    setActiveTab('basic')
     setErrors({})
-    setShowSuccess(false)
   }, [product, mode, isOpen])
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchCategories()
-    }
-  }, [isOpen])
-
-  // Event handlers
-  const fetchCategories = useCallback(async () => {
-    setLoadingCategories(true)
-    try {
-      const response = await fetch('/api/inventory/categories')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.categories.length > 0) {
-          setCategories(data.categories)
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    } finally {
-      setLoadingCategories(false)
-    }
-  }, [])
-
-  const handleInputChange = useCallback((field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-    
-    // Clear error for this field
+  // Handlers
+  const handleInputChange = (field: keyof Product, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors[field]
-        return newErrors
-      })
+      setErrors(prev => ({ ...prev, [field]: '' }))
     }
-  }, [errors])
+  }
 
-  const handleBaseUnitChange = useCallback((unitCode: string) => {
-    const selectedUnit = allUnits.find(unit => unit.code === unitCode)
-    if (selectedUnit) {
-      setFormData(prev => ({
-        ...prev,
-        base_unit: selectedUnit.code,
-        stock_unit: selectedUnit.code
-      }))
-    }
-  }, [allUnits])
-
-  const handleGenerateSKU = useCallback(() => {
+  const handleGenerateSKU = () => {
     if (formData.name && formData.category) {
-      const sku = generateSKU(formData.name, formData.category)
-      handleInputChange('sku', sku)
+      const newSKU = generateSKU(formData.name, formData.category)
+      handleInputChange('sku', newSKU)
+    } else {
+      toast.error('Ingresa nombre y categoría primero')
     }
-  }, [formData.name, formData.category, handleInputChange])
+  }
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = async () => {
     const validationErrors = validateForm(formData)
-    
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      toast.error('Por favor corrige los errores antes de continuar')
       return
     }
 
     setLoading(true)
     try {
-      const url = mode === 'create'
+      const url = mode === 'create' 
         ? '/api/inventory/products'
-        : `/api/inventory/products/${product?.id}`
+        : `/api/inventory/products/${product?.id || product?.product_id}`
       
       const method = mode === 'create' ? 'POST' : 'PUT'
-
+      
       const response = await fetch(url, {
         method,
         headers: {
@@ -278,357 +251,351 @@ export default function ProductModalGlass({ isOpen, onClose, product, mode, onSu
       })
 
       if (response.ok) {
-        setShowSuccess(true)
-        setTimeout(() => {
-          onSuccess()
-          onClose()
-        }, 1500)
+        toast.success(`Producto ${mode === 'create' ? 'creado' : 'actualizado'} exitosamente`)
+        onSuccess()
+        onClose()
       } else {
         const error = await response.json()
-        setErrors({ submit: error.error || error.message || "Error al guardar el producto" })
+        toast.error(error.message || 'Error al guardar el producto')
       }
     } catch (error) {
-      setErrors({ submit: "Error al procesar la solicitud" })
+      console.error('Error saving product:', error)
+      toast.error('Error al guardar el producto')
     } finally {
       setLoading(false)
     }
-  }, [formData, mode, product?.id, onSuccess, onClose])
-
-  const tabs = [
-    { key: 'basic', label: 'Información Básica', icon: FileText },
-    { key: 'stock', label: 'Stock', icon: Building },
-    { key: 'config', label: 'Configuración', icon: Settings }
-  ]
-
-  const getTitle = () => {
-    if (mode === 'create') return 'Crear Nuevo Producto'
-    if (mode === 'edit') return 'Editar Producto'
-    return 'Detalles del Producto'
   }
 
-  const getSubtitle = () => {
-    if (product && mode !== 'create') {
-      return `SKU: ${product.sku} • ${product.is_active ? 'Activo' : 'Inactivo'}`
-    }
-    return undefined
-  }
+  const unitOptions = allUnits.map(unit => ({
+    value: unit.code,
+    label: `${unit.name} (${unit.code})`
+  }))
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={isOpen}
       onClose={onClose}
-      title={getTitle()}
-      subtitle={getSubtitle()}
-      icon={Package}
-      size="lg"
-      footer={
-        <ModalFooter>
-          <div>
-            {Object.keys(errors).length > 0 && !errors.submit && (
-              <p className="text-red-600 text-sm">Por favor corrige los errores antes de continuar</p>
-            )}
-          </div>
-          
-          <ModalActions>
-            <ModalButton
-              onClick={onClose}
-              variant="secondary"
-            >
-              {isReadOnly ? 'Cerrar' : 'Cancelar'}
-            </ModalButton>
-            
-            {!isReadOnly && (
-              <ModalButton
-                onClick={handleSubmit}
-                disabled={loading || Object.keys(validateForm(formData)).length > 0}
-                loading={loading}
-                variant="primary"
-              >
-                {mode === 'create' ? 'Crear Producto' : 'Actualizar Producto'}
-              </ModalButton>
-            )}
-          </ModalActions>
-        </ModalFooter>
-      }
+      title={mode === 'create' ? 'Nuevo Producto' : 
+             mode === 'edit' ? 'Editar Producto' : 'Detalles del Producto'}
+      size="xl"
+      closeOnEscape={!loading}
+      closeOnClickOutside={!loading}
+      styles={{
+        content: {
+          maxHeight: '95vh',
+          overflow: 'hidden'
+        },
+        body: {
+          maxHeight: 'calc(95vh - 120px)',
+          overflow: 'auto',
+          padding: '1rem'
+        }
+      }}
     >
-      {/* Success Message */}
-      {showSuccess && (
-        <div className="glass-card p-4 mb-6 bg-green-50/80 border border-green-200/50">
-          <div className="flex items-center">
-            <Check className="w-5 h-5 text-green-500 mr-3" />
-            <p className="text-green-700 font-medium">
-              {mode === 'create' ? 'Producto creado exitosamente' : 'Producto actualizado exitosamente'}
-            </p>
-          </div>
-        </div>
-      )}
+      <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'basic')}>
+        <Tabs.List>
+          <Tabs.Tab value="basic" leftSection={<IconPackage size={16} />}>
+            Información Básica
+          </Tabs.Tab>
+          <Tabs.Tab value="inventory" leftSection={<IconTag size={16} />}>
+            Inventario
+          </Tabs.Tab>
+          <Tabs.Tab value="specifications" leftSection={<IconSettings size={16} />}>
+            Especificaciones
+          </Tabs.Tab>
+        </Tabs.List>
 
-      {/* Error Message */}
-      {errors.submit && (
-        <div className="glass-card p-4 mb-6 bg-red-50/80 border border-red-200/50">
-          <div className="flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
-            <p className="text-red-700">{errors.submit}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Navigation Tabs */}
-      <div className="flex gap-2 mb-6 p-1 glass-card">
-        {tabs.map((tab) => {
-          const TabIcon = tab.icon
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all flex-1 ${
-                activeTab === tab.key
-                  ? 'glass-tab active text-blue-700'
-                  : 'glass-tab text-slate-600 hover:text-slate-800'
-              }`}
-            >
-              <TabIcon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Content */}
-      <div className="space-y-6">
-        {activeTab === 'basic' && (
-          <div className="space-y-6">
-            <div className="glass-card p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nombre del Producto *
-                </label>
-                <div className="relative">
-                  <Package className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    readOnly={isReadOnly}
-                    className={`glass-input w-full pl-11 pr-4 py-3 text-slate-800 placeholder-slate-500 ${
-                      isReadOnly ? 'opacity-60' : ''
-                    } ${errors.name ? 'border-red-300' : ''}`}
-                    placeholder="Ingrese el nombre del producto"
+        <Tabs.Panel value="basic" pt="lg">
+          <Stack gap="md">
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 8 }}>
+                <TextInput
+                  label="Nombre del Producto *"
+                  placeholder="Nombre del producto"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  disabled={isReadOnly}
+                  error={errors.name}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <Group>
+                  <TextInput
+                    label="SKU *"
+                    placeholder="SKU"
+                    value={formData.sku}
+                    onChange={(e) => handleInputChange('sku', e.target.value)}
+                    disabled={isReadOnly}
+                    error={errors.sku}
+                    style={{ flex: 1 }}
                   />
-                </div>
-                {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    SKU *
-                  </label>
-                  <div className="relative">
-                    <Tag className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                    <input
-                      type="text"
-                      value={formData.sku}
-                      onChange={(e) => handleInputChange('sku', e.target.value)}
-                      readOnly={isReadOnly}
-                      className={`glass-input w-full pl-11 pr-4 py-3 text-slate-800 placeholder-slate-500 ${
-                        isReadOnly ? 'opacity-60' : ''
-                      } ${errors.sku ? 'border-red-300' : ''}`}
-                      placeholder="SKU del producto"
-                    />
-                  </div>
-                  {errors.sku && <p className="text-red-600 text-sm mt-1">{errors.sku}</p>}
-                </div>
-                
-                {!isReadOnly && (
-                  <div className="flex items-end">
-                    <ModalButton
+                  {!isReadOnly && (
+                    <Button
+                      variant="light"
+                      size="sm"
                       onClick={handleGenerateSKU}
-                      disabled={!formData.name || !formData.category}
-                      variant="secondary"
-                      className="w-full"
+                      mt="xl"
                     >
-                      <Settings className="w-4 h-4" />
-                      Generar SKU
-                    </ModalButton>
-                  </div>
-                )}
-              </div>
+                      Generar
+                    </Button>
+                  )}
+                </Group>
+              </Grid.Col>
+            </Grid>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Categoría *
-                </label>
-                <select
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Select
+                  label="Categoría *"
+                  placeholder="Selecciona una categoría"
                   value={formData.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                  disabled={isReadOnly || loadingCategories}
-                  className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${
-                    isReadOnly ? 'opacity-60' : ''
-                  } ${errors.category ? 'border-red-300' : ''}`}
-                >
-                  <option value="">
-                    {loadingCategories ? "Cargando categorías..." : "Seleccione una categoría"}
-                  </option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-                {errors.category && <p className="text-red-600 text-sm mt-1">{errors.category}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Descripción
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  readOnly={isReadOnly}
-                  rows={3}
-                  className={`glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none ${
-                    isReadOnly ? 'opacity-60' : ''
-                  }`}
-                  placeholder="Descripción detallada del producto..."
+                  onChange={(value) => handleInputChange('category', value)}
+                  disabled={isReadOnly}
+                  error={errors.category}
+                  data={categories}
                 />
-              </div>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <TextInput
+                  label="Código de Barras"
+                  placeholder="Código de barras"
+                  value={formData.barcode || ''}
+                  onChange={(e) => handleInputChange('barcode', e.target.value)}
+                  disabled={isReadOnly}
+                />
+              </Grid.Col>
+            </Grid>
 
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="is_active"
+            <Textarea
+              label="Descripción"
+              placeholder="Descripción del producto"
+              value={formData.description || ''}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              disabled={isReadOnly}
+              minRows={3}
+            />
+
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <Switch
+                  label="Producto Activo"
                   checked={formData.is_active}
-                  onChange={(e) => handleInputChange('is_active', e.target.checked)}
+                  onChange={(e) => handleInputChange('is_active', e.currentTarget.checked)}
                   disabled={isReadOnly}
-                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="is_active" className="text-sm font-medium text-slate-700">
-                  Producto Activo
-                </label>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'stock' && (
-          <div className="space-y-6">
-            <div className="glass-card p-6">
-              <h4 className="text-lg font-medium text-slate-800 mb-4">Unidades</h4>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Unidad Base *
-                </label>
-                <select
-                  value={formData.base_unit}
-                  onChange={(e) => handleBaseUnitChange(e.target.value)}
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <Switch
+                  label="Es Perecedero"
+                  checked={formData.is_perishable}
+                  onChange={(e) => handleInputChange('is_perishable', e.currentTarget.checked)}
                   disabled={isReadOnly}
-                  className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${
-                    isReadOnly ? 'opacity-60' : ''
-                  } ${errors.base_unit ? 'border-red-300' : ''}`}
-                >
-                  <option value="">Seleccione una unidad</option>
-                  {allUnits.map((unit) => (
-                    <option key={unit.code} value={unit.code}>
-                      {unit.name} ({unit.code}) - {unit.category}
-                    </option>
-                  ))}
-                </select>
-                {errors.base_unit && <p className="text-red-600 text-sm mt-1">{errors.base_unit}</p>}
-              </div>
-            </div>
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <Switch
+                  label="Requiere Lotes"
+                  checked={formData.requires_batch}
+                  onChange={(e) => handleInputChange('requires_batch', e.currentTarget.checked)}
+                  disabled={isReadOnly}
+                />
+              </Grid.Col>
+            </Grid>
+          </Stack>
+        </Tabs.Panel>
 
-            <div className="glass-card p-6">
-              <h4 className="text-lg font-medium text-slate-800 mb-4">Niveles de Stock</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Stock Mínimo *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.stock_minimum}
-                      onChange={(e) => handleInputChange('stock_minimum', parseFloat(e.target.value) || 0)}
-                      readOnly={isReadOnly}
-                      className={`glass-input w-full px-4 py-3 pr-16 text-slate-800 placeholder-slate-500 ${
-                        isReadOnly ? 'opacity-60' : ''
-                      } ${errors.stock_minimum ? 'border-red-300' : ''}`}
-                      placeholder="0"
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm">
-                      {formData.base_unit}
-                    </span>
-                  </div>
-                  {errors.stock_minimum && <p className="text-red-600 text-sm mt-1">{errors.stock_minimum}</p>}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Punto de Reorden *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.stock_reorder_point}
-                      onChange={(e) => handleInputChange('stock_reorder_point', parseFloat(e.target.value) || 0)}
-                      readOnly={isReadOnly}
-                      className={`glass-input w-full px-4 py-3 pr-16 text-slate-800 placeholder-slate-500 ${
-                        isReadOnly ? 'opacity-60' : ''
-                      } ${errors.stock_reorder_point ? 'border-red-300' : ''}`}
-                      placeholder="0"
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm">
-                      {formData.base_unit}
-                    </span>
-                  </div>
-                  {errors.stock_reorder_point && <p className="text-red-600 text-sm mt-1">{errors.stock_reorder_point}</p>}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <Tabs.Panel value="inventory" pt="lg">
+          <Stack gap="md">
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Select
+                  label="Unidad Base *"
+                  placeholder="Selecciona una unidad"
+                  value={formData.base_unit}
+                  onChange={(value) => handleInputChange('base_unit', value)}
+                  disabled={isReadOnly}
+                  error={errors.base_unit}
+                  data={unitOptions}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Select
+                  label="Unidad de Stock"
+                  placeholder="Selecciona una unidad"
+                  value={formData.stock_unit}
+                  onChange={(value) => handleInputChange('stock_unit', value)}
+                  disabled={isReadOnly}
+                  data={unitOptions}
+                />
+              </Grid.Col>
+            </Grid>
 
-        {activeTab === 'config' && (
-          <div className="space-y-6">
-            <div className="glass-card p-6">
-              <h4 className="text-lg font-medium text-slate-800 mb-4">Configuración del Producto</h4>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="is_perishable"
-                    checked={formData.is_perishable}
-                    onChange={(e) => handleInputChange('is_perishable', e.target.checked)}
-                    disabled={isReadOnly}
-                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="is_perishable" className="text-sm font-medium text-slate-700">
-                    Producto Perecedero
-                  </label>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="requires_batch"
-                    checked={formData.requires_batch}
-                    onChange={(e) => handleInputChange('requires_batch', e.target.checked)}
-                    disabled={isReadOnly}
-                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="requires_batch" className="text-sm font-medium text-slate-700">
-                    Requiere Manejo por Lotes
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <NumberInput
+                  label="Stock Mínimo"
+                  placeholder="0"
+                  value={formData.stock_minimum}
+                  onChange={(value) => handleInputChange('stock_minimum', typeof value === 'number' ? value : 0)}
+                  disabled={isReadOnly}
+                  min={0}
+                  error={errors.stock_minimum}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <NumberInput
+                  label="Punto de Reorden"
+                  placeholder="0"
+                  value={formData.stock_reorder_point}
+                  onChange={(value) => handleInputChange('stock_reorder_point', typeof value === 'number' ? value : 0)}
+                  disabled={isReadOnly}
+                  min={0}
+                  error={errors.stock_reorder_point}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <NumberInput
+                  label="Días de Advertencia"
+                  placeholder="7"
+                  value={formData.expiry_warning_days}
+                  onChange={(value) => handleInputChange('expiry_warning_days', typeof value === 'number' ? value : 7)}
+                  disabled={isReadOnly}
+                  min={1}
+                />
+              </Grid.Col>
+            </Grid>
+
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <NumberInput
+                  label="Último Costo"
+                  placeholder="0.00"
+                  value={formData.last_cost}
+                  onChange={(value) => handleInputChange('last_cost', typeof value === 'number' ? value : 0)}
+                  disabled={isReadOnly}
+                  min={0}
+                  step={0.01}
+                  decimalScale={2}
+                  prefix="$"
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <NumberInput
+                  label="Costo Promedio"
+                  placeholder="0.00"
+                  value={formData.average_cost}
+                  onChange={(value) => handleInputChange('average_cost', typeof value === 'number' ? value : 0)}
+                  disabled={isReadOnly}
+                  min={0}
+                  step={0.01}
+                  decimalScale={2}
+                  prefix="$"
+                />
+              </Grid.Col>
+            </Grid>
+          </Stack>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="specifications" pt="lg">
+          <Stack gap="md">
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <TextInput
+                  label="Marca"
+                  placeholder="Marca del producto"
+                  value={formData.spec_brand || ''}
+                  onChange={(e) => handleInputChange('spec_brand', e.target.value)}
+                  disabled={isReadOnly}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <TextInput
+                  label="Modelo"
+                  placeholder="Modelo del producto"
+                  value={formData.spec_model || ''}
+                  onChange={(e) => handleInputChange('spec_model', e.target.value)}
+                  disabled={isReadOnly}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <TextInput
+                  label="Color"
+                  placeholder="Color del producto"
+                  value={formData.spec_color || ''}
+                  onChange={(e) => handleInputChange('spec_color', e.target.value)}
+                  disabled={isReadOnly}
+                />
+              </Grid.Col>
+            </Grid>
+
+            <Grid>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                <NumberInput
+                  label="Peso (kg)"
+                  placeholder="0"
+                  value={formData.spec_weight}
+                  onChange={(value) => handleInputChange('spec_weight', typeof value === 'number' ? value : 0)}
+                  disabled={isReadOnly}
+                  min={0}
+                  step={0.01}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                <NumberInput
+                  label="Largo (cm)"
+                  placeholder="0"
+                  value={formData.spec_length}
+                  onChange={(value) => handleInputChange('spec_length', typeof value === 'number' ? value : 0)}
+                  disabled={isReadOnly}
+                  min={0}
+                  step={0.01}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                <NumberInput
+                  label="Ancho (cm)"
+                  placeholder="0"
+                  value={formData.spec_width}
+                  onChange={(value) => handleInputChange('spec_width', typeof value === 'number' ? value : 0)}
+                  disabled={isReadOnly}
+                  min={0}
+                  step={0.01}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                <NumberInput
+                  label="Alto (cm)"
+                  placeholder="0"
+                  value={formData.spec_height}
+                  onChange={(value) => handleInputChange('spec_height', typeof value === 'number' ? value : 0)}
+                  disabled={isReadOnly}
+                  min={0}
+                  step={0.01}
+                />
+              </Grid.Col>
+            </Grid>
+          </Stack>
+        </Tabs.Panel>
+      </Tabs>
+
+      {!isReadOnly && (
+        <Group justify="flex-end" mt="lg">
+          <Button
+            variant="light"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            loading={loading}
+            leftSection={<IconDeviceFloppy size={16} />}
+          >
+            {mode === 'create' ? 'Crear Producto' : 'Guardar Cambios'}
+          </Button>
+        </Group>
+      )}
     </Modal>
   )
 }

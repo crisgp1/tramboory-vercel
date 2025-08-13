@@ -2,23 +2,28 @@
 
 import { useState, useCallback } from "react";
 import {
-  Card,
-  CardBody,
+  Paper,
   Button,
-  Input,
+  TextInput,
   Textarea,
   Select,
-  SelectItem,
-  Chip,
+  Badge,
   Progress,
   Image,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure
-} from "@heroui/react";
+  Group,
+  Stack,
+  Text,
+  Title,
+  Grid,
+  ActionIcon,
+  Center,
+  FileInput,
+  NumberInput,
+  Container,
+  Alert
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import {
   PhotoIcon,
   XMarkIcon,
@@ -31,7 +36,6 @@ import {
   TagIcon,
   CubeIcon
 } from "@heroicons/react/24/outline";
-// Using native HTML5 drag and drop instead of react-dropzone
 
 interface ProductFormData {
   name: string;
@@ -55,11 +59,12 @@ interface SupplierProductUploadProps {
 }
 
 export default function SupplierProductUpload({ supplierId, onSuccess }: SupplierProductUploadProps) {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [opened, { open, close }] = useDisclosure(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [newTag, setNewTag] = useState("");
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
@@ -78,23 +83,23 @@ export default function SupplierProductUpload({ supplierId, onSuccess }: Supplie
   });
 
   const categories = [
-    { key: "electronics", label: "Electrónicos" },
-    { key: "furniture", label: "Muebles" },
-    { key: "office", label: "Oficina" },
-    { key: "cleaning", label: "Limpieza" },
-    { key: "food", label: "Alimentos" },
-    { key: "clothing", label: "Ropa y Uniformes" },
-    { key: "tools", label: "Herramientas" },
-    { key: "other", label: "Otros" }
+    { value: "electronics", label: "Electrónicos" },
+    { value: "furniture", label: "Muebles" },
+    { value: "office", label: "Oficina" },
+    { value: "cleaning", label: "Limpieza" },
+    { value: "food", label: "Alimentos" },
+    { value: "clothing", label: "Ropa y Uniformes" },
+    { value: "tools", label: "Herramientas" },
+    { value: "other", label: "Otros" }
   ];
 
   const units = [
-    { key: "pcs", label: "Piezas" },
-    { key: "kg", label: "Kilogramos" },
-    { key: "lts", label: "Litros" },
-    { key: "m", label: "Metros" },
-    { key: "box", label: "Cajas" },
-    { key: "pack", label: "Paquetes" }
+    { value: "pcs", label: "Piezas" },
+    { value: "kg", label: "Kilogramos" },
+    { value: "lts", label: "Litros" },
+    { value: "m", label: "Metros" },
+    { value: "box", label: "Cajas" },
+    { value: "pack", label: "Paquetes" }
   ];
 
   const [isDragActive, setIsDragActive] = useState(false);
@@ -254,7 +259,7 @@ export default function SupplierProductUpload({ supplierId, onSuccess }: Supplie
       if (response.ok) {
         setTimeout(() => {
           onSuccess?.();
-          onClose();
+          close();
           resetForm();
         }, 1000);
       } else {
@@ -293,139 +298,150 @@ export default function SupplierProductUpload({ supplierId, onSuccess }: Supplie
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Información Básica</h3>
+          <Stack gap="md">
+            <Title order={4}>Información Básica</Title>
             
-            <Input
+            <TextInput
               label="Nombre del Producto"
               placeholder="Ej: Laptop HP ProBook 450"
               value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              isInvalid={!!errors.name}
-              errorMessage={errors.name}
-              startContent={<CubeIcon className="w-4 h-4 text-gray-400" />}
+              onChange={(e) => handleInputChange('name', e.currentTarget.value)}
+              error={errors.name}
+              leftSection={<CubeIcon className="w-4 h-4" />}
+              required
             />
 
             <Textarea
               label="Descripción"
               placeholder="Describe las características principales del producto..."
               value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              isInvalid={!!errors.description}
-              errorMessage={errors.description}
+              onChange={(e) => handleInputChange('description', e.currentTarget.value)}
+              error={errors.description}
               minRows={3}
+              required
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Select
-                label="Categoría"
-                placeholder="Selecciona una categoría"
-                selectedKeys={formData.category ? [formData.category] : []}
-                onSelectionChange={(keys) => handleInputChange('category', Array.from(keys)[0])}
-                isInvalid={!!errors.category}
-                errorMessage={errors.category}
-              >
-                {categories.map(cat => (
-                  <SelectItem key={cat.key}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </Select>
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Select
+                  label="Categoría"
+                  placeholder="Selecciona una categoría"
+                  value={formData.category}
+                  onChange={(value) => handleInputChange('category', value)}
+                  data={categories}
+                  error={errors.category}
+                  required
+                />
+              </Grid.Col>
 
-              <Input
-                label="Marca"
-                placeholder="Ej: HP, Samsung, etc."
-                value={formData.brand}
-                onChange={(e) => handleInputChange('brand', e.target.value)}
-                startContent={<TagIcon className="w-4 h-4 text-gray-400" />}
-              />
-            </div>
-          </div>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <TextInput
+                  label="Marca"
+                  placeholder="Ej: HP, Samsung, etc."
+                  value={formData.brand}
+                  onChange={(e) => handleInputChange('brand', e.currentTarget.value)}
+                  leftSection={<TagIcon className="w-4 h-4" />}
+                />
+              </Grid.Col>
+            </Grid>
+          </Stack>
         );
 
       case 2:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Precio y Disponibilidad</h3>
+          <Stack gap="md">
+            <Title order={4}>Precio y Disponibilidad</Title>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="SKU / Código"
-                placeholder="Ej: HP-PB450-001"
-                value={formData.sku}
-                onChange={(e) => handleInputChange('sku', e.target.value)}
-                isInvalid={!!errors.sku}
-                errorMessage={errors.sku}
-              />
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <TextInput
+                  label="SKU / Código"
+                  placeholder="Ej: HP-PB450-001"
+                  value={formData.sku}
+                  onChange={(e) => handleInputChange('sku', e.currentTarget.value)}
+                  error={errors.sku}
+                  required
+                />
+              </Grid.Col>
 
-              <Input
-                label="Precio"
-                type="number"
-                placeholder="0.00"
-                value={formData.price.toString()}
-                onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                isInvalid={!!errors.price}
-                errorMessage={errors.price}
-                startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-              />
-            </div>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <NumberInput
+                  label="Precio"
+                  placeholder="0.00"
+                  leftSection="$"
+                  decimalScale={2}
+                  min={0}
+                  value={formData.price}
+                  onChange={(value) => handleInputChange('price', typeof value === 'number' ? value : 0)}
+                  error={errors.price}
+                  required
+                />
+              </Grid.Col>
+            </Grid>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
-                label="Cantidad Mínima"
-                type="number"
-                placeholder="1"
-                value={formData.minQuantity.toString()}
-                onChange={(e) => handleInputChange('minQuantity', parseInt(e.target.value) || 1)}
-              />
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <NumberInput
+                  label="Cantidad Mínima"
+                  placeholder="1"
+                  min={1}
+                  value={formData.minQuantity}
+                  onChange={(value) => handleInputChange('minQuantity', typeof value === 'number' ? value : 1)}
+                />
+              </Grid.Col>
 
-              <Input
-                label="Cantidad Máxima"
-                type="number"
-                placeholder="1000"
-                value={formData.maxQuantity.toString()}
-                onChange={(e) => handleInputChange('maxQuantity', parseInt(e.target.value) || 1000)}
-              />
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <NumberInput
+                  label="Cantidad Máxima"
+                  placeholder="1000"
+                  min={1}
+                  value={formData.maxQuantity}
+                  onChange={(value) => handleInputChange('maxQuantity', typeof value === 'number' ? value : 1000)}
+                />
+              </Grid.Col>
 
-              <Select
-                label="Unidad"
-                placeholder="Selecciona"
-                selectedKeys={formData.unit ? [formData.unit] : []}
-                onSelectionChange={(keys) => handleInputChange('unit', Array.from(keys)[0])}
-                isInvalid={!!errors.unit}
-                errorMessage={errors.unit}
-              >
-                {units.map(unit => (
-                  <SelectItem key={unit.key}>
-                    {unit.label}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <Select
+                  label="Unidad"
+                  placeholder="Selecciona"
+                  value={formData.unit}
+                  onChange={(value) => handleInputChange('unit', value)}
+                  data={units}
+                  error={errors.unit}
+                  required
+                />
+              </Grid.Col>
+            </Grid>
 
             <Textarea
               label="Especificaciones Técnicas"
               placeholder="Detalles técnicos, dimensiones, características especiales..."
               value={formData.specifications}
-              onChange={(e) => handleInputChange('specifications', e.target.value)}
+              onChange={(e) => handleInputChange('specifications', e.currentTarget.value)}
               minRows={3}
             />
-          </div>
+          </Stack>
         );
 
       case 3:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Imágenes del Producto</h3>
+          <Stack gap="md">
+            <Title order={4}>Imágenes del Producto</Title>
             
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => document.getElementById('file-input')?.click()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                isDragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-              }`}
+              style={{
+                border: `2px dashed ${isDragActive ? 'var(--mantine-color-blue-4)' : 'var(--mantine-color-gray-4)'}`,
+                borderRadius: 'var(--mantine-radius-md)',
+                padding: '2rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                backgroundColor: isDragActive ? 'var(--mantine-color-blue-0)' : 'transparent',
+                transition: 'all 0.2s ease'
+              }}
             >
               <input 
                 id="file-input"
@@ -433,195 +449,223 @@ export default function SupplierProductUpload({ supplierId, onSuccess }: Supplie
                 multiple
                 accept="image/*"
                 onChange={(e) => handleFileSelect(e.target.files)}
-                className="hidden"
+                style={{ display: 'none' }}
               />
-              <CloudArrowUpIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-gray-700 mb-2">
+              <CloudArrowUpIcon style={{ width: '3rem', height: '3rem', margin: '0 auto 1rem', color: 'var(--mantine-color-gray-5)' }} />
+              <Text size="lg" fw={500} c="dark.7" mb="sm">
                 {isDragActive ? 'Suelta las imágenes aquí' : 'Arrastra imágenes aquí'}
-              </p>
-              <p className="text-sm text-gray-500">
+              </Text>
+              <Text size="sm" c="dimmed">
                 O haz clic para seleccionar archivos (máximo 6 imágenes, 5MB cada una)
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
+              </Text>
+              <Text size="xs" c="dimmed" mt="xs">
                 Formatos soportados: JPG, PNG, WebP
-              </p>
+              </Text>
             </div>
 
             {errors.images && (
-              <p className="text-red-500 text-sm">{errors.images}</p>
+              <Text c="red" size="sm">{errors.images}</Text>
             )}
 
             {formData.images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Grid>
                 {formData.images.map((image, index) => (
-                  <div key={index} className="relative">
-                    <Image
-                      src={URL.createObjectURL(image)}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      color="danger"
-                      variant="solid"
-                      className="absolute top-2 right-2"
-                      onClick={() => removeImage(index)}
-                    >
-                      <XMarkIcon className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <Grid.Col key={index} span={{ base: 6, md: 4 }}>
+                    <div style={{ position: 'relative' }}>
+                      <Image
+                        src={URL.createObjectURL(image)}
+                        alt={`Preview ${index + 1}`}
+                        h={120}
+                        style={{ objectFit: 'cover' }}
+                        radius="md"
+                      />
+                      <ActionIcon
+                        size="sm"
+                        color="red"
+                        style={{ position: 'absolute', top: 8, right: 8 }}
+                        onClick={() => removeImage(index)}
+                      >
+                        <XMarkIcon className="w-4 h-4" />
+                      </ActionIcon>
+                    </div>
+                  </Grid.Col>
                 ))}
-              </div>
+              </Grid>
             )}
-          </div>
+          </Stack>
         );
 
       case 4:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Etiquetas y Finalización</h3>
+          <Stack gap="md">
+            <Title order={4}>Etiquetas y Finalización</Title>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Etiquetas (palabras clave)
-              </label>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {formData.tags.map((tag, index) => (
-                  <Chip
-                    key={index}
-                    onClose={() => removeTag(index)}
-                    variant="flat"
-                    color="primary"
-                  >
-                    {tag}
-                  </Chip>
-                ))}
-              </div>
-              <Input
-                placeholder="Escribe una etiqueta y presiona Enter"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addTag(e.currentTarget.value);
-                    e.currentTarget.value = '';
-                  }
-                }}
-              />
+              <Text size="sm" fw={500} mb="xs">Etiquetas (palabras clave)</Text>
+              
+              {formData.tags.length > 0 && (
+                <Group gap="xs" mb="sm">
+                  {formData.tags.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="light"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => removeTag(index)}
+                    >
+                      {tag} ×
+                    </Badge>
+                  ))}
+                </Group>
+              )}
+              
+              <Group>
+                <TextInput
+                  placeholder="Escribe una etiqueta"
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.currentTarget.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newTag.trim()) {
+                        addTag(newTag.trim());
+                        setNewTag('');
+                      }
+                    }
+                  }}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  onClick={() => {
+                    if (newTag.trim()) {
+                      addTag(newTag.trim());
+                      setNewTag('');
+                    }
+                  }}
+                  disabled={!newTag.trim() || formData.tags.includes(newTag.trim())}
+                >
+                  Agregar
+                </Button>
+              </Group>
             </div>
 
             {/* Resumen del producto */}
-            <Card className="bg-gray-50">
-              <CardBody className="p-4">
-                <h4 className="font-semibold mb-3">Resumen del Producto</h4>
-                <div className="space-y-2 text-sm">
-                  <p><span className="font-medium">Nombre:</span> {formData.name}</p>
-                  <p><span className="font-medium">Categoría:</span> {categories.find(c => c.key === formData.category)?.label}</p>
-                  <p><span className="font-medium">SKU:</span> {formData.sku}</p>
-                  <p><span className="font-medium">Precio:</span> ${formData.price.toLocaleString()}</p>
-                  <p><span className="font-medium">Unidad:</span> {units.find(u => u.key === formData.unit)?.label}</p>
-                  <p><span className="font-medium">Imágenes:</span> {formData.images.length} archivo(s)</p>
-                </div>
-              </CardBody>
-            </Card>
+            <Paper bg="gray.0" p="md" withBorder>
+              <Text fw={500} mb="md">Resumen del Producto</Text>
+              <Stack gap="xs">
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">Nombre:</Text>
+                  <Text size="sm" fw={500}>{formData.name}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">Categoría:</Text>
+                  <Text size="sm" fw={500}>{categories.find(c => c.value === formData.category)?.label}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">SKU:</Text>
+                  <Text size="sm" fw={500}>{formData.sku}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">Precio:</Text>
+                  <Text size="sm" fw={500}>${formData.price.toLocaleString()}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">Unidad:</Text>
+                  <Text size="sm" fw={500}>{units.find(u => u.value === formData.unit)?.label}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">Imágenes:</Text>
+                  <Text size="sm" fw={500}>{formData.images.length} archivo(s)</Text>
+                </Group>
+              </Stack>
+            </Paper>
 
             {loading && (
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Subiendo producto...</span>
-                  <span className="text-sm font-semibold">{uploadProgress}%</span>
-                </div>
-                <Progress value={uploadProgress} color="primary" />
-              </div>
+              <Stack gap="xs">
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">Subiendo producto...</Text>
+                  <Text size="sm" fw={500}>{uploadProgress}%</Text>
+                </Group>
+                <Progress value={uploadProgress} />
+              </Stack>
             )}
 
             {errors.submit && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
-                  <p className="text-sm text-red-600">{errors.submit}</p>
-                </div>
-              </div>
+              <Alert color="red" icon={<ExclamationTriangleIcon className="w-5 h-5" />}>
+                {errors.submit}
+              </Alert>
             )}
-          </div>
+          </Stack>
         );
+
+      default:
+        return null;
     }
   };
 
   return (
     <>
       <Button
-        color="primary"
         size="lg"
-        startContent={<PlusIcon className="w-5 h-5" />}
-        onPress={onOpen}
-        className="font-semibold"
+        leftSection={<PlusIcon className="w-5 h-5" />}
+        onClick={open}
       >
         Agregar Nuevo Producto
       </Button>
 
       <Modal 
-        isOpen={isOpen} 
-        onClose={onClose}
-        size="2xl"
-        scrollBehavior="inside"
-        isDismissable={!loading}
-        hideCloseButton={loading}
+        opened={opened} 
+        onClose={close}
+        size="xl"
+        closeOnClickOutside={!loading}
+        closeOnEscape={!loading}
+        withCloseButton={!loading}
+        title={
+          <Stack gap="xs">
+            <Title order={3}>Agregar Nuevo Producto</Title>
+            <Group>
+              <Progress
+                value={(currentStep / 4) * 100}
+                style={{ flex: 1 }}
+                size="sm"
+              />
+              <Text size="sm" c="dimmed">
+                Paso {currentStep} de 4
+              </Text>
+            </Group>
+          </Stack>
+        }
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                <h2 className="text-xl font-bold">Agregar Nuevo Producto</h2>
-                <div className="flex items-center gap-2">
-                  <Progress
-                    value={(currentStep / 4) * 100}
-                    className="flex-1"
-                    color="primary"
-                    size="sm"
-                  />
-                  <span className="text-sm text-gray-500">
-                    Paso {currentStep} de 4
-                  </span>
-                </div>
-              </ModalHeader>
-              
-              <ModalBody>
-                {renderStep()}
-              </ModalBody>
-              
-              <ModalFooter>
-                <Button
-                  color="default"
-                  variant="light"
-                  onPress={currentStep === 1 ? onClose : prevStep}
-                  isDisabled={loading}
-                >
-                  {currentStep === 1 ? 'Cancelar' : 'Anterior'}
-                </Button>
-                
-                {currentStep < 4 ? (
-                  <Button
-                    color="primary"
-                    onPress={nextStep}
-                    isDisabled={loading}
-                  >
-                    Siguiente
-                  </Button>
-                ) : (
-                  <Button
-                    color="success"
-                    onPress={handleSubmit}
-                    isLoading={loading}
-                    startContent={uploadProgress === 100 ? <CheckCircleIcon className="w-5 h-5" /> : undefined}
-                  >
-                    {loading ? 'Subiendo...' : uploadProgress === 100 ? 'Completado' : 'Crear Producto'}
-                  </Button>
-                )}
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+        <Stack gap="lg">
+          {renderStep()}
+          
+          <Group justify="flex-end" mt="lg">
+            <Button
+              variant="light"
+              onClick={currentStep === 1 ? close : prevStep}
+              disabled={loading}
+            >
+              {currentStep === 1 ? 'Cancelar' : 'Anterior'}
+            </Button>
+            
+            {currentStep < 4 ? (
+              <Button
+                onClick={nextStep}
+                disabled={loading}
+              >
+                Siguiente
+              </Button>
+            ) : (
+              <Button
+                color="green"
+                onClick={handleSubmit}
+                loading={loading}
+                leftSection={uploadProgress === 100 ? <CheckCircleIcon className="w-5 h-5" /> : undefined}
+              >
+                {loading ? 'Subiendo...' : uploadProgress === 100 ? 'Completado' : 'Crear Producto'}
+              </Button>
+            )}
+          </Group>
+        </Stack>
       </Modal>
     </>
   );

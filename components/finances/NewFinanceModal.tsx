@@ -3,33 +3,31 @@
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Button,
-  Input,
+  TextInput,
   Select,
-  SelectItem,
   Textarea,
   Card,
-  CardBody,
-  Chip,
+  Badge,
   Autocomplete,
-  AutocompleteItem,
-  Divider
-} from '@heroui/react';
+  Divider,
+  Group,
+  Stack,
+  Text,
+  Title,
+  ActionIcon
+} from '@mantine/core';
 import {
-  XMarkIcon,
-  CurrencyDollarIcon,
-  CalendarIcon,
-  TagIcon,
-  DocumentTextIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  UserIcon,
-  BuildingOfficeIcon
-} from '@heroicons/react/24/outline';
+  IconX,
+  IconCurrencyDollar,
+  IconCalendar,
+  IconTag,
+  IconFileText,
+  IconTrendingUp,
+  IconTrendingDown,
+  IconUser,
+  IconBuilding
+} from '@tabler/icons-react';
 import {
   FINANCE_TYPES,
   FINANCE_CATEGORIES,
@@ -46,7 +44,7 @@ import {
 } from '@/types/finance';
 
 interface NewFinanceModalProps {
-  isOpen: boolean;
+  opened: boolean;
   onClose: () => void;
   onSubmit: (data: CreateFinanceData) => Promise<void>;
   availableTags: string[];
@@ -67,7 +65,7 @@ interface NewFinanceModalProps {
 }
 
 export default function NewFinanceModal({
-  isOpen,
+  opened,
   onClose,
   onSubmit,
   availableTags = [],
@@ -92,7 +90,7 @@ export default function NewFinanceModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (isOpen) {
+    if (opened) {
       // Reset form when modal opens
       setFormData({
         type: 'income',
@@ -109,7 +107,7 @@ export default function NewFinanceModal({
       setStep(1);
       setTagInput('');
     }
-  }, [isOpen]);
+  }, [opened]);
 
   const validateStep = (stepNumber: number): boolean => {
     const newErrors: Record<string, string> = {};
@@ -208,619 +206,557 @@ export default function NewFinanceModal({
   };
 
   const renderStep1 = () => (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Vinculación con reserva - Sección destacada */}
       {reservations && reservations.length > 0 && (
-        <Card className="border-2 border-blue-200 bg-blue-50">
-          <CardBody className="p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <UserIcon className="w-4 h-4 text-blue-600" />
-              </div>
-              <div>
-                <h4 className="font-medium text-blue-900">¿Relacionar con una reserva?</h4>
-                <p className="text-sm text-blue-700">Selecciona una reserva existente para vincular esta transacción</p>
-              </div>
+        <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderColor: 'var(--mantine-color-blue-3)' }}>
+          <Group gap="md" mb="md">
+            <div 
+              style={{
+                width: 32,
+                height: 32,
+                backgroundColor: 'var(--mantine-color-blue-1)',
+                borderRadius: 'var(--mantine-radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <IconUser size={16} color="var(--mantine-color-blue-6)" />
             </div>
-            <div className="flex gap-2">
-              <Select
-                placeholder="Seleccionar reserva existente..."
-                selectedKeys={formData.reservationId ? [formData.reservationId] : []}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0] as string;
-                  if (value) {
-                    handleReservationSelect(value);
-                  }
-                }}
-                variant="flat"
-                aria-label="Vincular con reserva"
-                classNames={{
-                  base: "flex-1",
-                  trigger: "bg-white border border-blue-200 hover:border-blue-300 focus-within:border-blue-500",
-                  value: "text-gray-900",
-                  listboxWrapper: "bg-white",
-                  popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
+            <Stack gap={0}>
+              <Text fw={500} c="blue">¿Relacionar con una reserva?</Text>
+              <Text size="sm" c="blue">Selecciona una reserva existente para vincular esta transacción</Text>
+            </Stack>
+          </Group>
+          <Group gap="sm">
+            <Select
+              placeholder="Seleccionar reserva existente..."
+              value={formData.reservationId || ''}
+              onChange={(value) => {
+                if (value) {
+                  handleReservationSelect(value);
+                }
+              }}
+              data={reservations.map((reservation) => ({
+                value: reservation._id,
+                label: `${reservation.customer.name} - ${reservation.child.name} - ${formatCurrency(reservation.pricing.total)} - ${new Date(reservation.eventDate).toLocaleDateString()}`
+              }))}
+              style={{ flex: 1 }}
+              styles={{
+                input: {
+                  backgroundColor: 'white',
+                  borderColor: 'var(--mantine-color-blue-3)'
+                }
+              }}
+            />
+            
+            {formData.reservationId && (
+              <Button
+                size="sm"
+                variant="light"
+                c="blue"
+                onClick={() => {
+                  setFormData((prev: CreateFinanceData) => ({
+                    ...prev,
+                    reservationId: undefined,
+                    category: 'other',
+                    description: '',
+                    amount: 0
+                  }));
                 }}
               >
-                {reservations.map((reservation) => (
-                  <SelectItem
-                    key={reservation._id}
-                    startContent={<UserIcon className="w-4 h-4 text-gray-400" />}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{reservation.customer.name}</span>
-                      <span className="text-xs text-gray-500">
-                        {reservation.child.name} - {formatCurrency(reservation.pricing.total)} - {new Date(reservation.eventDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </Select>
-              
-              {formData.reservationId && (
-                <Button
-                  size="sm"
-                  variant="light"
-                  className="text-blue-600 hover:text-blue-800 hover:bg-blue-100"
-                  onPress={() => {
-                    setFormData((prev: CreateFinanceData) => ({
-                      ...prev,
-                      reservationId: undefined,
-                      category: 'other',
-                      description: '',
-                      amount: 0
-                    }));
-                  }}
-                >
-                  Limpiar
-                </Button>
-              )}
-            </div>
-          </CardBody>
+                Limpiar
+              </Button>
+            )}
+          </Group>
         </Card>
       )}
 
       {/* Tipo de transacción */}
-      <div className="grid grid-cols-2 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--mantine-spacing-sm)' }}>
         {FINANCE_TYPES.map((type) => (
           <Card
             key={type}
-            isPressable
-            className={`border-2 transition-colors cursor-pointer ${
-              formData.type === type
-                ? type === 'income'
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-red-500 bg-red-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-            onPress={() => setFormData((prev: CreateFinanceData) => ({ ...prev, type }))}
+            withBorder
+            p="md"
+            style={{
+              cursor: 'pointer',
+              textAlign: 'center',
+              borderColor: formData.type === type
+                ? type === 'income' ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-red-5)'
+                : 'var(--mantine-color-gray-3)',
+              backgroundColor: formData.type === type
+                ? type === 'income' ? 'var(--mantine-color-green-0)' : 'var(--mantine-color-red-0)'
+                : 'transparent'
+            }}
+            onClick={() => setFormData((prev: CreateFinanceData) => ({ ...prev, type }))}
           >
-            <CardBody className="p-4 text-center">
-              <div className="flex flex-col items-center gap-2">
-                {type === 'income' ? (
-                  <ArrowTrendingUpIcon className="w-8 h-8 text-green-500" />
-                ) : (
-                  <ArrowTrendingDownIcon className="w-8 h-8 text-red-500" />
-                )}
-                <span className="font-medium text-sm">
-                  {FINANCE_TYPE_LABELS[type]}
-                </span>
-              </div>
-            </CardBody>
+            <Stack gap="xs" align="center">
+              {type === 'income' ? (
+                <IconTrendingUp size={32} color="var(--mantine-color-green-5)" />
+              ) : (
+                <IconTrendingDown size={32} color="var(--mantine-color-red-5)" />
+              )}
+              <Text fw={500} size="sm">
+                {FINANCE_TYPE_LABELS[type]}
+              </Text>
+            </Stack>
           </Card>
         ))}
       </div>
-      {errors.type && <p className="text-red-500 text-xs">{errors.type}</p>}
+      {errors.type && <Text c="red" size="xs">{errors.type}</Text>}
 
       {/* Información básica */}
-      <div className="space-y-4">
+      <Stack gap="md">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Text size="sm" fw={500} mb="xs">
             Descripción *
-          </label>
-          <Input
+          </Text>
+          <TextInput
             placeholder="Ej: Pago de cliente, Compra de materiales..."
             value={formData.description}
-            onValueChange={(value) => setFormData((prev: CreateFinanceData) => ({ ...prev, description: value }))}
-            isInvalid={!!errors.description}
-            errorMessage={errors.description}
-            startContent={<DocumentTextIcon className="w-4 h-4 text-gray-400" />}
-            variant="flat"
-            aria-label="Descripción de la transacción"
-            classNames={{
-              input: "text-foreground",
-              inputWrapper: "form-input"
-            }}
+            onChange={(e) => setFormData((prev: CreateFinanceData) => ({ ...prev, description: e.target.value }))}
+            error={errors.description}
+            leftSection={<IconFileText size={16} />}
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--mantine-spacing-md)' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Monto *
-            </label>
-            <Input
+            </Text>
+            <TextInput
               type="number"
               placeholder="0.00"
               value={formData.amount.toString()}
-              onValueChange={(value) => {
-                const num = parseFloat(value) || 0;
+              onChange={(e) => {
+                const num = parseFloat(e.target.value) || 0;
                 setFormData((prev: CreateFinanceData) => ({ ...prev, amount: num }));
               }}
-              isInvalid={!!errors.amount}
-              errorMessage={errors.amount}
-              startContent={<CurrencyDollarIcon className="w-4 h-4 text-gray-400" />}
-              variant="flat"
-              aria-label="Monto de la transacción"
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-              }}
+              error={errors.amount}
+              leftSection={<IconCurrencyDollar size={16} />}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Fecha *
-            </label>
-            <Input
+            </Text>
+            <TextInput
               type="date"
               value={formData.date.toISOString().split('T')[0]}
               onChange={(e) => {
                 const date = new Date(e.target.value);
                 setFormData((prev: CreateFinanceData) => ({ ...prev, date }));
               }}
-              startContent={<CalendarIcon className="w-4 h-4 text-gray-400" />}
-              variant="flat"
-              aria-label="Fecha de la transacción"
-              classNames={{
-                input: "text-gray-900",
-                inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-              }}
+              leftSection={<IconCalendar size={16} />}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--mantine-spacing-md)' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Categoría *
-            </label>
+            </Text>
             <Select
               placeholder="Selecciona una categoría"
-              selectedKeys={formData.category ? [formData.category] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0] as string;
-                setFormData((prev: CreateFinanceData) => ({ ...prev, category: value as FinanceCategory }));
-              }}
-              isInvalid={!!errors.category}
-              errorMessage={errors.category}
-              variant="flat"
-              aria-label="Categoría de la transacción"
-              classNames={{
-                trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                value: "text-gray-900",
-                listboxWrapper: "bg-white",
-                popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-              }}
-            >
-              {FINANCE_CATEGORIES.map((category) => (
-                <SelectItem key={category}>
-                  {FINANCE_CATEGORY_LABELS[category]}
-                </SelectItem>
-              ))}
-            </Select>
+              value={formData.category || ''}
+              onChange={(value) => setFormData((prev: CreateFinanceData) => ({ ...prev, category: value as FinanceCategory }))}
+              error={errors.category}
+              data={FINANCE_CATEGORIES.map((category) => ({
+                value: category,
+                label: FINANCE_CATEGORY_LABELS[category]
+              }))}
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Text size="sm" fw={500} mb="xs">
               Estado *
-            </label>
+            </Text>
             <Select
               placeholder="Selecciona un estado"
-              selectedKeys={formData.status ? [formData.status] : []}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0] as string;
-                setFormData((prev: CreateFinanceData) => ({ ...prev, status: value as FinanceStatus }));
-              }}
-              variant="flat"
-              aria-label="Estado de la transacción"
-              classNames={{
-                trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-                value: "text-gray-900",
-                listboxWrapper: "bg-white",
-                popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-              }}
-            >
-              {FINANCE_STATUSES.map((status) => (
-                <SelectItem key={status}>
-                  {FINANCE_STATUS_LABELS[status]}
-                </SelectItem>
-              ))}
-            </Select>
+              value={formData.status || ''}
+              onChange={(value) => setFormData((prev: CreateFinanceData) => ({ ...prev, status: value as FinanceStatus }))}
+              data={FINANCE_STATUSES.map((status) => ({
+                value: status,
+                label: FINANCE_STATUS_LABELS[status]
+              }))}
+            />
           </div>
         </div>
-      </div>
+      </Stack>
 
-    </div>
+    </Stack>
   );
 
   const renderStep2 = () => (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Método de pago */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <Text size="sm" fw={500} mb="xs">
           Método de pago *
-        </label>
+        </Text>
         <Select
           placeholder="Selecciona un método de pago"
-          selectedKeys={formData.paymentMethod ? [formData.paymentMethod] : []}
-          onSelectionChange={(keys) => {
-            const value = Array.from(keys)[0] as string;
+          value={formData.paymentMethod || ''}
+          onChange={(value) => {
             if (value) {
               setFormData((prev: CreateFinanceData) => ({ ...prev, paymentMethod: value as PaymentMethod }));
             }
           }}
-          variant="flat"
-          aria-label="Método de pago"
-          classNames={{
-            trigger: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-            value: "text-gray-900",
-            listboxWrapper: "bg-white",
-            popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-          }}
-        >
-          {PAYMENT_METHODS.map((method) => (
-            <SelectItem key={method}>
-              {PAYMENT_METHOD_LABELS[method]}
-            </SelectItem>
-          ))}
-        </Select>
+          data={PAYMENT_METHODS.map((method) => ({
+            value: method,
+            label: PAYMENT_METHOD_LABELS[method]
+          }))}
+        />
       </div>
 
       {/* Subcategoría */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <Text size="sm" fw={500} mb="xs">
           Subcategoría
-        </label>
-        <Input
+        </Text>
+        <TextInput
           placeholder="Ej: Marketing, Mantenimiento, Bonos..."
           value={formData.subcategory || ''}
-          onValueChange={(value) => setFormData((prev: CreateFinanceData) => ({ ...prev, subcategory: value }))}
-          startContent={<BuildingOfficeIcon className="w-4 h-4 text-gray-400" />}
-          variant="flat"
-          aria-label="Subcategoría de la transacción"
-          classNames={{
-            input: "text-gray-900",
-            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-          }}
+          onChange={(e) => setFormData((prev: CreateFinanceData) => ({ ...prev, subcategory: e.target.value }))}
+          leftSection={<IconBuilding size={16} />}
         />
       </div>
 
       {/* Tags */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-700">Etiquetas</label>
+      <Stack gap="sm">
+        <Text size="sm" fw={500}>Etiquetas</Text>
         
-        <div className="flex gap-2">
+        <Group gap="sm">
           <Autocomplete
             placeholder="Agregar etiqueta..."
             value={tagInput}
-            onInputChange={setTagInput}
-            onSelectionChange={(key) => {
-              if (key) {
-                handleTagAdd(key as string);
-              }
+            onChange={setTagInput}
+            onOptionSubmit={(value) => {
+              handleTagAdd(value);
             }}
             onKeyDown={handleTagInputKeyDown}
-            startContent={<TagIcon className="w-4 h-4 text-gray-400" />}
-            variant="flat"
-            aria-label="Agregar etiqueta"
-            classNames={{
-              base: "flex-1 bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900",
-              listboxWrapper: "bg-white",
-              popoverContent: "bg-white border border-gray-200 shadow-lg rounded-lg"
-            }}
-          >
-            {(availableTags || []).map((tag) => (
-              <AutocompleteItem key={tag}>
-                {tag}
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
+            leftSection={<IconTag size={16} />}
+            data={availableTags || []}
+            style={{ flex: 1 }}
+          />
           
           <Button
             size="sm"
             variant="light"
-            className="bg-gray-50 border-0 hover:bg-gray-100 text-gray-700"
-            onPress={() => handleTagAdd(tagInput.trim())}
-            isDisabled={!tagInput.trim() || (formData.tags && formData.tags.includes(tagInput.trim()))}
+            onClick={() => handleTagAdd(tagInput.trim())}
+            disabled={!tagInput.trim() || (formData.tags && formData.tags.includes(tagInput.trim()))}
           >
             Agregar
           </Button>
-        </div>
+        </Group>
 
         {formData.tags && formData.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <Group gap="xs">
             {formData.tags.map((tag: string) => (
-              <Chip
+              <Badge
                 key={tag}
-                variant="flat"
-                color="primary"
+                variant="outline"
+                color="blue"
                 size="sm"
-                onClose={() => handleTagRemove(tag)}
-                startContent={<TagIcon className="w-3 h-3" />}
+                rightSection={<ActionIcon size="xs" variant="transparent" onClick={() => handleTagRemove(tag)}><IconX size={10} /></ActionIcon>}
+                leftSection={<IconTag size={10} />}
               >
                 {tag}
-              </Chip>
+              </Badge>
             ))}
-          </div>
+          </Group>
         )}
-      </div>
+      </Stack>
 
       {/* Notas */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <Text size="sm" fw={500} mb="xs">
           Notas adicionales
-        </label>
+        </Text>
         <Textarea
           placeholder="Información adicional sobre esta transacción..."
           value={formData.notes || ''}
-          onValueChange={(value) => setFormData((prev: CreateFinanceData) => ({ ...prev, notes: value }))}
+          onChange={(e) => setFormData((prev: CreateFinanceData) => ({ ...prev, notes: e.target.value }))}
           minRows={3}
-          variant="flat"
-          aria-label="Notas adicionales"
-          classNames={{
-            input: "text-gray-900",
-            inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-          }}
         />
       </div>
-    </div>
+    </Stack>
   );
 
   const renderSummary = () => (
-    <div className="space-y-4">
-      <Card className="surface-card">
-        <CardBody className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Tipo:</span>
-              <Chip
-                color={formData.type === 'income' ? 'success' : 'danger'}
-                variant="flat"
-                size="sm"
-                startContent={formData.type === 'income' ? 
-                  <ArrowTrendingUpIcon className="w-3 h-3" /> : 
-                  <ArrowTrendingDownIcon className="w-3 h-3" />
-                }
-              >
-                {FINANCE_TYPE_LABELS[formData.type as keyof typeof FINANCE_TYPE_LABELS]}
-              </Chip>
-            </div>
-            
-            <Divider />
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Descripción:</span>
-              <span className="text-sm font-medium">{formData.description}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Monto:</span>
-              <span className={`text-sm font-semibold ${
-                formData.type === 'income' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {formData.type === 'income' ? '+' : '-'}{formatCurrency(formData.amount)}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Categoría:</span>
-              <span className="text-sm">{FINANCE_CATEGORY_LABELS[formData.category as keyof typeof FINANCE_CATEGORY_LABELS]}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Fecha:</span>
-              <span className="text-sm">{formData.date.toLocaleDateString()}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Estado:</span>
-              <span className="text-sm">{FINANCE_STATUS_LABELS[formData.status as keyof typeof FINANCE_STATUS_LABELS]}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Método de pago:</span>
-              <span className="text-sm">{PAYMENT_METHOD_LABELS[formData.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS]}</span>
-            </div>
+    <Stack gap="md">
+      <Card withBorder>
+        <Stack gap="sm">
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">Tipo:</Text>
+            <Badge
+              color={formData.type === 'income' ? 'green' : 'red'}
+              variant="light"
+              size="sm"
+              leftSection={formData.type === 'income' ? 
+                <IconTrendingUp size={12} /> : 
+                <IconTrendingDown size={12} />
+              }
+            >
+              {FINANCE_TYPE_LABELS[formData.type as keyof typeof FINANCE_TYPE_LABELS]}
+            </Badge>
+          </Group>
+          
+          <Divider />
+          
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">Descripción:</Text>
+            <Text size="sm" fw={500}>{formData.description}</Text>
+          </Group>
+          
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">Monto:</Text>
+            <Text 
+              size="sm" 
+              fw={600}
+              c={formData.type === 'income' ? 'green' : 'red'}
+            >
+              {formData.type === 'income' ? '+' : '-'}{formatCurrency(formData.amount)}
+            </Text>
+          </Group>
+          
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">Categoría:</Text>
+            <Text size="sm">{FINANCE_CATEGORY_LABELS[formData.category as keyof typeof FINANCE_CATEGORY_LABELS]}</Text>
+          </Group>
+          
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">Fecha:</Text>
+            <Text size="sm">{formData.date.toLocaleDateString()}</Text>
+          </Group>
+          
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">Estado:</Text>
+            <Text size="sm">{FINANCE_STATUS_LABELS[formData.status as keyof typeof FINANCE_STATUS_LABELS]}</Text>
+          </Group>
+          
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">Método de pago:</Text>
+            <Text size="sm">{PAYMENT_METHOD_LABELS[formData.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS]}</Text>
+          </Group>
 
-            {formData.subcategory && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Subcategoría:</span>
-                <span className="text-sm">{formData.subcategory}</span>
-              </div>
-            )}
+          {formData.subcategory && (
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">Subcategoría:</Text>
+              <Text size="sm">{formData.subcategory}</Text>
+            </Group>
+          )}
 
-            {formData.reservationId && (
-              <div className="space-y-2">
-                <span className="text-sm text-gray-600">Reserva vinculada:</span>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <div className="flex items-center gap-2">
-                    <UserIcon className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-900">
-                      {(() => {
-                        const reservation = reservations?.find(r => r._id === formData.reservationId);
-                        return reservation ? `${reservation.customer.name} - ${reservation.child.name}` : 'Reserva seleccionada';
-                      })()}
-                    </span>
-                  </div>
-                </div>
+          {formData.reservationId && (
+            <Stack gap="xs">
+              <Text size="sm" c="dimmed">Reserva vinculada:</Text>
+              <div style={{ backgroundColor: 'var(--mantine-color-blue-0)', border: '1px solid var(--mantine-color-blue-3)', borderRadius: 'var(--mantine-radius-sm)', padding: 'var(--mantine-spacing-sm)' }}>
+                <Group gap="xs">
+                  <IconUser size={16} color="var(--mantine-color-blue-6)" />
+                  <Text size="sm" fw={500} c="blue">
+                    {(() => {
+                      const reservation = reservations?.find(r => r._id === formData.reservationId);
+                      return reservation ? `${reservation.customer.name} - ${reservation.child.name}` : 'Reserva seleccionada';
+                    })()}
+                  </Text>
+                </Group>
               </div>
-            )}
+            </Stack>
+          )}
 
-            {formData.tags && formData.tags.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-sm text-gray-600">Etiquetas:</span>
-                <div className="flex flex-wrap gap-1">
-                  {formData.tags.map((tag: string) => (
-                    <Chip key={tag} variant="flat" color="primary" size="sm">
-                      {tag}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
-            )}
+          {formData.tags && formData.tags.length > 0 && (
+            <Stack gap="xs">
+              <Text size="sm" c="dimmed">Etiquetas:</Text>
+              <Group gap="xs">
+                {formData.tags.map((tag: string) => (
+                  <Badge key={tag} variant="light" color="blue" size="sm">
+                    {tag}
+                  </Badge>
+                ))}
+              </Group>
+            </Stack>
+          )}
 
-            {formData.notes && (
-              <div className="space-y-2">
-                <span className="text-sm text-gray-600">Notas:</span>
-                <p className="text-sm text-gray-800 bg-gray-50 p-2 rounded">
-                  {formData.notes}
-                </p>
-              </div>
-            )}
-          </div>
-        </CardBody>
+          {formData.notes && (
+            <Stack gap="xs">
+              <Text size="sm" c="dimmed">Notas:</Text>
+              <Text size="sm" style={{ backgroundColor: 'var(--mantine-color-gray-0)', padding: 'var(--mantine-spacing-xs)', borderRadius: 'var(--mantine-radius-sm)' }}>
+                {formData.notes}
+              </Text>
+            </Stack>
+          )}
+        </Stack>
       </Card>
-    </div>
+    </Stack>
   );
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={opened}
       onClose={onClose}
-      size="2xl"
-      scrollBehavior="inside"
-      backdrop="opaque"
-      placement="center"
-      isDismissable={!loading}
-      classNames={{
-        backdrop: "surface-overlay",
-        base: "surface-modal max-h-[90vh] my-4",
-        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto",
-        header: "border-b border-gray-100 flex-shrink-0",
-        body: "p-6 overflow-y-auto max-h-[calc(90vh-140px)]",
-        footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
+      size="lg"
+      title={null}
+      closeOnEscape={!loading}
+      closeOnClickOutside={!loading}
+      styles={{
+        content: {
+          maxHeight: '90vh'
+        },
+        body: {
+          padding: 0,
+          maxHeight: 'calc(90vh - 140px)',
+          overflowY: 'auto'
+        }
       }}
     >
-      <ModalContent>
         {/* Header */}
-        <ModalHeader className="px-6 py-4">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <CurrencyDollarIcon className="w-5 h-5 text-gray-600" />
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+          <Group justify="space-between" w="100%">
+            <Group gap="md">
+              <div 
+                style={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor: 'var(--mantine-color-gray-1)',
+                  borderRadius: 'var(--mantine-radius-sm)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <IconCurrencyDollar size={20} color="var(--mantine-color-gray-6)" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+              <Stack gap={0}>
+                <Title order={3} size="lg">
                   Nueva Transacción
-                </h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm text-gray-500">
+                </Title>
+                <Group gap="sm" mt={4}>
+                  <Text size="sm" c="dimmed">
                     Paso {step} de 3
-                  </span>
+                  </Text>
                   {formData.type && (
-                    <Chip
-                      color={formData.type === 'income' ? 'success' : 'danger'}
-                      variant="flat"
+                    <Badge
+                      color={formData.type === 'income' ? 'green' : 'red'}
+                      variant="light"
                       size="sm"
-                      className="text-xs"
                     >
                       {FINANCE_TYPE_LABELS[formData.type as keyof typeof FINANCE_TYPE_LABELS]}
-                    </Chip>
+                    </Badge>
                   )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </ModalHeader>
+                </Group>
+              </Stack>
+            </Group>
+          </Group>
+        </div>
 
         {/* Content */}
-        <ModalBody className="overflow-y-auto">
-          <div className="space-y-6">
+        <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
+          <Stack gap="lg">
             {/* Progress indicator */}
-            <div className="flex items-center justify-center">
-              <div className="flex items-center space-x-2">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Group gap="xs">
                 {[1, 2, 3].map((stepNumber) => (
                   <React.Fragment key={stepNumber}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      stepNumber === step
-                        ? 'btn-primary text-white'
-                        : stepNumber < step
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 text-gray-600'
-                    }`}>
+                    <div 
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        backgroundColor: stepNumber === step
+                          ? 'var(--mantine-color-blue-6)'
+                          : stepNumber < step
+                          ? 'var(--mantine-color-green-5)'
+                          : 'var(--mantine-color-gray-3)',
+                        color: stepNumber <= step ? 'white' : 'var(--mantine-color-gray-6)'
+                      }}
+                    >
                       {stepNumber}
                     </div>
                     {stepNumber < 3 && (
-                      <div className={`w-8 h-0.5 ${
-                        stepNumber < step ? 'bg-green-500' : 'bg-gray-200'
-                      }`} />
+                      <div 
+                        style={{
+                          width: 32,
+                          height: 2,
+                          backgroundColor: stepNumber < step ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-gray-3)'
+                        }} 
+                      />
                     )}
                   </React.Fragment>
                 ))}
-              </div>
+              </Group>
             </div>
 
             {/* Step content */}
             {step === 1 && renderStep1()}
             {step === 2 && renderStep2()}
             {step === 3 && renderSummary()}
-          </div>
-        </ModalBody>
+          </Stack>
+        </div>
 
         {/* Footer */}
-        <ModalFooter className="px-6 py-4">
-          <div className="flex gap-3 justify-between items-center w-full">
-            <div className="flex gap-3">
+        <div style={{ 
+          padding: '1.5rem', 
+          borderTop: '1px solid var(--mantine-color-gray-2)', 
+          backgroundColor: 'var(--mantine-color-gray-0)' 
+        }}>
+          <Group justify="space-between" w="100%">
+            <Group gap="sm">
               {step > 1 && (
                 <Button
                   variant="light"
-                  onPress={handleBack}
-                  isDisabled={loading}
+                  onClick={handleBack}
+                  disabled={loading}
                   size="sm"
-                  className="text-gray-600 hover:bg-gray-100"
+                  c="dimmed"
                 >
                   Anterior
                 </Button>
               )}
-            </div>
+            </Group>
             
-            <div className="flex gap-3">
+            <Group gap="sm">
               <Button
                 variant="light"
-                onPress={onClose}
-                isDisabled={loading}
+                onClick={onClose}
+                disabled={loading}
                 size="sm"
-                className="text-gray-600 hover:bg-gray-100"
+                c="dimmed"
               >
                 Cancelar
               </Button>
               
               {step < 3 ? (
                 <Button
-                  color="primary"
-                  onPress={handleNext}
+                  onClick={handleNext}
                   size="sm"
-                  className="btn-primary"
+                  color="blue"
                 >
                   Siguiente
                 </Button>
               ) : (
                 <Button
-                  color="primary"
-                  onPress={handleSubmit}
-                  isLoading={loading}
+                  onClick={handleSubmit}
+                  loading={loading}
                   size="sm"
-                  className="btn-primary"
+                  color="blue"
                 >
                   {loading ? 'Creando...' : 'Crear Transacción'}
                 </Button>
               )}
-            </div>
-          </div>
-        </ModalFooter>
-      </ModalContent>
+            </Group>
+          </Group>
+        </div>
     </Modal>
   );
 }

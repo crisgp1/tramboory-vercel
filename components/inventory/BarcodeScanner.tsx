@@ -3,26 +3,26 @@
 import React, { useState, useRef, useEffect } from "react"
 import {
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Button,
-  Input,
+  TextInput,
   Card,
-  CardBody,
-  Chip,
-  Divider,
-  Spinner
-} from "@heroui/react"
+  Badge,
+  Loader,
+  Group,
+  Stack,
+  Text,
+  Title,
+  ActionIcon,
+  Paper
+} from "@mantine/core"
 import {
-  QrCodeIcon,
-  CameraIcon,
-  MagnifyingGlassIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ExclamationTriangleIcon
-} from "@heroicons/react/24/outline"
+  IconQrcode,
+  IconCamera,
+  IconSearch,
+  IconCircleCheck,
+  IconCircleX,
+  IconAlertTriangle
+} from "@tabler/icons-react"
 import toast from "react-hot-toast"
 
 interface Product {
@@ -226,207 +226,224 @@ export default function BarcodeScanner({
   const getModeColor = () => {
     switch (mode) {
       case 'lookup':
-        return 'primary'
+        return 'blue'
       case 'inventory':
-        return 'warning'
+        return 'orange'
       case 'receiving':
-        return 'success'
+        return 'green'
       default:
-        return 'default'
+        return 'gray'
     }
   }
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={isOpen}
       onClose={onClose}
       size="lg"
-      scrollBehavior="inside"
-      backdrop="opaque"
-      classNames={{
-        backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
-        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto"
+      title={null}
+      centered
+      overlayProps={{
+        backgroundOpacity: 0.55,
+        blur: 3,
+      }}
+      styles={{
+        body: { padding: 0 },
+        header: { display: 'none' }
       }}
     >
-      <ModalContent>
-        <ModalHeader className="px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <QrCodeIcon className="w-4 h-4 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Chip
+      <Stack gap="lg">
+        <Paper p="lg" withBorder={false}>
+          <Group>
+            <ActionIcon
+              size="lg"
+              radius="md"
+              color="blue"
+              variant="light"
+            >
+              <IconQrcode size={20} />
+            </ActionIcon>
+            <Stack gap={2}>
+              <Title order={4} size="lg" fw={600}>{title}</Title>
+              <Group gap="xs">
+                <Badge
                   color={getModeColor()}
                   size="sm"
-                  variant="flat"
+                  variant="light"
                 >
                   {mode.toUpperCase()}
-                </Chip>
-                <span className="text-sm text-gray-600">{getModeDescription()}</span>
-              </div>
-            </div>
-          </div>
-        </ModalHeader>
+                </Badge>
+                <Text size="sm" c="dimmed">{getModeDescription()}</Text>
+              </Group>
+            </Stack>
+          </Group>
+        </Paper>
         
-        <ModalBody className="px-6">
-          <div className="space-y-6">
+        <Stack gap="lg" p="lg" pt={0}>
             {/* Cámara */}
-            <Card className="border border-gray-200">
-              <CardBody className="p-4">
-                <div className="text-center">
+            <Card withBorder p="md">
+                <Stack align="center" gap="md">
                   {!hasCamera ? (
-                    <div className="py-8">
-                      <ExclamationTriangleIcon className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
-                      <p className="text-gray-600">No se detectó cámara disponible</p>
-                      <p className="text-sm text-gray-500">Usa la entrada manual a continuación</p>
-                    </div>
+                    <Stack align="center" gap="md" py="xl">
+                      <IconAlertTriangle size={48} color="orange" />
+                      <Text ta="center" c="dimmed">No se detectó cámara disponible</Text>
+                      <Text size="sm" ta="center" c="dimmed">Usa la entrada manual a continuación</Text>
+                    </Stack>
                   ) : cameraError ? (
-                    <div className="py-8">
-                      <XCircleIcon className="w-12 h-12 text-red-500 mx-auto mb-3" />
-                      <p className="text-red-600 mb-2">{cameraError}</p>
+                    <Stack align="center" gap="md" py="xl">
+                      <IconCircleX size={48} color="red" />
+                      <Text ta="center" c="red">{cameraError}</Text>
                       <Button
-                        color="primary"
+                        color="blue"
                         variant="light"
-                        onPress={startCamera}
+                        onClick={startCamera}
                       >
                         Intentar de nuevo
                       </Button>
-                    </div>
+                    </Stack>
                   ) : !isScanning ? (
-                    <div className="py-8">
-                      <CameraIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 mb-4">Presiona para activar la cámara</p>
+                    <Stack align="center" gap="md" py="xl">
+                      <IconCamera size={48} color="gray" />
+                      <Text ta="center" c="dimmed">Presiona para activar la cámara</Text>
                       <Button
-                        color="primary"
-                        startContent={<CameraIcon className="w-4 h-4" />}
-                        onPress={startCamera}
+                        color="blue"
+                        leftSection={<IconCamera size={16} />}
+                        onClick={startCamera}
                       >
                         Activar Cámara
                       </Button>
-                    </div>
+                    </Stack>
                   ) : (
-                    <div className="space-y-4">
-                      <div className="relative bg-black rounded-lg overflow-hidden">
+                    <Stack gap="md">
+                      <div style={{ position: 'relative', backgroundColor: 'black', borderRadius: '8px', overflow: 'hidden' }}>
                         <video
                           ref={videoRef}
-                          className="w-full h-64 object-cover"
+                          style={{ width: '100%', height: '256px', objectFit: 'cover' }}
                           autoPlay
                           playsInline
                           muted
                         />
-                        <div className="absolute inset-0 border-2 border-blue-500 rounded-lg pointer-events-none">
-                          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                            <div className="w-48 h-32 border-2 border-blue-500 rounded-lg bg-blue-500/10">
-                              <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-blue-500"></div>
-                              <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-blue-500"></div>
-                              <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-500"></div>
-                              <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-500"></div>
+                        <div style={{ 
+                          position: 'absolute', 
+                          inset: 0, 
+                          border: '2px solid #228be6', 
+                          borderRadius: '8px', 
+                          pointerEvents: 'none' 
+                        }}>
+                          <div style={{ 
+                            position: 'absolute', 
+                            top: '50%', 
+                            left: '50%', 
+                            transform: 'translate(-50%, -50%)' 
+                          }}>
+                            <div style={{ 
+                              width: '192px', 
+                              height: '128px', 
+                              border: '2px solid #228be6', 
+                              borderRadius: '8px', 
+                              backgroundColor: 'rgba(34, 139, 230, 0.1)' 
+                            }}>
+                              <div style={{ position: 'absolute', top: 0, left: 0, width: '16px', height: '16px', borderTop: '2px solid #228be6', borderLeft: '2px solid #228be6' }}></div>
+                              <div style={{ position: 'absolute', top: 0, right: 0, width: '16px', height: '16px', borderTop: '2px solid #228be6', borderRight: '2px solid #228be6' }}></div>
+                              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '16px', height: '16px', borderBottom: '2px solid #228be6', borderLeft: '2px solid #228be6' }}></div>
+                              <div style={{ position: 'absolute', bottom: 0, right: 0, width: '16px', height: '16px', borderBottom: '2px solid #228be6', borderRight: '2px solid #228be6' }}></div>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-center gap-2">
-                        <Spinner size="sm" color="primary" />
-                        <span className="text-sm text-gray-600">Buscando código de barras...</span>
-                      </div>
+                      <Group justify="center">
+                        <Loader size="sm" color="blue" />
+                        <Text size="sm" c="dimmed">Buscando código de barras...</Text>
+                      </Group>
                       <Button
-                        color="danger"
+                        color="red"
                         variant="light"
-                        onPress={stopCamera}
+                        onClick={stopCamera}
                       >
                         Detener Cámara
                       </Button>
-                    </div>
+                    </Stack>
                   )}
-                </div>
-              </CardBody>
+                </Stack>
             </Card>
 
             {/* Entrada manual */}
-            <Card className="border border-gray-200">
-              <CardBody className="p-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Entrada Manual</h4>
-                <div className="flex gap-2">
-                  <Input
+            <Card withBorder p="md">
+              <Stack gap="md">
+                <Text size="sm" fw={500}>Entrada Manual</Text>
+                <Group>
+                  <TextInput
                     placeholder="Ingresa el código de barras manualmente"
                     value={manualBarcode}
-                    onChange={(e) => setManualBarcode(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleManualLookup()}
-                    startContent={<QrCodeIcon className="w-4 h-4 text-gray-400" />}
-                    isDisabled={loading}
-                    variant="flat"
-                    classNames={{
-                      input: "text-gray-900",
-                      inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                    }}
+                    onChange={(e) => setManualBarcode(e.currentTarget.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleManualLookup()}
+                    leftSection={<IconQrcode size={16} />}
+                    disabled={loading}
+                    variant="filled"
+                    style={{ flex: 1 }}
                   />
-                  <Button
-                    color="primary"
-                    isIconOnly
-                    onPress={handleManualLookup}
-                    isLoading={loading}
+                  <ActionIcon
+                    color="blue"
+                    size="lg"
+                    onClick={handleManualLookup}
+                    loading={loading}
                   >
-                    <MagnifyingGlassIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardBody>
+                    <IconSearch size={16} />
+                  </ActionIcon>
+                </Group>
+              </Stack>
             </Card>
 
             {/* Historial de escaneos */}
             {scanHistory.length > 0 && (
-              <Card className="border border-gray-200">
-                <CardBody className="p-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Historial de Escaneos</h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+              <Card withBorder p="md">
+                <Stack gap="md">
+                  <Text size="sm" fw={500}>Historial de Escaneos</Text>
+                  <Stack gap="xs" style={{ maxHeight: '192px', overflowY: 'auto' }}>
                     {scanHistory.map((scan, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          {scan.success ? (
-                            <div className="relative">
-                              <CheckCircleIcon className="w-4 h-4 text-emerald-600 drop-shadow-sm" />
-                              <div className="absolute inset-0 w-4 h-4 bg-gradient-to-br from-white/30 to-transparent rounded-full pointer-events-none" />
-                            </div>
-                          ) : (
-                            <XCircleIcon className="w-4 h-4 text-red-500" />
-                          )}
-                          <div>
-                            <p className="text-sm font-medium">{scan.barcode}</p>
-                            {scan.product ? (
-                              <p className="text-xs text-gray-600">{scan.product.name}</p>
+                      <Paper key={index} p="sm" bg="gray.0" radius="md">
+                        <Group justify="space-between">
+                          <Group gap="sm">
+                            {scan.success ? (
+                              <IconCircleCheck size={16} color="green" />
                             ) : (
-                              <p className="text-xs text-red-600">Producto no encontrado</p>
+                              <IconCircleX size={16} color="red" />
                             )}
-                          </div>
-                        </div>
-                        <span className="text-xs text-gray-500">
-                          {scan.timestamp.toLocaleTimeString()}
-                        </span>
-                      </div>
+                            <Stack gap={2}>
+                              <Text size="sm" fw={500}>{scan.barcode}</Text>
+                              {scan.product ? (
+                                <Text size="xs" c="dimmed">{scan.product.name}</Text>
+                              ) : (
+                                <Text size="xs" c="red">Producto no encontrado</Text>
+                              )}
+                            </Stack>
+                          </Group>
+                          <Text size="xs" c="dimmed">
+                            {scan.timestamp.toLocaleTimeString()}
+                          </Text>
+                        </Group>
+                      </Paper>
                     ))}
-                  </div>
-                </CardBody>
+                  </Stack>
+                </Stack>
               </Card>
             )}
-          </div>
-        </ModalBody>
+        </Stack>
         
-        <ModalFooter className="px-6 py-4">
-          <div className="flex gap-3 justify-end w-full">
+        <Paper p="lg" withBorder style={{ borderTop: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
+          <Group justify="flex-end">
             <Button
               variant="light"
-              onPress={() => {
+              onClick={() => {
                 stopCamera()
                 onClose()
               }}
             >
               Cerrar
             </Button>
-          </div>
-        </ModalFooter>
-      </ModalContent>
+          </Group>
+        </Paper>
+      </Stack>
     </Modal>
   )
 }

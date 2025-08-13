@@ -1,8 +1,9 @@
 "use client";
 
 import { SignOutButton } from "@clerk/nextjs";
-import { Button } from "@heroui/react";
+import { Button } from "@mantine/core";
 import { ArrowRightEndOnRectangleIcon } from "@heroicons/react/24/outline";
+import { mapHeroUIVariantToMantine, mapHeroUIColorToMantine, mapHeroUISize } from "@/lib/migration-utils";
 
 interface LogoutButtonProps {
   variant?: "solid" | "bordered" | "light" | "flat" | "faded" | "shadow" | "ghost";
@@ -24,11 +25,11 @@ export default function LogoutButton({
   return (
     <SignOutButton redirectUrl="/">
       <Button
-        variant={variant}
-        size={size}
-        color={color}
+        variant={mapHeroUIVariantToMantine(variant)}
+        size={mapHeroUISize(size)}
+        color={mapHeroUIColorToMantine(color)}
         className={className}
-        startContent={showIcon ? <ArrowRightEndOnRectangleIcon className="w-4 h-4" /> : undefined}
+        leftSection={showIcon ? <ArrowRightEndOnRectangleIcon className="w-4 h-4" /> : undefined}
       >
         {children || "Cerrar Sesión"}
       </Button>

@@ -2,23 +2,40 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from "react"
 import {
-  ArrowsUpDownIcon,
-  CubeIcon,
-  HashtagIcon,
-  CurrencyDollarIcon,
-  CalendarIcon,
-  BuildingOffice2Icon,
-  TagIcon,
-  PlusIcon,
-  MinusIcon,
-  ArrowPathIcon,
-  DocumentTextIcon,
-  CogIcon,
-  ArrowTrendingDownIcon,
-  CheckIcon,
-  ExclamationCircleIcon
-} from "@heroicons/react/24/outline"
-import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
+  Modal,
+  Button,
+  TextInput,
+  Textarea,
+  Select,
+  NumberInput,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Badge,
+  Card,
+  Alert,
+  LoadingOverlay
+} from '@mantine/core'
+import {
+  IconArrowsUpDown,
+  IconCube,
+  IconHash,
+  IconCurrencyDollar,
+  IconCalendar,
+  IconBuilding,
+  IconTag,
+  IconPlus,
+  IconMinus,
+  IconRefresh,
+  IconFileText,
+  IconSettings,
+  IconTrendingDown,
+  IconCheck,
+  IconAlertCircle,
+  IconCalculator
+} from '@tabler/icons-react'
+import toast from 'react-hot-toast'
 
 // Types and Enums
 enum MovementType {
@@ -73,7 +90,7 @@ const movementTypeConfig = {
   [MovementType.ENTRADA]: {
     label: "Entrada",
     description: "Agregar stock al inventario",
-    icon: PlusIcon,
+    icon: IconPlus,
     color: "green",
     bgColor: "bg-green-50/80",
     borderColor: "border-green-200/50",
@@ -82,7 +99,7 @@ const movementTypeConfig = {
   [MovementType.SALIDA]: {
     label: "Salida",
     description: "Retirar stock del inventario",
-    icon: MinusIcon,
+    icon: IconMinus,
     color: "red",
     bgColor: "bg-red-50/80",
     borderColor: "border-red-200/50",
@@ -91,7 +108,7 @@ const movementTypeConfig = {
   [MovementType.TRANSFERENCIA]: {
     label: "Transferencia",
     description: "Mover entre ubicaciones",
-    icon: ArrowPathIcon,
+    icon: IconRefresh,
     color: "blue",
     bgColor: "bg-blue-50/80",
     borderColor: "border-blue-200/50",
@@ -100,7 +117,7 @@ const movementTypeConfig = {
   [MovementType.AJUSTE]: {
     label: "Ajuste",
     description: "Corrección de inventario",
-    icon: CogIcon,
+    icon: IconSettings,
     color: "yellow",
     bgColor: "bg-yellow-50/80",
     borderColor: "border-yellow-200/50",
@@ -109,7 +126,7 @@ const movementTypeConfig = {
   [MovementType.MERMA]: {
     label: "Merma",
     description: "Pérdida o deterioro",
-    icon: ArrowTrendingDownIcon,
+    icon: IconTrendingDown,
     color: "orange",
     bgColor: "bg-orange-50/80",
     borderColor: "border-orange-200/50",
@@ -149,13 +166,46 @@ const commonReasons = {
   ]
 }
 
-// Validation function
-const validateMovement = (data: Partial<MovementData>): ValidationErrors => {
+// Enhanced validation function with stock calculation
+const validateMovement = (data: Partial<MovementData>, currentStock: number, unit: string): ValidationErrors => {
   const errors: ValidationErrors = {}
   
-  if (!data.type) errors.type = "Selecciona un tipo de movimiento"
+  if (!data.type) errors.movementType = "Selecciona un tipo de movimiento"
   if (!data.quantity || data.quantity <= 0) errors.quantity = "La cantidad debe ser mayor a 0"
-  if (!data.reason) errors.reason = "Selecciona una razón para el movimiento"
+  if (!data.reason) errors.reason = "El motivo es requerido"
+  
+  // Check for negative stock on outbound movements
+  if (data.type && data.quantity && currentStock !== undefined) {
+    let newStock = currentStock
+    
+    switch (data.type) {
+      case MovementType.ENTRADA:
+        newStock = currentStock + data.quantity
+        break
+      case MovementType.SALIDA:
+      case MovementType.MERMA:
+        newStock = currentStock - data.quantity
+        if (newStock < 0) {
+          errors.quantity = `No hay suficiente stock. Disponible: ${currentStock} ${unit}. Resultado sería: ${newStock}`
+        }
+        break
+      case MovementType.AJUSTE:
+        newStock = data.quantity // For adjustments, quantity is the final amount
+        if (newStock < 0) {
+          errors.quantity = `El stock no puede ser negativo. Valor mínimo: 0`
+        }
+        break
+      case MovementType.TRANSFERENCIA:
+        newStock = currentStock - data.quantity
+        if (newStock < 0) {
+          errors.quantity = `No hay suficiente stock para transferir. Disponible: ${currentStock} ${unit}`
+        }
+        if (!data.notes || !data.notes.trim()) {
+          errors.notes = "Para transferencias, especifica la ubicación destino"
+        }
+        break
+    }
+  }
   
   return errors
 }
@@ -264,7 +314,7 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
       expiryDate: expiryDate ? new Date(expiryDate).toISOString() : undefined
     }
 
-    const validationErrors = validateMovement(movementData)
+    const validationErrors = validateMovement(movementData, stockItem.available_quantity || 0, stockItem.unit || '')
     
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
@@ -303,295 +353,245 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={isOpen}
       onClose={onClose}
-      title={getTitle()}
-      subtitle={getSubtitle()}
-      icon={ArrowsUpDownIcon}
+      title={
+        <Group gap="sm">
+          <IconArrowsUpDown size={20} />
+          <Stack gap={2}>
+            <Title order={4}>Ajustar Stock</Title>
+            <Text size="sm" c="dimmed">{stockItem.product?.name} • SKU: {stockItem.product?.sku}</Text>
+          </Stack>
+        </Group>
+      }
       size="lg"
-      footer={
-        <ModalFooter>
-          <div>
+      closeOnEscape={!loading}
+      closeOnClickOutside={!loading}
+      styles={{
+        content: {
+          maxHeight: '90vh',
+          overflow: 'hidden'
+        },
+        body: {
+          maxHeight: 'calc(90vh - 120px)',
+          overflow: 'auto',
+          padding: '1rem'
+        }
+      }}
+    >
+      <LoadingOverlay visible={loading} overlayProps={{ blur: 2 }} />
+      
+      <Stack gap="lg">
+        {/* Success Message */}
+        {showSuccess && (
+          <Alert
+            icon={<IconCheck size={16} />}
+            title="Éxito"
+            color="green"
+          >
+            Movimiento de inventario registrado exitosamente
+          </Alert>
+        )}
+
+        {/* Error Message */}
+        {errors.submit && (
+          <Alert
+            icon={<IconAlertCircle size={16} />}
+            title="Error"
+            color="red"
+          >
+            {errors.submit}
+          </Alert>
+        )}
+
+        {/* Footer with Actions */}
+        <Group justify="space-between">
+          <Stack gap={0}>
             {Object.keys(errors).length > 0 && !errors.submit && (
-              <p className="text-red-600 text-sm">Por favor corrige los errores antes de continuar</p>
+              <Text size="sm" c="red">Por favor corrige los errores antes de continuar</Text>
             )}
-          </div>
+          </Stack>
           
-          <ModalActions>
-            <ModalButton
+          <Group>
+            <Button
+              variant="light"
               onClick={onClose}
               disabled={loading}
-              variant="secondary"
             >
               Cancelar
-            </ModalButton>
+            </Button>
             
-            <ModalButton
+            <Button
               onClick={handleSubmit}
-              disabled={loading || !movementType || !quantity || !reason}
+              disabled={loading || !movementType || !quantity || !reason || (resultingStock !== null && resultingStock < 0)}
               loading={loading}
-              variant="primary"
+              color={resultingStock !== null && resultingStock < 0 ? 'red' : 'blue'}
             >
-              Registrar Movimiento
-            </ModalButton>
-          </ModalActions>
-        </ModalFooter>
-      }
-    >
-      {/* Success Message */}
-      {showSuccess && (
-        <div className="glass-card p-4 bg-green-50/80 border border-green-200/50 mb-6">
-          <div className="flex items-center">
-            <CheckIcon className="w-5 h-5 text-green-500 mr-3" />
-            <p className="text-green-700 font-medium">
-              Movimiento de inventario registrado exitosamente
-            </p>
-          </div>
-        </div>
-      )}
+              {resultingStock !== null && resultingStock < 0 ? 'Stock Insuficiente' : 'Registrar Movimiento'}
+            </Button>
+          </Group>
+        </Group>
 
-      {/* Error Message */}
-      {errors.submit && (
-        <div className="glass-card p-4 bg-red-50/80 border border-red-200/50 mb-6">
-          <div className="flex items-center">
-            <ExclamationCircleIcon className="w-5 h-5 text-red-500 mr-3" />
-            <p className="text-red-700">{errors.submit}</p>
-          </div>
-        </div>
-      )}
+        {/* Stock Adjustment Form */}
+        <Stack gap="md">
+          {/* Current Stock Info */}
+          <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+            <Stack gap="xs">
+              <Text weight={500} size="sm">Stock Actual</Text>
+              <Group>
+                <Text size="sm" color="dimmed">Disponible:</Text>
+                <Text weight={600}>{stockItem.available_quantity || 0} {stockItem.unit}</Text>
+                <Text size="sm" color="dimmed">•</Text>
+                <Text size="sm" color="dimmed">Reservado:</Text>
+                <Text weight={600}>{stockItem.reserved_quantity || 0} {stockItem.unit}</Text>
+              </Group>
+            </Stack>
+          </Card>
 
-      {/* Content */}
-      <div className="space-y-6">
-        
-        {/* Current Stock */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <BuildingOffice2Icon className="w-5 h-5 text-blue-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Stock Actual</h4>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="glass-stat p-4 text-center">
-              <span className="text-slate-600 block text-sm font-medium mb-2">Disponible</span>
-              <p className="font-bold text-green-600 text-lg">{stockItem.available_quantity}</p>
-              <span className="text-sm text-slate-500">{stockItem.unit}</span>
-            </div>
-            <div className="glass-stat p-4 text-center">
-              <span className="text-slate-600 block text-sm font-medium mb-2">Reservado</span>
-              <p className="font-bold text-orange-600 text-lg">{stockItem.reserved_quantity}</p>
-              <span className="text-sm text-slate-500">{stockItem.unit}</span>
-            </div>
-            <div className="glass-stat p-4 text-center">
-              <span className="text-slate-600 block text-sm font-medium mb-2">Ubicación</span>
-              <p className="font-semibold text-slate-800">{stockItem.location_id}</p>
-              <span className="text-sm text-slate-500">Almacén</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Movement Configuration */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <CubeIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Configuración del Movimiento</h4>
-          </div>
-          
-          <div className="space-y-6">
-            {/* Movement Type */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Tipo de Movimiento *
-              </label>
-              <select
-                value={movementType}
-                onChange={(e) => handleInputChange('movementType', e.target.value)}
-                className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${
-                  errors.type ? 'border-red-300' : ''
-                }`}
-              >
-                <option value="">Seleccionar tipo de movimiento</option>
-                {Object.entries(movementTypeConfig).map(([key, config]) => (
-                  <option key={key} value={key}>
-                    {config.label} - {config.description}
-                  </option>
-                ))}
-              </select>
-              {errors.type && <p className="text-red-600 text-sm mt-1">{errors.type}</p>}
-            </div>
-
-            {/* Quantity and Reason */}
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Cantidad *
-                </label>
-                <div className="relative">
-                  <HashtagIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={quantity}
-                    onChange={(e) => handleInputChange('quantity', e.target.value)}
-                    className={`glass-input w-full pl-12 pr-16 py-3 text-slate-800 placeholder-slate-500 ${
-                      errors.quantity ? 'border-red-300' : ''
-                    }`}
-                    placeholder="0.00"
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm font-medium">
-                    {stockItem.unit}
-                  </span>
-                </div>
-                {errors.quantity && <p className="text-red-600 text-sm mt-1">{errors.quantity}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Razón *
-                </label>
-                <select
-                  value={reason}
-                  onChange={(e) => handleInputChange('reason', e.target.value)}
-                  disabled={!movementType}
-                  className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${
-                    !movementType ? 'opacity-60' : ''
-                  } ${errors.reason ? 'border-red-300' : ''}`}
-                >
-                  <option value="">
-                    {!movementType ? "Primero selecciona un tipo" : "Seleccionar razón"}
-                  </option>
-                  {availableReasons.map((reasonOption) => (
-                    <option key={reasonOption} value={reasonOption}>
-                      {reasonOption}
-                    </option>
-                  ))}
-                </select>
-                {errors.reason && <p className="text-red-600 text-sm mt-1">{errors.reason}</p>}
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Notas Adicionales
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                rows={3}
-                className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none"
-                placeholder="Notas adicionales sobre el movimiento..."
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Movement Info */}
-        {(selectedMovementConfig || resultingStock !== null) && (
-          <div className="glass-card p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <DocumentTextIcon className="w-5 h-5 text-blue-600" />
-              </div>
-              <h4 className="font-semibold text-slate-800">Información del Movimiento</h4>
-            </div>
-            
-            <div className="space-y-4">
-              {/* Selected Movement Type */}
-              {selectedMovementConfig && (
-                <div className={`glass-card ${selectedMovementConfig.bgColor} ${selectedMovementConfig.borderColor} border p-4`}>
-                  <div className="text-sm text-slate-600 mb-2 font-medium">Tipo Seleccionado</div>
-                  <div className={`flex items-center gap-3 ${selectedMovementConfig.textColor}`}>
-                    <selectedMovementConfig.icon className="w-5 h-5" />
-                    <span className="font-semibold">{selectedMovementConfig.label}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Resulting Stock */}
-              {resultingStock !== null && (
-                <div className="glass-card bg-blue-50/80 border border-blue-200/50 p-4">
-                  <div className="text-sm text-blue-600 mb-2 font-medium">Stock Resultante</div>
-                  <div className={`font-semibold text-lg ${resultingStock < 0 ? 'text-red-700' : 'text-blue-800'}`}>
+          {/* Stock Calculator - Show when type and quantity are selected */}
+          {movementType && quantity && resultingStock !== null && (
+            <Card 
+              withBorder 
+              p="md" 
+              style={{ 
+                backgroundColor: resultingStock < 0 ? 'var(--mantine-color-red-0)' : 'var(--mantine-color-green-0)',
+                borderColor: resultingStock < 0 ? 'var(--mantine-color-red-3)' : 'var(--mantine-color-green-3)'
+              }}
+            >
+              <Stack gap="xs">
+                <Group>
+                  <IconCalculator size={16} />
+                  <Text weight={500} size="sm">Cálculo de Stock</Text>
+                </Group>
+                <Group>
+                  <Text size="sm">{stockItem.available_quantity || 0}</Text>
+                  <Text size="sm" color="dimmed">
+                    {movementType === MovementType.ENTRADA ? '+' : 
+                     movementType === MovementType.AJUSTE ? '=' : '-'}
+                  </Text>
+                  <Text size="sm">{parseFloat(quantity) || 0}</Text>
+                  <Text size="sm" color="dimmed">=</Text>
+                  <Text 
+                    weight={600} 
+                    size="sm"
+                    color={resultingStock < 0 ? 'red' : 'green'}
+                  >
                     {resultingStock} {stockItem.unit}
-                  </div>
-                  {resultingStock < 0 && (
-                    <div className="text-sm text-red-600 mt-2 font-medium">
-                      ⚠️ Stock insuficiente
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                  </Text>
+                </Group>
+                {resultingStock < 0 && (
+                  <Text size="xs" color="red">
+                    ⚠️ El stock no puede ser negativo
+                  </Text>
+                )}
+              </Stack>
+            </Card>
+          )}
 
-        {/* Additional Fields for Inbound Movements */}
-        {movementType === MovementType.ENTRADA && (
-          <div className="glass-card bg-blue-50/80 border border-blue-200/50 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <PlusIcon className="w-5 h-5 text-blue-600" />
-              </div>
-              <h4 className="font-semibold text-blue-800">Información de Entrada</h4>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  ID del Lote
-                </label>
-                <div className="relative">
-                  <TagIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                  <input
-                    type="text"
-                    value={batchId}
-                    onChange={(e) => handleInputChange('batchId', e.target.value)}
-                    className="glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500"
-                    placeholder="Opcional"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Costo por Unidad
-                </label>
-                <div className="relative">
-                  <CurrencyDollarIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={costPerUnit}
-                    onChange={(e) => handleInputChange('costPerUnit', e.target.value)}
-                    className="glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Fecha de Caducidad
-                </label>
-                <div className="relative">
-                  <CalendarIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                  <input
-                    type="date"
-                    value={expiryDate}
-                    onChange={(e) => handleInputChange('expiryDate', e.target.value)}
-                    className="glass-input w-full pl-12 pr-4 py-3 text-slate-800"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+          {/* Movement Type */}
+          <Select
+            label="Tipo de Movimiento"
+            placeholder="Selecciona el tipo de movimiento"
+            value={movementType}
+            onChange={(value) => setMovementType(value as MovementType)}
+            data={[
+              { value: MovementType.ENTRADA, label: 'Entrada de Stock' },
+              { value: MovementType.SALIDA, label: 'Salida de Stock' },
+              { value: MovementType.AJUSTE, label: 'Ajuste de Inventario' },
+              { value: MovementType.MERMA, label: 'Merma' },
+              { value: MovementType.TRANSFERENCIA, label: 'Transferencia' }
+            ]}
+            required
+            error={errors.movementType}
+            icon={<IconArrowsUpDown size={16} />}
+          />
+
+          {/* Quantity */}
+          <NumberInput
+            label="Cantidad"
+            placeholder="Ingresa la cantidad"
+            value={quantity ? parseFloat(quantity) : ''}
+            onChange={(value) => {
+              const newQuantity = value?.toString() || ''
+              setQuantity(newQuantity)
+              // Clear quantity errors when user types
+              if (errors.quantity) {
+                setErrors(prev => ({ ...prev, quantity: '' }))
+              }
+            }}
+            min={0}
+            precision={2}
+            step={0.01}
+            required
+            error={errors.quantity}
+            rightSection={<Text size="sm" color="dimmed">{stockItem.unit}</Text>}
+            icon={<IconHash size={16} />}
+            description={movementType && quantity && resultingStock !== null ? 
+              `Resultado: ${resultingStock} ${stockItem.unit}` : undefined
+            }
+          />
+
+          {/* Reason */}
+          <TextInput
+            label="Motivo"
+            placeholder="Describe el motivo del movimiento"
+            value={reason}
+            onChange={(e) => setReason(e.currentTarget.value)}
+            required
+            error={errors.reason}
+            icon={<IconFileText size={16} />}
+          />
+
+          {/* Additional fields for specific movement types */}
+          {(movementType === MovementType.ENTRADA || movementType === MovementType.AJUSTE) && (
+            <>
+              {/* Batch ID for entries */}
+              <TextInput
+                label="ID de Lote (Opcional)"
+                placeholder="Ingresa el ID del lote"
+                value={batchId}
+                onChange={(e) => setBatchId(e.currentTarget.value)}
+                icon={<IconTag size={16} />}
+              />
+
+              {/* Cost per unit */}
+              <NumberInput
+                label="Costo por Unidad (Opcional)"
+                placeholder="0.00"
+                value={costPerUnit ? parseFloat(costPerUnit) : ''}
+                onChange={(value) => setCostPerUnit(value?.toString() || '')}
+                min={0}
+                precision={2}
+                step={0.01}
+                icon={<IconCurrencyDollar size={16} />}
+                rightSection={<Text size="sm" color="dimmed">MXN</Text>}
+              />
+
+              {/* Expiry Date */}
+              <TextInput
+                label="Fecha de Vencimiento (Opcional)"
+                placeholder="YYYY-MM-DD"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.currentTarget.value)}
+                type="date"
+                icon={<IconCalendar size={16} />}
+              />
+            </>
+          )}
+
+          {/* Notes */}
+          <Textarea
+            label="Notas Adicionales (Opcional)"
+            placeholder="Información adicional sobre el movimiento..."
+            value={notes}
+            onChange={(e) => setNotes(e.currentTarget.value)}
+            minRows={2}
+            maxRows={4}
+            icon={<IconFileText size={16} />}
+          />
+        </Stack>
+
+      </Stack>
     </Modal>
   )
 }

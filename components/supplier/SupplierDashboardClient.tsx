@@ -1,11 +1,21 @@
 "use client";
 
-import { 
-  Card, 
-  CardBody, 
-  Button, 
-  Chip 
-} from "@heroui/react";
+import {
+  Paper,
+  Button,
+  Badge,
+  Group,
+  Stack,
+  Text,
+  Title,
+  Grid,
+  ActionIcon,
+  Divider,
+  Alert,
+  Card,
+  Center,
+  Loader
+} from "@mantine/core";
 import {
   ClipboardDocumentListIcon,
   CubeIcon,
@@ -16,62 +26,231 @@ import {
   CheckCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  BuildingStorefrontIcon
+  BuildingStorefrontIcon,
+  InformationCircleIcon,
+  ExclamationCircleIcon
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { useEffect, useState } from "react";
+import { UnifiedSupplier, SupplierStatus, SupplierType } from "@/lib/types/supplier.types";
+import { formatSupplierDisplay, needsProfileCompletion } from "@/lib/utils/supplier.utils";
 
-// Define types for our props
+// Updated types for unified supplier system
 interface SupplierDashboardProps {
-  dashboardData?: {
-    supplier: {
-      _id: string;
-      name: string;
-      code: string;
-      rating: number;
-      isActive: boolean;
-      contactInfo: {
-        email: string;
-        [key: string]: any;
-      };
-    };
-    orders: {
-      pending: number;
-      approved: number;
-      ordered: number;
-      received: number;
-      total: number;
-    };
-    products: {
-      active: number;
-      inactive: number;
-      total: number;
-    };
-    recentActivity: Array<{
-      id: string;
-      type: string;
-      title: string;
-      description: string;
-      timestamp: string;
-      status: string;
-    }>;
-  } | null;
+  userId?: string;
+  userRole?: string;
+  initialSupplierData?: UnifiedSupplier | null;
 }
 
-export default function SupplierDashboardClient({ dashboardData }: SupplierDashboardProps) {
-  if (!dashboardData) {
+interface DashboardData {
+  supplier: UnifiedSupplier;
+  orders: {
+    pending: number;
+    approved: number;
+    ordered: number;
+    received: number;
+    total: number;
+  };
+  products: {
+    active: number;
+    inactive: number;
+    total: number;
+  };
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    title: string;
+    description: string;
+    timestamp: string;
+    status: string;
+  }>;
+}
+
+export default function SupplierDashboardClient({
+  userId,
+  userRole,
+  initialSupplierData
+}: SupplierDashboardProps) {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSupplierDashboard();
+  }, [userId]);
+
+  const loadSupplierDashboard = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Si tenemos datos iniciales, usarlos
+      if (initialSupplierData) {
+        await buildDashboardData(initialSupplierData);
+        return;
+      }
+
+      // Si no hay userId, no podemos cargar datos
+      if (!userId) {
+        setError('No se pudo identificar el usuario');
+        return;
+      }
+
+      // Obtener datos del proveedor desde la API
+      const response = await fetch('/api/supplier/profile');
+      if (!response.ok) {
+        if (response.status === 403) {
+          setError('Sin acceso de proveedor');
+        } else {
+          setError('Error al cargar datos del proveedor');
+        }
+        return;
+      }
+
+      const supplierData: UnifiedSupplier = await response.json();
+      await buildDashboardData(supplierData);
+      
+    } catch (err) {
+      console.error('Error loading supplier dashboard:', err);
+      setError('Error inesperado al cargar el dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buildDashboardData = async (supplier: UnifiedSupplier) => {
+    try {
+      // TODO: Obtener datos reales de órdenes y productos desde APIs
+      // Por ahora usamos datos mock
+      const mockOrders = {
+        pending: 3,
+        approved: 5,
+        ordered: 2,
+        received: 8,
+        total: 18
+      };
+
+      const mockProducts = {
+        active: 12,
+        inactive: 3,
+        total: 15
+      };
+
+      const mockActivity = [
+        {
+          id: '1',
+          type: 'order_approved',
+          title: 'Orden #ORD-2024-001 Aprobada',
+          description: 'Tu orden de materiales de oficina ha sido aprobada',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          status: 'success'
+        },
+        {
+          id: '2',
+          type: 'order_in_process',
+          title: 'Orden #ORD-2024-002 En Proceso',
+          description: 'Orden de suministros de cocina en preparación',
+          timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+          status: 'warning'
+        },
+        {
+          id: '3',
+          type: 'order_completed',
+          title: 'Orden #ORD-2024-003 Entregada',
+          description: 'Entrega exitosa de productos de limpieza',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          status: 'success'
+        }
+      ];
+
+      setDashboardData({
+        supplier,
+        orders: mockOrders,
+        products: mockProducts,
+        recentActivity: mockActivity
+      });
+    } catch (err) {
+      console.error('Error building dashboard data:', err);
+      setError('Error al procesar datos del dashboard');
+    }
+  };
+
+  // Estados de carga y error
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Vista de Proveedor</h1>
-          <p className="text-gray-600 mb-6">
-            No hay datos de proveedor asociados a este usuario. Si eres administrador o gerente, puedes usar esta vista para pruebas o supervisión.
-          </p>
-        </div>
+      <Center style={{ minHeight: '100vh' }}>
+        <Stack align="center" gap="md">
+          <Loader size="lg" />
+          <Text c="dimmed">Cargando dashboard de proveedor...</Text>
+        </Stack>
+      </Center>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        padding: '2rem'
+      }}>
+        <Card withBorder p="xl" style={{ maxWidth: '500px', width: '100%' }}>
+          <Stack align="center" gap="md">
+            <ExclamationCircleIcon style={{ width: '3rem', height: '3rem', color: 'var(--mantine-color-orange-6)' }} />
+            <Title order={3}>Acceso no disponible</Title>
+            
+            {error === 'Sin acceso de proveedor' ? (
+              <Stack gap="sm">
+                <Text ta="center" c="dimmed">
+                  Tu cuenta no tiene un perfil de proveedor asociado.
+                </Text>
+                <Alert icon={<InformationCircleIcon style={{ width: '1rem', height: '1rem' }} />} color="blue">
+                  Si deberías tener acceso como proveedor, contacta al administrador del sistema.
+                </Alert>
+              </Stack>
+            ) : (
+              <Text ta="center" c="dimmed">
+                {error}
+              </Text>
+            )}
+            
+            <Group>
+              <Button variant="light" onClick={() => window.location.reload()}>
+                Reintentar
+              </Button>
+              <Button variant="light" component={Link} href="/dashboard">
+                Volver al Dashboard
+              </Button>
+            </Group>
+          </Stack>
+        </Card>
       </div>
     );
   }
+
+  if (!dashboardData) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        padding: '1rem'
+      }}>
+        <Text c="dimmed">No hay datos disponibles</Text>
+      </div>
+    );
+  }
+
+  const { supplier } = dashboardData;
+  const supplierDisplay = formatSupplierDisplay(supplier);
+  const needsCompletion = needsProfileCompletion(supplier);
 
   // Formato para mostrar tiempo relativo
   const formatTimeAgo = (dateString: string) => {
@@ -100,336 +279,345 @@ export default function SupplierDashboardClient({ dashboardData }: SupplierDashb
   // Mapeo de status a colores
   const getStatusColor = (status: string) => {
     switch(status) {
-      case "success": return "success";
-      case "warning": return "warning";
-      case "danger": return "danger";
-      case "primary": return "primary";
-      default: return "default";
+      case "success": return "green";
+      case "warning": return "yellow";
+      case "danger": return "red";
+      case "primary": return "blue";
+      default: return "gray";
     }
   };
   
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar de navegación */}
-      <nav className="hidden lg:block w-64 border-r border-gray-200 bg-white h-screen sticky top-0">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <BuildingStorefrontIcon className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-lg text-gray-900">Portal Proveedor</h1>
-              <p className="text-xs text-gray-500">Gestiona tus órdenes y productos</p>
-            </div>
-          </div>
-          
-          <div className="space-y-1 mb-8">
-            <Link href="/proveedor" className="flex items-center gap-3 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium">
-              <div className="w-6 h-6 flex items-center justify-center">
-                <UserIcon className="w-5 h-5" />
-              </div>
-              <span>Dashboard</span>
-            </Link>
-            
-            <Link href="/proveedor/ordenes" className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-              <div className="w-6 h-6 flex items-center justify-center">
-                <ClipboardDocumentListIcon className="w-5 h-5" />
-              </div>
-              <span>Órdenes de Compra</span>
-            </Link>
-            
-            <Link href="/proveedor/productos" className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-              <div className="w-6 h-6 flex items-center justify-center">
-                <CubeIcon className="w-5 h-5" />
-              </div>
-              <span>Productos</span>
-            </Link>
-            
-            <Link href="/proveedor/perfil" className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-              <div className="w-6 h-6 flex items-center justify-center">
-                <UserIcon className="w-5 h-5" />
-              </div>
-              <span>Perfil</span>
-            </Link>
-          </div>
-          
-          <div className="border-t border-gray-200 pt-4 mt-4">
-            <div className="flex flex-col px-3 py-2">
-              <p className="text-sm font-medium text-gray-900">{dashboardData.supplier.name}</p>
-              <p className="text-xs text-gray-500">{dashboardData.supplier.contactInfo.email}</p>
-              <div className="mt-1">
-                <Chip size="sm" color={dashboardData.supplier.isActive ? "success" : "danger"} variant="flat">
-                  {dashboardData.supplier.isActive ? "Activo" : "Inactivo"}
-                </Chip>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-      
-      {/* Contenido principal */}
-      <main className="flex-1 p-4 md:p-8">
-        {/* Header móvil */}
-        <div className="lg:hidden mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <BuildingStorefrontIcon className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="font-semibold text-lg text-gray-900">Portal Proveedor</h1>
-                <p className="text-xs text-gray-500">{dashboardData.supplier.name}</p>
-              </div>
-            </div>
-            
-            <Button isIconOnly variant="light" size="sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </Button>
-          </div>
-          
-          {/* Navegación móvil */}
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-            <Link href="/proveedor">
-              <Button size="sm" color="primary" variant="flat" className="whitespace-nowrap">
-                Dashboard
-              </Button>
-            </Link>
-            <Link href="/proveedor/ordenes">
-              <Button size="sm" variant="light" className="whitespace-nowrap">
-                Órdenes
-              </Button>
-            </Link>
-            <Link href="/proveedor/productos">
-              <Button size="sm" variant="light" className="whitespace-nowrap">
-                Productos
-              </Button>
-            </Link>
-            <Link href="/proveedor/perfil">
-              <Button size="sm" variant="light" className="whitespace-nowrap">
-                Perfil
-              </Button>
-            </Link>
-          </div>
-        </div>
+    <>
+      {/* Bienvenida y alertas */}
+      <div style={{ marginBottom: '2rem' }}>
+        <Title order={2} mb="xs">Bienvenido, {supplierDisplay.displayName}</Title>
+        <Text c="dimmed">Aquí tienes un resumen de tu actividad reciente y estado actual.</Text>
         
-        {/* Bienvenida */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Bienvenido, {dashboardData.supplier.name}</h1>
-          <p className="text-gray-600">Aquí tienes un resumen de tu actividad reciente y estado actual.</p>
-        </div>
+        {/* Alertas según el estado */}
+        <Stack gap="sm" mt="md">
+          {supplier.status === SupplierStatus.INVITED && (
+            <Alert icon={<InformationCircleIcon style={{ width: '1rem', height: '1rem' }} />} color="blue">
+              <Text fw={500}>¡Bienvenido al portal de proveedores!</Text>
+              <Text size="sm">
+                Tu cuenta ha sido activada. Completa tu perfil para aprovechar todas las funcionalidades.
+              </Text>
+            </Alert>
+          )}
+          
+          {needsCompletion && (
+            <Alert icon={<ExclamationTriangleIcon style={{ width: '1rem', height: '1rem' }} />} color="yellow">
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text fw={500}>Perfil incompleto</Text>
+                  <Text size="sm">
+                    Completa tu información de contacto para recibir órdenes de compra.
+                  </Text>
+                </div>
+                <Button size="sm" component={Link} href="/proveedor/perfil">
+                  Completar
+                </Button>
+              </Group>
+            </Alert>
+          )}
+          
+          {supplier.status === SupplierStatus.INACTIVE && (
+            <Alert icon={<ExclamationTriangleIcon style={{ width: '1rem', height: '1rem' }} />} color="orange">
+              <Text fw={500}>Cuenta inactiva</Text>
+              <Text size="sm">
+                Tu cuenta está temporalmente inactiva. Contacta al administrador para más información.
+              </Text>
+            </Alert>
+          )}
+        </Stack>
+      </div>
         
         {/* Tarjetas de resumen */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="border border-gray-200">
-            <CardBody className="p-4">
-              <div className="flex items-start justify-between">
+        <Grid mb="xl">
+          <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+            <Paper withBorder p="md">
+              <Group justify="space-between">
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Órdenes Pendientes</p>
-                  <p className="text-2xl font-bold text-gray-900">{dashboardData.orders.pending}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <Text size="sm" c="dimmed" mb="xs">Órdenes Pendientes</Text>
+                  <Text size="xl" fw={700}>{dashboardData.orders.pending}</Text>
+                  <Text size="xs" c="dimmed" mt="xs">
                     De un total de {dashboardData.orders.total} órdenes
-                  </p>
+                  </Text>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                  <ClockIcon className="w-5 h-5 text-yellow-600" />
+                <div style={{ 
+                  width: '2.5rem', 
+                  height: '2.5rem', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'var(--mantine-color-yellow-1)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}>
+                  <ClockIcon style={{ width: '1.25rem', height: '1.25rem', color: 'var(--mantine-color-yellow-6)' }} />
                 </div>
-              </div>
-            </CardBody>
-          </Card>
+              </Group>
+            </Paper>
+          </Grid.Col>
           
-          <Card className="border border-gray-200">
-            <CardBody className="p-4">
-              <div className="flex items-start justify-between">
+          <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+            <Paper withBorder p="md">
+              <Group justify="space-between">
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Órdenes Aprobadas</p>
-                  <p className="text-2xl font-bold text-gray-900">{dashboardData.orders.approved}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <Text size="sm" c="dimmed" mb="xs">Órdenes Aprobadas</Text>
+                  <Text size="xl" fw={700}>{dashboardData.orders.approved}</Text>
+                  <Text size="xs" c="dimmed" mt="xs">
                     Listas para procesar
-                  </p>
+                  </Text>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                <div style={{ 
+                  width: '2.5rem', 
+                  height: '2.5rem', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'var(--mantine-color-green-1)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}>
+                  <CheckCircleIcon style={{ width: '1.25rem', height: '1.25rem', color: 'var(--mantine-color-green-6)' }} />
                 </div>
-              </div>
-            </CardBody>
-          </Card>
+              </Group>
+            </Paper>
+          </Grid.Col>
           
-          <Card className="border border-gray-200">
-            <CardBody className="p-4">
-              <div className="flex items-start justify-between">
+          <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+            <Paper withBorder p="md">
+              <Group justify="space-between">
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Órdenes En Proceso</p>
-                  <p className="text-2xl font-bold text-gray-900">{dashboardData.orders.ordered}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <Text size="sm" c="dimmed" mb="xs">Órdenes En Proceso</Text>
+                  <Text size="xl" fw={700}>{dashboardData.orders.ordered}</Text>
+                  <Text size="xs" c="dimmed" mt="xs">
                     En camino a entrega
-                  </p>
+                  </Text>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <ClipboardDocumentListIcon className="w-5 h-5 text-blue-600" />
+                <div style={{ 
+                  width: '2.5rem', 
+                  height: '2.5rem', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'var(--mantine-color-blue-1)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}>
+                  <ClipboardDocumentListIcon style={{ width: '1.25rem', height: '1.25rem', color: 'var(--mantine-color-blue-6)' }} />
                 </div>
-              </div>
-            </CardBody>
-          </Card>
+              </Group>
+            </Paper>
+          </Grid.Col>
           
-          <Card className="border border-gray-200">
-            <CardBody className="p-4">
-              <div className="flex items-start justify-between">
+          <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+            <Paper withBorder p="md">
+              <Group justify="space-between">
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Productos Activos</p>
-                  <p className="text-2xl font-bold text-gray-900">{dashboardData.products.active}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <Text size="sm" c="dimmed" mb="xs">Productos Activos</Text>
+                  <Text size="xl" fw={700}>{dashboardData.products.active}</Text>
+                  <Text size="xs" c="dimmed" mt="xs">
                     De un total de {dashboardData.products.total} productos
-                  </p>
+                  </Text>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                  <CubeIcon className="w-5 h-5 text-purple-600" />
+                <div style={{ 
+                  width: '2.5rem', 
+                  height: '2.5rem', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'var(--mantine-color-violet-1)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}>
+                  <CubeIcon style={{ width: '1.25rem', height: '1.25rem', color: 'var(--mantine-color-violet-6)' }} />
                 </div>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+              </Group>
+            </Paper>
+          </Grid.Col>
+        </Grid>
         
         {/* Contenido principal dividido en dos columnas */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Grid>
           {/* Actividad reciente - 2 columnas */}
-          <div className="lg:col-span-2">
-            <Card className="border border-gray-200">
-              <CardBody className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Actividad Reciente</h2>
-                  <Link href="/proveedor/ordenes">
-                    <Button
-                      variant="light"
-                      size="sm"
-                      endContent={<ChevronRightIcon className="w-4 h-4" />}
-                    >
-                      Ver todas
-                    </Button>
-                  </Link>
-                </div>
-                
-                <div className="space-y-4">
-                  {dashboardData.recentActivity.length === 0 ? (
-                    <p className="text-gray-500 text-center py-6">No hay actividad reciente</p>
-                  ) : (
-                    dashboardData.recentActivity.map((activity) => (
-                      <div key={activity.id} className="flex gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                        <div className="mt-1 flex-shrink-0">
-                          {getActivityIcon(activity.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start">
-                            <p className="font-medium text-gray-900 text-sm">{activity.title}</p>
-                            <Chip size="sm" color={getStatusColor(activity.status)} variant="flat">
-                              {formatTimeAgo(activity.timestamp)}
-                            </Chip>
-                          </div>
-                          <p className="text-gray-600 text-sm line-clamp-2">{activity.description}</p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-          
-          {/* Acciones rápidas - 1 columna */}
-          <div>
-            <Card className="border border-gray-200">
-              <CardBody className="p-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
-                
-                <div className="space-y-2">
-                  <Link href="/proveedor/ordenes">
-                    <Button
-                      color="primary"
-                      className="w-full justify-start"
-                      startContent={<ClipboardDocumentListIcon className="w-5 h-5" />}
-                    >
-                      Ver Órdenes Pendientes
-                    </Button>
-                  </Link>
-                  
-                  <Link href="/proveedor/productos/nuevo">
-                    <Button
-                      color="secondary"
-                      variant="flat"
-                      className="w-full justify-start"
-                      startContent={<CubeIcon className="w-5 h-5" />}
-                    >
-                      Registrar Nuevo Producto
-                    </Button>
-                  </Link>
-                  
-                  <Link href="/proveedor/perfil">
-                    <Button
-                      variant="flat"
-                      className="w-full justify-start"
-                      startContent={<UserIcon className="w-5 h-5" />}
-                    >
-                      Actualizar Perfil
-                    </Button>
-                  </Link>
-                </div>
-                
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <h3 className="text-sm font-medium text-gray-900 mb-3">Recursos</h3>
-                  
-                  <div className="space-y-2">
-                    <Link href="/proveedor/ayuda" className="block text-sm text-blue-600 hover:underline">
-                      Centro de Ayuda
-                    </Link>
-                    <Link href="/proveedor/faq" className="block text-sm text-blue-600 hover:underline">
-                      Preguntas Frecuentes
-                    </Link>
-                    <Link href="/proveedor/contacto" className="block text-sm text-blue-600 hover:underline">
-                      Contactar Soporte
-                    </Link>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-            
-            {/* Calificación */}
-            <Card className="border border-gray-200 mt-4">
-              <CardBody className="p-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">Tu Calificación</h2>
-                
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="text-3xl font-bold text-gray-900">{dashboardData.supplier.rating.toFixed(1)}</div>
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <svg
-                        key={star}
-                        className={`w-5 h-5 ${star <= Math.round(dashboardData.supplier.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                </div>
-                
-                <Link href="/proveedor/calificaciones">
+          <Grid.Col span={{ base: 12, lg: 8 }}>
+            <Paper withBorder p="md">
+              <Group justify="space-between" mb="md">
+                <Title order={4}>Actividad Reciente</Title>
+                <Link href="/proveedor/ordenes" style={{ textDecoration: 'none' }}>
                   <Button
                     variant="light"
                     size="sm"
-                    className="w-full"
-                    endContent={<ChevronRightIcon className="w-4 h-4" />}
+                    rightSection={<ChevronRightIcon className="w-4 h-4" />}
                   >
-                    Ver detalles de calificación
+                    Ver todas
                   </Button>
                 </Link>
-              </CardBody>
-            </Card>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
+              </Group>
+              
+              <Stack gap="md">
+                {dashboardData.recentActivity.length === 0 ? (
+                  <Text c="dimmed" ta="center" py="xl">No hay actividad reciente</Text>
+                ) : (
+                  dashboardData.recentActivity.map((activity) => (
+                    <div 
+                      key={activity.id} 
+                      style={{
+                        display: 'flex',
+                        gap: '0.75rem',
+                        padding: '0.5rem',
+                        borderRadius: 'var(--mantine-radius-lg)',
+                        transition: 'background-color 0.2s ease',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-0)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <div style={{ marginTop: '0.25rem', flexShrink: 0 }}>
+                        {getActivityIcon(activity.type)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Group justify="space-between" align="flex-start">
+                          <Text fw={500} size="sm">{activity.title}</Text>
+                          <Badge 
+                            size="sm" 
+                            color={getStatusColor(activity.status)} 
+                            variant="light"
+                          >
+                            {formatTimeAgo(activity.timestamp)}
+                          </Badge>
+                        </Group>
+                        <Text c="dimmed" size="sm" lineClamp={2}>{activity.description}</Text>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </Stack>
+            </Paper>
+          </Grid.Col>
+          
+          {/* Acciones rápidas - 1 columna */}
+          <Grid.Col span={{ base: 12, lg: 4 }}>
+            <Paper withBorder p="md">
+              <Title order={4} mb="md">Acciones Rápidas</Title>
+              
+              <Stack gap="xs">
+                <Link href="/proveedor/ordenes" style={{ textDecoration: 'none' }}>
+                  <Button
+                    fullWidth
+                    justify="flex-start"
+                    leftSection={<ClipboardDocumentListIcon className="w-5 h-5" />}
+                  >
+                    Ver Órdenes Pendientes
+                  </Button>
+                </Link>
+                
+                <Link href="/proveedor/productos/nuevo" style={{ textDecoration: 'none' }}>
+                  <Button
+                    color="violet"
+                    variant="light"
+                    fullWidth
+                    justify="flex-start"
+                    leftSection={<CubeIcon className="w-5 h-5" />}
+                  >
+                    Registrar Nuevo Producto
+                  </Button>
+                </Link>
+                
+                <Link href="/proveedor/perfil" style={{ textDecoration: 'none' }}>
+                  <Button
+                    variant="light"
+                    fullWidth
+                    justify="flex-start"
+                    leftSection={<UserIcon className="w-5 h-5" />}
+                  >
+                    Actualizar Perfil
+                  </Button>
+                </Link>
+              </Stack>
+              
+              <Divider mt="lg" mb="md" />
+              
+              <Title order={5} mb="md">Recursos</Title>
+              
+              <Stack gap="xs">
+                <Link href="/proveedor/ayuda" style={{ textDecoration: 'none', color: 'var(--mantine-color-blue-6)' }}>
+                  <Text size="sm" style={{ cursor: 'pointer' }} className="hover:underline">
+                    Centro de Ayuda
+                  </Text>
+                </Link>
+                <Link href="/proveedor/faq" style={{ textDecoration: 'none', color: 'var(--mantine-color-blue-6)' }}>
+                  <Text size="sm" style={{ cursor: 'pointer' }} className="hover:underline">
+                    Preguntas Frecuentes
+                  </Text>
+                </Link>
+                <Link href="/proveedor/contacto" style={{ textDecoration: 'none', color: 'var(--mantine-color-blue-6)' }}>
+                  <Text size="sm" style={{ cursor: 'pointer' }} className="hover:underline">
+                    Contactar Soporte
+                  </Text>
+                </Link>
+              </Stack>
+            </Paper>
+            
+            {/* Calificación */}
+            <Paper withBorder p="md" mt="md">
+              <Title order={4} mb="sm">Tu Calificación</Title>
+              
+              <Group gap="sm" mb="md">
+                <Text size="xl" fw={700}>
+                  {supplier.overall_rating ? supplier.overall_rating.toFixed(1) : 'N/A'}
+                </Text>
+                <Group gap="xs">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <svg
+                      key={star}
+                      style={{
+                        width: '1.25rem',
+                        height: '1.25rem',
+                        color: star <= Math.round(supplier.overall_rating || 0) ? '#fbbf24' : '#d1d5db'
+                      }}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </Group>
+              </Group>
+              
+              {supplier.overall_rating && (
+                <Stack gap="xs" mb="md">
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Calidad</Text>
+                    <Text size="sm" fw={500}>{supplier.rating_quality}/5</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Confiabilidad</Text>
+                    <Text size="sm" fw={500}>{supplier.rating_reliability}/5</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Precio</Text>
+                    <Text size="sm" fw={500}>{supplier.rating_pricing}/5</Text>
+                  </Group>
+                </Stack>
+              )}
+              
+              <Link href="/proveedor/calificaciones" style={{ textDecoration: 'none' }}>
+                <Button
+                  variant="light"
+                  size="sm"
+                  fullWidth
+                  rightSection={<ChevronRightIcon className="w-4 h-4" />}
+                >
+                  Ver detalles de calificación
+                </Button>
+              </Link>
+            </Paper>
+          </Grid.Col>
+        </Grid>
+      </>
+    );
+  }

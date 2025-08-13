@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import dbConnect from "@/lib/mongodb";
 import Supplier from "@/lib/models/inventory/Supplier";
-import { SupabaseInventoryService } from "@/lib/supabase/inventory";
+import { SupabaseInventoryClientService } from "@/lib/supabase/inventory-client";
 import SupplierMessaging from "@/components/supplier/SupplierMessaging";
 
 export const metadata: Metadata = {
@@ -17,11 +17,11 @@ async function getSupplierByUserIdSupabase(userId: string, userRole: string) {
     // Si es admin o gerente, intentar encontrar cualquier proveedor activo
     if (userRole === "admin" || userRole === "gerente") {
       // Primero intentar buscar por user_id vinculado
-      let supplier = await SupabaseInventoryService.getSupplierByUserId(userId);
+      let supplier = await SupabaseInventoryClientService.getSupplierByUserId(userId);
       
       // Si no hay coincidencia, buscar cualquier proveedor activo para mostrar vista de ejemplo
       if (!supplier) {
-        const suppliers = await SupabaseInventoryService.getAllSuppliers(true);
+        const suppliers = await SupabaseInventoryClientService.getAllSuppliers(true);
         supplier = suppliers.length > 0 ? suppliers[0] : null;
       }
       
@@ -29,7 +29,7 @@ async function getSupplierByUserIdSupabase(userId: string, userRole: string) {
     }
     
     // Para usuarios con rol proveedor, buscar por user_id vinculado
-    const supplier = await SupabaseInventoryService.getSupplierByUserId(userId);
+    const supplier = await SupabaseInventoryClientService.getSupplierByUserId(userId);
     return supplier;
 
   } catch (error) {

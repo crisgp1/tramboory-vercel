@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { Button, Avatar, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
+import { Button, Avatar, Menu, Group, Text, Loader, Paper, Stack } from "@mantine/core";
 import { UserIcon, HomeIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import LogoutButton from "./LogoutButton";
@@ -21,48 +21,48 @@ export default function SimpleHeader({
 
   if (!isLoaded) {
     return (
-      <header className={`bg-white shadow-sm border-b border-gray-200 px-4 py-3 ${className}`}>
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <h1 className="text-xl font-bold text-gray-900">{title}</h1>
-          <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
-        </div>
-      </header>
+      <Paper component="header" shadow="sm" p="md" className={className} withBorder>
+        <Group justify="space-between" maw="7xl" mx="auto">
+          <Text size="xl" fw={700}>{title}</Text>
+          <Loader size="sm" />
+        </Group>
+      </Paper>
     );
   }
 
   return (
-    <header className={`bg-white shadow-sm border-b border-gray-200 px-4 py-3 ${className}`}>
-      <div className="flex items-center justify-between max-w-7xl mx-auto">
+    <Paper component="header" shadow="sm" p="md" className={className} withBorder>
+      <Group justify="space-between" maw="7xl" mx="auto">
         {/* Title/Logo */}
-        <div className="flex items-center gap-4">
+        <Group gap="md">
           {showHomeLink && (
-            <Link href="/">
-              <Button
-                variant="light"
-                size="sm"
-                startContent={<HomeIcon className="w-4 h-4" />}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Inicio
-              </Button>
-            </Link>
+            <Button
+              component={Link}
+              href="/"
+              variant="subtle"
+              size="sm"
+              leftSection={<HomeIcon className="w-4 h-4" />}
+              color="gray"
+            >
+              Inicio
+            </Button>
           )}
-          <h1 className="text-xl font-bold text-gray-900">{title}</h1>
-        </div>
+          <Text size="xl" fw={700}>{title}</Text>
+        </Group>
 
         {/* User Menu */}
-        <div className="flex items-center gap-3">
+        <Group gap="sm">
           {user ? (
             <>
               {/* Desktop View */}
-              <div className="hidden md:flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">
+              <Group gap="sm" visibleFrom="md">
+                <div style={{ textAlign: 'right' }}>
+                  <Text size="sm" fw={500}>
                     {user.firstName} {user.lastName}
-                  </p>
-                  <p className="text-xs text-gray-600">
+                  </Text>
+                  <Text size="xs" c="dimmed">
                     {user.primaryEmailAddress?.emailAddress}
-                  </p>
+                  </Text>
                 </div>
                 <Avatar
                   src={user.imageUrl}
@@ -70,54 +70,55 @@ export default function SimpleHeader({
                   size="sm"
                 />
                 <LogoutButton size="sm" />
-              </div>
+              </Group>
 
               {/* Mobile View */}
-              <div className="md:hidden">
-                <Dropdown>
-                  <DropdownTrigger>
+              <Group hiddenFrom="md">
+                <Menu shadow="md" width={250}>
+                  <Menu.Target>
                     <Avatar
                       src={user.imageUrl}
                       name={user.firstName || "Usuario"}
                       size="sm"
-                      className="cursor-pointer"
+                      style={{ cursor: 'pointer' }}
                     />
-                  </DropdownTrigger>
-                  <DropdownMenu aria-label="Menú de usuario">
-                    <DropdownItem key="profile" className="h-14 gap-2">
-                      <p className="font-semibold">{user.firstName} {user.lastName}</p>
-                      <p className="text-xs text-gray-600">{user.primaryEmailAddress?.emailAddress}</p>
-                    </DropdownItem>
-                    {showHomeLink ? (
-                      <DropdownItem 
-                        key="home" 
-                        startContent={<HomeIcon className="w-4 h-4" />}
-                        onPress={() => window.location.href = "/"}
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item>
+                      <Stack gap={0}>
+                        <Text fw={500}>{user.firstName} {user.lastName}</Text>
+                        <Text size="xs" c="dimmed">
+                          {user.primaryEmailAddress?.emailAddress}
+                        </Text>
+                      </Stack>
+                    </Menu.Item>
+                    {showHomeLink && (
+                      <Menu.Item
+                        leftSection={<HomeIcon className="w-4 h-4" />}
+                        onClick={() => window.location.href = "/"}
                       >
                         Inicio
-                      </DropdownItem>
-                    ) : null}
-                    <DropdownItem key="logout" color="danger" className="text-danger">
-                      <LogoutButton 
-                        variant="light" 
-                        color="danger" 
+                      </Menu.Item>
+                    )}
+                    <Menu.Item color="red">
+                      <LogoutButton
+                        variant="light"
+                        color="danger"
                         size="sm"
-                        className="w-full justify-start p-0"
+                        className="w-full"
                       />
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
-              </div>
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              </Group>
             </>
           ) : (
-            <Link href="/sign-in">
-              <Button color="primary" size="sm">
-                Iniciar Sesión
-              </Button>
-            </Link>
+            <Button component={Link} href="/sign-in" color="blue" size="sm">
+              Iniciar Sesión
+            </Button>
           )}
-        </div>
-      </div>
-    </header>
+        </Group>
+      </Group>
+    </Paper>
   );
 }

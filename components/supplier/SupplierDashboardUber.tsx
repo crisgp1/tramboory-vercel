@@ -1,13 +1,24 @@
 "use client";
 
-import { 
-  Card, 
-  CardBody, 
-  Button, 
-  Chip,
+import {
+  Paper,
+  Button,
+  Badge,
   Progress,
-  Avatar
-} from "@heroui/react";
+  Avatar,
+  Group,
+  Stack,
+  Text,
+  SimpleGrid,
+  ActionIcon,
+  Burger,
+  Drawer,
+  Title,
+  Center,
+  Divider,
+  Grid
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import {
   ClipboardDocumentListIcon,
   CubeIcon,
@@ -27,7 +38,6 @@ import {
   ArrowUpIcon,
   ArrowDownIcon
 } from "@heroicons/react/24/outline";
-import { BellIcon as BellIconSolid } from "@heroicons/react/24/solid";
 import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
 import SimpleHeader from "@/components/auth/SimpleHeader";
@@ -82,23 +92,22 @@ interface SupplierDashboardProps {
 }
 
 export default function SupplierDashboardUber({ dashboardData }: SupplierDashboardProps) {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuOpen, { toggle: toggleMobileMenu, close: closeMobileMenu }] = useDisclosure(false);
 
   if (!dashboardData) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
         <SimpleHeader title="Portal de Proveedor" />
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-4">
-          <div className="text-center">
-            <BuildingStorefrontIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Portal de Proveedor</h1>
-            <p className="text-gray-600 mb-6">
+        <Center style={{ minHeight: 'calc(100vh - 80px)' }} p="md">
+          <Stack align="center" gap="md">
+            <BuildingStorefrontIcon className="w-16 h-16 text-gray-400" />
+            <Title order={2}>Portal de Proveedor</Title>
+            <Text c="dimmed" ta="center" mb="lg">
               No hay datos de proveedor asociados a tu cuenta.
-            </p>
-            <Button color="primary">Contactar Soporte</Button>
-          </div>
-        </div>
+            </Text>
+            <Button color="blue">Contactar Soporte</Button>
+          </Stack>
+        </Center>
       </div>
     );
   }
@@ -119,377 +128,407 @@ export default function SupplierDashboardUber({ dashboardData }: SupplierDashboa
     responseTime: "2h"
   };
 
-  // Notifications are now handled by SupplierNotificationCenter component
-
   return (
-    <div className="min-h-screen" style={{backgroundColor: 'var(--background)'}}>
-      {/* Header Uber-style */}
-      <header className="surface-base sticky top-0 z-50" style={{
-        backgroundColor: 'var(--primary)',
-        color: 'white',
-        borderBottom: `0.0625rem solid var(--border-default)`
-      }}>
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            {/* Logo y nombre */}
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 hover:bg-gray-900 rounded-lg transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <div className="flex items-center gap-2">
-                <BuildingStorefrontIcon className="w-8 h-8" />
-                <div>
-                  <h1 className="font-bold text-lg">Portal Proveedor</h1>
-                  <p className="text-xs text-gray-400 hidden sm:block">{dashboardData.supplier.name}</p>
-                </div>
-              </div>
-            </div>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+      {/* Header */}
+      <Paper 
+        component="header" 
+        pos="sticky" 
+        top={0} 
+        style={{ zIndex: 50 }}
+        p="md"
+        bg="blue.6"
+        c="white"
+        withBorder
+      >
+        <Group justify="space-between">
+          <Group>
+            <Burger 
+              opened={mobileMenuOpen} 
+              onClick={toggleMobileMenu} 
+              hiddenFrom="lg" 
+              color="white"
+            />
+            <Group gap="sm">
+              <BuildingStorefrontIcon className="w-8 h-8" />
+              <Stack gap={0}>
+                <Text fw={700} size="lg">Portal Proveedor</Text>
+                <Text size="xs" c="blue.1" visibleFrom="sm">
+                  {dashboardData.supplier.name}
+                </Text>
+              </Stack>
+            </Group>
+          </Group>
 
-            {/* Acciones del header */}
-            <div className="flex items-center gap-2">
-              {/* Notificaciones */}
-              <SupplierNotificationCenter 
-                supplierId={dashboardData.supplier._id}
-                className="text-white"
+          <Group gap="sm">
+            <SupplierNotificationCenter 
+              supplierId={dashboardData.supplier._id}
+              className="text-white"
+            />
+            <Group visibleFrom="sm">
+              <Avatar
+                size="sm"
+                name={dashboardData.supplier.name}
               />
+              <Stack gap={0} visibleFrom="md">
+                <Text size="sm" fw={500}>{dashboardData.supplier.name}</Text>
+                <Text size="xs" c="blue.1">{dashboardData.supplier.code}</Text>
+              </Stack>
+              <LogoutButton 
+                variant="bordered" 
+                color="default" 
+                size="sm"
+                className="text-white border-white/30 hover:bg-white/10"
+                showIcon={false}
+              >
+                Salir
+              </LogoutButton>
+            </Group>
+          </Group>
+        </Group>
 
-              {/* Avatar del usuario */}
-              <div className="flex items-center gap-3">
-                <Avatar
-                  size="sm"
-                  src=""
-                  name={dashboardData.supplier.name}
-                  className="hidden sm:block"
-                />
-                <div className="hidden md:block text-right">
-                  <p className="text-sm font-medium">{dashboardData.supplier.name}</p>
-                  <p className="text-xs text-gray-400">{dashboardData.supplier.code}</p>
-                </div>
-                
-                {/* Logout Button */}
-                <div className="hidden sm:block">
-                  <LogoutButton 
-                    variant="bordered" 
-                    color="default" 
-                    size="sm"
-                    className="text-white border-white/30 hover:bg-white/10"
-                    showIcon={false}
-                  >
-                    Salir
-                  </LogoutButton>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Desktop Navigation */}
+        <Group gap="lg" mt="md" visibleFrom="lg">
+          <Button component={Link} href="/proveedor" variant="subtle" c="white" style={{ textDecoration: 'none', borderBottom: '2px solid white' }}>
+            Dashboard
+          </Button>
+          <Button component={Link} href="/proveedor/ordenes" variant="subtle" c="blue.1" style={{ textDecoration: 'none' }}>
+            Órdenes
+          </Button>
+          <Button component={Link} href="/proveedor/productos" variant="subtle" c="blue.1" style={{ textDecoration: 'none' }}>
+            Productos
+          </Button>
+          <Button component={Link} href="/proveedor/estadisticas" variant="subtle" c="blue.1" style={{ textDecoration: 'none' }}>
+            Estadísticas
+          </Button>
+          <Button component={Link} href="/proveedor/perfil" variant="subtle" c="blue.1" style={{ textDecoration: 'none' }}>
+            Perfil
+          </Button>
+        </Group>
+      </Paper>
 
-        {/* Navegación desktop */}
-        <nav className="hidden lg:block border-t border-gray-800">
-          <div className="px-4">
-            <div className="flex gap-6">
-              <Link href="/proveedor" className="py-3 border-b-2 border-white text-white font-medium">
-                Dashboard
-              </Link>
-              <Link href="/proveedor/ordenes" className="py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
-                Órdenes
-              </Link>
-              <Link href="/proveedor/productos" className="py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
-                Productos
-              </Link>
-              <Link href="/proveedor/estadisticas" className="py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
-                Estadísticas
-              </Link>
-              <Link href="/proveedor/perfil" className="py-3 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">
-                Perfil
-              </Link>
-            </div>
-          </div>
-        </nav>
-      </header>
+      {/* Mobile Menu Drawer */}
+      <Drawer opened={mobileMenuOpen} onClose={closeMobileMenu} size="md" hiddenFrom="lg" title="Menú">
+        <Stack gap="xs">
+          <Button component={Link} href="/proveedor" variant="light" fullWidth justify="start" style={{ textDecoration: 'none' }}>
+            Dashboard
+          </Button>
+          <Button component={Link} href="/proveedor/ordenes" variant="subtle" fullWidth justify="start" style={{ textDecoration: 'none' }}>
+            Órdenes
+          </Button>
+          <Button component={Link} href="/proveedor/productos" variant="subtle" fullWidth justify="start" style={{ textDecoration: 'none' }}>
+            Productos
+          </Button>
+          <Button component={Link} href="/proveedor/estadisticas" variant="subtle" fullWidth justify="start" style={{ textDecoration: 'none' }}>
+            Estadísticas
+          </Button>
+          <Button component={Link} href="/proveedor/perfil" variant="subtle" fullWidth justify="start" style={{ textDecoration: 'none' }}>
+            Perfil
+          </Button>
+          <LogoutButton 
+            variant="light" 
+            color="danger" 
+            size="sm"
+            className="w-full"
+          />
+        </Stack>
+      </Drawer>
 
-      {/* Menú móvil */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40" style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.5)'
-        }} onClick={() => setMobileMenuOpen(false)}>
-          <div className="bg-white w-64 h-full shadow-lg" onClick={e => e.stopPropagation()}>
-            <div className="p-4" style={{
-              backgroundColor: 'var(--primary)',
-              color: 'white'
-            }}>
-              <h2 className="font-bold text-lg">Menú</h2>
-            </div>
-            <nav className="p-4 space-y-2">
-              <Link href="/proveedor" className="block px-4 py-2 bg-gray-100 rounded-lg font-medium">
-                Dashboard
-              </Link>
-              <Link href="/proveedor/ordenes" className="block px-4 py-2 hover:bg-gray-100 rounded-lg">
-                Órdenes
-              </Link>
-              <Link href="/proveedor/productos" className="block px-4 py-2 hover:bg-gray-100 rounded-lg">
-                Productos
-              </Link>
-              <Link href="/proveedor/estadisticas" className="block px-4 py-2 hover:bg-gray-100 rounded-lg">
-                Estadísticas
-              </Link>
-              <Link href="/proveedor/perfil" className="block px-4 py-2 hover:bg-gray-100 rounded-lg">
-                Perfil
-              </Link>
-              <div className="px-4 py-2">
-                <LogoutButton 
-                  variant="light" 
-                  color="danger" 
-                  size="sm"
-                  className="w-full justify-start"
-                />
-              </div>
-            </nav>
-          </div>
-        </div>
-      )}
+      {/* Main Content */}
+      <main style={{ padding: 'var(--mantine-spacing-md)', maxWidth: '7xl', margin: '0 auto' }}>
+        {/* Metrics Grid */}
+        <SimpleGrid cols={{ base: 2, lg: 4 }} spacing="md" mb="lg">
+          {/* Sales Metric */}
+          <Paper withBorder p="md" shadow="sm" style={{ cursor: 'pointer', transition: 'box-shadow 0.2s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-md)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)'; }}>
+            <Group justify="space-between" mb="xs">
+              <CurrencyDollarIcon className="w-8 h-8 text-green-500" />
+              <Badge
+                size="sm"
+                color={stats.growthPercentage > 0 ? 'green' : 'red'}
+                variant="light"
+              >
+                {stats.growthPercentage > 0 ? '↗' : '↘'} {Math.abs(stats.growthPercentage)}%
+              </Badge>
+            </Group>
+            <Text size="xl" fw={700} mb="xs">
+              ${stats.salesThisMonth.toLocaleString()}
+            </Text>
+            <Text size="sm" c="dimmed">Ventas este mes</Text>
+          </Paper>
 
-      {/* Contenido principal */}
-      <main className="p-4 max-w-7xl mx-auto">
-        {/* Métricas principales estilo Uber */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {/* Ventas del mes */}
-          <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
-            <CardBody className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <CurrencyDollarIcon className="w-8 h-8 text-green-500" />
-                <Chip
-                  size="sm"
-                  className={`${stats.growthPercentage > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-                >
-                  {stats.growthPercentage > 0 ? <ArrowUpIcon className="w-3 h-3 mr-1" /> : <ArrowDownIcon className="w-3 h-3 mr-1" />}
-                  {Math.abs(stats.growthPercentage)}%
-                </Chip>
-              </div>
-              <p className="text-2xl font-bold">${stats.salesThisMonth.toLocaleString()}</p>
-              <p className="text-sm text-gray-500">Ventas este mes</p>
-            </CardBody>
-          </Card>
+          {/* Orders Metric */}
+          <Paper withBorder p="md" shadow="sm" style={{ cursor: 'pointer', transition: 'box-shadow 0.2s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-md)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)'; }}>
+            <Group justify="space-between" mb="xs">
+              <ClipboardDocumentListIcon className="w-8 h-8 text-blue-500" />
+              <Text size="xl" fw={700} c="blue.6">
+                {dashboardData.orders.pending + dashboardData.orders.approved}
+              </Text>
+            </Group>
+            <Text size="lg" fw={600} mb="xs">Órdenes Activas</Text>
+            <Text size="sm" c="dimmed">Requieren atención</Text>
+          </Paper>
 
-          {/* Órdenes activas */}
-          <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
-            <CardBody className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <ClipboardDocumentListIcon className="w-8 h-8 text-blue-500" />
-                <span className="text-2xl font-bold text-blue-600">{dashboardData.orders.pending + dashboardData.orders.approved}</span>
-              </div>
-              <p className="text-lg font-semibold">Órdenes Activas</p>
-              <p className="text-sm text-gray-500">Requieren atención</p>
-            </CardBody>
-          </Card>
+          {/* Completion Rate */}
+          <Paper withBorder p="md" shadow="sm" style={{ cursor: 'pointer', transition: 'box-shadow 0.2s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-md)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)'; }}>
+            <Group justify="space-between" mb="xs">
+              <CheckCircleIcon className="w-8 h-8 text-green-500" />
+              <Progress value={stats.completionRate} size="sm" color="green" w={64} />
+            </Group>
+            <Text size="xl" fw={700} mb="xs">{stats.completionRate}%</Text>
+            <Text size="sm" c="dimmed">Tasa de completado</Text>
+          </Paper>
 
-          {/* Tasa de completado */}
-          <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
-            <CardBody className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <CheckCircleIcon className="w-8 h-8 text-green-500" />
-                <Progress 
-                  value={stats.completionRate} 
-                  className="w-16" 
-                  size="sm"
-                  color="success"
-                />
-              </div>
-              <p className="text-2xl font-bold">{stats.completionRate}%</p>
-              <p className="text-sm text-gray-500">Tasa de completado</p>
-            </CardBody>
-          </Card>
+          {/* Rating */}
+          <Paper withBorder p="md" shadow="sm" style={{ cursor: 'pointer', transition: 'box-shadow 0.2s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-md)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)'; }}>
+            <Group justify="space-between" mb="xs">
+              <StarIcon className="w-8 h-8 text-yellow-500" />
+              <Group gap={2}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <StarIcon
+                    key={star}
+                    className={`w-4 h-4 ${star <= Math.round(dashboardData.supplier.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                    style={{ fill: star <= Math.round(dashboardData.supplier.rating) ? 'currentColor' : 'none' }}
+                  />
+                ))}
+              </Group>
+            </Group>
+            <Text size="xl" fw={700} mb="xs">{dashboardData.supplier.rating.toFixed(1)}</Text>
+            <Text size="sm" c="dimmed">Calificación promedio</Text>
+          </Paper>
+        </SimpleGrid>
 
-          {/* Calificación */}
-          <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
-            <CardBody className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <StarIcon className="w-8 h-8 text-yellow-500" />
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <StarIcon
-                      key={star}
-                      className={`w-4 h-4 ${star <= Math.round(dashboardData.supplier.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                    />
-                  ))}
-                </div>
-              </div>
-              <p className="text-2xl font-bold">{dashboardData.supplier.rating.toFixed(1)}</p>
-              <p className="text-sm text-gray-500">Calificación promedio</p>
-            </CardBody>
-          </Card>
-        </div>
+        {/* Quick Actions */}
+        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md" mb="lg">
+          <Paper 
+            component={Link} 
+            href="/proveedor/ordenes"
+            p="lg"
+            style={{ 
+              background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-blue-7))',
+              color: 'white',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              transition: 'box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-lg)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; }}
+          >
+            <Group justify="space-between" align="flex-start">
+              <Stack gap="xs">
+                <Text size="xl" fw={700}>Gestionar Órdenes</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  {dashboardData.orders.pending} pendientes
+                </Text>
+              </Stack>
+              <ClipboardDocumentListIcon className="w-12 h-12" style={{ opacity: 0.8 }} />
+            </Group>
+          </Paper>
 
-        {/* Acciones rápidas estilo Uber */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Link href="/proveedor/ordenes">
-            <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg transition-all cursor-pointer">
-              <CardBody className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold mb-1">Gestionar Órdenes</h3>
-                    <p className="text-blue-100">{dashboardData.orders.pending} pendientes</p>
-                  </div>
-                  <ClipboardDocumentListIcon className="w-12 h-12 text-blue-200" />
-                </div>
-              </CardBody>
-            </Card>
-          </Link>
+          <Paper 
+            component={Link} 
+            href="/proveedor/productos/nuevo"
+            p="lg"
+            style={{ 
+              background: 'linear-gradient(135deg, var(--mantine-color-green-6), var(--mantine-color-green-7))',
+              color: 'white',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              transition: 'box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-lg)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; }}
+          >
+            <Group justify="space-between" align="flex-start">
+              <Stack gap="xs">
+                <Text size="xl" fw={700}>Nuevo Producto</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.8)' }}>Agregar al catálogo</Text>
+              </Stack>
+              <PlusIcon className="w-12 h-12" style={{ opacity: 0.8 }} />
+            </Group>
+          </Paper>
 
-          <Link href="/proveedor/productos/nuevo">
-            <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg transition-all cursor-pointer">
-              <CardBody className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold mb-1">Nuevo Producto</h3>
-                    <p className="text-green-100">Agregar al catálogo</p>
-                  </div>
-                  <PlusIcon className="w-12 h-12 text-green-200" />
-                </div>
-              </CardBody>
-            </Card>
-          </Link>
+          <Paper 
+            component={Link} 
+            href="/proveedor/mensajes"
+            p="lg"
+            style={{ 
+              background: 'linear-gradient(135deg, var(--mantine-color-violet-6), var(--mantine-color-violet-7))',
+              color: 'white',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              transition: 'box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--mantine-shadow-lg)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; }}
+          >
+            <Group justify="space-between" align="flex-start">
+              <Stack gap="xs">
+                <Text size="xl" fw={700}>Mensajes</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.8)' }}>3 sin leer</Text>
+              </Stack>
+              <ChatBubbleLeftIcon className="w-12 h-12" style={{ opacity: 0.8 }} />
+            </Group>
+          </Paper>
+        </SimpleGrid>
 
-          <Link href="/proveedor/mensajes">
-            <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:shadow-lg transition-all cursor-pointer">
-              <CardBody className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold mb-1">Mensajes</h3>
-                    <p className="text-purple-100">3 sin leer</p>
-                  </div>
-                  <ChatBubbleLeftIcon className="w-12 h-12 text-purple-200" />
-                </div>
-              </CardBody>
-            </Card>
-          </Link>
-        </div>
+        {/* Content Grid */}
+        <Grid gutter="lg">
+          {/* Recent Orders */}
+          <Grid.Col span={{ base: 12, lg: 8 }}>
+            <Paper withBorder p="lg" shadow="sm">
+              <Group justify="space-between" mb="md">
+                <Title order={3}>Órdenes Recientes</Title>
+                <Button component={Link} href="/proveedor/ordenes" variant="light" size="sm"
+                  rightSection={<ChevronRightIcon className="w-4 h-4" />} style={{ textDecoration: 'none' }}>
+                  Ver todas
+                </Button>
+              </Group>
 
-        {/* Órdenes recientes y actividad */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Órdenes recientes */}
-          <div className="lg:col-span-2">
-            <Card className="bg-white border-0 shadow-sm">
-              <CardBody className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Órdenes Recientes</h2>
-                  <Link href="/proveedor/ordenes">
-                    <Button variant="light" size="sm" endContent={<ChevronRightIcon className="w-4 h-4" />}>
-                      Ver todas
-                    </Button>
-                  </Link>
-                </div>
-
-                <div className="space-y-4">
-                  {dashboardData.orders.pending > 0 && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <ClockIcon className="w-6 h-6 text-yellow-600" />
-                          </div>
-                          <div>
-                            <p className="font-semibold">Órdenes Pendientes</p>
-                            <p className="text-sm text-gray-600">{dashboardData.orders.pending} órdenes esperan tu respuesta</p>
-                          </div>
+              <Stack gap="md">
+                {dashboardData.orders.pending > 0 && (
+                  <Paper p="md" bg="yellow.0" withBorder>
+                    <Group justify="space-between">
+                      <Group>
+                        <div style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--mantine-color-yellow-1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <ClockIcon className="w-6 h-6 text-yellow-600" />
                         </div>
-                        <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-                      </div>
-                    </div>
-                  )}
+                        <Stack gap={0}>
+                          <Text fw={600}>Órdenes Pendientes</Text>
+                          <Text size="sm" c="dimmed">
+                            {dashboardData.orders.pending} órdenes esperan tu respuesta
+                          </Text>
+                        </Stack>
+                      </Group>
+                      <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                    </Group>
+                  </Paper>
+                )}
 
-                  {dashboardData.recentActivity.slice(0, 3).map((activity) => (
-                    <div key={activity.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                            <TruckIcon className="w-6 h-6 text-gray-600" />
-                          </div>
-                          <div>
-                            <p className="font-semibold">{activity.title}</p>
-                            <p className="text-sm text-gray-600">{activity.description}</p>
-                          </div>
+                {dashboardData.recentActivity.slice(0, 3).map((activity) => (
+                  <Paper key={activity.id} p="md" withBorder
+                    style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-0)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; }}>
+                    <Group justify="space-between">
+                      <Group>
+                        <div style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--mantine-color-gray-1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <TruckIcon className="w-6 h-6 text-gray-600" />
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500">{formatTimeAgo(activity.timestamp)}</p>
-                          <Chip size="sm" variant="flat" className="mt-1">
-                            En proceso
-                          </Chip>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardBody>
-            </Card>
-          </div>
+                        <Stack gap={0}>
+                          <Text fw={600}>{activity.title}</Text>
+                          <Text size="sm" c="dimmed">{activity.description}</Text>
+                        </Stack>
+                      </Group>
+                      <Stack gap={0} align="flex-end">
+                        <Text size="xs" c="dimmed">{formatTimeAgo(activity.timestamp)}</Text>
+                        <Badge size="sm" variant="light" mt="xs">En proceso</Badge>
+                      </Stack>
+                    </Group>
+                  </Paper>
+                ))}
+              </Stack>
+            </Paper>
+          </Grid.Col>
 
-          {/* Panel de rendimiento */}
-          <div>
-            {/* Penalizaciones */}
+          {/* Performance Panel */}
+          <Grid.Col span={{ base: 12, lg: 4 }}>
+            <Stack>
             <SupplierPenaltyDisplay 
               supplierId={dashboardData.supplier._id} 
               className="mb-4"
             />
             
-            <Card className="bg-white border-0 shadow-sm">
-              <CardBody className="p-6">
-                <h2 className="text-xl font-bold mb-4">Tu Rendimiento</h2>
-                
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-medium">Tiempo de respuesta</span>
-                      <span className="text-sm font-bold text-green-600">{stats.responseTime}</span>
-                    </div>
-                    <Progress value={85} color="success" size="sm" />
-                  </div>
+            <Paper withBorder p="lg" shadow="sm">
+              <Title order={3} mb="md">Tu Rendimiento</Title>
+              
+              <Stack gap="md">
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>Tiempo de respuesta</Text>
+                    <Text size="sm" fw={700} c="green.6">{stats.responseTime}</Text>
+                  </Group>
+                  <Progress value={85} color="green" size="sm" />
+                </Stack>
 
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-medium">Productos activos</span>
-                      <span className="text-sm font-bold">{dashboardData.products.active}/{dashboardData.products.total}</span>
-                    </div>
-                    <Progress value={(dashboardData.products.active / dashboardData.products.total) * 100} color="primary" size="sm" />
-                  </div>
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>Productos activos</Text>
+                    <Text size="sm" fw={700}>
+                      {dashboardData.products.active}/{dashboardData.products.total}
+                    </Text>
+                  </Group>
+                  <Progress 
+                    value={(dashboardData.products.active / dashboardData.products.total) * 100} 
+                    color="blue" 
+                    size="sm" 
+                  />
+                </Stack>
 
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-medium">Satisfacción del cliente</span>
-                      <span className="text-sm font-bold">{(dashboardData.supplier.rating / 5 * 100).toFixed(0)}%</span>
-                    </div>
-                    <Progress value={dashboardData.supplier.rating / 5 * 100} color="warning" size="sm" />
-                  </div>
-                </div>
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>Satisfacción del cliente</Text>
+                    <Text size="sm" fw={700}>
+                      {(dashboardData.supplier.rating / 5 * 100).toFixed(0)}%
+                    </Text>
+                  </Group>
+                  <Progress 
+                    value={dashboardData.supplier.rating / 5 * 100} 
+                    color="yellow" 
+                    size="sm" 
+                  />
+                </Stack>
+              </Stack>
 
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <Link href="/proveedor/estadisticas">
-                    <Button color="primary" variant="flat" className="w-full">
-                      Ver estadísticas completas
-                    </Button>
-                  </Link>
-                </div>
-              </CardBody>
-            </Card>
+              <Divider my="lg" />
+              <Button component={Link} href="/proveedor/estadisticas" color="blue" variant="light" fullWidth style={{ textDecoration: 'none' }}>
+                Ver estadísticas completas
+              </Button>
+            </Paper>
 
-            {/* Tips y recursos */}
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-0 mt-4">
-              <CardBody className="p-6">
-                <h3 className="font-bold mb-3">💡 Tip del día</h3>
-                <p className="text-sm text-gray-700 mb-3">
-                  Mantén tu catálogo actualizado para recibir más órdenes. Los productos con fotos de alta calidad reciben 3x más pedidos.
-                </p>
-                <Button size="sm" variant="solid" color="primary">
-                  Actualizar catálogo
-                </Button>
-              </CardBody>
-            </Card>
-          </div>
-        </div>
+            {/* Tips Card */}
+            <Paper 
+              p="lg" 
+              mt="md"
+              style={{ 
+                background: 'linear-gradient(135deg, var(--mantine-color-blue-0), var(--mantine-color-blue-1))',
+              }}
+              withBorder
+            >
+              <Text fw={700} mb="xs">💡 Tip del día</Text>
+              <Text size="sm" c="dimmed" mb="md">
+                Mantén tu catálogo actualizado para recibir más órdenes. Los productos con fotos de alta calidad reciben 3x más pedidos.
+              </Text>
+              <Button size="sm" color="blue">
+                Actualizar catálogo
+              </Button>
+            </Paper>
+          </Stack>
+        </Grid.Col>
+      </Grid>
       </main>
     </div>
   );

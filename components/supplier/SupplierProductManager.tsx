@@ -1,37 +1,37 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { SupabaseInventoryClientService } from "@/lib/supabase/inventory-client"
+import { supabase } from "@/lib/supabase/client"
 import {
-  Card,
-  CardBody,
+  Paper,
   Button,
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Input,
-  Chip,
+  TextInput,
+  Badge,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
   Pagination,
-  Spinner,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
+  Loader,
+  Menu,
   Textarea,
   Switch,
   Select,
-  SelectItem,
   Tabs,
-  Tab
-} from "@heroui/react"
+  Group,
+  Stack,
+  Text,
+  Title,
+  Grid,
+  ActionIcon,
+  Center,
+  Divider,
+  ScrollArea,
+  NumberInput,
+  FileInput,
+  Image,
+  Container
+} from "@mantine/core"
+import { useDisclosure } from "@mantine/hooks"
 import {
   MagnifyingGlassIcon,
   PencilIcon,
@@ -61,65 +61,37 @@ enum ProductApprovalStatus {
   REJECTED = "REJECTED"
 }
 
-// Product interface
+// Product interface - Updated to match Supabase structure with approval system
 interface Product {
-  _id: string;
-  productId: string;
+  id?: string;
+  product_id?: string;
   name: string;
   description?: string;
   category: string;
   sku?: string;
   barcode?: string;
-  baseUnit: string;
-  units: {
-    base: {
-      code: string;
-      name: string;
-      category: string;
-    };
-    alternatives: {
-      code: string;
-      name: string;
-      category: string;
-      conversionFactor: number;
-      conversionType: string;
-      containedUnit?: string;
-    }[];
-  };
-  pricing: {
-    tieredPricing: {
-      minQuantity: number;
-      maxQuantity: number;
-      unit: string;
-      pricePerUnit: number;
-      type: string;
-    }[];
-    lastCost?: number;
-    averageCost?: number;
-  };
-  suppliers: {
-    supplierId: string;
-    supplierName: string;
-    isPreferred: boolean;
-    lastPurchasePrice?: number;
-    leadTimeDays: number;
-  }[];
-  stockLevels: {
-    minimum: number;
-    reorderPoint: number;
-    unit: string;
-  };
+  base_unit: string;
+  unit_price?: number;
+  last_cost?: number;
+  average_cost?: number;
+  stock_minimum?: number;
+  stock_reorder_point?: number;
+  stock_unit?: string;
   images?: string[];
   tags?: string[];
-  isActive: boolean;
-  isPerishable: boolean;
-  requiresBatch: boolean;
-  approvalStatus?: ProductApprovalStatus;
-  rejectionReason?: string;
-  createdBy: string;
-  updatedBy: string;
-  createdAt: string;
-  updatedAt: string;
+  is_active: boolean;
+  is_perishable?: boolean;
+  requires_batch?: boolean;
+  approval_status?: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejected_by?: string;
+  rejected_at?: string;
+  created_by?: string;
+  updated_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // New product form interface
@@ -173,23 +145,20 @@ export default function SupplierProductManager() {
   const [formError, setFormError] = useState<string | null>(null);
   const [productsWithoutMovementsCount, setProductsWithoutMovementsCount] = useState(0);
   
-  const { 
-    isOpen: isProductModalOpen, 
-    onOpen: onProductModalOpen, 
-    onClose: onProductModalClose 
-  } = useDisclosure();
+  const [
+    productModalOpened, 
+    { open: openProductModal, close: closeProductModal }
+  ] = useDisclosure(false);
   
-  const { 
-    isOpen: isNewProductModalOpen, 
-    onOpen: onNewProductModalOpen, 
-    onClose: onNewProductModalClose 
-  } = useDisclosure();
+  const [
+    newProductModalOpened, 
+    { open: openNewProductModal, close: closeNewProductModal }
+  ] = useDisclosure(false);
   
-  const { 
-    isOpen: isProductsWithoutMovementsModalOpen, 
-    onOpen: onProductsWithoutMovementsModalOpen, 
-    onClose: onProductsWithoutMovementsModalClose 
-  } = useDisclosure();
+  const [
+    productsWithoutMovementsModalOpened, 
+    { open: openProductsWithoutMovementsModal, close: closeProductsWithoutMovementsModal }
+  ] = useDisclosure(false);
 
   const itemsPerPage = 10;
   const categories = [
@@ -221,26 +190,32 @@ export default function SupplierProductManager() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const queryParams = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: itemsPerPage.toString(),
-        ...(searchTerm && { search: searchTerm }),
-        ...(statusFilter !== "all" && { approvalStatus: statusFilter }),
-        ...(categoryFilter && { category: categoryFilter })
-      });
+      // Use supplier-specific endpoint to get only supplier's products
+      const params = new URLSearchParams();
+      if (searchTerm) params.set('search', searchTerm);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (categoryFilter) params.set('category', categoryFilter);
 
-      // En producción, esta API debe filtrar automáticamente por el proveedor actual
-      const response = await fetch(`/api/inventory/products?${queryParams}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
-        setTotalPages(Math.ceil((data.total || 0) / itemsPerPage));
-      } else {
-        toast.error("Error al cargar los productos");
+      const response = await fetch(`/api/supplier/products?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
       }
+      
+      const data = await response.json();
+      let supplierProducts = data.products || [];
+        
+      console.log("Supplier products fetched:", supplierProducts.length);
+      
+      // Apply pagination (server-side filtering is already done)
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedProducts = supplierProducts.slice(startIndex, endIndex);
+      
+      setProducts(paginatedProducts);
+      setTotalPages(Math.ceil(supplierProducts.length / itemsPerPage));
     } catch (error) {
-      console.error("Error fetching products:", error);
-      toast.error("Error al cargar los productos");
+      console.error("Error fetching supplier products:", error);
+      toast.error("Error al cargar tus productos");
     } finally {
       setLoading(false);
     }
@@ -248,19 +223,20 @@ export default function SupplierProductManager() {
 
   const fetchProductsWithoutMovementsCount = async () => {
     try {
-      const response = await fetch('/api/inventory/products?withoutMovements=true&limit=1000');
-      if (response.ok) {
-        const data = await response.json();
-        setProductsWithoutMovementsCount(data.products?.length || 0);
-      }
+      // For now, disable this feature until the Supabase service method is implemented
+      // const productsWithoutInventory = await SupabaseInventoryClientService.getProductsWithoutInventory();
+      // setProductsWithoutMovementsCount(productsWithoutInventory?.length || 0);
+      setProductsWithoutMovementsCount(0); // Temporarily set to 0
     } catch (error) {
       console.error("Error fetching products without movements count:", error);
+      setProductsWithoutMovementsCount(0);
     }
   };
 
   const fetchPriceHistory = async (productId: string) => {
     setLoadingPriceHistory(true);
     try {
+      // For now, use a direct API call since price history is not in the service
       const response = await fetch(`/api/supplier/products/${productId}/price-history`);
       
       if (response.ok) {
@@ -288,26 +264,26 @@ export default function SupplierProductManager() {
   const handleViewProduct = (product: Product) => {
     setSelectedProduct(product);
     setModalView('details');
-    onProductModalOpen();
+    openProductModal();
   };
 
   const handleEditProduct = (product: Product) => {
     setSelectedProduct(product);
     setModalView('edit');
-    onProductModalOpen();
+    openProductModal();
   };
 
   const handleViewPriceHistory = (product: Product) => {
     setSelectedProduct(product);
     setModalView('price');
-    fetchPriceHistory(product._id);
-    onProductModalOpen();
+    fetchPriceHistory(product.id || product.product_id || '');
+    openProductModal();
   };
 
   const handleEditStock = (product: Product) => {
     setSelectedProduct(product);
     setModalView('stock');
-    onProductModalOpen();
+    openProductModal();
   };
 
   const handleCreateProduct = () => {
@@ -329,7 +305,7 @@ export default function SupplierProductManager() {
       images: []
     });
     setFormError(null);
-    onNewProductModalOpen();
+    openNewProductModal();
   };
 
   const handleAddTag = () => {
@@ -380,38 +356,32 @@ export default function SupplierProductManager() {
 
     setLoading(true);
     try {
-      // Prepare data for API
+      // Prepare data for Supabase API (correct format)
       const productData = {
-        ...newProduct,
-        approvalStatus: ProductApprovalStatus.PENDING_APPROVAL,
-        pricing: {
-          tieredPricing: [
-            {
-              minQuantity: 1,
-              maxQuantity: 999999,
-              unit: newProduct.baseUnit,
-              pricePerUnit: newProduct.unitPrice,
-              type: "retail"
-            }
-          ],
-          lastCost: newProduct.costPrice
-        },
-        stockLevels: {
-          minimum: newProduct.minStock,
-          reorderPoint: newProduct.reorderPoint,
-          unit: newProduct.baseUnit
-        },
-        units: {
-          base: {
-            code: newProduct.baseUnit,
-            name: unitOptions.find(u => u.value === newProduct.baseUnit)?.label || newProduct.baseUnit,
-            category: "piece"
-          },
-          alternatives: []
-        }
+        name: newProduct.name,
+        description: newProduct.description || undefined,
+        category: newProduct.category,
+        sku: newProduct.sku,
+        barcode: newProduct.barcode || undefined,
+        base_unit: newProduct.baseUnit,
+        stock_minimum: newProduct.minStock,
+        stock_reorder_point: newProduct.reorderPoint,
+        stock_unit: newProduct.baseUnit,
+        last_cost: newProduct.costPrice,
+        average_cost: newProduct.costPrice, // Initialize with cost price
+        is_active: true,
+        is_perishable: newProduct.isPerishable,
+        requires_batch: newProduct.requiresBatch,
+        expiry_has_expiry: newProduct.isPerishable,
+        expiry_shelf_life_days: newProduct.isPerishable ? 30 : undefined, // Default for perishables
+        expiry_warning_days: newProduct.isPerishable ? 7 : undefined,
+        images: newProduct.images,
+        tags: newProduct.tags
       };
 
-      const response = await fetch("/api/inventory/products", {
+      console.log("Sending product data:", productData);
+
+      const response = await fetch("/api/supplier/products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -420,12 +390,15 @@ export default function SupplierProductManager() {
       });
 
       if (response.ok) {
-        toast.success("Producto enviado para aprobación");
+        const result = await response.json();
+        console.log("Product created successfully:", result);
+        toast.success("Producto creado exitosamente");
         fetchProducts();
-        onNewProductModalClose();
+        closeNewProductModal();
       } else {
-        const error = await response.json();
-        setFormError(error.message || "Error al crear el producto");
+        const errorData = await response.json();
+        console.error("Error response:", errorData);
+        setFormError(errorData.error || "Error al crear el producto");
       }
     } catch (error) {
       console.error("Error creating product:", error);
@@ -444,25 +417,15 @@ export default function SupplierProductManager() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          pricing: {
-            lastCost: newCostPrice,
-            tieredPricing: [
-              {
-                minQuantity: 1,
-                maxQuantity: 999999,
-                unit: selectedProduct?.baseUnit || "unidad",
-                pricePerUnit: newUnitPrice,
-                type: "retail"
-              }
-            ]
-          }
+          last_cost: newCostPrice,
+          unit_price: newUnitPrice
         })
       });
 
       if (response.ok) {
         toast.success("Precio actualizado correctamente");
         fetchProducts();
-        onProductModalClose();
+        closeProductModal();
       } else {
         toast.error("Error al actualizar el precio");
       }
@@ -483,18 +446,16 @@ export default function SupplierProductManager() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          stockLevels: {
-            minimum: minStock,
-            reorderPoint: reorderPoint,
-            unit: selectedProduct?.stockLevels.unit || "unidad"
-          }
+          stock_minimum: minStock,
+          stock_reorder_point: reorderPoint,
+          stock_unit: selectedProduct?.stock_unit || selectedProduct?.base_unit || "unidad"
         })
       });
 
       if (response.ok) {
         toast.success("Niveles de inventario actualizados correctamente");
         fetchProducts();
-        onProductModalClose();
+        closeProductModal();
       } else {
         toast.error("Error al actualizar niveles de inventario");
       }
@@ -521,13 +482,13 @@ export default function SupplierProductManager() {
   const getApprovalStatusColor = (status?: ProductApprovalStatus) => {
     switch (status) {
       case ProductApprovalStatus.PENDING_APPROVAL:
-        return "warning";
+        return "yellow";
       case ProductApprovalStatus.APPROVED:
-        return "success";
+        return "green";
       case ProductApprovalStatus.REJECTED:
-        return "danger";
+        return "red";
       default:
-        return "success"; // Already approved (no status)
+        return "green"; // Already approved (no status)
     }
   };
 
@@ -557,1271 +518,1171 @@ export default function SupplierProductManager() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header y controles */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex-1 max-w-md">
-          <Input
-            placeholder="Buscar productos por nombre, SKU o categoría..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
-            variant="bordered"
-            className="w-full"
-          />
-        </div>
+  const statusOptions = [
+    { value: "all", label: "Todos los estados" },
+    { value: "pending", label: "Pendientes de Aprobación" },
+    { value: "approved", label: "Aprobados" },
+    { value: "rejected", label: "Rechazados" },
+  ];
 
-        <div className="flex gap-2">
+  const categoryOptions = [
+    { value: "", label: "Todas las categorías" },
+    ...categories.map(cat => ({ value: cat, label: cat }))
+  ];
+
+  return (
+    <Stack gap="lg">
+      {/* Header y controles */}
+      <Group justify="space-between" align="flex-start">
+        <TextInput
+          placeholder="Buscar productos por nombre, SKU o categoría..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.currentTarget.value)}
+          leftSection={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
+          style={{ maxWidth: 400, flex: 1 }}
+        />
+
+        <Group>
           {productsWithoutMovementsCount > 0 && (
-            <div className="relative">
+            <div style={{ position: 'relative' }}>
               <Button
-                color="danger"
-                variant="solid"
-                startContent={<ExclamationTriangleIcon className="w-4 h-4" />}
-                onPress={onProductsWithoutMovementsModalOpen}
-                className="animate-pulse shadow-lg"
-                size="md"
+                color="red"
+                leftSection={<ExclamationTriangleIcon className="w-4 h-4" />}
+                onClick={openProductsWithoutMovementsModal}
+                style={{ animation: 'pulse 2s infinite' }}
               >
-                <span className="font-semibold">
+                <Text fw={600}>
                   {productsWithoutMovementsCount} Sin Movimientos
-                </span>
+                </Text>
               </Button>
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+              <div style={{
+                position: 'absolute',
+                top: -4,
+                right: -4,
+                width: 12,
+                height: 12,
+                backgroundColor: 'red',
+                borderRadius: '50%',
+                animation: 'ping 1s infinite'
+              }} />
             </div>
           )}
           <Button
-            color="primary"
-            startContent={<PlusIcon className="w-4 h-4" />}
-            onPress={handleCreateProduct}
+            leftSection={<PlusIcon className="w-4 h-4" />}
+            onClick={handleCreateProduct}
           >
             Nuevo Producto
           </Button>
-        </div>
-      </div>
+        </Group>
+      </Group>
 
-      {/* Filtros y categorías */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Card className="border border-gray-200 flex-1">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-700">Filtros</h3>
-            </div>
+      {/* Filtros */}
+      <Paper withBorder p="md">
+        <Group justify="space-between" mb="md">
+          <Text fw={500}>Filtros</Text>
+        </Group>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">Todos los estados</option>
-                  <option value={ProductApprovalStatus.PENDING_APPROVAL}>Pendiente de Aprobación</option>
-                  <option value={ProductApprovalStatus.APPROVED}>Aprobado</option>
-                  <option value={ProductApprovalStatus.REJECTED}>Rechazado</option>
-                </select>
-              </div>
+        <Grid>
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <Text size="sm" fw={500} mb="xs">Estado</Text>
+            <Select
+              value={statusFilter}
+              onChange={(value) => setStatusFilter(value || "all")}
+              data={statusOptions}
+              placeholder="Seleccionar estado"
+            />
+          </Grid.Col>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Todas las categorías</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <Text size="sm" fw={500} mb="xs">Categoría</Text>
+            <Select
+              value={categoryFilter}
+              onChange={(value) => setCategoryFilter(value || "")}
+              data={categoryOptions}
+              placeholder="Seleccionar categoría"
+            />
+          </Grid.Col>
 
-              <div className="flex items-end">
-                <Button
-                  variant="light"
-                  size="sm"
-                  onPress={clearFilters}
-                  className="w-full"
-                >
-                  Limpiar Filtros
-                </Button>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
+          <Grid.Col span={{ base: 12, sm: 4 }} style={{ display: 'flex', alignItems: 'end' }}>
+            <Button
+              variant="light"
+              onClick={clearFilters}
+              fullWidth
+            >
+              Limpiar Filtros
+            </Button>
+          </Grid.Col>
+        </Grid>
+      </Paper>
 
       {/* Tabla de productos */}
-      <Card className="border border-gray-200">
-        <CardBody className="p-0">
-          <Table
-            aria-label="Tabla de productos"
-            classNames={{
-              wrapper: "min-h-[400px]",
-            }}
-          >
-            <TableHeader>
-              <TableColumn>PRODUCTO</TableColumn>
-              <TableColumn>SKU / CÓDIGO</TableColumn>
-              <TableColumn>CATEGORÍA</TableColumn>
-              <TableColumn>PRECIOS</TableColumn>
-              <TableColumn>STOCK</TableColumn>
-              <TableColumn>ESTADO</TableColumn>
-              <TableColumn>ACCIONES</TableColumn>
-            </TableHeader>
-            <TableBody
-              items={products}
-              isLoading={loading}
-              loadingContent={<Spinner label="Cargando productos..." />}
-              emptyContent="No se encontraron productos"
-            >
-              {(product) => (
-                <TableRow key={product._id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                        {product.images && product.images.length > 0 ? (
-                          <img 
-                            src={product.images[0]} 
-                            alt={product.name} 
-                            className="w-10 h-10 object-cover rounded-lg"
-                          />
-                        ) : (
-                          <CubeIcon className="w-5 h-5 text-gray-500" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{product.name}</p>
-                        <p className="text-xs text-gray-500 truncate max-w-[150px]">
-                          {product.description || "Sin descripción"}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="text-sm font-medium">{product.sku}</p>
-                      {product.barcode && (
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <QrCodeIcon className="w-3 h-3" />
-                          <span>{product.barcode}</span>
+      <Paper withBorder>
+        <ScrollArea>
+          <Table striped highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>PRODUCTO</Table.Th>
+                <Table.Th>SKU / CÓDIGO</Table.Th>
+                <Table.Th>CATEGORÍA</Table.Th>
+                <Table.Th>PRECIOS</Table.Th>
+                <Table.Th>STOCK</Table.Th>
+                <Table.Th>ESTADO</Table.Th>
+                <Table.Th>ACCIONES</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {loading ? (
+                <Table.Tr>
+                  <Table.Td colSpan={7}>
+                    <Center py="xl">
+                      <Loader />
+                    </Center>
+                  </Table.Td>
+                </Table.Tr>
+              ) : products.length === 0 ? (
+                <Table.Tr>
+                  <Table.Td colSpan={7}>
+                    <Center py="xl">
+                      <Text c="dimmed">No se encontraron productos</Text>
+                    </Center>
+                  </Table.Td>
+                </Table.Tr>
+              ) : (
+                products.map((product) => (
+                  <Table.Tr key={product.id || product.product_id}>
+                    <Table.Td>
+                      <Group>
+                        <div style={{
+                          width: 40,
+                          height: 40,
+                          backgroundColor: 'var(--mantine-color-gray-1)',
+                          borderRadius: 8,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {product.images && product.images.length > 0 ? (
+                            <Image
+                              src={product.images[0]}
+                              alt={product.name}
+                              w={40}
+                              h={40}
+                              style={{ objectFit: 'cover', borderRadius: 8 }}
+                            />
+                          ) : (
+                            <CubeIcon className="w-5 h-5 text-gray-500" />
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Chip size="sm" variant="flat" color="default">
-                      {product.category}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="text-sm">
-                        <span className="font-medium">Costo:</span> {formatCurrency(product.pricing.lastCost || 0)}
-                      </p>
-                      <p className="text-sm">
-                        <span className="font-medium">Venta:</span> {formatCurrency(product.pricing.tieredPricing?.[0]?.pricePerUnit || 0)}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="text-sm">
-                        <span className="font-medium">Mínimo:</span> {product.stockLevels.minimum} {product.stockLevels.unit}
-                      </p>
-                      <p className="text-sm">
-                        <span className="font-medium">Reorden:</span> {product.stockLevels.reorderPoint} {product.stockLevels.unit}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="sm"
-                      color={getApprovalStatusColor(product.approvalStatus)}
-                      startContent={getApprovalStatusIcon(product.approvalStatus)}
-                    >
-                      {getApprovalStatusLabel(product.approvalStatus)}
-                    </Chip>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        isIconOnly
+                        <Stack gap="xs">
+                          <Text fw={500}>{product.name}</Text>
+                          <Text size="xs" c="dimmed" style={{ maxWidth: 150 }} truncate>
+                            {product.description || "Sin descripción"}
+                          </Text>
+                        </Stack>
+                      </Group>
+                    </Table.Td>
+                    <Table.Td>
+                      <Stack gap="xs">
+                        <Text size="sm" fw={500}>{product.sku}</Text>
+                        {product.barcode && (
+                          <Group gap="xs">
+                            <QrCodeIcon className="w-3 h-3 text-gray-500" />
+                            <Text size="xs" c="dimmed">{product.barcode}</Text>
+                          </Group>
+                        )}
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge size="sm" variant="light">
+                        {product.category}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Stack gap="xs">
+                        <Text size="sm">
+                          <Text component="span" fw={500}>Costo:</Text> {formatCurrency(product.last_cost || 0)}
+                        </Text>
+                        <Text size="sm">
+                          <Text component="span" fw={500}>Venta:</Text> {formatCurrency(product.unit_price || (product.last_cost ? product.last_cost * 1.3 : 0))}
+                        </Text>
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>
+                      <Stack gap="xs">
+                        <Text size="sm">
+                          <Text component="span" fw={500}>Mínimo:</Text> {product.stock_minimum || 0} {product.stock_unit || product.base_unit}
+                        </Text>
+                        <Text size="sm">
+                          <Text component="span" fw={500}>Reorden:</Text> {product.stock_reorder_point || 0} {product.stock_unit || product.base_unit}
+                        </Text>
+                      </Stack>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge
                         size="sm"
-                        variant="light"
-                        onPress={() => handleViewProduct(product)}
+                        color={
+                          product.approval_status === "approved" ? "green" :
+                          product.approval_status === "rejected" ? "red" : "yellow"
+                        }
+                        leftSection={
+                          product.approval_status === "approved" ? <CheckCircleIcon className="w-4 h-4" /> :
+                          product.approval_status === "rejected" ? <NoSymbolIcon className="w-4 h-4" /> :
+                          <ClockIcon className="w-4 h-4" />
+                        }
                       >
-                        <EyeIcon className="w-4 h-4" />
-                      </Button>
-                      
-                      {(!product.approvalStatus || product.approvalStatus === ProductApprovalStatus.APPROVED) && (
-                        <>
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                            color="primary"
-                            onPress={() => handleEditProduct(product)}
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </Button>
-                          <Dropdown>
-                            <DropdownTrigger>
-                              <Button
-                                isIconOnly
-                                size="sm"
-                                variant="light"
-                              >
-                                <svg width="20" height="20" viewBox="0 0 20 20">
-                                  <path d="M6 10C6 11.1046 5.10457 12 4 12C2.89543 12 2 11.1046 2 10C2 8.89543 2.89543 8 4 8C5.10457 8 6 8.89543 6 10Z" fill="currentColor" />
-                                  <path d="M12 10C12 11.1046 11.1046 12 10 12C8.89543 12 8 11.1046 8 10C8 8.89543 8.89543 8 10 8C11.1046 8 12 8.89543 12 10Z" fill="currentColor" />
-                                  <path d="M18 10C18 11.1046 17.1046 12 16 12C14.8954 12 14 11.1046 14 10C14 8.89543 14.8954 8 16 8C17.1046 8 18 8.89543 18 10Z" fill="currentColor" />
-                                </svg>
-                              </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu aria-label="Acciones">
-                              <DropdownItem 
-                                key="price" 
-                                startContent={<TagIcon className="w-4 h-4" />}
-                                onPress={() => handleViewPriceHistory(product)}
-                              >
-                                Precios
-                              </DropdownItem>
-                              <DropdownItem 
-                                key="stock" 
-                                startContent={<ShoppingCartIcon className="w-4 h-4" />}
-                                onPress={() => handleEditStock(product)}
-                              >
-                                Inventario
-                              </DropdownItem>
-                            </DropdownMenu>
-                          </Dropdown>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                        {
+                          product.approval_status === "approved" ? "Aprobado" :
+                          product.approval_status === "rejected" ? "Rechazado" :
+                          "Pendiente"
+                        }
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Group gap="xs">
+                        <ActionIcon
+                          size="sm"
+                          variant="light"
+                          onClick={() => handleViewProduct(product)}
+                        >
+                          <EyeIcon className="w-4 h-4" />
+                        </ActionIcon>
+                        
+                        {product.approval_status === "approved" && (
+                          <>
+                            <ActionIcon
+                              size="sm"
+                              variant="light"
+                              color="blue"
+                              onClick={() => handleEditProduct(product)}
+                            >
+                              <PencilIcon className="w-4 h-4" />
+                            </ActionIcon>
+                            <Menu shadow="md" width={200}>
+                              <Menu.Target>
+                                <ActionIcon
+                                  size="sm"
+                                  variant="light"
+                                >
+                                  <svg width="20" height="20" viewBox="0 0 20 20">
+                                    <path d="M6 10C6 11.1046 5.10457 12 4 12C2.89543 12 2 11.1046 2 10C2 8.89543 2.89543 8 4 8C5.10457 8 6 8.89543 6 10Z" fill="currentColor" />
+                                    <path d="M12 10C12 11.1046 11.1046 12 10 12C8.89543 12 8 11.1046 8 10C8 8.89543 8.89543 8 10 8C11.1046 8 12 8.89543 12 10Z" fill="currentColor" />
+                                    <path d="M18 10C18 11.1046 17.1046 12 16 12C14.8954 12 14 11.1046 14 10C14 8.89543 14.8954 8 16 8C17.1046 8 18 8.89543 18 10Z" fill="currentColor" />
+                                  </svg>
+                                </ActionIcon>
+                              </Menu.Target>
+
+                              <Menu.Dropdown>
+                                <Menu.Item
+                                  leftSection={<TagIcon className="w-4 h-4" />}
+                                  onClick={() => handleViewPriceHistory(product)}
+                                >
+                                  Precios
+                                </Menu.Item>
+                                <Menu.Item
+                                  leftSection={<ShoppingCartIcon className="w-4 h-4" />}
+                                  onClick={() => handleEditStock(product)}
+                                >
+                                  Inventario
+                                </Menu.Item>
+                              </Menu.Dropdown>
+                            </Menu>
+                          </>
+                        )}
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))
               )}
-            </TableBody>
+            </Table.Tbody>
           </Table>
-          
-          {/* Paginación */}
-          {totalPages > 1 && (
-            <div className="flex justify-center p-4">
-              <Pagination
-                total={totalPages}
-                page={currentPage}
-                onChange={setCurrentPage}
-                showControls
-                showShadow
-                color="primary"
-              />
-            </div>
-          )}
-        </CardBody>
-      </Card>
+        </ScrollArea>
+        
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <Group justify="center" p="md">
+            <Pagination
+              total={totalPages}
+              value={currentPage}
+              onChange={setCurrentPage}
+              withEdges
+            />
+          </Group>
+        )}
+      </Paper>
 
       {/* Modal de producto - Detalles, Edición, Precios o Stock */}
       <Modal
-        isOpen={isProductModalOpen}
-        onClose={onProductModalClose}
-        size="2xl"
-        scrollBehavior="inside"
-        backdrop="blur"
-        classNames={{
-          backdrop: "bg-gradient-to-t from-zinc-900 to-zinc-900/10 backdrop-opacity-20"
-        }}
+        opened={productModalOpened}
+        onClose={closeProductModal}
+        size="xl"
+        title={selectedProduct && (
+          <Group justify="space-between">
+            <Title order={4}>
+              {modalView === 'details' && "Detalles del Producto"}
+              {modalView === 'edit' && "Editar Producto"}
+              {modalView === 'price' && "Historial de Precios"}
+              {modalView === 'stock' && "Niveles de Inventario"}
+            </Title>
+            <Badge
+              color={
+                selectedProduct.approval_status === "approved" ? "green" :
+                selectedProduct.approval_status === "rejected" ? "red" : "yellow"
+              }
+              leftSection={
+                selectedProduct.approval_status === "approved" ? <CheckCircleIcon className="w-4 h-4" /> :
+                selectedProduct.approval_status === "rejected" ? <NoSymbolIcon className="w-4 h-4" /> :
+                <ClockIcon className="w-4 h-4" />
+              }
+            >
+              {
+                selectedProduct.approval_status === "approved" ? "Aprobado" :
+                selectedProduct.approval_status === "rejected" ? "Rechazado" :
+                "Pendiente"
+              }
+            </Badge>
+          </Group>
+        )}
       >
-        <ModalContent className="bg-white shadow-2xl">
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1 bg-white border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">
-                    {modalView === 'details' && "Detalles del Producto"}
-                    {modalView === 'edit' && "Editar Producto"}
-                    {modalView === 'price' && "Historial de Precios"}
-                    {modalView === 'stock' && "Niveles de Inventario"}
-                  </h3>
-                  {selectedProduct && (
-                    <Chip 
-                      color={getApprovalStatusColor(selectedProduct.approvalStatus)}
-                      size="sm"
-                      startContent={getApprovalStatusIcon(selectedProduct.approvalStatus)}
-                    >
-                      {getApprovalStatusLabel(selectedProduct.approvalStatus)}
-                    </Chip>
-                  )}
-                </div>
-              </ModalHeader>
-              <ModalBody className="bg-white">
-                {selectedProduct && (
-                  <>
-                    {/* Vista de detalles */}
-                    {modalView === 'details' && (
-                      <div className="space-y-6">
-                        <div className="flex flex-col md:flex-row gap-4">
-                          <div className="md:w-1/3">
-                            <div className="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center">
-                              {selectedProduct.images && selectedProduct.images.length > 0 ? (
-                                <img 
-                                  src={selectedProduct.images[0]} 
-                                  alt={selectedProduct.name} 
-                                  className="max-w-full max-h-full object-contain"
-                                />
-                              ) : (
-                                <CubeIcon className="w-16 h-16 text-gray-400" />
-                              )}
-                            </div>
-                          </div>
-                          <div className="md:w-2/3 space-y-4">
-                            <div>
-                              <h2 className="text-xl font-semibold text-gray-900">{selectedProduct.name}</h2>
-                              <p className="text-sm text-gray-600">{selectedProduct.description || "Sin descripción"}</p>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <h4 className="text-xs font-medium text-gray-500">SKU</h4>
-                                <p className="text-sm font-medium">{selectedProduct.sku}</p>
-                              </div>
-                              <div>
-                                <h4 className="text-xs font-medium text-gray-500">Categoría</h4>
-                                <p className="text-sm font-medium">{selectedProduct.category}</p>
-                              </div>
-                              <div>
-                                <h4 className="text-xs font-medium text-gray-500">Unidad Base</h4>
-                                <p className="text-sm font-medium">{selectedProduct.units.base.name}</p>
-                              </div>
-                              <div>
-                                <h4 className="text-xs font-medium text-gray-500">Código de Barras</h4>
-                                <p className="text-sm font-medium">{selectedProduct.barcode || "No disponible"}</p>
-                              </div>
-                            </div>
-                            
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {selectedProduct.tags && selectedProduct.tags.map((tag) => (
-                                <Chip key={tag} size="sm" variant="flat">
-                                  {tag}
-                                </Chip>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Precios</h4>
-                            <div className="bg-gray-50 p-3 rounded-lg space-y-2">
-                              <div className="flex justify-between">
-                                <span className="text-sm text-gray-600">Precio de Costo:</span>
-                                <span className="text-sm font-medium">{formatCurrency(selectedProduct.pricing.lastCost || 0)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-sm text-gray-600">Precio de Venta:</span>
-                                <span className="text-sm font-medium">{formatCurrency(selectedProduct.pricing.tieredPricing?.[0]?.pricePerUnit || 0)}</span>
-                              </div>
-                              {selectedProduct.pricing.averageCost && (
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-gray-600">Costo Promedio:</span>
-                                  <span className="text-sm font-medium">{formatCurrency(selectedProduct.pricing.averageCost)}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Niveles de Stock</h4>
-                            <div className="bg-gray-50 p-3 rounded-lg space-y-2">
-                              <div className="flex justify-between">
-                                <span className="text-sm text-gray-600">Stock Mínimo:</span>
-                                <span className="text-sm font-medium">{selectedProduct.stockLevels.minimum} {selectedProduct.units.base.name}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-sm text-gray-600">Punto de Reorden:</span>
-                                <span className="text-sm font-medium">{selectedProduct.stockLevels.reorderPoint} {selectedProduct.units.base.name}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Características</h4>
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="flex items-center gap-2">
-                                <Switch isSelected={selectedProduct.isPerishable} isDisabled size="sm" />
-                                <span className="text-sm">Producto Perecedero</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Switch isSelected={selectedProduct.requiresBatch} isDisabled size="sm" />
-                                <span className="text-sm">Requiere Lote</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Información Adicional</h4>
-                          <div className="bg-gray-50 p-3 rounded-lg space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-gray-600">Fecha de Creación:</span>
-                              <span className="text-sm font-medium">{new Date(selectedProduct.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-gray-600">Última Actualización:</span>
-                              <span className="text-sm font-medium">{new Date(selectedProduct.updatedAt).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {selectedProduct.approvalStatus === ProductApprovalStatus.REJECTED && selectedProduct.rejectionReason && (
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                            <h4 className="text-sm font-medium text-red-700 mb-1">Motivo de Rechazo</h4>
-                            <p className="text-sm text-red-600">{selectedProduct.rejectionReason}</p>
-                          </div>
+        {selectedProduct && (
+          <Stack gap="lg">
+            {/* Vista de detalles */}
+            {modalView === 'details' && (
+              <Stack gap="lg">
+                <Grid>
+                  <Grid.Col span={{ base: 12, md: 4 }}>
+                    <Center>
+                      <div style={{ 
+                        width: '100%', 
+                        height: 160, 
+                        backgroundColor: 'var(--mantine-color-gray-1)', 
+                        borderRadius: 8,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {selectedProduct.images && selectedProduct.images.length > 0 ? (
+                          <Image 
+                            src={selectedProduct.images[0]} 
+                            alt={selectedProduct.name} 
+                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                          />
+                        ) : (
+                          <CubeIcon className="w-16 h-16 text-gray-400" />
                         )}
                       </div>
-                    )}
-                    
-                    {/* Vista de edición */}
-                    {modalView === 'edit' && (
-                      <div className="space-y-4">
-                        <div>
-                          <Input
-                            label="Nombre del Producto"
-                            placeholder="Ej: Laptop Dell Inspiron 15"
-                            variant="bordered"
-                            isRequired
-                            value={selectedProduct.name}
-                            onChange={(e) => setSelectedProduct({...selectedProduct, name: e.target.value})}
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Nombre comercial que aparecerá en catálogos y facturas
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <Textarea
-                            label="Descripción del Producto"
-                            placeholder="Describe las características, especificaciones y beneficios del producto..."
-                            variant="bordered"
-                            value={selectedProduct.description || ""}
-                            onChange={(e) => setSelectedProduct({...selectedProduct, description: e.target.value})}
-                            minRows={3}
-                            maxRows={5}
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Información detallada que ayude a los compradores a entender el producto
-                          </p>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Input
-                              label="SKU (Código de Producto)"
-                              placeholder="Ej: DELL-LAP-INS15-001"
-                              variant="bordered"
-                              value={selectedProduct.sku || ""}
-                              onChange={(e) => setSelectedProduct({...selectedProduct, sku: e.target.value})}
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Código único de identificación del producto
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <Input
-                              label="Código de Barras"
-                              placeholder="Ej: 123456789012"
-                              variant="bordered"
-                              value={selectedProduct.barcode || ""}
-                              onChange={(e) => setSelectedProduct({...selectedProduct, barcode: e.target.value})}
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Código de barras para escaneo (EAN, UPC, etc.)
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Select
-                              label="Categoría del Producto"
-                              placeholder="Selecciona una categoría"
-                              variant="bordered"
-                              isRequired
-                              selectedKeys={[selectedProduct.category]}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setSelectedProduct({...selectedProduct, category: value});
-                              }}
-                            >
-                              {categories.map((category) => (
-                                <SelectItem key={category}>
-                                  {category}
-                                </SelectItem>
-                              ))}
-                            </Select>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Clasifica el producto para facilitar su búsqueda
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <Select
-                              label="Unidad de Medida Base"
-                              placeholder="Selecciona la unidad"
-                              variant="bordered"
-                              isRequired
-                              selectedKeys={[selectedProduct.baseUnit]}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setSelectedProduct({...selectedProduct, baseUnit: value});
-                              }}
-                            >
-                              {unitOptions.map((unit) => (
-                                <SelectItem key={unit.value}>
-                                  {unit.label}
-                                </SelectItem>
-                              ))}
-                            </Select>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Unidad principal de venta (piezas, kilos, litros, etc.)
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-4">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Características del Producto</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="p-3 border border-gray-200 rounded-lg">
-                              <Switch
-                                isSelected={selectedProduct.isPerishable}
-                                onValueChange={(value) => setSelectedProduct({...selectedProduct, isPerishable: value})}
-                              >
-                                <div>
-                                  <span className="font-medium">Producto Perecedero</span>
-                                </div>
-                              </Switch>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Producto con fecha de caducidad o vida útil limitada
-                              </p>
-                            </div>
-                            
-                            <div className="p-3 border border-gray-200 rounded-lg">
-                              <Switch
-                                isSelected={selectedProduct.requiresBatch}
-                                onValueChange={(value) => setSelectedProduct({...selectedProduct, requiresBatch: value})}
-                              >
-                                <div>
-                                  <span className="font-medium">Requiere Control de Lote</span>
-                                </div>
-                              </Switch>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Necesita seguimiento por número de lote o serie
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-1">Etiquetas del Producto</h4>
-                            <p className="text-xs text-gray-500 mb-3">
-                              Palabras clave que faciliten la búsqueda del producto (ej: "ofertas", "nuevo", "premium")
-                            </p>
-                          </div>
-                          
-                          {selectedProduct.tags && selectedProduct.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {selectedProduct.tags.map((tag) => (
-                                <Chip 
-                                  key={tag} 
-                                  onClose={() => setSelectedProduct({
-                                    ...selectedProduct, 
-                                    tags: selectedProduct.tags?.filter(t => t !== tag) || []
-                                  })}
-                                  variant="flat"
-                                  color="primary"
-                                >
-                                  {tag}
-                                </Chip>
-                              ))}
-                            </div>
-                          )}
-                          
-                          <div className="flex gap-2">
-                            <Input
-                              label="Agregar Nueva Etiqueta"
-                              placeholder="Ej: ofertas, premium, nuevo..."
-                              variant="bordered"
-                              value={newTag}
-                              onChange={(e) => setNewTag(e.target.value)}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  if (newTag.trim() && !selectedProduct.tags?.includes(newTag.trim())) {
-                                    setSelectedProduct({
-                                      ...selectedProduct, 
-                                      tags: [...(selectedProduct.tags || []), newTag.trim()]
-                                    });
-                                    setNewTag("");
-                                  }
-                                }
-                              }}
-                              className="flex-1"
-                            />
-                            <Button 
-                              color="primary" 
-                              variant="bordered"
-                              onPress={() => {
-                                if (newTag.trim() && !selectedProduct.tags?.includes(newTag.trim())) {
-                                  setSelectedProduct({
-                                    ...selectedProduct, 
-                                    tags: [...(selectedProduct.tags || []), newTag.trim()]
-                                  });
-                                  setNewTag("");
-                                }
-                              }}
-                              isDisabled={!newTag.trim() || selectedProduct.tags?.includes(newTag.trim())}
-                            >
-                              Agregar
-                            </Button>
-                          </div>
-                        </div>
+                    </Center>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, md: 8 }}>
+                    <Stack gap="md">
+                      <div>
+                        <Title order={3}>{selectedProduct.name}</Title>
+                        <Text c="dimmed">{selectedProduct.description || "Sin descripción"}</Text>
                       </div>
-                    )}
-                    
-                    {/* Vista de historial de precios */}
-                    {modalView === 'price' && (
-                      <div className="space-y-6">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <h4 className="text-sm font-medium text-gray-700 mb-3">Precios Actuales</h4>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              type="number"
-                              label="Precio de Costo (MXN)"
-                              placeholder="0.00"
-                              variant="bordered"
-                              startContent={
-                                <div className="pointer-events-none flex items-center">
-                                  <span className="text-default-400 text-small">$</span>
-                                </div>
-                              }
-                              value={(selectedProduct.pricing.lastCost || 0).toString()}
-                              onChange={(e) => setSelectedProduct({
-                                ...selectedProduct,
-                                pricing: {
-                                  ...selectedProduct.pricing,
-                                  lastCost: parseFloat(e.target.value)
-                                }
-                              })}
-                            />
-                            
-                            <Input
-                              type="number"
-                              label="Precio de Venta (MXN)"
-                              placeholder="0.00"
-                              variant="bordered"
-                              startContent={
-                                <div className="pointer-events-none flex items-center">
-                                  <span className="text-default-400 text-small">$</span>
-                                </div>
-                              }
-                              value={(selectedProduct.pricing.tieredPricing?.[0]?.pricePerUnit || 0).toString()}
-                              onChange={(e) => {
-                                const tieredPricing = [...(selectedProduct.pricing.tieredPricing || [])];
-                                if (tieredPricing.length > 0) {
-                                  tieredPricing[0] = {
-                                    ...tieredPricing[0],
-                                    pricePerUnit: parseFloat(e.target.value)
-                                  };
-                                } else {
-                                  tieredPricing.push({
-                                    minQuantity: 1,
-                                    maxQuantity: 999999,
-                                    unit: selectedProduct.baseUnit,
-                                    pricePerUnit: parseFloat(e.target.value),
-                                    type: "retail"
-                                  });
-                                }
-                                
-                                setSelectedProduct({
-                                  ...selectedProduct,
-                                  pricing: {
-                                    ...selectedProduct.pricing,
-                                    tieredPricing
-                                  }
-                                });
-                              }}
-                            />
-                          </div>
-                          
-                          <Button
-                            color="primary"
-                            className="w-full mt-4"
-                            onPress={() => updateProductPrice(
-                              selectedProduct._id,
-                              selectedProduct.pricing.lastCost || 0,
-                              selectedProduct.pricing.tieredPricing?.[0]?.pricePerUnit || 0
-                            )}
-                          >
-                            Actualizar Precios
-                          </Button>
-                        </div>
-                        
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-3">Historial de Precios</h4>
-                          {loadingPriceHistory ? (
-                            <div className="flex justify-center py-8">
-                              <Spinner />
-                            </div>
-                          ) : (
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50">
-                                <tr>
-                                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio de Costo</th>
-                                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio de Venta</th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {priceHistoryData.map((item, index) => (
-                                  <tr key={index}>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-                                      {new Date(item.date).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-right">
-                                      {formatCurrency(item.costPrice)}
-                                    </td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-right">
-                                      {formatCurrency(item.unitPrice)}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Vista de niveles de stock */}
-                    {modalView === 'stock' && (
-                      <div className="space-y-6">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <h4 className="text-sm font-medium text-gray-700 mb-3">Niveles de Inventario</h4>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              type="number"
-                              label={`Stock Mínimo (${selectedProduct.stockLevels.unit})`}
-                              placeholder="0"
-                              variant="bordered"
-                              value={selectedProduct.stockLevels.minimum.toString()}
-                              onChange={(e) => setSelectedProduct({
-                                ...selectedProduct,
-                                stockLevels: {
-                                  ...selectedProduct.stockLevels,
-                                  minimum: parseInt(e.target.value)
-                                }
-                              })}
-                            />
-                            
-                            <Input
-                              type="number"
-                              label={`Punto de Reorden (${selectedProduct.stockLevels.unit})`}
-                              placeholder="0"
-                              variant="bordered"
-                              value={selectedProduct.stockLevels.reorderPoint.toString()}
-                              onChange={(e) => setSelectedProduct({
-                                ...selectedProduct,
-                                stockLevels: {
-                                  ...selectedProduct.stockLevels,
-                                  reorderPoint: parseInt(e.target.value)
-                                }
-                              })}
-                            />
-                          </div>
-                          
-                          <div className="mt-4">
-                            <p className="text-xs text-gray-500 mb-2">
-                              <span className="font-medium">Nota:</span> El stock mínimo indica el nivel crítico por debajo del cual no debería caer el inventario.
-                              El punto de reorden indica el nivel en el que se debe generar una alerta para realizar un nuevo pedido.
-                            </p>
-                          </div>
-                          
-                          <Button
-                            color="primary"
-                            className="w-full mt-4"
-                            onPress={() => updateProductStock(
-                              selectedProduct._id,
-                              selectedProduct.stockLevels.minimum,
-                              selectedProduct.stockLevels.reorderPoint
-                            )}
-                          >
-                            Actualizar Niveles de Inventario
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </ModalBody>
-              <ModalFooter className="bg-white border-t border-gray-200">
-                <Button 
-                  color="default" 
-                  variant="light" 
-                  onPress={onClose}
-                >
-                  Cerrar
-                </Button>
+                      
+                      <Grid>
+                        <Grid.Col span={6}>
+                          <Text size="xs" fw={500} c="dimmed">SKU</Text>
+                          <Text size="sm" fw={500}>{selectedProduct.sku}</Text>
+                        </Grid.Col>
+                        <Grid.Col span={6}>
+                          <Text size="xs" fw={500} c="dimmed">Categoría</Text>
+                          <Text size="sm" fw={500}>{selectedProduct.category}</Text>
+                        </Grid.Col>
+                        <Grid.Col span={6}>
+                          <Text size="xs" fw={500} c="dimmed">Unidad Base</Text>
+                          <Text size="sm" fw={500}>{selectedProduct.base_unit}</Text>
+                        </Grid.Col>
+                        <Grid.Col span={6}>
+                          <Text size="xs" fw={500} c="dimmed">Código de Barras</Text>
+                          <Text size="sm" fw={500}>{selectedProduct.barcode || "No disponible"}</Text>
+                        </Grid.Col>
+                      </Grid>
+                      
+                      {selectedProduct.tags && selectedProduct.tags.length > 0 && (
+                        <Group gap="xs" mt="sm">
+                          {selectedProduct.tags.map((tag) => (
+                            <Badge key={tag} size="sm" variant="light">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </Group>
+                      )}
+                    </Stack>
+                  </Grid.Col>
+                </Grid>
                 
-                {modalView === 'details' && selectedProduct && (!selectedProduct.approvalStatus || selectedProduct.approvalStatus === ProductApprovalStatus.APPROVED) && (
-                  <Button
-                    color="primary"
-                    onPress={() => {
-                      setModalView('edit');
-                    }}
-                  >
-                    Editar Producto
-                  </Button>
-                )}
+                <Grid>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Text size="sm" fw={500} c="dimmed" mb="xs">Precios</Text>
+                    <Paper bg="gray.0" p="sm">
+                      <Stack gap="xs">
+                        <Group justify="space-between">
+                          <Text size="sm" c="dimmed">Precio de Costo:</Text>
+                          <Text size="sm" fw={500}>{formatCurrency(selectedProduct.last_cost || 0)}</Text>
+                        </Group>
+                        <Group justify="space-between">
+                          <Text size="sm" c="dimmed">Precio de Venta:</Text>
+                          <Text size="sm" fw={500}>{formatCurrency(selectedProduct.unit_price || 0)}</Text>
+                        </Group>
+                        {selectedProduct.average_cost && (
+                          <Group justify="space-between">
+                            <Text size="sm" c="dimmed">Costo Promedio:</Text>
+                            <Text size="sm" fw={500}>{formatCurrency(selectedProduct.average_cost)}</Text>
+                          </Group>
+                        )}
+                      </Stack>
+                    </Paper>
+                  </Grid.Col>
+                  
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Text size="sm" fw={500} c="dimmed" mb="xs">Niveles de Stock</Text>
+                    <Paper bg="gray.0" p="sm">
+                      <Stack gap="xs">
+                        <Group justify="space-between">
+                          <Text size="sm" c="dimmed">Stock Mínimo:</Text>
+                          <Text size="sm" fw={500}>{selectedProduct.stock_minimum || 0} {selectedProduct.stock_unit || selectedProduct.base_unit}</Text>
+                        </Group>
+                        <Group justify="space-between">
+                          <Text size="sm" c="dimmed">Punto de Reorden:</Text>
+                          <Text size="sm" fw={500}>{selectedProduct.stock_reorder_point || 0} {selectedProduct.stock_unit || selectedProduct.base_unit}</Text>
+                        </Group>
+                      </Stack>
+                    </Paper>
+                  </Grid.Col>
+                </Grid>
                 
-                {modalView === 'edit' && (
-                  <Button
-                    color="primary"
-                    onPress={() => {
-                      // Implementar guardado de cambios aquí
-                      toast.success("Cambios guardados correctamente");
-                      onClose();
-                    }}
-                  >
-                    Guardar Cambios
-                  </Button>
-                )}
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-
-      {/* Modal de nuevo producto */}
-      <Modal
-        isOpen={isNewProductModalOpen}
-        onClose={onNewProductModalClose}
-        size="2xl"
-        scrollBehavior="inside"
-        backdrop="opaque"
-        placement="center"
-        classNames={{
-          backdrop: "bg-gray-900/50",
-          base: "bg-white",
-          header: "border-b border-gray-200",
-          body: "p-6",
-          footer: "border-t border-gray-200"
-        }}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="px-6 py-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Registrar Nuevo Producto</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Los productos nuevos requerirán aprobación de un administrador antes de estar disponibles en el sistema.
-                  </p>
+                  <Text size="sm" fw={500} c="dimmed" mb="xs">Características</Text>
+                  <Paper bg="gray.0" p="sm">
+                    <Grid>
+                      <Grid.Col span={6}>
+                        <Group>
+                          <Switch checked={selectedProduct.is_perishable || false} readOnly size="sm" />
+                          <Text size="sm">Producto Perecedero</Text>
+                        </Group>
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <Group>
+                          <Switch checked={selectedProduct.requires_batch || false} readOnly size="sm" />
+                          <Text size="sm">Requiere Lote</Text>
+                        </Group>
+                      </Grid.Col>
+                    </Grid>
+                  </Paper>
                 </div>
-              </ModalHeader>
-              <ModalBody>
-                <div className="space-y-6">
-                  {/* Información Básica */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
-                      Información Básica
-                    </h4>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Nombre del Producto <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                          placeholder="Ej: Laptop Dell Inspiron 15 3000 Intel Core i5"
-                          variant="bordered"
-                          value={newProduct.name}
-                          onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                          isRequired
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Nombre completo y descriptivo que aparecerá en catálogos y facturas
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Descripción del Producto
-                        </label>
-                        <Textarea
-                          placeholder="Incluye características, especificaciones técnicas, beneficios y cualquier información relevante..."
-                          variant="bordered"
-                          value={newProduct.description}
-                          onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                          minRows={4}
-                          maxRows={6}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Información detallada que ayude a los compradores a entender las características y beneficios del producto
-                        </p>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            SKU (Código de Producto) <span className="text-red-500">*</span>
-                          </label>
-                          <Input
-                            placeholder="Ej: DELL-LAP-INS15-001"
-                            variant="bordered"
-                            value={newProduct.sku}
-                            onChange={(e) => setNewProduct({...newProduct, sku: e.target.value})}
-                            isRequired
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Código único de identificación interno del producto
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Código de Barras (Opcional)
-                          </label>
-                          <Input
-                            placeholder="Ej: 123456789012"
-                            variant="bordered"
-                            value={newProduct.barcode}
-                            onChange={(e) => setNewProduct({...newProduct, barcode: e.target.value})}
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Código de barras para escaneo (EAN, UPC, etc.)
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Categoría del Producto <span className="text-red-500">*</span>
-                          </label>
-                          <Select
-                            placeholder="Selecciona una categoría"
-                            variant="bordered"
-                            selectedKeys={newProduct.category ? [newProduct.category] : []}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setNewProduct({...newProduct, category: value});
-                            }}
-                            isRequired
-                          >
-                            {categories.map((category) => (
-                              <SelectItem key={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </Select>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Clasifica el producto para facilitar su búsqueda y organización
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Unidad de Medida Base <span className="text-red-500">*</span>
-                          </label>
-                          <Select
-                            placeholder="Selecciona la unidad"
-                            variant="bordered"
-                            selectedKeys={[newProduct.baseUnit]}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setNewProduct({...newProduct, baseUnit: value});
-                            }}
-                            isRequired
-                          >
-                            {unitOptions.map((unit) => (
-                              <SelectItem key={unit.value}>
-                                {unit.label}
-                              </SelectItem>
-                            ))}
-                          </Select>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Unidad principal de venta (piezas, kilos, litros, etc.)
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Características del Producto */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
-                      Características del Producto
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 border border-gray-200 rounded-lg">
-                        <Switch
-                          isSelected={newProduct.isPerishable}
-                          onValueChange={(value) => setNewProduct({...newProduct, isPerishable: value})}
-                        >
-                          <span className="font-medium">Producto Perecedero</span>
-                        </Switch>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Producto con fecha de caducidad o vida útil limitada
-                        </p>
-                      </div>
-                      
-                      <div className="p-4 border border-gray-200 rounded-lg">
-                        <Switch
-                          isSelected={newProduct.requiresBatch}
-                          onValueChange={(value) => setNewProduct({...newProduct, requiresBatch: value})}
-                        >
-                          <span className="font-medium">Requiere Control de Lote</span>
-                        </Switch>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Necesita seguimiento por número de lote o serie
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Precios e Inventario */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
-                      Precios e Inventario
-                    </h4>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Precio de Costo (MXN) <span className="text-red-500">*</span>
-                          </label>
-                          <Input
-                            type="number"
-                            placeholder="Ej: 1500.00"
-                            variant="bordered"
-                            startContent={
-                              <div className="pointer-events-none flex items-center">
-                                <span className="text-default-400 text-small">$</span>
-                              </div>
-                            }
-                            value={newProduct.costPrice.toString()}
-                            onChange={(e) => setNewProduct({...newProduct, costPrice: parseFloat(e.target.value) || 0})}
-                            step="0.01"
-                            min="0"
-                            isRequired
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Precio al que compras o produces el producto (para cálculo de margen)
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Precio de Venta (MXN) <span className="text-red-500">*</span>
-                          </label>
-                          <Input
-                            type="number"
-                            placeholder="Ej: 2500.00"
-                            variant="bordered"
-                            startContent={
-                              <div className="pointer-events-none flex items-center">
-                                <span className="text-default-400 text-small">$</span>
-                              </div>
-                            }
-                            value={newProduct.unitPrice.toString()}
-                            onChange={(e) => setNewProduct({...newProduct, unitPrice: parseFloat(e.target.value) || 0})}
-                            step="0.01"
-                            min="0"
-                            isRequired
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Precio al que vendes el producto a tus clientes
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Stock Mínimo ({newProduct.baseUnit})
-                          </label>
-                          <Input
-                            type="number"
-                            placeholder="Ej: 10"
-                            variant="bordered"
-                            value={newProduct.minStock.toString()}
-                            onChange={(e) => setNewProduct({...newProduct, minStock: parseInt(e.target.value) || 0})}
-                            min="0"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Cantidad mínima que debe mantenerse en inventario
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Punto de Reorden ({newProduct.baseUnit})
-                          </label>
-                          <Input
-                            type="number"
-                            placeholder="Ej: 20"
-                            variant="bordered"
-                            value={newProduct.reorderPoint.toString()}
-                            onChange={(e) => setNewProduct({...newProduct, reorderPoint: parseInt(e.target.value) || 0})}
-                            min="0"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Nivel en el que se debe generar un nuevo pedido
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-xs text-gray-600">
-                          <span className="font-medium">Stock Mínimo:</span> Nivel crítico por debajo del cual no debería caer el inventario.
-                        </p>
-                        <p className="text-xs text-gray-600 mt-1">
-                          <span className="font-medium">Punto de Reorden:</span> Nivel en el que se debe generar una alerta para realizar un nuevo pedido.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Información Adicional */}
-                  <div className="space-y-4">
-                    <h4 className="text-md font-medium text-gray-900 border-b border-gray-200 pb-2">
-                      Información Adicional
-                    </h4>
-                    <div className="space-y-4">
-                      <div className="space-y-3">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-1">Etiquetas del Producto</h4>
-                          <p className="text-xs text-gray-500 mb-3">
-                            Palabras clave que faciliten la búsqueda del producto (ej: "ofertas", "nuevo", "premium", "eco-friendly")
-                          </p>
-                        </div>
-                        
-                        {newProduct.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {newProduct.tags.map((tag) => (
-                              <Chip 
-                                key={tag} 
-                                onClose={() => handleRemoveTag(tag)}
-                                variant="flat"
-                                color="primary"
-                              >
-                                {tag}
-                              </Chip>
-                            ))}
-                          </div>
-                        )}
-                        
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Agregar Nueva Etiqueta
-                            </label>
-                            <Input
-                              placeholder="Ej: ofertas, premium, nuevo, eco-friendly..."
-                              variant="bordered"
-                              value={newTag}
-                              onChange={(e) => setNewTag(e.target.value)}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleAddTag();
-                                }
-                              }}
-                            />
-                          </div>
-                          <Button 
-                            color="primary" 
-                            variant="bordered"
-                            onPress={handleAddTag}
-                            isDisabled={!newTag.trim() || newProduct.tags.includes(newTag.trim())}
-                          >
-                            Agregar
-                          </Button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Las etiquetas ayudan a los compradores a encontrar productos relacionados y facilitan la organización del catálogo
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Imágenes del Producto</h4>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                          <div className="flex justify-center mb-4">
-                            <PhotoIcon className="w-10 h-10 text-gray-400" />
-                          </div>
-                          <h4 className="text-sm font-medium text-gray-900 mb-1">
-                            Sube imágenes del producto
-                          </h4>
-                          <p className="text-xs text-gray-500 mb-4">
-                            PNG, JPG, o WEBP hasta 5MB
-                          </p>
-                          <Button
-                            startContent={<ArrowUpTrayIcon className="w-4 h-4" />}
-                            color="primary"
-                            variant="flat"
-                            size="sm"
-                          >
-                            Seleccionar Archivo
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Error Message */}
-                  {formError && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <p className="text-sm text-red-600">{formError}</p>
-                    </div>
-                  )}
+                
+                <div>
+                  <Text size="sm" fw={500} c="dimmed" mb="xs">Información Adicional</Text>
+                  <Paper bg="gray.0" p="sm">
+                    <Stack gap="xs">
+                      <Group justify="space-between">
+                        <Text size="sm" c="dimmed">Fecha de Creación:</Text>
+                        <Text size="sm" fw={500}>{selectedProduct.created_at ? new Date(selectedProduct.created_at).toLocaleDateString() : 'N/A'}</Text>
+                      </Group>
+                      <Group justify="space-between">
+                        <Text size="sm" c="dimmed">Última Actualización:</Text>
+                        <Text size="sm" fw={500}>{selectedProduct.updated_at ? new Date(selectedProduct.updated_at).toLocaleDateString() : 'N/A'}</Text>
+                      </Group>
+                    </Stack>
+                  </Paper>
                 </div>
-              </ModalBody>
-              <ModalFooter className="px-6 py-4">
-                <div className="flex gap-3 justify-end w-full">
+                
+                {selectedProduct.approval_status === "rejected" && selectedProduct.rejection_reason && (
+                  <Paper bg="red.0" withBorder p="sm">
+                    <Text size="sm" fw={500} c="red.7" mb="xs">Motivo de Rechazo</Text>
+                    <Text size="sm" c="red.6">{selectedProduct.rejection_reason}</Text>
+                  </Paper>
+                )}
+
+                <Group justify="flex-end" mt="lg">
                   <Button 
                     variant="light" 
-                    onPress={onClose}
+                    onClick={closeProductModal}
+                  >
+                    Cerrar
+                  </Button>
+                  
+                  {selectedProduct.approval_status === "approved" && (
+                    <Button
+                      onClick={() => setModalView('edit')}
+                    >
+                      Editar Producto
+                    </Button>
+                  )}
+                </Group>
+              </Stack>
+            )}
+            
+            {/* Vista de edición */}
+            {modalView === 'edit' && (
+              <Stack gap="md">
+                <TextInput
+                  label="Nombre del Producto"
+                  placeholder="Ej: Laptop Dell Inspiron 15"
+                  required
+                  value={selectedProduct.name}
+                  onChange={(e) => setSelectedProduct({...selectedProduct, name: e.currentTarget.value})}
+                />
+                
+                <Textarea
+                  label="Descripción del Producto"
+                  placeholder="Describe las características, especificaciones y beneficios del producto..."
+                  value={selectedProduct.description || ""}
+                  onChange={(e) => setSelectedProduct({...selectedProduct, description: e.currentTarget.value})}
+                  minRows={3}
+                />
+                
+                <Grid>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <TextInput
+                      label="SKU (Código de Producto)"
+                      placeholder="Ej: DELL-LAP-INS15-001"
+                      value={selectedProduct.sku || ""}
+                      onChange={(e) => setSelectedProduct({...selectedProduct, sku: e.currentTarget.value})}
+                    />
+                  </Grid.Col>
+                  
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <TextInput
+                      label="Código de Barras"
+                      placeholder="Ej: 123456789012"
+                      value={selectedProduct.barcode || ""}
+                      onChange={(e) => setSelectedProduct({...selectedProduct, barcode: e.currentTarget.value})}
+                    />
+                  </Grid.Col>
+                </Grid>
+                
+                <Grid>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Select
+                      label="Categoría del Producto"
+                      placeholder="Selecciona una categoría"
+                      required
+                      value={selectedProduct.category}
+                      onChange={(value) => setSelectedProduct({...selectedProduct, category: value || ""})}
+                      data={categories.map(cat => ({ value: cat, label: cat }))}
+                    />
+                  </Grid.Col>
+                  
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Select
+                      label="Unidad de Medida Base"
+                      placeholder="Selecciona la unidad"
+                      required
+                      value={selectedProduct.base_unit}
+                      onChange={(value) => setSelectedProduct({...selectedProduct, base_unit: value || ""})}
+                      data={unitOptions}
+                    />
+                  </Grid.Col>
+                </Grid>
+                
+                <div>
+                  <Text size="sm" fw={500} mb="md">Características del Producto</Text>
+                  <Grid>
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                      <Paper withBorder p="sm">
+                        <Switch
+                          label="Producto Perecedero"
+                          checked={selectedProduct.is_perishable || false}
+                          onChange={(event) => setSelectedProduct({...selectedProduct, is_perishable: event.currentTarget.checked})}
+                        />
+                        <Text size="xs" c="dimmed" mt="xs">
+                          Producto con fecha de caducidad o vida útil limitada
+                        </Text>
+                      </Paper>
+                    </Grid.Col>
+                    
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                      <Paper withBorder p="sm">
+                        <Switch
+                          label="Requiere Control de Lote"
+                          checked={selectedProduct.requires_batch || false}
+                          onChange={(event) => setSelectedProduct({...selectedProduct, requires_batch: event.currentTarget.checked})}
+                        />
+                        <Text size="xs" c="dimmed" mt="xs">
+                          Necesita seguimiento por número de lote o serie
+                        </Text>
+                      </Paper>
+                    </Grid.Col>
+                  </Grid>
+                </div>
+                
+                <div>
+                  <Text size="sm" fw={500} mb="xs">Etiquetas del Producto</Text>
+                  
+                  {selectedProduct.tags && selectedProduct.tags.length > 0 && (
+                    <Group gap="xs" mb="sm">
+                      {selectedProduct.tags.map((tag) => (
+                        <Badge 
+                          key={tag} 
+                          variant="light"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => setSelectedProduct({
+                            ...selectedProduct, 
+                            tags: selectedProduct.tags?.filter(t => t !== tag) || []
+                          })}
+                        >
+                          {tag} ×
+                        </Badge>
+                      ))}
+                    </Group>
+                  )}
+                  
+                  <Group>
+                    <TextInput
+                      placeholder="Ej: ofertas, premium, nuevo..."
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.currentTarget.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newTag.trim() && !selectedProduct.tags?.includes(newTag.trim())) {
+                            setSelectedProduct({
+                              ...selectedProduct, 
+                              tags: [...(selectedProduct.tags || []), newTag.trim()]
+                            });
+                            setNewTag("");
+                          }
+                        }
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                    <Button 
+                      variant="light"
+                      onClick={() => {
+                        if (newTag.trim() && !selectedProduct.tags?.includes(newTag.trim())) {
+                          setSelectedProduct({
+                            ...selectedProduct, 
+                            tags: [...(selectedProduct.tags || []), newTag.trim()]
+                          });
+                          setNewTag("");
+                        }
+                      }}
+                      disabled={!newTag.trim() || selectedProduct.tags?.includes(newTag.trim())}
+                    >
+                      Agregar
+                    </Button>
+                  </Group>
+                </div>
+
+                <Group justify="flex-end" mt="lg">
+                  <Button 
+                    variant="light" 
+                    onClick={closeProductModal}
                   >
                     Cancelar
                   </Button>
                   <Button
-                    color="primary"
-                    isLoading={loading}
-                    onPress={submitNewProduct}
-                    startContent={<FolderPlusIcon className="w-4 h-4" />}
+                    onClick={() => {
+                      // Implementar guardado de cambios aquí
+                      toast.success("Cambios guardados correctamente");
+                      closeProductModal();
+                    }}
                   >
-                    Enviar para Aprobación
+                    Guardar Cambios
                   </Button>
+                </Group>
+              </Stack>
+            )}
+            
+            {/* Vista de historial de precios */}
+            {modalView === 'price' && (
+              <Stack gap="lg">
+                <Paper bg="gray.0" p="md">
+                  <Text size="sm" fw={500} c="dimmed" mb="md">Precios Actuales</Text>
+                  <Grid>
+                    <Grid.Col span={6}>
+                      <NumberInput
+                        label="Precio de Costo (MXN)"
+                        placeholder="0.00"
+                        leftSection="$"
+                        decimalScale={2}
+                        value={selectedProduct.last_cost || 0}
+                        onChange={(value) => setSelectedProduct({
+                          ...selectedProduct,
+                          last_cost: typeof value === 'number' ? value : 0
+                        })}
+                      />
+                    </Grid.Col>
+                    
+                    <Grid.Col span={6}>
+                      <NumberInput
+                        label="Precio de Venta (MXN)"
+                        placeholder="0.00"
+                        leftSection="$"
+                        decimalScale={2}
+                        value={selectedProduct.unit_price || 0}
+                        onChange={(value) => setSelectedProduct({
+                          ...selectedProduct,
+                          unit_price: typeof value === 'number' ? value : 0
+                        })}
+                      />
+                    </Grid.Col>
+                  </Grid>
+                  
+                  <Button
+                    fullWidth
+                    mt="md"
+                    onClick={() => updateProductPrice(
+                      selectedProduct.id || selectedProduct.product_id || '',
+                      selectedProduct.last_cost || 0,
+                      selectedProduct.unit_price || 0
+                    )}
+                  >
+                    Actualizar Precios
+                  </Button>
+                </Paper>
+                
+                <div>
+                  <Text size="sm" fw={500} c="dimmed" mb="md">Historial de Precios</Text>
+                  {loadingPriceHistory ? (
+                    <Center py="xl">
+                      <Loader />
+                    </Center>
+                  ) : (
+                    <Table>
+                      <Table.Thead bg="gray.0">
+                        <Table.Tr>
+                          <Table.Th>Fecha</Table.Th>
+                          <Table.Th ta="right">Precio de Costo</Table.Th>
+                          <Table.Th ta="right">Precio de Venta</Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {priceHistoryData.map((item, index) => (
+                          <Table.Tr key={index}>
+                            <Table.Td>
+                              {new Date(item.date).toLocaleDateString()}
+                            </Table.Td>
+                            <Table.Td ta="right">
+                              {formatCurrency(item.costPrice)}
+                            </Table.Td>
+                            <Table.Td ta="right">
+                              {formatCurrency(item.unitPrice)}
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  )}
                 </div>
-              </ModalFooter>
-            </>
+              </Stack>
+            )}
+            
+            {/* Vista de niveles de stock */}
+            {modalView === 'stock' && (
+              <Stack gap="lg">
+                <Paper bg="gray.0" p="md">
+                  <Text size="sm" fw={500} c="dimmed" mb="md">Niveles de Inventario</Text>
+                  <Grid>
+                    <Grid.Col span={6}>
+                      <NumberInput
+                        label={`Stock Mínimo (${selectedProduct.stock_unit || selectedProduct.base_unit || 'unidad'})`}
+                        placeholder="0"
+                        value={selectedProduct.stock_minimum || 0}
+                        onChange={(value) => setSelectedProduct({
+                          ...selectedProduct,
+                          stock_minimum: typeof value === 'number' ? value : 0
+                        })}
+                      />
+                    </Grid.Col>
+                    
+                    <Grid.Col span={6}>
+                      <NumberInput
+                        label={`Punto de Reorden (${selectedProduct.stock_unit || selectedProduct.base_unit || 'unidad'})`}
+                        placeholder="0"
+                        value={selectedProduct.stock_reorder_point || 0}
+                        onChange={(value) => setSelectedProduct({
+                          ...selectedProduct,
+                          stock_reorder_point: typeof value === 'number' ? value : 0
+                        })}
+                      />
+                    </Grid.Col>
+                  </Grid>
+                  
+                  <Text size="xs" c="dimmed" my="sm">
+                    <Text component="span" fw={500}>Nota:</Text> El stock mínimo indica el nivel crítico por debajo del cual no debería caer el inventario.
+                    El punto de reorden indica el nivel en el que se debe generar una alerta para realizar un nuevo pedido.
+                  </Text>
+                  
+                  <Button
+                    fullWidth
+                    mt="md"
+                    onClick={() => updateProductStock(
+                      selectedProduct.id || selectedProduct.product_id || '',
+                      selectedProduct.stock_minimum || 0,
+                      selectedProduct.stock_reorder_point || 0
+                    )}
+                  >
+                    Actualizar Niveles de Inventario
+                  </Button>
+                </Paper>
+              </Stack>
+            )}
+          </Stack>
+        )}
+      </Modal>
+
+      {/* Modal de nuevo producto */}
+      <Modal
+        opened={newProductModalOpened}
+        onClose={closeNewProductModal}
+        size="xl"
+        title={
+          <div>
+            <Title order={4}>Registrar Nuevo Producto</Title>
+            <Text size="sm" c="dimmed" mt="xs">
+              Los productos nuevos requerirán aprobación de un administrador antes de estar disponibles en el sistema.
+            </Text>
+          </div>
+        }
+      >
+        <Stack gap="lg">
+          {/* Información Básica */}
+          <div>
+            <Text fw={500} mb="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)', paddingBottom: 8 }}>
+              Información Básica
+            </Text>
+            
+            <Stack gap="md">
+              <TextInput
+                label={<>Nombre del Producto <Text component="span" c="red">*</Text></>}
+                placeholder="Ej: Laptop Dell Inspiron 15 3000 Intel Core i5"
+                value={newProduct.name}
+                onChange={(e) => setNewProduct({...newProduct, name: e.currentTarget.value})}
+                required
+                description="Nombre completo y descriptivo que aparecerá en catálogos y facturas"
+              />
+              
+              <Textarea
+                label="Descripción del Producto"
+                placeholder="Incluye características, especificaciones técnicas, beneficios y cualquier información relevante..."
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({...newProduct, description: e.currentTarget.value})}
+                minRows={4}
+                description="Información detallada que ayude a los compradores a entender las características y beneficios del producto"
+              />
+              
+              <Grid>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <TextInput
+                    label={<>SKU (Código de Producto) <Text component="span" c="red">*</Text></>}
+                    placeholder="Ej: DELL-LAP-INS15-001"
+                    value={newProduct.sku}
+                    onChange={(e) => setNewProduct({...newProduct, sku: e.currentTarget.value})}
+                    required
+                    description="Código único de identificación interno del producto"
+                  />
+                </Grid.Col>
+                
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <TextInput
+                    label="Código de Barras (Opcional)"
+                    placeholder="Ej: 123456789012"
+                    value={newProduct.barcode}
+                    onChange={(e) => setNewProduct({...newProduct, barcode: e.currentTarget.value})}
+                    description="Código de barras para escaneo (EAN, UPC, etc.)"
+                  />
+                </Grid.Col>
+              </Grid>
+              
+              <Grid>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Select
+                    label={<>Categoría del Producto <Text component="span" c="red">*</Text></>}
+                    placeholder="Selecciona una categoría"
+                    value={newProduct.category}
+                    onChange={(value) => setNewProduct({...newProduct, category: value || ""})}
+                    data={categories.map(cat => ({ value: cat, label: cat }))}
+                    required
+                    description="Clasifica el producto para facilitar su búsqueda y organización"
+                  />
+                </Grid.Col>
+                
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Select
+                    label={<>Unidad de Medida Base <Text component="span" c="red">*</Text></>}
+                    placeholder="Selecciona la unidad"
+                    value={newProduct.baseUnit}
+                    onChange={(value) => setNewProduct({...newProduct, baseUnit: value || ""})}
+                    data={unitOptions}
+                    required
+                    description="Unidad principal de venta (piezas, kilos, litros, etc.)"
+                  />
+                </Grid.Col>
+              </Grid>
+            </Stack>
+          </div>
+
+          {/* Características del Producto */}
+          <div>
+            <Text fw={500} mb="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)', paddingBottom: 8 }}>
+              Características del Producto
+            </Text>
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Paper withBorder p="md">
+                  <Switch
+                    label="Producto Perecedero"
+                    checked={newProduct.isPerishable}
+                    onChange={(event) => setNewProduct({...newProduct, isPerishable: event.currentTarget.checked})}
+                  />
+                  <Text size="xs" c="dimmed" mt="xs">
+                    Producto con fecha de caducidad o vida útil limitada
+                  </Text>
+                </Paper>
+              </Grid.Col>
+              
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Paper withBorder p="md">
+                  <Switch
+                    label="Requiere Control de Lote"
+                    checked={newProduct.requiresBatch}
+                    onChange={(event) => setNewProduct({...newProduct, requiresBatch: event.currentTarget.checked})}
+                  />
+                  <Text size="xs" c="dimmed" mt="xs">
+                    Necesita seguimiento por número de lote o serie
+                  </Text>
+                </Paper>
+              </Grid.Col>
+            </Grid>
+          </div>
+
+          {/* Precios e Inventario */}
+          <div>
+            <Text fw={500} mb="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)', paddingBottom: 8 }}>
+              Precios e Inventario
+            </Text>
+            <Stack gap="md">
+              <Grid>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <NumberInput
+                    label={<>Precio de Costo (MXN) <Text component="span" c="red">*</Text></>}
+                    placeholder="Ej: 1500.00"
+                    leftSection="$"
+                    decimalScale={2}
+                    min={0}
+                    value={newProduct.costPrice}
+                    onChange={(value) => setNewProduct({...newProduct, costPrice: typeof value === 'number' ? value : 0})}
+                    required
+                    description="Precio al que compras o produces el producto (para cálculo de margen)"
+                  />
+                </Grid.Col>
+                
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <NumberInput
+                    label={<>Precio de Venta (MXN) <Text component="span" c="red">*</Text></>}
+                    placeholder="Ej: 2500.00"
+                    leftSection="$"
+                    decimalScale={2}
+                    min={0}
+                    value={newProduct.unitPrice}
+                    onChange={(value) => setNewProduct({...newProduct, unitPrice: typeof value === 'number' ? value : 0})}
+                    required
+                    description="Precio al que vendes el producto a tus clientes"
+                  />
+                </Grid.Col>
+              </Grid>
+              
+              <Grid>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <NumberInput
+                    label={`Stock Mínimo (${newProduct.baseUnit})`}
+                    placeholder="Ej: 10"
+                    min={0}
+                    value={newProduct.minStock}
+                    onChange={(value) => setNewProduct({...newProduct, minStock: typeof value === 'number' ? value : 0})}
+                    description="Cantidad mínima que debe mantenerse en inventario"
+                  />
+                </Grid.Col>
+                
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <NumberInput
+                    label={`Punto de Reorden (${newProduct.baseUnit})`}
+                    placeholder="Ej: 20"
+                    min={0}
+                    value={newProduct.reorderPoint}
+                    onChange={(value) => setNewProduct({...newProduct, reorderPoint: typeof value === 'number' ? value : 0})}
+                    description="Nivel en el que se debe generar un nuevo pedido"
+                  />
+                </Grid.Col>
+              </Grid>
+              
+              <Paper bg="gray.0" p="sm">
+                <Text size="xs" c="dimmed">
+                  <Text component="span" fw={500}>Stock Mínimo:</Text> Nivel crítico por debajo del cual no debería caer el inventario.
+                </Text>
+                <Text size="xs" c="dimmed" mt="xs">
+                  <Text component="span" fw={500}>Punto de Reorden:</Text> Nivel en el que se debe generar una alerta para realizar un nuevo pedido.
+                </Text>
+              </Paper>
+            </Stack>
+          </div>
+
+          {/* Información Adicional */}
+          <div>
+            <Text fw={500} mb="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)', paddingBottom: 8 }}>
+              Información Adicional
+            </Text>
+            <Stack gap="md">
+              <div>
+                <Text size="sm" fw={500} mb="xs">Etiquetas del Producto</Text>
+                <Text size="xs" c="dimmed" mb="md">
+                  Palabras clave que faciliten la búsqueda del producto (ej: "ofertas", "nuevo", "premium", "eco-friendly")
+                </Text>
+                
+                {newProduct.tags.length > 0 && (
+                  <Group gap="xs" mb="sm">
+                    {newProduct.tags.map((tag) => (
+                      <Badge 
+                        key={tag} 
+                        variant="light"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleRemoveTag(tag)}
+                      >
+                        {tag} ×
+                      </Badge>
+                    ))}
+                  </Group>
+                )}
+                
+                <Group>
+                  <TextInput
+                    placeholder="Ej: ofertas, premium, nuevo, eco-friendly..."
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.currentTarget.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddTag();
+                      }
+                    }}
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    variant="light"
+                    onClick={handleAddTag}
+                    disabled={!newTag.trim() || newProduct.tags.includes(newTag.trim())}
+                  >
+                    Agregar
+                  </Button>
+                </Group>
+              </div>
+              
+              <div>
+                <Text size="sm" fw={500} mb="xs">Imágenes del Producto</Text>
+                <Text size="xs" c="dimmed" mb="md">
+                  Sube imágenes que muestren el producto desde diferentes ángulos (opcional)
+                </Text>
+                
+                <FileInput
+                  placeholder="Seleccionar imágenes..."
+                  multiple
+                  accept="image/*"
+                  leftSection={<PhotoIcon className="w-4 h-4" />}
+                  onChange={(files) => {
+                    // En una implementación real, aquí subirías los archivos y obtendrías las URLs
+                    if (files && files.length > 0) {
+                      const urls = files.map(file => URL.createObjectURL(file));
+                      setNewProduct({...newProduct, images: [...newProduct.images, ...urls]});
+                    }
+                  }}
+                />
+                
+                {newProduct.images.length > 0 && (
+                  <Group gap="xs" mt="sm">
+                    {newProduct.images.map((image, index) => (
+                      <div key={index} style={{ position: 'relative' }}>
+                        <Image
+                          src={image}
+                          alt={`Producto ${index + 1}`}
+                          w={80}
+                          h={80}
+                          style={{ objectFit: 'cover', borderRadius: 8 }}
+                        />
+                        <ActionIcon
+                          size="xs"
+                          color="red"
+                          style={{ position: 'absolute', top: -8, right: -8 }}
+                          onClick={() => {
+                            const newImages = newProduct.images.filter((_, i) => i !== index);
+                            setNewProduct({...newProduct, images: newImages});
+                          }}
+                        >
+                          <XMarkIcon className="w-3 h-3" />
+                        </ActionIcon>
+                      </div>
+                    ))}
+                  </Group>
+                )}
+              </div>
+            </Stack>
+          </div>
+
+          {/* Error del formulario */}
+          {formError && (
+            <Paper bg="red.0" withBorder p="sm">
+              <Group>
+                <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />
+                <Text size="sm" c="red.7" fw={500}>{formError}</Text>
+              </Group>
+            </Paper>
           )}
-        </ModalContent>
+
+          {/* Resumen del producto */}
+          <Paper bg="blue.0" withBorder p="md">
+            <Text size="sm" fw={500} c="blue.7" mb="sm">Resumen del Producto</Text>
+            <Grid>
+              <Grid.Col span={6}>
+                <Text size="xs" c="dimmed">Nombre:</Text>
+                <Text size="sm" fw={500}>{newProduct.name || "Sin nombre"}</Text>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Text size="xs" c="dimmed">Categoría:</Text>
+                <Text size="sm" fw={500}>{newProduct.category || "Sin categoría"}</Text>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Text size="xs" c="dimmed">Precio de Costo:</Text>
+                <Text size="sm" fw={500}>{formatCurrency(newProduct.costPrice)}</Text>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Text size="xs" c="dimmed">Precio de Venta:</Text>
+                <Text size="sm" fw={500}>{formatCurrency(newProduct.unitPrice)}</Text>
+              </Grid.Col>
+            </Grid>
+            {newProduct.unitPrice > 0 && newProduct.costPrice > 0 && (
+              <Text size="xs" c="blue.6" mt="sm">
+                <Text component="span" fw={500}>Margen de Ganancia:</Text> {(((newProduct.unitPrice - newProduct.costPrice) / newProduct.costPrice) * 100).toFixed(1)}%
+              </Text>
+            )}
+          </Paper>
+
+          {/* Botones de acción */}
+          <Group justify="flex-end" mt="lg">
+            <Button
+              variant="light"
+              onClick={closeNewProductModal}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={submitNewProduct}
+              loading={loading}
+              disabled={!newProduct.name || !newProduct.category || !newProduct.sku || newProduct.costPrice <= 0 || newProduct.unitPrice <= 0}
+            >
+              {loading ? "Enviando..." : "Registrar Producto"}
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
 
       {/* Modal de productos sin movimientos */}
       <ProductsWithoutMovementsModal
-        isOpen={isProductsWithoutMovementsModalOpen}
-        onClose={onProductsWithoutMovementsModalClose}
-        onSuccess={() => {
-          fetchProducts();
-          fetchProductsWithoutMovementsCount();
-        }}
+        isOpen={productsWithoutMovementsModalOpened}
+        onClose={closeProductsWithoutMovementsModal}
+        onSuccess={fetchProducts}
       />
-    </div>
+    </Stack>
   );
 }

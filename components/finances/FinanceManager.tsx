@@ -2,19 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Card,
-  CardBody,
+  Paper,
   Button,
-  useDisclosure,
-  Spinner
-} from '@heroui/react';
+  Loader,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Grid,
+  Card,
+  ThemeIcon,
+  Center
+} from '@mantine/core';
 import {
-  PlusIcon,
-  CurrencyDollarIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  ScaleIcon
-} from '@heroicons/react/24/outline';
+  IconPlus,
+  IconCurrencyDollar,
+  IconTrendingUp,
+  IconTrendingDown,
+  IconScale
+} from '@tabler/icons-react';
+import { useDisclosure } from '@mantine/hooks';
 import FinanceTable from './FinanceTable';
 import FinanceModal from './FinanceModal';
 import NewFinanceModal from './NewFinanceModal';
@@ -49,8 +56,8 @@ export default function FinanceManager() {
   const [minAmount, setMinAmount] = useState<number | undefined>();
   const [maxAmount, setMaxAmount] = useState<number | undefined>();
   
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isOpen: isNewModalOpen, onOpen: onNewModalOpen, onClose: onNewModalClose } = useDisclosure();
+  const [isOpen, { open: onOpen, close: onClose }] = useDisclosure();
+  const [isNewModalOpen, { open: onNewModalOpen, close: onNewModalClose }] = useDisclosure();
 
   useEffect(() => {
     fetchFinances();
@@ -298,33 +305,24 @@ export default function FinanceManager() {
   };
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--space-8)'}}>
-      {/* Professional Header */}
-      <div className="surface-card">
-        <div className="flex items-center justify-between" style={{padding: 'var(--space-6)'}}>
-          <div>
-            <h1 style={{
-              fontSize: 'var(--text-xl)',
-              fontWeight: '600',
-              marginBottom: 'var(--space-1)'
-            }}>
-              Finanzas
-            </h1>
-            <p className="text-neutral-600" style={{
-              fontSize: 'var(--text-sm)'
-            }}>
+    <Stack gap="lg">
+      {/* Header */}
+      <Paper p="lg" withBorder>
+        <Group justify="space-between">
+          <Stack gap="xs">
+            <Title order={2}>Finanzas</Title>
+            <Text c="dimmed" size="sm">
               {finances.length} transacciones en total
-            </p>
-          </div>
-          <button
-            className="btn-primary"
+            </Text>
+          </Stack>
+          <Button
+            leftSection={<IconPlus size={16} />}
             onClick={handleCreateFinance}
           >
-            <PlusIcon className="icon-base" />
             Nueva Transacción
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Group>
+      </Paper>
 
       {/* Filtros */}
       <FinanceFilters
@@ -352,161 +350,106 @@ export default function FinanceManager() {
         onClearFilters={handleClearFilters}
       />
 
-      {/* Professional Statistics */}
+      {/* Statistics */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4" style={{gap: 'var(--space-4)'}}>
-          <div className="metric-card status-success">
-            <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-              <div style={{
-                width: 'var(--space-8)',
-                height: 'var(--space-8)',
-                backgroundColor: '#dcfce7',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <ArrowTrendingUpIcon className="icon-base text-green-600" />
-              </div>
-              <div>
-                <div style={{
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: '500',
-                  marginBottom: 'var(--space-1)'
-                }}>
-                  {formatCurrency(stats.totalIncome)}
-                </div>
-                <div className="text-neutral-600" style={{
-                  fontSize: 'var(--text-xs)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  Ingresos ({stats.incomeCount})
-                </div>
-              </div>
-            </div>
-          </div>
+        <Grid>
+          <Grid.Col span={{ base: 6, lg: 3 }}>
+            <Card withBorder p="md">
+              <Group>
+                <ThemeIcon size="lg" radius="md" color="green">
+                  <IconTrendingUp size={24} />
+                </ThemeIcon>
+                <Stack gap={0}>
+                  <Text size="xl" fw={600}>
+                    {formatCurrency(stats.totalIncome)}
+                  </Text>
+                  <Text size="xs" c="dimmed" tt="uppercase">
+                    Ingresos ({stats.incomeCount})
+                  </Text>
+                </Stack>
+              </Group>
+            </Card>
+          </Grid.Col>
           
-          <div className="metric-card status-error">
-            <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-              <div style={{
-                width: 'var(--space-8)',
-                height: 'var(--space-8)',
-                backgroundColor: '#fee2e2',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <ArrowTrendingDownIcon className="icon-base text-red-600" />
-              </div>
-              <div>
-                <div style={{
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: '500',
-                  marginBottom: 'var(--space-1)'
-                }}>
-                  {formatCurrency(stats.totalExpense)}
-                </div>
-                <div className="text-neutral-600" style={{
-                  fontSize: 'var(--text-xs)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
-                  Egresos ({stats.expenseCount})
-                </div>
-              </div>
-            </div>
-          </div>
+          <Grid.Col span={{ base: 6, lg: 3 }}>
+            <Card withBorder p="md">
+              <Group>
+                <ThemeIcon size="lg" radius="md" color="red">
+                  <IconTrendingDown size={24} />
+                </ThemeIcon>
+                <Stack gap={0}>
+                  <Text size="xl" fw={600}>
+                    {formatCurrency(stats.totalExpense)}
+                  </Text>
+                  <Text size="xs" c="dimmed" tt="uppercase">
+                    Egresos ({stats.expenseCount})
+                  </Text>
+                </Stack>
+              </Group>
+            </Card>
+          </Grid.Col>
           
-          <div className={`metric-card ${
-            stats.balance >= 0 ? 'status-info' : 'status-warning'
-          }`}>
-            <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-              <div style={{
-                width: 'var(--space-8)',
-                height: 'var(--space-8)',
-                backgroundColor: stats.balance >= 0 ? '#dbeafe' : '#fef3c7',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <ScaleIcon className={`icon-base ${
-                  stats.balance >= 0 ? 'text-blue-600' : 'text-orange-600'
-                }`} />
-              </div>
-              <div>
-                <div style={{
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: '500',
-                  marginBottom: 'var(--space-1)',
-                  color: stats.balance >= 0 ? 'var(--foreground)' : '#ea580c'
-                }}>
-                  {formatCurrency(stats.balance)}
-                </div>
-                <div className="text-neutral-600" style={{
-                  fontSize: 'var(--text-xs)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>Balance</div>
-              </div>
-            </div>
-          </div>
+          <Grid.Col span={{ base: 6, lg: 3 }}>
+            <Card withBorder p="md">
+              <Group>
+                <ThemeIcon size="lg" radius="md" color={stats.balance >= 0 ? "blue" : "orange"}>
+                  <IconScale size={24} />
+                </ThemeIcon>
+                <Stack gap={0}>
+                  <Text 
+                    size="xl" 
+                    fw={600}
+                    c={stats.balance >= 0 ? undefined : "orange"}
+                  >
+                    {formatCurrency(stats.balance)}
+                  </Text>
+                  <Text size="xs" c="dimmed" tt="uppercase">
+                    Balance
+                  </Text>
+                </Stack>
+              </Group>
+            </Card>
+          </Grid.Col>
           
-          <div className="metric-card status-neutral">
-            <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-              <div style={{
-                width: 'var(--space-8)',
-                height: 'var(--space-8)',
-                backgroundColor: 'var(--surface-elevated)',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <CurrencyDollarIcon className="icon-base text-neutral-600" />
-              </div>
-              <div>
-                <div style={{
-                  fontSize: 'var(--text-lg)',
-                  fontWeight: '500',
-                  marginBottom: 'var(--space-1)'
-                }}>
-                  {stats.totalTransactions}
-                </div>
-                <div className="text-neutral-600" style={{
-                  fontSize: 'var(--text-xs)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>Total</div>
-              </div>
-            </div>
-          </div>
-        </div>
+          <Grid.Col span={{ base: 6, lg: 3 }}>
+            <Card withBorder p="md">
+              <Group>
+                <ThemeIcon size="lg" radius="md" color="gray">
+                  <IconCurrencyDollar size={24} />
+                </ThemeIcon>
+                <Stack gap={0}>
+                  <Text size="xl" fw={600}>
+                    {stats.totalTransactions}
+                  </Text>
+                  <Text size="xs" c="dimmed" tt="uppercase">
+                    Total
+                  </Text>
+                </Stack>
+              </Group>
+            </Card>
+          </Grid.Col>
+        </Grid>
       )}
 
-      {/* Professional Main Content */}
-      <div className="surface-card">
-        <div style={{padding: 'var(--space-6)'}}>
-          {loading ? (
-            <div className="flex flex-col justify-center items-center" style={{
-              padding: 'var(--space-16) 0'
-            }}>
-              <div className="loading-spinner" style={{marginBottom: 'var(--space-4)'}}></div>
-              <p className="text-neutral-600" style={{fontSize: 'var(--text-sm)'}}>Cargando finanzas...</p>
-            </div>
-          ) : (
-            <FinanceTable
-              finances={filteredFinances}
-              loading={loading}
-              onView={handleView}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          )}
-        </div>
-      </div>
+      {/* Main Content */}
+      <Paper withBorder>
+        {loading ? (
+          <Center p="xl" style={{ minHeight: 200 }}>
+            <Stack align="center" gap="sm">
+              <Loader size="lg" />
+              <Text c="dimmed">Cargando finanzas...</Text>
+            </Stack>
+          </Center>
+        ) : (
+          <FinanceTable
+            finances={filteredFinances}
+            loading={loading}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
+      </Paper>
 
       {/* Modal de detalles/edición */}
       <FinanceModal
@@ -526,6 +469,6 @@ export default function FinanceManager() {
         availableTags={availableTags}
         reservations={reservations}
       />
-    </div>
+    </Stack>
   );
 }

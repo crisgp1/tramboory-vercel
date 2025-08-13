@@ -3,29 +3,29 @@
 import React, { useState } from 'react';
 import {
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
+  ScrollArea,
   Button,
-  Chip,
+  Badge,
   Card,
-  CardBody
-} from '@heroui/react';
+  ActionIcon,
+  Group,
+  Stack,
+  Text,
+  Tooltip
+} from '@mantine/core';
 import {
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  CurrencyDollarIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  Squares2X2Icon,
-  TableCellsIcon,
-  TagIcon,
-  UserGroupIcon,
-  CogIcon
-} from '@heroicons/react/24/outline';
+  IconEye,
+  IconEdit,
+  IconTrash,
+  IconCurrencyDollar,
+  IconTrendingUp,
+  IconTrendingDown,
+  IconGrid3x3,
+  IconTable,
+  IconTag,
+  IconUsers,
+  IconSettings
+} from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Finance, FINANCE_TYPE_LABELS, FINANCE_CATEGORY_LABELS, FINANCE_STATUS_LABELS, PAYMENT_METHOD_LABELS } from '@/types/finance';
@@ -39,21 +39,21 @@ interface FinanceTableProps {
 }
 
 const typeColorMap = {
-  income: 'success',
-  expense: 'danger'
+  income: 'green',
+  expense: 'red'
 } as const;
 
 const statusColorMap = {
-  pending: 'warning',
-  completed: 'success',
-  cancelled: 'danger'
+  pending: 'orange',
+  completed: 'green',
+  cancelled: 'red'
 } as const;
 
 const categoryColorMap = {
-  reservation: 'primary',
-  operational: 'secondary',
-  salary: 'warning',
-  other: 'default'
+  reservation: 'blue',
+  operational: 'gray',
+  salary: 'orange',
+  other: 'gray'
 } as const;
 
 export default function FinanceTable({
@@ -97,154 +97,159 @@ export default function FinanceTable({
   const GridView = () => (
     <div className="w-full">
       {finances.length === 0 ? (
-        <div className="text-center py-20">
-          <CurrencyDollarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 text-sm">No hay transacciones disponibles</p>
-        </div>
+        <Stack align="center" py="xl" gap="md">
+          <IconCurrencyDollar size={48} color="gray" />
+          <Text c="dimmed" size="sm">No hay transacciones disponibles</Text>
+        </Stack>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {finances.map((finance) => (
             <Card 
               key={finance._id} 
-              className="border border-gray-200 hover:border-gray-300 transition-colors duration-200 bg-white shadow-none hover:shadow-sm"
+              withBorder
+              p="md"
+              style={{ cursor: 'pointer' }}
+              className="hover:shadow-sm transition-shadow"
             >
-              <CardBody className="p-4">
                 {/* Header con tipo */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      finance.type === 'income' ? 'bg-green-500' : 'bg-red-500'
-                    }`}></div>
-                    <span className="font-medium text-gray-900 text-sm truncate">
+                <Group justify="space-between" mb="sm">
+                  <Group gap="xs" style={{ minWidth: 0, flex: 1 }}>
+                    <div 
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: finance.type === 'income' ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-red-5)',
+                        flexShrink: 0
+                      }}
+                    />
+                    <Text size="sm" fw={500} truncate style={{ flex: 1 }}>
                       {finance.description}
-                    </span>
-                  </div>
-                  <Chip
+                    </Text>
+                  </Group>
+                  <Badge
                     color={typeColorMap[finance.type]}
-                    variant="flat"
+                    variant="light"
                     size="sm"
-                    className="text-xs"
-                    startContent={finance.type === 'income' ? 
-                      <ArrowTrendingUpIcon className="w-3 h-3" /> : 
-                      <ArrowTrendingDownIcon className="w-3 h-3" />
+                    leftSection={finance.type === 'income' ? 
+                      <IconTrendingUp size={12} /> : 
+                      <IconTrendingDown size={12} />
                     }
                   >
                     {FINANCE_TYPE_LABELS[finance.type]}
-                  </Chip>
-                </div>
+                  </Badge>
+                </Group>
 
                 {/* Información principal */}
-                <div className="space-y-2 mb-4">
-                  <div className="text-xs text-gray-600">
+                <Stack gap="xs" mb="md">
+                  <Text size="xs" c="dimmed">
                     {formatDate(finance.date)}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    <Chip
-                      color={categoryColorMap[finance.category]}
-                      variant="flat"
-                      size="sm"
-                      className="text-xs"
-                    >
-                      {FINANCE_CATEGORY_LABELS[finance.category]}
-                    </Chip>
-                  </div>
+                  </Text>
+                  <Badge
+                    color={categoryColorMap[finance.category]}
+                    variant="light"
+                    size="sm"
+                  >
+                    {FINANCE_CATEGORY_LABELS[finance.category]}
+                  </Badge>
                   {finance.reservation && (
-                    <div className="text-xs text-gray-600 truncate">
+                    <Text size="xs" c="dimmed" truncate>
                       Cliente: {finance.reservation.customerName}
-                    </div>
+                    </Text>
                   )}
                   {finance.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
+                    <Group gap="xs">
                       {finance.tags.slice(0, 2).map((tag, index) => (
-                        <span key={index} className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
-                          <TagIcon className="w-2 h-2" />
+                        <Badge 
+                          key={index} 
+                          variant="outline" 
+                          size="xs"
+                          leftSection={<IconTag size={10} />}
+                        >
                           {tag}
-                        </span>
+                        </Badge>
                       ))}
                       {finance.tags.length > 2 && (
-                        <span className="inline-flex px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+                        <Badge variant="outline" size="xs">
                           +{finance.tags.length - 2}
-                        </span>
+                        </Badge>
                       )}
-                    </div>
+                    </Group>
                   )}
-                </div>
+                </Stack>
 
                 {/* Monto y estado */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex flex-col">
-                    <span className={`font-semibold text-sm ${
-                      finance.type === 'income' ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                <Group justify="space-between" mb="sm">
+                  <Stack gap="xs">
+                    <Text 
+                      size="sm" 
+                      fw={600}
+                      c={finance.type === 'income' ? 'green' : 'red'}
+                    >
                       {finance.type === 'income' ? '+' : '-'}{formatCurrency(finance.amount)}
-                    </span>
+                    </Text>
                     {finance.totalWithChildren && finance.totalWithChildren !== finance.amount && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <UserGroupIcon className="w-3 h-3 text-gray-400" />
-                        <span className={`text-xs ${
-                          finance.type === 'income' ? 'text-green-500' : 'text-red-500'
-                        }`}>
+                      <Group gap="xs">
+                        <IconUsers size={12} color="gray" />
+                        <Text 
+                          size="xs"
+                          c={finance.type === 'income' ? 'green' : 'red'}
+                        >
                           Total: {finance.type === 'income' ? '+' : '-'}{formatCurrency(finance.totalWithChildren)}
-                        </span>
-                      </div>
+                        </Text>
+                      </Group>
                     )}
                     {finance.children && finance.children.length > 0 && (
-                      <span className="text-xs text-gray-500 mt-1">
+                      <Text size="xs" c="dimmed">
                         {finance.children.length} relacionado{finance.children.length !== 1 ? 's' : ''}
-                      </span>
+                      </Text>
                     )}
-                  </div>
-                  <Chip
+                  </Stack>
+                  <Badge
                     color={statusColorMap[finance.status]}
-                    variant="flat"
+                    variant="light"
                     size="sm"
-                    className="text-xs"
                   >
                     {FINANCE_STATUS_LABELS[finance.status]}
-                  </Chip>
-                </div>
+                  </Badge>
+                </Group>
 
                 {/* Acciones */}
-                <div className="flex items-center gap-1">
-                  <Button
-                    isIconOnly
-                    variant="light"
-                    size="sm"
-                    className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 flex-1"
-                    onPress={() => onView(finance)}
-                  >
-                    <EyeIcon className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    isIconOnly
-                    variant="light"
-                    size="sm"
-                    className={`flex-1 ${
-                      finance.isSystemGenerated
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                    onPress={() => !finance.isSystemGenerated && onEdit(finance)}
-                    isDisabled={finance.isSystemGenerated}
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    isIconOnly
-                    variant="light"
-                    size="sm"
-                    className={`flex-1 ${
-                      finance.isSystemGenerated
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
-                    }`}
-                    onPress={() => !finance.isSystemGenerated && onDelete(finance._id)}
-                    isDisabled={finance.isSystemGenerated}
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardBody>
+                <Group gap="xs">
+                  <Tooltip label="Ver detalles">
+                    <ActionIcon
+                      variant="light"
+                      size="sm"
+                      color="gray"
+                      onClick={() => onView(finance)}
+                      style={{ flex: 1 }}
+                    >
+                      <IconEye size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label="Editar">
+                    <ActionIcon
+                      variant="light"
+                      size="sm"
+                      color="gray"
+                      onClick={() => onEdit(finance)}
+                      style={{ flex: 1 }}
+                    >
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label="Eliminar">
+                    <ActionIcon
+                      variant="light"
+                      size="sm"
+                      color="red"
+                      onClick={() => onDelete(finance._id)}
+                      style={{ flex: 1 }}
+                    >
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
             </Card>
           ))}
         </div>
@@ -252,251 +257,152 @@ export default function FinanceTable({
     </div>
   );
 
-  // Vista de tabla minimalista
+  // Vista de tabla minimalista  
   const TableView = () => {
-    const columns = [
-      { key: 'date', label: 'Fecha' },
-      { key: 'type', label: 'Tipo' },
-      { key: 'description', label: 'Descripción' },
-      { key: 'category', label: 'Categoría' },
-      { key: 'amount', label: 'Monto' },
-      { key: 'status', label: 'Estado' },
-      { key: 'actions', label: '' }
-    ];
+    if (finances.length === 0) {
+      return (
+        <Stack align="center" py="xl" gap="md">
+          <IconCurrencyDollar size={48} color="gray" />
+          <Text c="dimmed" size="sm">No hay transacciones disponibles</Text>
+        </Stack>
+      );
+    }
 
     return (
-      <div className="w-full overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table 
-            aria-label="Tabla de finanzas"
-            classNames={{
-              wrapper: "shadow-none border border-gray-200 rounded-lg",
-              th: "bg-gray-50 text-gray-700 font-medium text-xs uppercase tracking-wide",
-              td: "py-3 border-b border-gray-100 last:border-b-0 text-sm"
-            }}
-          >
-            <TableHeader columns={columns}>
-              {(column) => (
-                <TableColumn key={column.key} className="text-left px-4">
-                  {column.label}
-                </TableColumn>
-              )}
-            </TableHeader>
-            <TableBody 
-              items={finances}
-              isLoading={loading}
-              loadingContent={
-                <div className="flex justify-center items-center p-8">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                    <p className="text-gray-600 text-sm">Cargando...</p>
-                  </div>
-                </div>
-              }
-              emptyContent={
-                <div className="text-center py-12">
-                  <CurrencyDollarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 text-sm">No hay transacciones disponibles</p>
-                </div>
-              }
-            >
-              {(finance) => (
-                <TableRow key={finance._id} className="hover:bg-gray-50 transition-colors">
-                  <TableCell className="px-4">
-                    <span className="text-gray-900 text-sm">
-                      {formatDate(finance.date)}
-                    </span>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <Chip
-                      color={typeColorMap[finance.type]}
-                      variant="flat"
-                      size="sm"
-                      className="text-xs"
-                      startContent={finance.type === 'income' ? 
-                        <ArrowTrendingUpIcon className="w-3 h-3" /> : 
-                        <ArrowTrendingDownIcon className="w-3 h-3" />
-                      }
-                    >
-                      {FINANCE_TYPE_LABELS[finance.type]}
-                    </Chip>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900 text-sm">
-                          {finance.description}
-                        </span>
-                        {finance.isSystemGenerated && (
-                          <CogIcon className="w-3 h-3 text-blue-500" title="Generado automáticamente" />
-                        )}
-                      </div>
-                      {finance.reservation && (
-                        <span className="text-xs text-gray-600">
-                          Cliente: {finance.reservation.customerName}
-                        </span>
-                      )}
-                      {finance.children && finance.children.length > 0 && (
-                        <span className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                          <UserGroupIcon className="w-3 h-3" />
-                          {finance.children.length} relacionado{finance.children.length !== 1 ? 's' : ''}
-                        </span>
-                      )}
-                      {finance.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {finance.tags.slice(0, 3).map((tag, index) => (
-                            <span key={index} className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
-                              <TagIcon className="w-2 h-2" />
-                              {tag}
-                            </span>
-                          ))}
-                          {finance.tags.length > 3 && (
-                            <span className="inline-flex px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
-                              +{finance.tags.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <div className="flex flex-col">
-                      <Chip
-                        color={categoryColorMap[finance.category]}
-                        variant="flat"
-                        size="sm"
-                        className="text-xs"
-                      >
-                        {FINANCE_CATEGORY_LABELS[finance.category]}
-                      </Chip>
-                      {finance.subcategory && (
-                        <span className="text-xs text-gray-500 mt-1">
-                          {finance.subcategory}
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <div className="flex flex-col">
-                      <span className={`font-semibold text-sm ${
-                        finance.type === 'income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {finance.type === 'income' ? '+' : '-'}{formatCurrency(finance.amount)}
-                      </span>
-                      {finance.totalWithChildren && finance.totalWithChildren !== finance.amount && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <UserGroupIcon className="w-3 h-3 text-gray-400" />
-                          <span className={`text-xs ${
-                            finance.type === 'income' ? 'text-green-500' : 'text-red-500'
-                          }`}>
-                            Total: {finance.type === 'income' ? '+' : '-'}{formatCurrency(finance.totalWithChildren)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <Chip
-                      color={statusColorMap[finance.status]}
-                      variant="flat"
-                      size="sm"
-                      className="text-xs"
-                    >
-                      {FINANCE_STATUS_LABELS[finance.status]}
-                    </Chip>
-                  </TableCell>
-                  
-                  <TableCell className="px-4">
-                    <div className="flex items-center gap-1">
-                      <Button
-                        isIconOnly
+      <ScrollArea>
+        <Table>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Fecha</Table.Th>
+              <Table.Th>Tipo</Table.Th>
+              <Table.Th>Descripción</Table.Th>
+              <Table.Th>Categoría</Table.Th>
+              <Table.Th>Monto</Table.Th>
+              <Table.Th>Estado</Table.Th>
+              <Table.Th>Acciones</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {finances.map((finance) => (
+              <Table.Tr key={finance._id}>
+                <Table.Td>
+                  <Text size="sm">
+                    {formatDate(finance.date)}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Badge
+                    color={typeColorMap[finance.type]}
+                    variant="light"
+                    size="sm"
+                    leftSection={finance.type === 'income' ? 
+                      <IconTrendingUp size={12} /> : 
+                      <IconTrendingDown size={12} />
+                    }
+                  >
+                    {FINANCE_TYPE_LABELS[finance.type]}
+                  </Badge>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" truncate>
+                    {finance.description}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Badge
+                    color={categoryColorMap[finance.category]}
+                    variant="light"
+                    size="sm"
+                  >
+                    {FINANCE_CATEGORY_LABELS[finance.category]}
+                  </Badge>
+                </Table.Td>
+                <Table.Td>
+                  <Text 
+                    size="sm" 
+                    fw={600}
+                    c={finance.type === 'income' ? 'green' : 'red'}
+                  >
+                    {finance.type === 'income' ? '+' : '-'}{formatCurrency(finance.amount)}
+                  </Text>
+                </Table.Td>
+                <Table.Td>
+                  <Badge
+                    color={statusColorMap[finance.status]}
+                    variant="light"
+                    size="sm"
+                  >
+                    {FINANCE_STATUS_LABELS[finance.status]}
+                  </Badge>
+                </Table.Td>
+                <Table.Td>
+                  <Group gap="xs">
+                    <Tooltip label="Ver">
+                      <ActionIcon
                         variant="light"
                         size="sm"
-                        className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                        onPress={() => onView(finance)}
+                        color="gray"
+                        onClick={() => onView(finance)}
                       >
-                        <EyeIcon className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        isIconOnly
+                        <IconEye size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Editar">
+                      <ActionIcon
                         variant="light"
                         size="sm"
-                        className={finance.isSystemGenerated
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }
-                        onPress={() => !finance.isSystemGenerated && onEdit(finance)}
-                        isDisabled={finance.isSystemGenerated}
+                        color="gray"
+                        onClick={() => onEdit(finance)}
                       >
-                        <PencilIcon className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        isIconOnly
+                        <IconEdit size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Eliminar">
+                      <ActionIcon
                         variant="light"
                         size="sm"
-                        className={finance.isSystemGenerated
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
-                        }
-                        onPress={() => !finance.isSystemGenerated && onDelete(finance._id)}
-                        isDisabled={finance.isSystemGenerated}
+                        color="red"
+                        onClick={() => onDelete(finance._id)}
                       >
-                        <TrashIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </ScrollArea>
     );
   };
 
   return (
-    <div className="w-full">
-      {/* Toggle de vista minimalista */}
-      <div className="hidden lg:flex justify-end mb-4">
-        <div className="flex items-center border border-gray-200 rounded-lg p-1 bg-white">
+    <Stack gap="md">
+      {/* Toggle de vista */}
+      <Group justify="flex-end" className="hidden lg:flex">
+        <Button.Group>
           <Button
             size="sm"
-            variant="light"
-            className={`px-3 py-1 text-xs rounded-md transition-colors ${
-              viewMode === 'grid' 
-                ? 'bg-gray-900 text-white' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-            onPress={() => setViewMode('grid')}
-            startContent={<Squares2X2Icon className="w-3 h-3" />}
+            variant={viewMode === 'grid' ? 'filled' : 'light'}
+            leftSection={<IconGrid3x3 size={16} />}
+            onClick={() => setViewMode('grid')}
           >
             Grid
           </Button>
           <Button
             size="sm"
-            variant="light"
-            className={`px-3 py-1 text-xs rounded-md transition-colors ${
-              viewMode === 'table' 
-                ? 'bg-gray-900 text-white' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-            onPress={() => setViewMode('table')}
-            startContent={<TableCellsIcon className="w-3 h-3" />}
+            variant={viewMode === 'table' ? 'filled' : 'light'}
+            leftSection={<IconTable size={16} />}
+            onClick={() => setViewMode('table')}
           >
             Tabla
           </Button>
-        </div>
-      </div>
+        </Button.Group>
+      </Group>
 
-      {/* Contenido principal */}
-      <div className="w-full">
-        {viewMode === 'grid' ? <GridView /> : <TableView />}
-      </div>
-    </div>
+      {/* Vista actual */}
+      {viewMode === 'grid' ? <GridView /> : <TableView />}
+    </Stack>
   );
 }

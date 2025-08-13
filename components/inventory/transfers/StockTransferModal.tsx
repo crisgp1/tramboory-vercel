@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  PlusIcon,
-  TrashIcon,
-  ArrowRightIcon,
-  TruckIcon,
-  BuildingStorefrontIcon,
-  CheckIcon,
-  ExclamationCircleIcon
-} from "@heroicons/react/24/outline"
+  IconPlus,
+  IconTrash,
+  IconArrowRight,
+  IconTruck,
+  IconShoppingBag,
+  IconCheck,
+  IconExclamationCircle
+} from "@tabler/icons-react"
 import toast from "react-hot-toast"
-import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
+import { Modal, Stack, Card, TextInput, Textarea, Select, Button, Group, Text, Title, NumberInput, Alert } from '@mantine/core'
 
 interface TransferItem {
   productId: string
@@ -236,327 +236,256 @@ export default function StockTransferModal({
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={isOpen}
       onClose={onClose}
-      title={getTitle()}
-      subtitle={getSubtitle()}
-      icon={TruckIcon}
-      size="lg"
-      footer={
-        <ModalFooter>
-          <div>
-            {!isReadOnly && (!formData.fromLocation || !formData.toLocation || formData.items.length === 0) && (
-              <p className="text-red-600 text-sm">Completa todos los campos requeridos</p>
-            )}
-          </div>
-          
-          <ModalActions>
-            <ModalButton
-              onClick={onClose}
-              variant="secondary"
-            >
-              {isReadOnly ? 'Cerrar' : 'Cancelar'}
-            </ModalButton>
-            
-            {!isReadOnly && (
-              <ModalButton
-                onClick={handleSubmit}
-                disabled={loading || !formData.fromLocation || !formData.toLocation || formData.items.length === 0}
-                loading={loading}
-                variant="primary"
-              >
-                {mode === 'create' ? 'Crear Transferencia' : 'Actualizar Transferencia'}
-              </ModalButton>
-            )}
-          </ModalActions>
-        </ModalFooter>
+      title={
+        <Stack gap="xs">
+          <Title order={3}>{getTitle()}</Title>
+          {getSubtitle() && <Text c="dimmed" size="sm">{getSubtitle()}</Text>}
+        </Stack>
       }
+      size="xl"
+      styles={{
+        content: {
+          maxHeight: '95vh',
+          overflow: 'hidden'
+        },
+        body: {
+          maxHeight: 'calc(95vh - 120px)',
+          overflow: 'auto',
+          padding: '1rem'
+        }
+      }}
     >
       {/* Success Message */}
       {showSuccess && (
-        <div className="glass-card p-4 bg-green-50/80 border border-green-200/50 mb-6">
-          <div className="flex items-center">
-            <CheckIcon className="w-5 h-5 text-green-500 mr-3" />
-            <p className="text-green-700 font-medium">
-              Transferencia procesada exitosamente
-            </p>
-          </div>
-        </div>
+        <Alert 
+          icon={<IconCheck size={16} />} 
+          title="¡Éxito!" 
+          color="green"
+          mb="lg"
+        >
+          Transferencia procesada exitosamente
+        </Alert>
       )}
 
-      <div className="space-y-6">
+      <Stack gap="lg">
         
         {/* Configuración de Ubicaciones */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <BuildingStorefrontIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Configuración de Transferencia</h4>
-          </div>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconShoppingBag size={20} />
+              Configuración de Transferencia
+            </Group>
+          </Title>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Ubicación de Origen *
-              </label>
-              <select
-                value={formData.fromLocation}
-                onChange={(e) => handleInputChange('fromLocation', e.target.value)}
-                disabled={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-              >
-                <option value="">Seleccionar origen</option>
-                {AVAILABLE_LOCATIONS.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <Group grow align="flex-end">
+            <Select
+              label="Ubicación de Origen"
+              placeholder="Seleccionar origen"
+              value={formData.fromLocation}
+              onChange={(value) => handleInputChange('fromLocation', value)}
+              disabled={isReadOnly}
+              data={AVAILABLE_LOCATIONS.map((location) => ({
+                value: location.id,
+                label: location.name
+              }))}
+              required
+            />
 
-            <div className="flex justify-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <ArrowRightIcon className="w-6 h-6 text-green-600" />
+            <div style={{ display: 'flex', justifyContent: 'center', alignSelf: 'flex-end', paddingBottom: '8px' }}>
+              <div style={{ width: 48, height: 48, backgroundColor: '#e8f5e8', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconArrowRight size={24} color="#4ade80" />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Ubicación de Destino *
-              </label>
-              <select
-                value={formData.toLocation}
-                onChange={(e) => handleInputChange('toLocation', e.target.value)}
-                disabled={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-              >
-                <option value="">Seleccionar destino</option>
-                {AVAILABLE_LOCATIONS.filter(loc => loc.id !== formData.fromLocation).map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+            <Select
+              label="Ubicación de Destino"
+              placeholder="Seleccionar destino"
+              value={formData.toLocation}
+              onChange={(value) => handleInputChange('toLocation', value)}
+              disabled={isReadOnly}
+              data={AVAILABLE_LOCATIONS.filter(loc => loc.id !== formData.fromLocation).map((location) => ({
+                value: location.id,
+                label: location.name
+              }))}
+              required
+            />
+          </Group>
 
           {mode !== 'create' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Estado
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  disabled={isReadOnly}
-                  className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${
-                    isReadOnly ? 'opacity-60' : ''
-                  }`}
-                >
-                  {Object.entries(statusConfig).map(([key, config]) => (
-                    <option key={key} value={key}>
-                      {config.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <Group grow align="flex-start" mt="md">
+              <Select
+                label="Estado"
+                value={formData.status}
+                onChange={(value) => handleInputChange('status', value)}
+                disabled={isReadOnly}
+                data={Object.entries(statusConfig).map(([key, config]) => ({
+                  value: key,
+                  label: config.label
+                }))}
+              />
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Entrega Estimada
-                </label>
-                <input
-                  type="date"
-                  value={formData.estimatedDelivery || ''}
-                  onChange={(e) => handleInputChange('estimatedDelivery', e.target.value)}
-                  readOnly={isReadOnly}
-                  className={`glass-input w-full px-4 py-3 text-slate-800 ${
-                    isReadOnly ? 'opacity-60' : ''
-                  }`}
-                />
-              </div>
-            </div>
+              <TextInput
+                type="date"
+                label="Entrega Estimada"
+                value={formData.estimatedDelivery || ''}
+                onChange={(e) => handleInputChange('estimatedDelivery', e.currentTarget.value)}
+                readOnly={isReadOnly}
+              />
+            </Group>
           )}
-        </div>
+        </Card>
 
         {/* Productos a Transferir */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <TruckIcon className="w-5 h-5 text-green-600" />
-              </div>
-              <h4 className="font-semibold text-slate-800">Productos a Transferir</h4>
-            </div>
+        <Card withBorder p="lg">
+          <Group justify="space-between" mb="md">
+            <Title order={4}>
+              <Group gap="xs">
+                <IconTruck size={20} />
+                Productos a Transferir
+              </Group>
+            </Title>
             
             {!isReadOnly && formData.fromLocation && (
-              <ModalButton
+              <Button
                 onClick={handleAddItem}
                 size="sm"
-                variant="primary"
+                leftSection={<IconPlus size={16} />}
               >
-                <PlusIcon className="w-4 h-4" />
                 Agregar Producto
-              </ModalButton>
+              </Button>
             )}
-          </div>
+          </Group>
 
-          <div className="space-y-4">
+          <Stack gap="md">
             {formData.items.map((item, index) => (
-              <div key={index} className="glass-card p-4 border border-slate-200/50">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Producto
-                    </label>
-                    <select
-                      value={item.productId}
-                      onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                      disabled={isReadOnly}
-                      className={`glass-input w-full px-3 py-2 text-slate-800 appearance-none cursor-pointer ${
-                        isReadOnly ? 'opacity-60' : ''
-                      }`}
+              <Card key={index} withBorder p="md">
+                <Group grow align="flex-end">
+                  <Select
+                    label="Producto"
+                    value={item.productId}
+                    onChange={(value) => handleItemChange(index, 'productId', value || '')}
+                    disabled={isReadOnly}
+                    data={availableProducts.map((stockItem) => ({
+                      value: stockItem.product.id,
+                      label: `${stockItem.product.name} - Disponible: ${stockItem.available_quantity} ${stockItem.unit}`
+                    }))}
+                    placeholder="Seleccionar producto"
+                    style={{ flex: 2 }}
+                  />
+
+                  <NumberInput
+                    label="Cantidad"
+                    min={0}
+                    max={item.availableQuantity}
+                    step={0.01}
+                    value={item.quantity}
+                    onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
+                    readOnly={isReadOnly}
+                    description={item.availableQuantity > 0 ? `Disponible: ${item.availableQuantity} ${item.unit}` : undefined}
+                  />
+
+                  <TextInput
+                    label="Unidad"
+                    value={item.unit}
+                    readOnly
+                  />
+
+                  {!isReadOnly && (
+                    <Button
+                      onClick={() => handleRemoveItem(index)}
+                      color="red"
+                      size="sm"
+                      style={{ alignSelf: 'flex-end' }}
                     >
-                      <option value="">Seleccionar producto</option>
-                      {availableProducts.map((stockItem) => (
-                        <option key={stockItem.product.id} value={stockItem.product.id}>
-                          {stockItem.product.name} - Disponible: {stockItem.available_quantity} {stockItem.unit}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Cantidad
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={item.availableQuantity}
-                      step="0.01"
-                      value={item.quantity}
-                      onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                      readOnly={isReadOnly}
-                      className={`glass-input w-full px-3 py-2 text-slate-800 ${
-                        isReadOnly ? 'opacity-60' : ''
-                      }`}
-                    />
-                    {item.availableQuantity > 0 && (
-                      <p className="text-xs text-slate-500 mt-1">
-                        Disponible: {item.availableQuantity} {item.unit}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Unidad
-                    </label>
-                    <input
-                      type="text"
-                      value={item.unit}
-                      readOnly
-                      className="glass-input w-full px-3 py-2 text-slate-800 opacity-60"
-                    />
-                  </div>
-
-                  <div className="flex items-end">
-                    {!isReadOnly && (
-                      <ModalButton
-                        onClick={() => handleRemoveItem(index)}
-                        variant="danger"
-                        size="sm"
-                        className="w-full"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </ModalButton>
-                    )}
-                  </div>
-                </div>
+                      <IconTrash size={16} />
+                    </Button>
+                  )}
+                </Group>
 
                 {item.quantity > item.availableQuantity && item.availableQuantity > 0 && (
-                  <div className="mt-3 flex items-center text-red-600 text-sm">
-                    <ExclamationCircleIcon className="w-4 h-4 mr-2" />
+                  <Alert icon={<IconExclamationCircle size={16} />} color="red" mt="sm">
                     La cantidad excede el stock disponible
-                  </div>
+                  </Alert>
                 )}
-              </div>
+              </Card>
             ))}
 
             {formData.items.length === 0 && (
-              <div className="text-center py-8 text-slate-500">
+              <Text ta="center" py="xl" c="dimmed">
                 {isReadOnly ? 'No hay productos en esta transferencia' : 'Selecciona una ubicación de origen y agrega productos'}
-              </div>
+              </Text>
             )}
-          </div>
-        </div>
+          </Stack>
+        </Card>
 
         {/* Notas */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-              <BuildingStorefrontIcon className="w-5 h-5 text-purple-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Información Adicional</h4>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconShoppingBag size={20} />
+              Información Adicional
+            </Group>
+          </Title>
+
+          <Group grow align="flex-start" mb="md">
+            <TextInput
+              label="Solicitado por"
+              value={formData.requestedBy}
+              onChange={(e) => handleInputChange('requestedBy', e.currentTarget.value)}
+              readOnly={isReadOnly}
+              placeholder="Nombre de quien solicita"
+            />
+
+            <TextInput
+              type="date"
+              label="Fecha de Solicitud"
+              value={formData.requestedDate}
+              onChange={(e) => handleInputChange('requestedDate', e.currentTarget.value)}
+              readOnly={isReadOnly}
+            />
+          </Group>
+
+          <Textarea
+            label="Notas"
+            value={formData.notes || ''}
+            onChange={(e) => handleInputChange('notes', e.currentTarget.value)}
+            readOnly={isReadOnly}
+            rows={3}
+            placeholder="Notas adicionales sobre la transferencia..."
+          />
+        </Card>
+
+        {/* Footer Buttons */}
+        <Group justify="space-between" pt="lg">
+          <div>
+            {!isReadOnly && (!formData.fromLocation || !formData.toLocation || formData.items.length === 0) && (
+              <Text c="red" size="sm">Completa todos los campos requeridos</Text>
+            )}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Solicitado por
-              </label>
-              <input
-                type="text"
-                value={formData.requestedBy}
-                onChange={(e) => handleInputChange('requestedBy', e.target.value)}
-                readOnly={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-                placeholder="Nombre de quien solicita"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Fecha de Solicitud
-              </label>
-              <input
-                type="date"
-                value={formData.requestedDate}
-                onChange={(e) => handleInputChange('requestedDate', e.target.value)}
-                readOnly={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-3">
-                Notas
-              </label>
-              <textarea
-                value={formData.notes || ''}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                readOnly={isReadOnly}
-                rows={3}
-                className={`glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none ${
-                  isReadOnly ? 'opacity-60' : ''
-                }`}
-                placeholder="Notas adicionales sobre la transferencia..."
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+          
+          <Group>
+            <Button
+              variant="default"
+              onClick={onClose}
+            >
+              {isReadOnly ? 'Cerrar' : 'Cancelar'}
+            </Button>
+            
+            {!isReadOnly && (
+              <Button
+                onClick={handleSubmit}
+                disabled={loading || !formData.fromLocation || !formData.toLocation || formData.items.length === 0}
+                loading={loading}
+              >
+                {mode === 'create' ? 'Crear Transferencia' : 'Actualizar Transferencia'}
+              </Button>
+            )}
+          </Group>
+        </Group>
+      </Stack>
     </Modal>
   )
 }

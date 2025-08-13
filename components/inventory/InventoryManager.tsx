@@ -2,34 +2,38 @@
 
 import React, { useState } from "react"
 import {
-  Card,
-  CardBody,
+  Paper,
   Button,
   Tabs,
-  Tab,
   Badge,
-  Chip,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem
-} from "@heroui/react"
+  Menu,
+  Group,
+  Stack,
+  Title,
+  Text,
+  Grid,
+  Card,
+  ThemeIcon,
+  Center,
+  ActionIcon,
+  Loader
+} from "@mantine/core"
 import {
-  ArchiveBoxIcon,
-  CubeIcon,
-  TruckIcon,
-  ChartBarIcon,
-  ExclamationTriangleIcon,
-  PlusIcon,
-  AdjustmentsHorizontalIcon,
-  DocumentTextIcon,
-  QrCodeIcon,
-  ArrowsRightLeftIcon,
-  TagIcon,
-  CalendarIcon,
-  ChevronDownIcon,
-  MagnifyingGlassIcon
-} from "@heroicons/react/24/outline"
+  IconArchive,
+  IconBox,
+  IconTruck,
+  IconChartBar,
+  IconAlertTriangle,
+  IconPlus,
+  IconAdjustmentsHorizontal,
+  IconFileText,
+  IconQrcode,
+  IconArrowsLeftRight,
+  IconTag,
+  IconCalendar,
+  IconChevronDown,
+  IconSearch
+} from "@tabler/icons-react"
 import { useRole } from "@/hooks/useRole"
 import { useInventoryStats } from "@/hooks/useInventoryStats"
 import ProductManager from "./products/ProductManager"
@@ -61,7 +65,7 @@ export default function InventoryManager() {
       value: statsLoading ? "..." : totalProducts.toString(), 
       change: "", 
       trend: "neutral",
-      icon: CubeIcon,
+      icon: IconBox,
       color: "blue"
     },
     { 
@@ -69,24 +73,24 @@ export default function InventoryManager() {
       value: statsLoading ? "..." : lowStockItems.toString(), 
       change: "", 
       trend: lowStockItems > 0 ? "warning" : "neutral",
-      icon: ExclamationTriangleIcon,
-      color: "warning"
+      icon: IconAlertTriangle,
+      color: "orange"
     },
     { 
       label: "Valor Inventario", 
       value: statsLoading ? "..." : `$${totalValue.toLocaleString('es-CO', { minimumFractionDigits: 0 })}`, 
       change: "", 
       trend: "neutral",
-      icon: ChartBarIcon,
-      color: "success"
+      icon: IconChartBar,
+      color: "green"
     },
     { 
       label: "Proveedores", 
       value: statsLoading ? "..." : suppliersCount.toString(), 
       change: "", 
       trend: "neutral",
-      icon: TruckIcon,
-      color: "purple"
+      icon: IconTruck,
+      color: "grape"
     }
   ]
 
@@ -94,49 +98,49 @@ export default function InventoryManager() {
     {
       id: "stock",
       label: "Control de Stock",
-      icon: ArchiveBoxIcon,
+      icon: IconArchive,
       description: "Gestión de inventario y movimientos",
       component: <StockManager />
     },
     {
       id: "products",
       label: "Productos",
-      icon: CubeIcon,
+      icon: IconBox,
       description: "Catálogo de productos y configuración",
       component: <ProductManager />
     },
     {
       id: "purchase-orders",
       label: "Órdenes de Compra",
-      icon: DocumentTextIcon,
+      icon: IconFileText,
       description: "Gestión de órdenes de compra y proveedores",
       component: <PurchaseOrderManager />
     },
     {
       id: "batches",
       label: "Gestión de Lotes",
-      icon: CalendarIcon,
+      icon: IconCalendar,
       description: "Control de lotes y fechas de vencimiento",
       component: <BatchManager />
     },
     {
       id: "pricing",
       label: "Precios Escalonados",
-      icon: TagIcon,
+      icon: IconTag,
       description: "Configuración de precios por volumen",
       component: <PricingTierManager />
     },
     {
       id: "suppliers",
       label: "Proveedores",
-      icon: TruckIcon,
+      icon: IconTruck,
       description: "Gestión de proveedores y órdenes",
       component: <SupplierManager />
     },
     {
       id: "reports",
       label: "Reportes",
-      icon: ChartBarIcon,
+      icon: IconChartBar,
       description: "Análisis y reportes de inventario",
       component: <InventoryReports />
     }
@@ -175,25 +179,25 @@ export default function InventoryManager() {
     {
       key: "new-product",
       label: "Nuevo Producto",
-      icon: <PlusIcon className="w-4 h-4" />,
+      icon: <IconPlus size={16} />,
       action: () => setActiveTab("products")
     },
     {
       key: "new-purchase-order",
       label: "Nueva Orden de Compra",
-      icon: <DocumentTextIcon className="w-4 h-4" />,
+      icon: <IconFileText size={16} />,
       action: () => setActiveTab("purchase-orders")
     },
     {
       key: "new-batch",
       label: "Nuevo Lote",
-      icon: <CalendarIcon className="w-4 h-4" />,
+      icon: <IconCalendar size={16} />,
       action: () => setActiveTab("batches")
     },
     {
       key: "stock-transfer",
       label: "Transferir Stock",
-      icon: <ArrowsRightLeftIcon className="w-4 h-4" />,
+      icon: <IconArrowsLeftRight size={16} />,
       action: () => setIsTransferModalOpen(true)
     }
   ]
@@ -204,135 +208,121 @@ export default function InventoryManager() {
       key: "scan-lookup",
       label: "Buscar Producto",
       description: "Buscar información del producto",
-      icon: <MagnifyingGlassIcon className="w-4 h-4 text-blue-600" />,
+      icon: <IconSearch size={16} />,
       action: () => handleScannerOpen('lookup')
     },
     {
       key: "scan-inventory",
       label: "Conteo de Inventario",
       description: "Realizar conteo de inventario",
-      icon: <ArchiveBoxIcon className="w-4 h-4 text-green-600" />,
+      icon: <IconArchive size={16} />,
       action: () => handleScannerOpen('inventory')
     },
     {
       key: "scan-receiving",
       label: "Recepción de Productos",
       description: "Recibir productos en almacén",
-      icon: <TruckIcon className="w-4 h-4 text-purple-600" />,
+      icon: <IconTruck size={16} />,
       action: () => handleScannerOpen('receiving')
     }
   ]
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Professional Header */}
-      <div className="surface-card">
-        <div className="flex items-center justify-between p-6">
-          <div>
-            <h1 className="text-2xl font-bold mb-2" style={{fontSize: 'var(--text-2xl)'}}>
-              Inventario
-            </h1>
-            <p className="text-neutral-600" style={{fontSize: 'var(--text-sm)'}}>
+    <Stack gap="lg">
+      {/* Header */}
+      <Paper p="lg" withBorder>
+        <Group justify="space-between">
+          <Stack gap="xs">
+            <Title order={2}>Inventario</Title>
+            <Text c="dimmed" size="sm">
               Control inteligente de materiales, equipos y suministros
-            </p>
-          </div>
-          <button
+            </Text>
+          </Stack>
+          <Button
+            leftSection={<IconPlus size={16} />}
             onClick={() => setActiveTab("products")}
-            className="btn-primary"
           >
-            <PlusIcon className="icon-base" />
             Nuevo Producto
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Group>
+      </Paper>
 
-      {/* Professional Statistics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4" style={{gap: 'var(--space-4)'}}>
+      {/* Statistics Grid */}
+      <Grid>
         {stats.map((stat, index) => {
           const Icon = stat.icon
-          const statusClass = 
-            stat.color === 'blue' ? 'status-info' :
-            stat.color === 'warning' ? 'status-warning' :
-            stat.color === 'success' ? 'status-success' :
-            stat.color === 'purple' ? 'status-neutral' : 'status-neutral'
+          const colorMap = {
+            'blue': 'blue',
+            'orange': 'orange', 
+            'green': 'green',
+            'grape': 'grape'
+          }
+          const mantineColor = colorMap[stat.color as keyof typeof colorMap] || 'gray'
           
           return (
-            <div key={index} className={`metric-card surface-card-interactive ${statusClass}`}>
-              <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-                <div className={`rounded-xl flex items-center justify-center motion-safe ${
-                  stat.color === 'blue' ? 'bg-blue-500' :
-                  stat.color === 'warning' ? 'bg-orange-500' :
-                  stat.color === 'success' ? 'bg-green-500' :
-                  stat.color === 'purple' ? 'bg-purple-500' : 'bg-slate-500'
-                }`} style={{
-                  width: 'var(--space-10)',
-                  height: 'var(--space-10)',
-                  borderRadius: 'var(--radius-lg)'
-                }}>
-                  <Icon className="icon-base text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold mb-1 truncate" style={{
-                    fontSize: 'var(--text-lg)',
-                    marginBottom: 'var(--space-1)'
-                  }}>
-                    {stat.value}
-                  </div>
-                  <div className="text-neutral-600 uppercase tracking-wider truncate" style={{
-                    fontSize: 'var(--text-xs)'
-                  }}>
-                    {stat.label}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Grid.Col key={index} span={{ base: 6, md: 3 }}>
+              <Card withBorder p="md">
+                <Group>
+                  <ThemeIcon size="lg" radius="md" color={mantineColor}>
+                    <Icon size={24} />
+                  </ThemeIcon>
+                  <Stack gap={0}>
+                    <Text size="xl" fw={600}>
+                      {stat.value}
+                    </Text>
+                    <Text size="xs" c="dimmed" tt="uppercase">
+                      {stat.label}
+                    </Text>
+                  </Stack>
+                </Group>
+              </Card>
+            </Grid.Col>
           )
         })}
-      </div>
+      </Grid>
 
-      {/* Professional Main Content */}
-      <div className="surface-card overflow-hidden">
-        <div style={{padding: 'var(--space-6)'}}>
-          {loading ? (
-            <div className="flex flex-col justify-center items-center" style={{padding: 'var(--space-20) 0'}}>
-              <div className="loading-spinner" style={{marginBottom: 'var(--space-6)'}}></div>
-              <p className="text-neutral-600 font-medium" style={{fontSize: 'var(--text-base)'}}>Cargando inventario...</p>
-            </div>
-          ) : (
-            <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--space-6)'}}>
-              {/* Professional Tab Navigation */}
-              <div className="flex flex-wrap border rounded-xl surface-elevated" style={{
-                gap: 'var(--space-2)',
-                padding: 'var(--space-2)',
-                borderRadius: 'var(--radius-xl)',
-                border: `0.0625rem solid var(--border-default)`
-              }}>
+      {/* Main Content */}
+      <Paper withBorder>
+        {loading ? (
+          <Center p="xl" style={{ minHeight: 400 }}>
+            <Stack align="center" gap="sm">
+              <Loader size="lg" />
+              <Text c="dimmed">Cargando inventario...</Text>
+            </Stack>
+          </Center>
+        ) : (
+          <Stack gap="lg" p="lg">
+            {/* Tab Navigation */}
+            <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'stock')}>
+              <Tabs.List>
                 {filteredTabs.map((tab) => {
                   const Icon = tab.icon
-                  const isActive = activeTab === tab.id
                   return (
-                    <button
+                    <Tabs.Tab
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`nav-tab ${isActive ? 'active' : ''}`}
+                      value={tab.id}
+                      leftSection={<Icon size={16} />}
                     >
-                      <Icon className="icon-base" />
-                      <span className="whitespace-nowrap">{tab.label}</span>
-                    </button>
+                      {tab.label}
+                    </Tabs.Tab>
                   )
                 })}
-              </div>
+              </Tabs.List>
               
               {/* Tab Content */}
-              <div style={{minHeight: '25rem'}}>
-                {filteredTabs.find(tab => tab.id === activeTab)?.component}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+              {filteredTabs.map((tab) => (
+                <Tabs.Panel key={tab.id} value={tab.id} pt="lg">
+                  <div style={{ minHeight: 400 }}>
+                    {tab.component}
+                  </div>
+                </Tabs.Panel>
+              ))}
+            </Tabs>
+          </Stack>
+        )}
+      </Paper>
 
-      {/* Professional Modals */}
+      {/* Modals */}
       <BarcodeScanner
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
@@ -353,6 +343,6 @@ export default function InventoryManager() {
           setIsTransferModalOpen(false)
         }}
       />
-    </div>
+    </Stack>
   )
 }

@@ -2,21 +2,17 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  BuildingOffice2Icon,
-  UserIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  CurrencyDollarIcon,
-  CalendarDaysIcon,
-  StarIcon,
-  PlusIcon,
-  PencilIcon,
-  EyeIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline'
-import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid'
+  IconBuilding,
+  IconUser,
+  IconMail,
+  IconPhone,
+  IconCurrencyDollar,
+  IconCalendar,
+  IconStar,
+  IconAlertTriangle
+} from '@tabler/icons-react'
 import toast from "react-hot-toast"
-import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
+import { Modal, Stack, Card, TextInput, Textarea, Select, Checkbox, Button, Group, Text, Title, NumberInput } from '@mantine/core'
 
 interface Supplier {
   _id?: string
@@ -273,426 +269,391 @@ export default function SupplierModal({ isOpen, onClose, supplier, mode, onSucce
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={isOpen}
       onClose={onClose}
-      title={getTitle()}
-      subtitle={getSubtitle()}
-      icon={BuildingOffice2Icon}
-      size="lg"
-      footer={
-        <ModalFooter>
-          <div></div>
-          <ModalActions>
-            <ModalButton
-              onClick={onClose}
-              variant="secondary"
-            >
-              {isReadOnly ? 'Cerrar' : 'Cancelar'}
-            </ModalButton>
-            
-            {!isReadOnly && (
-              <ModalButton
-                onClick={handleSubmit}
-                disabled={loading || !formData.name || !formData.code || !formData.contactInfo?.email}
-                loading={loading}
-                variant="primary"
-              >
-                {mode === 'create' ? 'Crear Proveedor' : 'Actualizar Proveedor'}
-              </ModalButton>
-            )}
-          </ModalActions>
-        </ModalFooter>
+      title={
+        <Stack gap="xs">
+          <Title order={3}>{getTitle()}</Title>
+          {getSubtitle() && <Text c="dimmed" size="sm">{getSubtitle()}</Text>}
+        </Stack>
       }
+      size="xl"
+      styles={{
+        content: {
+          maxHeight: '95vh',
+          overflow: 'hidden'
+        },
+        body: {
+          maxHeight: 'calc(95vh - 120px)',
+          overflow: 'auto',
+          padding: '1rem'
+        }
+      }}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <Stack gap="lg">
         
         {/* Información básica */}
-        <div className="glass-card p-6 lg:col-span-1 xl:col-span-2">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <UserIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Información Básica</h4>
-          </div>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconUser size={20} />
+              Información Básica
+            </Group>
+          </Title>
             
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <div className="relative">
-                <BuildingOffice2Icon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="text"
-                  placeholder="Nombre del Proveedor *"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  readOnly={isReadOnly}
-                  className={`glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500 ${isReadOnly ? 'opacity-60' : ''}`}
-                />
-              </div>
-            </div>
+          <Stack gap="md">
+            <TextInput
+              label="Nombre del Proveedor"
+              placeholder="Nombre del Proveedor *"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.currentTarget.value)}
+              readOnly={isReadOnly}
+              leftSection={<IconBuilding size={16} />}
+              required
+            />
 
-            <div>
-              <div className="relative">
-                <BuildingOffice2Icon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="text"
-                  placeholder="Código del Proveedor *"
-                  value={formData.code}
-                  onChange={(e) => handleInputChange('code', e.target.value)}
-                  readOnly={isReadOnly}
-                  className={`glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500 ${isReadOnly ? 'opacity-60' : ''}`}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                disabled={isReadOnly}
-                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="isActive" className="text-sm font-medium text-slate-700">
-                Proveedor Activo
-              </label>
-            </div>
-
-            <div className="sm:col-span-2">
-              <textarea
-                placeholder="Descripción del proveedor..."
-                value={formData.description || ''}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={2}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--mantine-spacing-md)' }}>
+              <TextInput
+                label="Código del Proveedor"
+                placeholder="Código del Proveedor *"
+                value={formData.code}
+                onChange={(e) => handleInputChange('code', e.currentTarget.value)}
                 readOnly={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none ${isReadOnly ? 'opacity-60' : ''}`}
+                leftSection={<IconBuilding size={16} />}
+                required
+              />
+
+              <Checkbox
+                label="Proveedor Activo"
+                checked={formData.isActive}
+                onChange={(e) => handleInputChange('isActive', e.currentTarget.checked)}
+                disabled={isReadOnly}
+                style={{ alignSelf: 'flex-end' }}
               />
             </div>
 
-            <div className="sm:col-span-2">
-              <div className="relative">
-                <UserIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <select
-                  value={formData.userId || ''}
-                  onChange={(e) => handleInputChange('userId', e.target.value)}
-                  disabled={isReadOnly || loadingUsers}
-                  className={`glass-input w-full pl-12 pr-4 py-3 text-slate-800 appearance-none cursor-pointer ${isReadOnly || loadingUsers ? 'opacity-60' : ''}`}
-                >
-                  <option value="">Seleccionar usuario proveedor (opcional)</option>
-                  {providerUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.fullName} - {user.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {!isReadOnly && (
-                <p className="text-xs text-slate-500 mt-2">
-                  Vincula este proveedor con un usuario existente para darle acceso al portal
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+            <Textarea
+              label="Descripción"
+              placeholder="Descripción del proveedor..."
+              value={formData.description || ''}
+              onChange={(e) => handleInputChange('description', e.currentTarget.value)}
+              rows={2}
+              readOnly={isReadOnly}
+            />
+
+            <Select
+              label="Usuario Proveedor (Opcional)"
+              placeholder="Seleccionar usuario proveedor (opcional)"
+              value={formData.userId || ''}
+              onChange={(value) => handleInputChange('userId', value)}
+              disabled={isReadOnly || loadingUsers}
+              data={providerUsers.map((user) => ({
+                value: user.id,
+                label: `${user.fullName} - ${user.email}`
+              }))}
+              leftSection={<IconUser size={16} />}
+            />
+            {!isReadOnly && (
+              <Text size="xs" c="dimmed">
+                Vincula este proveedor con un usuario existente para darle acceso al portal
+              </Text>
+            )}
+          </Stack>
+        </Card>
 
         {/* Calificación General */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <StarIcon className="w-5 h-5 text-yellow-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Calificación</h4>
-          </div>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconStar size={20} />
+              Calificación
+            </Group>
+          </Title>
             
-          <div className="text-center mb-6">
-            <div className="text-3xl font-bold text-slate-800 mb-2">
+          <Stack align="center" mb="lg">
+            <Text size="xl" fw={700}>
               {getOverallRating()}
-            </div>
-            <div className="text-sm text-slate-600 mb-3">de 5.0</div>
-            <div className="flex justify-center">
+            </Text>
+            <Text size="sm" c="dimmed">de 5.0</Text>
+            <Group gap="xs">
               {[1, 2, 3, 4, 5].map((star) => (
-                <StarSolidIcon
+                <IconStar
                   key={star}
-                  className={`w-5 h-5 ${star <= Math.round(getOverallRating()) ? 'text-yellow-400' : 'text-slate-300'}`}
+                  size={16}
+                  style={{
+                    color: star <= Math.round(getOverallRating()) ? '#ffc107' : '#e9ecef',
+                    fill: star <= Math.round(getOverallRating()) ? '#ffc107' : 'none'
+                  }}
                 />
               ))}
-            </div>
-          </div>
+            </Group>
+          </Stack>
 
-          <div className="space-y-4">
+          <Stack gap="md">
             {[
               { key: 'quality', label: 'Calidad' },
               { key: 'delivery', label: 'Entrega' },
               { key: 'service', label: 'Servicio' },
               { key: 'price', label: 'Precio' }
             ].map(({ key, label }) => (
-              <div key={key} className="flex justify-between items-center">
-                <span className="text-sm text-slate-600 font-medium">{label}</span>
-                <div className="flex items-center gap-1">
+              <Group key={key} justify="space-between">
+                <Text size="sm" fw={500}>{label}</Text>
+                <Group gap="xs">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <button
+                    <Button
                       key={star}
-                      type="button"
+                      variant="transparent"
+                      size="xs"
+                      p={0}
                       onClick={() => !isReadOnly && handleNestedInputChange('rating', key, star)}
                       disabled={isReadOnly}
-                      className={`${!isReadOnly ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
+                      style={{ cursor: !isReadOnly ? 'pointer' : 'default' }}
                     >
-                      {star <= (formData.rating?.[key as keyof typeof formData.rating] || 0) ? (
-                        <StarSolidIcon className="w-4 h-4 text-yellow-400" />
-                      ) : (
-                        <StarIcon className="w-4 h-4 text-slate-300" />
-                      )}
-                    </button>
+                      <IconStar
+                        size={14}
+                        style={{
+                          color: star <= (formData.rating?.[key as keyof typeof formData.rating] || 0) ? '#ffc107' : '#e9ecef',
+                          fill: star <= (formData.rating?.[key as keyof typeof formData.rating] || 0) ? '#ffc107' : 'none'
+                        }}
+                      />
+                    </Button>
                   ))}
-                </div>
-              </div>
+                </Group>
+              </Group>
             ))}
-          </div>
-        </div>
+          </Stack>
+        </Card>
 
         {/* Información de contacto */}
-        <div className="glass-card p-6 lg:col-span-2 xl:col-span-3">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <EnvelopeIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Información de Contacto</h4>
-          </div>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconMail size={20} />
+              Información de Contacto
+            </Group>
+          </Title>
             
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Email *
-              </label>
-              <div className="relative">
-                <EnvelopeIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="email"
-                  placeholder="contacto@proveedor.com"
-                  value={formData.contactInfo?.email || ''}
-                  onChange={(e) => handleNestedInputChange('contactInfo', 'email', e.target.value)}
-                  readOnly={isReadOnly}
-                  className={`glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500 ${isReadOnly ? 'opacity-60' : ''}`}
-                />
-              </div>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--mantine-spacing-md)' }}>
+            <TextInput
+              label="Email"
+              type="email"
+              placeholder="contacto@proveedor.com"
+              value={formData.contactInfo?.email || ''}
+              onChange={(e) => handleNestedInputChange('contactInfo', 'email', e.currentTarget.value)}
+              readOnly={isReadOnly}
+              leftSection={<IconMail size={16} />}
+              required
+            />
             
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Teléfono
-              </label>
-              <div className="relative">
-                <PhoneIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="tel"
-                  placeholder="+52 55 1234 5678"
-                  value={formData.contactInfo?.phone || ''}
-                  onChange={(e) => handleNestedInputChange('contactInfo', 'phone', e.target.value)}
-                  readOnly={isReadOnly}
-                  className={`glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500 ${isReadOnly ? 'opacity-60' : ''}`}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Persona de Contacto
-              </label>
-              <div className="relative">
-                <UserIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="text"
-                  placeholder="Nombre del contacto principal"
-                  value={formData.contactInfo?.contactPerson || ''}
-                  onChange={(e) => handleNestedInputChange('contactInfo', 'contactPerson', e.target.value)}
-                  readOnly={isReadOnly}
-                  className={`glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500 ${isReadOnly ? 'opacity-60' : ''}`}
-                />
-              </div>
-            </div>
-
-            <div className="sm:col-span-2 lg:col-span-1">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Dirección
-              </label>
-              <textarea
-                placeholder="Dirección completa del proveedor..."
-                value={formData.contactInfo?.address || ''}
-                onChange={(e) => handleNestedInputChange('contactInfo', 'address', e.target.value)}
-                rows={1}
-                readOnly={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none ${isReadOnly ? 'opacity-60' : ''}`}
-              />
-            </div>
+            <TextInput
+              label="Teléfono"
+              type="tel"
+              placeholder="+52 55 1234 5678"
+              value={formData.contactInfo?.phone || ''}
+              onChange={(e) => handleNestedInputChange('contactInfo', 'phone', e.currentTarget.value)}
+              readOnly={isReadOnly}
+              leftSection={<IconPhone size={16} />}
+            />
           </div>
-        </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--mantine-spacing-md)' }}>
+            <TextInput
+              label="Persona de Contacto"
+              placeholder="Nombre del contacto principal"
+              value={formData.contactInfo?.contactPerson || ''}
+              onChange={(e) => handleNestedInputChange('contactInfo', 'contactPerson', e.currentTarget.value)}
+              readOnly={isReadOnly}
+              leftSection={<IconUser size={16} />}
+            />
+          </div>
+
+          <Textarea
+            label="Dirección"
+            placeholder="Dirección completa del proveedor..."
+            value={formData.contactInfo?.address || ''}
+            onChange={(e) => handleNestedInputChange('contactInfo', 'address', e.currentTarget.value)}
+            rows={2}
+            readOnly={isReadOnly}
+          />
+        </Card>
 
         {/* Términos de pago */}
-        <div className="glass-card p-6 lg:col-span-2 xl:col-span-2">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-              <CurrencyDollarIcon className="w-5 h-5 text-green-600" />
-            </div>
-            <h4 className="font-semibold text-slate-800">Términos de Pago</h4>
-          </div>
+        <Card withBorder p="lg">
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <IconCurrencyDollar size={20} />
+              Términos de Pago
+            </Group>
+          </Title>
             
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Días de Crédito
-              </label>
-              <div className="relative">
-                <CalendarDaysIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="number"
-                  placeholder="30"
-                  value={formData.paymentTerms.creditDays.toString()}
-                  onChange={(e) => handleNestedInputChange('paymentTerms', 'creditDays', parseInt(e.target.value) || 0)}
-                  readOnly={isReadOnly}
-                  className={`glass-input w-full pl-12 pr-16 py-3 text-slate-800 placeholder-slate-500 ${isReadOnly ? 'opacity-60' : ''}`}
-                />
-                <span className="text-slate-400 text-sm absolute right-3 top-1/2 transform -translate-y-1/2">días</span>
-              </div>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--mantine-spacing-md)' }}>
+            <NumberInput
+              label="Días de Crédito"
+              placeholder="30"
+              value={formData.paymentTerms.creditDays}
+              onChange={(value) => handleNestedInputChange('paymentTerms', 'creditDays', value || 0)}
+              readOnly={isReadOnly}
+              leftSection={<IconCalendar size={16} />}
+              suffix=" días"
+            />
             
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Método de Pago
-              </label>
-              <select
-                value={formData.paymentTerms.paymentMethod}
-                onChange={(e) => handleNestedInputChange('paymentTerms', 'paymentMethod', e.target.value)}
-                disabled={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer ${isReadOnly ? 'opacity-60' : ''}`}
-              >
-                <option value="cash">Efectivo</option>
-                <option value="credit">Crédito</option>
-                <option value="transfer">Transferencia</option>
-                <option value="check">Cheque</option>
-              </select>
-            </div>
+            <Select
+              label="Método de Pago"
+              value={formData.paymentTerms.paymentMethod}
+              onChange={(value) => handleNestedInputChange('paymentTerms', 'paymentMethod', value)}
+              disabled={isReadOnly}
+              data={[
+                { value: 'cash', label: 'Efectivo' },
+                { value: 'credit', label: 'Crédito' },
+                { value: 'transfer', label: 'Transferencia' },
+                { value: 'check', label: 'Cheque' }
+              ]}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Moneda
-              </label>
-              <div className="relative">
-                <CurrencyDollarIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
-                <input
-                  type="text"
-                  placeholder="MXN"
-                  value={formData.paymentTerms.currency}
-                  onChange={(e) => handleNestedInputChange('paymentTerms', 'currency', e.target.value)}
-                  readOnly={isReadOnly}
-                  className={`glass-input w-full pl-12 pr-4 py-3 text-slate-800 placeholder-slate-500 ${isReadOnly ? 'opacity-60' : ''}`}
-                />
-              </div>
-            </div>
-
-            <div className="sm:col-span-2 lg:col-span-3">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Términos de Descuento
-              </label>
-              <input
-                type="text"
-                placeholder="Ej: 2% por pago anticipado"
-                value={formData.paymentTerms.discountTerms || ''}
-                onChange={(e) => handleNestedInputChange('paymentTerms', 'discountTerms', e.target.value)}
-                readOnly={isReadOnly}
-                className={`glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 ${isReadOnly ? 'opacity-60' : ''}`}
-              />
-            </div>
+            <TextInput
+              label="Moneda"
+              placeholder="MXN"
+              value={formData.paymentTerms.currency}
+              onChange={(e) => handleNestedInputChange('paymentTerms', 'currency', e.currentTarget.value)}
+              readOnly={isReadOnly}
+              leftSection={<IconCurrencyDollar size={16} />}
+            />
           </div>
-        </div>
+
+          <TextInput
+            label="Términos de Descuento"
+            placeholder="Ej: 2% por pago anticipado"
+            value={formData.paymentTerms.discountTerms || ''}
+            onChange={(e) => handleNestedInputChange('paymentTerms', 'discountTerms', e.currentTarget.value)}
+            readOnly={isReadOnly}
+          />
+        </Card>
 
         {/* Estadísticas (solo en modo view) */}
         {mode === 'view' && supplier && (
           <>
-            <div className="glass-card p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <StarIcon className="w-5 h-5 text-blue-600" />
-                </div>
-                <h4 className="font-semibold text-slate-800">Estadísticas</h4>
-              </div>
+            <Card withBorder p="lg">
+              <Title order={4} mb="md">
+                <Group gap="xs">
+                  <IconStar size={20} />
+                  Estadísticas
+                </Group>
+              </Title>
                 
-              <div className="space-y-4">
-                <div className="glass-stat p-4">
-                  <span className="text-slate-600 block text-sm mb-2 font-medium">Total de Órdenes</span>
-                  <p className="font-bold text-blue-600 text-xl">{supplier.totalOrders || 0}</p>
-                </div>
-                <div className="glass-stat p-4">
-                  <span className="text-slate-600 block text-sm mb-2 font-medium">Total Gastado</span>
-                  <p className="font-bold text-green-600 text-xl">{formatCurrency(supplier.totalSpent || 0)}</p>
-                </div>
-                <div className="glass-stat p-4">
-                  <span className="text-slate-600 block text-sm mb-2 font-medium">Última Orden</span>
-                  <p className="font-semibold text-slate-800">
+              <Stack gap="md">
+                <Card withBorder p="md">
+                  <Text size="sm" c="dimmed" mb="xs">Total de Órdenes</Text>
+                  <Text size="xl" fw={700} c="blue">{supplier.totalOrders || 0}</Text>
+                </Card>
+                <Card withBorder p="md">
+                  <Text size="sm" c="dimmed" mb="xs">Total Gastado</Text>
+                  <Text size="xl" fw={700} c="green">{formatCurrency(supplier.totalSpent || 0)}</Text>
+                </Card>
+                <Card withBorder p="md">
+                  <Text size="sm" c="dimmed" mb="xs">Última Orden</Text>
+                  <Text fw={600}>
                     {supplier.lastOrderDate ? formatDate(supplier.lastOrderDate) : 'Sin órdenes'}
-                  </p>
-                </div>
-              </div>
-            </div>
+                  </Text>
+                </Card>
+              </Stack>
+            </Card>
             
             {/* Información de Penalizaciones */}
             {supplier.penaltyData && (
-              <div className="glass-card p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <ExclamationTriangleIcon className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <h4 className="font-semibold text-slate-800">Penalizaciones</h4>
-                </div>
+              <Card withBorder p="lg">
+                <Title order={4} mb="md">
+                  <Group gap="xs">
+                    <IconAlertTriangle size={20} />
+                    Penalizaciones
+                  </Group>
+                </Title>
                   
-                <div className="space-y-4">
-                  <div className={`glass-stat p-4 ${
-                    supplier.penaltyData.totalPoints > 50 ? 'bg-red-50/80' :
-                    supplier.penaltyData.totalPoints > 30 ? 'bg-orange-50/80' :
-                    supplier.penaltyData.totalPoints > 0 ? 'bg-yellow-50/80' :
-                    'bg-green-50/80'
-                  }`}>
-                    <span className="text-slate-600 block text-sm mb-2 font-medium">Puntos Totales</span>
-                    <p className={`font-bold text-xl ${
-                      supplier.penaltyData.totalPoints > 50 ? 'text-red-600' :
-                      supplier.penaltyData.totalPoints > 30 ? 'text-orange-600' :
-                      supplier.penaltyData.totalPoints > 0 ? 'text-yellow-600' :
-                      'text-green-600'
-                    }`}>
+                <Stack gap="md">
+                  <Card withBorder p="md" 
+                    style={{
+                      backgroundColor: 
+                        supplier.penaltyData.totalPoints > 50 ? '#fef2f2' :
+                        supplier.penaltyData.totalPoints > 30 ? '#fff7ed' :
+                        supplier.penaltyData.totalPoints > 0 ? '#fefce8' :
+                        '#f0fdf4'
+                    }}
+                  >
+                    <Text size="sm" c="dimmed" mb="xs">Puntos Totales</Text>
+                    <Text size="xl" fw={700} c={
+                      supplier.penaltyData.totalPoints > 50 ? 'red' :
+                      supplier.penaltyData.totalPoints > 30 ? 'orange' :
+                      supplier.penaltyData.totalPoints > 0 ? 'yellow' :
+                      'green'
+                    }>
                       {supplier.penaltyData.totalPoints} pts
-                    </p>
-                  </div>
+                    </Text>
+                  </Card>
                   
-                  <div className="glass-stat p-4">
-                    <span className="text-slate-600 block text-sm mb-2 font-medium">Penalizaciones Activas</span>
-                    <p className="font-bold text-slate-800 text-xl">{supplier.penaltyData.activePenalties}</p>
-                  </div>
+                  <Card withBorder p="md">
+                    <Text size="sm" c="dimmed" mb="xs">Penalizaciones Activas</Text>
+                    <Text size="xl" fw={700}>{supplier.penaltyData.activePenalties}</Text>
+                  </Card>
                   
                   {supplier.penaltyData.lastPenaltyDate && (
-                    <div className="glass-stat p-4">
-                      <span className="text-slate-600 block text-sm mb-2 font-medium">Última Penalización</span>
-                      <p className="font-semibold text-slate-800">
+                    <Card withBorder p="md">
+                      <Text size="sm" c="dimmed" mb="xs">Última Penalización</Text>
+                      <Text fw={600}>
                         {formatDate(supplier.penaltyData.lastPenaltyDate)}
-                      </p>
-                    </div>
+                      </Text>
+                    </Card>
                   )}
                   
-                  <div className={`text-center py-3 px-4 rounded-xl text-sm font-medium ${
-                    supplier.penaltyData.totalPoints > 50 ? 'bg-red-100/80 text-red-800' :
-                    supplier.penaltyData.totalPoints > 30 ? 'bg-orange-100/80 text-orange-800' :
-                    supplier.penaltyData.totalPoints > 0 ? 'bg-yellow-100/80 text-yellow-800' :
-                    'bg-green-100/80 text-green-800'
-                  }`}>
-                    {supplier.penaltyData.totalPoints > 50 ? 'Riesgo Alto' :
-                     supplier.penaltyData.totalPoints > 30 ? 'Riesgo Medio' :
-                     supplier.penaltyData.totalPoints > 0 ? 'Riesgo Bajo' :
-                     'Sin Riesgo'}
-                  </div>
-                </div>
-              </div>
+                  <Card withBorder p="md" ta="center" 
+                    style={{
+                      backgroundColor: 
+                        supplier.penaltyData.totalPoints > 50 ? '#fef2f2' :
+                        supplier.penaltyData.totalPoints > 30 ? '#fff7ed' :
+                        supplier.penaltyData.totalPoints > 0 ? '#fefce8' :
+                        '#f0fdf4'
+                    }}
+                  >
+                    <Text fw={500} c={
+                      supplier.penaltyData.totalPoints > 50 ? 'red' :
+                      supplier.penaltyData.totalPoints > 30 ? 'orange' :
+                      supplier.penaltyData.totalPoints > 0 ? 'yellow' :
+                      'green'
+                    }>
+                      {supplier.penaltyData.totalPoints > 50 ? 'Riesgo Alto' :
+                       supplier.penaltyData.totalPoints > 30 ? 'Riesgo Medio' :
+                       supplier.penaltyData.totalPoints > 0 ? 'Riesgo Bajo' :
+                       'Sin Riesgo'}
+                    </Text>
+                  </Card>
+                </Stack>
+              </Card>
             )}
           </>
         )}
-      </div>
+
+        {/* Footer Buttons */}
+        <Group justify="space-between" pt="lg">
+          <div></div>
+          
+          <Group>
+            <Button
+              variant="default"
+              onClick={onClose}
+            >
+              {isReadOnly ? 'Cerrar' : 'Cancelar'}
+            </Button>
+            
+            {!isReadOnly && (
+              <Button
+                onClick={handleSubmit}
+                disabled={loading || !formData.name || !formData.code || !formData.contactInfo?.email}
+                loading={loading}
+              >
+                {mode === 'create' ? 'Crear Proveedor' : 'Actualizar Proveedor'}
+              </Button>
+            )}
+          </Group>
+        </Group>
+      </Stack>
     </Modal>
   )
 }

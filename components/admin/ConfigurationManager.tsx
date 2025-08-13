@@ -3,24 +3,23 @@
 import React, { useState } from 'react';
 import { useRole } from '@/hooks/useRole';
 import {
-  Card,
-  CardBody
-} from '@heroui/react';
-import { PrimaryButton } from '@/components/shared/ui';
+  Paper,
+  Title,
+  Text,
+  Stack,
+  Tabs,
+  Center,
+  Loader,
+  ThemeIcon
+} from '@mantine/core';
 import {
-  CubeIcon,
-  SparklesIcon,
-  CakeIcon,
-  Cog6ToothIcon,
-  BuildingStorefrontIcon
-} from '@heroicons/react/24/outline';
-import {
-  CubeIcon as CubeSolidIcon,
-  SparklesIcon as SparklesSolidIcon,
-  CakeIcon as CakeSolidIcon,
-  Cog6ToothIcon as CogSolidIcon,
-  BuildingStorefrontIcon as BuildingSolidIcon
-} from '@heroicons/react/24/solid';
+  IconBox,
+  IconSparkles,
+  IconCake,
+  IconSettings,
+  IconBuildingStore,
+  IconAlertTriangle
+} from '@tabler/icons-react';
 import PackageManager from './PackageManager';
 import FoodOptionsManager from './FoodOptionsManager';
 import ExtraServicesManager from './ExtraServicesManager';
@@ -31,36 +30,31 @@ const configTabs = [
   {
     id: 'packages',
     label: 'Paquetes',
-    icon: CubeIcon,
-    iconSolid: CubeSolidIcon,
+    icon: IconBox,
     description: 'Gestiona los paquetes de fiestas disponibles'
   },
   {
     id: 'food',
     label: 'Alimentos',
-    icon: CakeIcon,
-    iconSolid: CakeSolidIcon,
+    icon: IconCake,
     description: 'Configura opciones de comida y bebidas'
   },
   {
     id: 'extras',
     label: 'Servicios Extras',
-    icon: SparklesIcon,
-    iconSolid: SparklesSolidIcon,
+    icon: IconSparkles,
     description: 'Administra servicios adicionales'
   },
   {
     id: 'themes',
     label: 'Temas de Evento',
-    icon: BuildingStorefrontIcon,
-    iconSolid: BuildingSolidIcon,
+    icon: IconBuildingStore,
     description: 'Gestiona temas y decoraciones'
   },
   {
     id: 'system',
     label: 'Sistema',
-    icon: Cog6ToothIcon,
-    iconSolid: CogSolidIcon,
+    icon: IconSettings,
     description: 'Configuración general del sistema'
   }
 ];
@@ -71,29 +65,31 @@ export default function ConfigurationManager() {
 
   // Solo permitir acceso a administradores
   if (!isLoaded) {
-    return <div className="p-6">Cargando...</div>;
+    return (
+      <Center h={200}>
+        <Stack align="center" gap="sm">
+          <Loader size="lg" />
+          <Text c="dimmed">Cargando...</Text>
+        </Stack>
+      </Center>
+    );
   }
 
   if (!isAdmin) {
     return (
-      <div className="surface-card" style={{
-        maxWidth: '28rem',
-        margin: '0 auto',
-        marginTop: 'var(--space-8)',
-        padding: 'var(--space-6)',
-        textAlign: 'center'
-      }}>
-        <h3 style={{
-          fontSize: 'var(--text-lg)',
-          fontWeight: '600',
-          marginBottom: 'var(--space-2)'
-        }}>
-          Acceso Restringido
-        </h3>
-        <p className="text-neutral-600">
-          No tienes permisos para acceder a esta sección.
-        </p>
-      </div>
+      <Center h="60vh">
+        <Paper p="xl" radius="md" withBorder shadow="sm" style={{maxWidth: 400, width: '100%'}}>
+          <Stack align="center" gap="lg">
+            <ThemeIcon size="xl" radius="xl" color="red">
+              <IconAlertTriangle size={32} />
+            </ThemeIcon>
+            <Stack align="center" gap="xs">
+              <Title order={3}>Acceso Restringido</Title>
+              <Text c="dimmed" ta="center">No tienes permisos para acceder a esta sección.</Text>
+            </Stack>
+          </Stack>
+        </Paper>
+      </Center>
     );
   }
 
@@ -117,70 +113,38 @@ export default function ConfigurationManager() {
   const activeTabData = configTabs.find(tab => tab.id === activeTab);
 
   return (
-    <div className="w-full space-y-6 p-6">
-      {/* Professional Header */}
-      <Card className="bg-white border border-slate-200 shadow-sm">
-        <CardBody className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                Configuración del Sistema
-              </h1>
-              <p className="text-sm text-slate-600">
-                Administra todos los componentes de las reservas
-              </p>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+    <Stack gap="lg">
+      {/* Header */}
+      <Paper p="lg" withBorder>
+        <Stack gap="xs">
+          <Title order={2}>Configuración del Sistema</Title>
+          <Text c="dimmed">Administra todos los componentes de las reservas</Text>
+        </Stack>
+      </Paper>
 
-      {/* Nordic Navigation Tabs */}
-      <Card className="bg-white border border-slate-200 shadow-sm">
-        <CardBody className="p-0">
-          <div className="border-b border-slate-200">
-            <nav className="flex gap-1 px-6 pt-4" aria-label="Tabs">
-              {configTabs.map((tab) => {
-                const Icon = tab.icon;
-                const IconSolid = tab.iconSolid;
-                const isActive = activeTab === tab.id;
-                
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      px-4 py-3 text-sm font-medium transition-colors rounded-t-lg
-                      flex items-center gap-2
-                      ${
-                        isActive
-                          ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }
-                    `}
-                  >
-                    <div className={`
-                      w-5 h-5
-                      ${isActive ? 'text-blue-600' : 'text-slate-500'}
-                    `}>
-                      {isActive ? (
-                        <IconSolid className="icon-sm" />
-                      ) : (
-                        <Icon className="icon-sm" />
-                      )}
-                    </div>
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </CardBody>
-      </Card>
+      {/* Tabs */}
+      <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'packages')}>
+        <Tabs.List>
+          {configTabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <Tabs.Tab
+                key={tab.id}
+                value={tab.id}
+                leftSection={<Icon size={16} />}
+              >
+                {tab.label}
+              </Tabs.Tab>
+            );
+          })}
+        </Tabs.List>
 
-      {/* Nordic Tab Content */}
-      <div className="min-h-[600px] space-y-6">
-        {renderTabContent()}
-      </div>
-    </div>
+        <Tabs.Panel value={activeTab} pt="lg">
+          <div style={{ minHeight: 600 }}>
+            {renderTabContent()}
+          </div>
+        </Tabs.Panel>
+      </Tabs>
+    </Stack>
   );
 }

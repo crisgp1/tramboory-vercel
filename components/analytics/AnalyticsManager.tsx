@@ -3,35 +3,41 @@
 import React, { useState, useEffect } from "react"
 import {
   Card,
-  CardBody,
-  CardHeader,
+  Title,
+  Text,
   Button,
   Select,
-  SelectItem,
-  Chip,
-  Spinner,
+  Badge,
+  Loader,
   Divider,
-  Tab,
   Tabs,
   Progress,
-  Tooltip as HeroTooltip
-} from "@heroui/react"
+  Tooltip,
+  Paper,
+  Group,
+  Stack,
+  Grid,
+  Center,
+  ActionIcon,
+  RingProgress,
+  ThemeIcon
+} from "@mantine/core"
 import {
-  ChartBarIcon,
-  CurrencyDollarIcon,
-  CalendarDaysIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  ExclamationTriangleIcon,
-  ArrowDownTrayIcon,
-  PresentationChartLineIcon,
-  ChartPieIcon,
-  CalendarIcon,
-  BanknotesIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon
-} from "@heroicons/react/24/outline"
+  IconChartBar,
+  IconCurrencyDollar,
+  IconCalendarEvent,
+  IconTrendingUp,
+  IconTrendingDown,
+  IconAlertTriangle,
+  IconDownload,
+  IconPresentation,
+  IconChartPie,
+  IconCalendar,
+  IconCash,
+  IconClock,
+  IconCircleCheck,
+  IconCircleX
+} from "@tabler/icons-react"
 import AvailabilityCalendar from "@/components/admin/AvailabilityCalendar"
 import DayDetailsModal from "@/components/admin/DayDetailsModal"
 import {
@@ -41,7 +47,7 @@ import {
   PointElement,
   LineElement,
   BarElement,
-  Title,
+  Title as ChartTitle,
   Tooltip as ChartTooltip,
   Legend,
   ArcElement,
@@ -49,7 +55,7 @@ import {
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import { useRole } from "@/hooks/useRole"
-import toast from "react-hot-toast"
+import { notifications } from "@mantine/notifications"
 
 // Registrar componentes de Chart.js
 ChartJS.register(
@@ -58,7 +64,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
-  Title,
+  ChartTitle,
   ChartTooltip,
   Legend,
   ArcElement,
@@ -147,11 +153,19 @@ export default function AnalyticsManager() {
         const combinedData = combineAnalyticsData(financesData, reservationsData)
         setAnalyticsData(combinedData)
       } else {
-        toast.error("Error al cargar los datos de analytics")
+        notifications.show({
+          title: 'Error',
+          message: 'Error al cargar los datos de analytics',
+          color: 'red'
+        })
       }
     } catch (error) {
       console.error('Error fetching analytics:', error)
-      toast.error("Error al cargar los datos de analytics")
+      notifications.show({
+        title: 'Error',
+        message: 'Error al cargar los datos de analytics',
+        color: 'red'
+      })
     } finally {
       setLoading(false)
     }
@@ -254,11 +268,19 @@ export default function AnalyticsManager() {
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-        toast.success('Reporte exportado exitosamente')
+        notifications.show({
+          title: 'Éxito',
+          message: 'Reporte exportado exitosamente',
+          color: 'green'
+        })
       }
     } catch (error) {
       console.error('Error exporting report:', error)
-      toast.error('Error al exportar el reporte')
+      notifications.show({
+        title: 'Error',
+        message: 'Error al exportar el reporte',
+        color: 'red'
+      })
     }
   }
 
@@ -307,398 +329,288 @@ export default function AnalyticsManager() {
 
   if (!isAdmin && !isGerente) {
     return (
-      <div className="surface-card" style={{
-        maxWidth: '28rem',
-        margin: '0 auto',
-        marginTop: 'var(--space-8)',
-        padding: 'var(--space-6)',
-        textAlign: 'center'
-      }}>
-        <div style={{
-          width: 'var(--space-12)',
-          height: 'var(--space-12)',
-          backgroundColor: '#fee2e2',
-          borderRadius: 'var(--radius-full)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto var(--space-4)'
-        }}>
-          <ExclamationTriangleIcon className="icon-lg text-red-600" />
-        </div>
-        <h3 style={{
-          fontSize: 'var(--text-lg)',
-          fontWeight: '600',
-          marginBottom: 'var(--space-2)'
-        }}>
-          Acceso Restringido
-        </h3>
-        <p className="text-neutral-600">No tienes permisos para ver esta sección</p>
-      </div>
+      <Center h="60vh">
+        <Paper p="xl" radius="md" withBorder shadow="sm" style={{maxWidth: 400, width: '100%'}}>
+          <Stack align="center" gap="lg">
+            <ThemeIcon size="xl" radius="xl" color="red">
+              <IconAlertTriangle size={32} />
+            </ThemeIcon>
+            <Stack align="center" gap="xs">
+              <Title order={3}>Acceso Restringido</Title>
+              <Text c="dimmed" ta="center">No tienes permisos para ver esta sección</Text>
+            </Stack>
+          </Stack>
+        </Paper>
+      </Center>
     )
   }
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--space-6)'}}>
-      {/* Professional Header y controles */}
-      <div className="surface-card">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between" style={{padding: 'var(--space-6)'}}>
-          <div>
-            <h1 style={{
-              fontSize: 'var(--text-2xl)',
-              fontWeight: '600',
-              marginBottom: 'var(--space-1)'
-            }}>
-              Analytics
-            </h1>
-            <p className="text-neutral-600" style={{fontSize: 'var(--text-sm)'}}>
-              Centro de análisis y métricas del negocio
-            </p>
-          </div>
+    <Stack gap="lg">
+      {/* Header with controls */}
+      <Paper p="lg" withBorder>
+        <Group justify="space-between" align="flex-start">
+          <Stack gap="xs">
+            <Title order={2}>Analytics</Title>
+            <Text c="dimmed" size="sm">Centro de análisis y métricas del negocio</Text>
+          </Stack>
           
-          <div className="flex" style={{gap: 'var(--space-2)'}}>
+          <Group>
             <Select
-              selectedKeys={[dateRange]}
-              onSelectionChange={(keys) => setDateRange(Array.from(keys)[0] as string)}
-              className="min-w-[10rem]"
-              variant="bordered"
+              value={dateRange}
+              onChange={(value) => setDateRange(value || 'last30days')}
+              data={dateRanges.map(range => ({ value: range.key, label: range.label }))}
+              style={{ minWidth: 160 }}
               size="sm"
-            >
-              {dateRanges.map((range) => (
-                <SelectItem key={range.key}>{range.label}</SelectItem>
-              ))}
-            </Select>
+            />
             
-            <HeroTooltip content="Exportar reporte">
-              <button
-                className="btn-icon btn-icon-sm"
+            <Tooltip label="Exportar reporte">
+              <ActionIcon 
+                variant="light"
                 onClick={() => exportReport('pdf')}
               >
-                <ArrowDownTrayIcon className="icon-sm" />
-              </button>
-            </HeroTooltip>
-          </div>
-        </div>
-      </div>
+                <IconDownload size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        </Group>
+      </Paper>
 
-      {/* Professional Tabs Navigation */}
-      <div className="surface-card" style={{padding: '0'}}>
-        <div style={{
-          borderBottom: `0.0625rem solid var(--border-default)`
-        }}>
-          <nav className="flex" style={{
-            gap: 'var(--space-8)',
-            padding: '0 var(--space-6)'
-          }} aria-label="Tabs">
-            {[
-              { key: 'overview', icon: ChartBarIcon, label: 'Resumen General' },
-              { key: 'graphs', icon: PresentationChartLineIcon, label: 'Gráficos' },
-              { key: 'calendar', icon: CalendarIcon, label: 'Calendario' },
-              { key: 'distribution', icon: ChartPieIcon, label: 'Distribución' }
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = selectedTab === tab.key;
-              
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setSelectedTab(tab.key)}
-                  className={`nav-tab-vertical ${isActive ? 'active' : ''}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-2)',
-                    padding: 'var(--space-4) var(--space-1)',
-                    borderBottom: isActive ? `0.125rem solid var(--primary)` : '0.125rem solid transparent',
-                    fontWeight: '500',
-                    fontSize: 'var(--text-sm)',
-                    transition: 'var(--motion-fast)',
-                    color: isActive ? 'var(--foreground)' : 'var(--neutral-500)'
-                  }}
-                >
-                  <Icon className="icon-sm" />
-                  <span className="hidden sm:block">{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
+      {/* Tabs Navigation */}
+      <Tabs value={selectedTab} onChange={(value) => setSelectedTab(value || 'overview')}>
+        <Tabs.List>
+          <Tabs.Tab value="overview" leftSection={<IconChartBar size={16} />}>
+            Resumen General
+          </Tabs.Tab>
+          <Tabs.Tab value="graphs" leftSection={<IconPresentation size={16} />}>
+            Gráficos
+          </Tabs.Tab>
+          <Tabs.Tab value="calendar" leftSection={<IconCalendar size={16} />}>
+            Calendario
+          </Tabs.Tab>
+          <Tabs.Tab value="distribution" leftSection={<IconChartPie size={16} />}>
+            Distribución
+          </Tabs.Tab>
+        </Tabs.List>
 
-      {loading ? (
-        <div className="flex justify-center items-center" style={{height: '16rem'}}>
-          <div className="loading-spinner"></div>
-        </div>
-      ) : analyticsData ? (
-        <>
-          {/* Tab: Overview */}
-          {selectedTab === "overview" && (
-            <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--space-6)'}}>
-              {/* Professional KPIs Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4" style={{gap: 'var(--space-4)'}}>
-                <div className="metric-card status-success">
-                  <div className="flex items-center" style={{gap: 'var(--space-3)'}}>
-                    <div style={{
-                      width: 'var(--space-8)',
-                      height: 'var(--space-8)',
-                      backgroundColor: '#dcfce7',
-                      borderRadius: 'var(--radius-lg)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <CurrencyDollarIcon className="icon-base text-green-600" />
-                    </div>
-                    <div>
-                      <div style={{
-                        fontSize: 'var(--text-lg)',
-                        fontWeight: '500',
-                        marginBottom: 'var(--space-1)'
-                      }}>
+        <Tabs.Panel value="overview">
+          {loading ? (
+            <Center h={200}>
+              <Stack align="center" gap="sm">
+                <Loader size="lg" />
+                <Text c="dimmed">Cargando analytics...</Text>
+              </Stack>
+            </Center>
+          ) : analyticsData ? (
+          <Stack gap="lg">
+            {/* KPI Cards */}
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+                <Card withBorder>
+                  <Group>
+                    <ThemeIcon size="lg" radius="md" color="green">
+                      <IconCurrencyDollar size={24} />
+                    </ThemeIcon>
+                    <Stack gap={0}>
+                      <Text size="xl" fw={600}>
                         {formatCurrency(analyticsData.summary.totalRevenue)}
-                      </div>
-                      <div className="text-neutral-600" style={{
-                        fontSize: 'var(--text-xs)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                      }}>
+                      </Text>
+                      <Text size="xs" c="dimmed" tt="uppercase">
                         Ingresos Totales
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{
-                    marginTop: 'var(--space-2)',
-                    fontSize: 'var(--text-xs)',
-                    color: analyticsData.summary.monthlyGrowth >= 0 ? '#16a34a' : '#dc2626'
-                  }}>
+                      </Text>
+                    </Stack>
+                  </Group>
+                  <Text 
+                    size="xs" 
+                    c={analyticsData.summary.monthlyGrowth >= 0 ? 'green' : 'red'} 
+                    mt="sm"
+                  >
                     {formatPercentage(analyticsData.summary.monthlyGrowth)} vs mes anterior
-                  </div>
-                </div>
-
-                <Card className="border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardBody className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center">
-                          <CalendarDaysIcon className="w-6 h-6 text-blue-700" />
-                        </div>
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          className="bg-blue-100 text-blue-700"
-                        >
-                          {analyticsData.summary.completedEvents}
-                        </Chip>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Reservas</p>
-                        <p className="text-2xl font-bold text-foreground mt-1">
-                          {analyticsData.summary.totalReservations}
-                        </p>
-                        <div className="flex items-center gap-2 mt-3">
-                          <CheckCircleIcon className="w-4 h-4 text-green-600" />
-                          <span className="text-xs text-gray-600">{analyticsData.summary.completedEvents} completados</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardBody>
+                  </Text>
                 </Card>
+              </Grid.Col>
 
-                <Card className="border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardBody className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center">
-                          <ChartBarIcon className="w-6 h-6 text-purple-700" />
-                        </div>
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          className="bg-purple-100 text-purple-700"
-                        >
-                          Por evento
-                        </Chip>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Promedio</p>
-                        <p className="text-2xl font-bold text-foreground mt-1">
-                          {formatCurrency(analyticsData.summary.averageEventValue)}
-                        </p>
-                        <Progress 
-                          value={60} 
-                          size="sm" 
-                          color="secondary" 
-                          className="mt-3"
-                        />
-                      </div>
-                    </div>
-                  </CardBody>
+              <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+                <Card withBorder>
+                  <Group justify="space-between" mb="md">
+                    <ThemeIcon size="lg" radius="md" color="blue">
+                      <IconCalendarEvent size={24} />
+                    </ThemeIcon>
+                    <Badge color="blue" variant="light">
+                      {analyticsData.summary.completedEvents}
+                    </Badge>
+                  </Group>
+                  <Stack gap="xs">
+                    <Text size="xs" c="dimmed" tt="uppercase">Total Reservas</Text>
+                    <Text size="xl" fw={600}>
+                      {analyticsData.summary.totalReservations}
+                    </Text>
+                    <Group gap="xs" mt="xs">
+                      <IconCircleCheck size={16} color="green" />
+                      <Text size="xs" c="dimmed">{analyticsData.summary.completedEvents} completados</Text>
+                    </Group>
+                  </Stack>
                 </Card>
+              </Grid.Col>
 
-                <Card className="border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardBody className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl flex items-center justify-center">
-                          <BanknotesIcon className="w-6 h-6 text-orange-700" />
-                        </div>
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          className="bg-orange-100 text-orange-700"
-                        >
-                          Pendiente
-                        </Chip>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pagos Pendientes</p>
-                        <p className="text-2xl font-bold text-foreground mt-1">
-                          {formatCurrency(analyticsData.summary.pendingPayments)}
-                        </p>
-                        <div className="flex items-center gap-2 mt-3">
-                          <ClockIcon className="w-4 h-4 text-orange-600" />
-                          <span className="text-xs text-gray-600">Ocupación: {analyticsData.summary.occupancyRate.toFixed(1)}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardBody>
+              <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+                <Card withBorder>
+                  <Group justify="space-between" mb="md">
+                    <ThemeIcon size="lg" radius="md" color="grape">
+                      <IconChartBar size={24} />
+                    </ThemeIcon>
+                    <Badge color="grape" variant="light">
+                      Por evento
+                    </Badge>
+                  </Group>
+                  <Stack gap="xs">
+                    <Text size="xs" c="dimmed" tt="uppercase">Valor Promedio</Text>
+                    <Text size="xl" fw={600}>
+                      {formatCurrency(analyticsData.summary.averageEventValue)}
+                    </Text>
+                    <Progress value={60} size="sm" color="grape" mt="xs" />
+                  </Stack>
                 </Card>
-              </div>
+              </Grid.Col>
 
-              {/* Quick Stats Summary */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <Card className="border border-gray-200">
-                  <CardBody className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Tasa de Cancelación</p>
-                        <p className="text-xl font-bold text-foreground">{analyticsData.summary.cancellationRate.toFixed(1)}%</p>
-                      </div>
-                      <div className="w-16 h-16">
-                        <Doughnut
-                          data={{
-                            datasets: [{
-                              data: [analyticsData.summary.cancellationRate, 100 - analyticsData.summary.cancellationRate],
-                              backgroundColor: ['rgba(239, 68, 68, 0.8)', 'rgba(229, 231, 235, 0.5)'],
-                              borderWidth: 0
-                            }]
-                          }}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </CardBody>
+              <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+                <Card withBorder>
+                  <Group justify="space-between" mb="md">
+                    <ThemeIcon size="lg" radius="md" color="orange">
+                      <IconCash size={24} />
+                    </ThemeIcon>
+                    <Badge color="orange" variant="light">
+                      Pendiente
+                    </Badge>
+                  </Group>
+                  <Stack gap="xs">
+                    <Text size="xs" c="dimmed" tt="uppercase">Pagos Pendientes</Text>
+                    <Text size="xl" fw={600}>
+                      {formatCurrency(analyticsData.summary.pendingPayments)}
+                    </Text>
+                    <Group gap="xs" mt="xs">
+                      <IconClock size={16} color="orange" />
+                      <Text size="xs" c="dimmed">Ocupación: {analyticsData.summary.occupancyRate.toFixed(1)}%</Text>
+                    </Group>
+                  </Stack>
                 </Card>
+              </Grid.Col>
+            </Grid>
 
-                <Card className="border border-gray-200">
-                  <CardBody className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Eventos Completados</p>
-                        <p className="text-xl font-bold text-foreground">{analyticsData.summary.completedEvents}</p>
-                      </div>
-                      <div className="w-16 h-16">
-                        <Doughnut
-                          data={{
-                            datasets: [{
-                              data: [
-                                analyticsData.summary.completedEvents,
-                                analyticsData.summary.totalReservations - analyticsData.summary.completedEvents
-                              ],
-                              backgroundColor: ['rgba(34, 197, 94, 0.8)', 'rgba(229, 231, 235, 0.5)'],
-                              borderWidth: 0
-                            }]
-                          }}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </CardBody>
+            {/* Quick Stats Summary */}
+            <Grid>
+              <Grid.Col span={{ base: 12, lg: 4 }}>
+                <Card withBorder p="md">
+                  <Group justify="space-between" align="center">
+                    <Stack gap="xs">
+                      <Text size="sm" c="dimmed">Tasa de Cancelación</Text>
+                      <Text size="xl" fw={700}>{analyticsData.summary.cancellationRate.toFixed(1)}%</Text>
+                    </Stack>
+                    <RingProgress
+                      size={64}
+                      thickness={8}
+                      sections={[
+                        { value: analyticsData.summary.cancellationRate, color: 'red' },
+                        { value: 100 - analyticsData.summary.cancellationRate, color: 'gray.3' }
+                      ]}
+                    />
+                  </Group>
                 </Card>
+              </Grid.Col>
 
-                <Card className="border border-gray-200">
-                  <CardBody className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Tasa de Ocupación</p>
-                        <p className="text-xl font-bold text-foreground">{analyticsData.summary.occupancyRate.toFixed(1)}%</p>
-                      </div>
-                      <div className="w-16 h-16">
-                        <Doughnut
-                          data={{
-                            datasets: [{
-                              data: [analyticsData.summary.occupancyRate, 100 - analyticsData.summary.occupancyRate],
-                              backgroundColor: ['rgba(59, 130, 246, 0.8)', 'rgba(229, 231, 235, 0.5)'],
-                              borderWidth: 0
-                            }]
-                          }}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </CardBody>
+              <Grid.Col span={{ base: 12, lg: 4 }}>
+                <Card withBorder p="md">
+                  <Group justify="space-between" align="center">
+                    <Stack gap="xs">
+                      <Text size="sm" c="dimmed">Eventos Completados</Text>
+                      <Text size="xl" fw={700}>{analyticsData.summary.completedEvents}</Text>
+                    </Stack>
+                    <RingProgress
+                      size={64}
+                      thickness={8}
+                      sections={[
+                        { value: (analyticsData.summary.completedEvents / analyticsData.summary.totalReservations) * 100, color: 'green' },
+                        { value: ((analyticsData.summary.totalReservations - analyticsData.summary.completedEvents) / analyticsData.summary.totalReservations) * 100, color: 'gray.3' }
+                      ]}
+                    />
+                  </Group>
                 </Card>
-              </div>
-            </div>
+              </Grid.Col>
+
+              <Grid.Col span={{ base: 12, lg: 4 }}>
+                <Card withBorder p="md">
+                  <Group justify="space-between" align="center">
+                    <Stack gap="xs">
+                      <Text size="sm" c="dimmed">Tasa de Ocupación</Text>
+                      <Text size="xl" fw={700}>{analyticsData.summary.occupancyRate.toFixed(1)}%</Text>
+                    </Stack>
+                    <RingProgress
+                      size={64}
+                      thickness={8}
+                      sections={[
+                        { value: analyticsData.summary.occupancyRate, color: 'blue' },
+                        { value: 100 - analyticsData.summary.occupancyRate, color: 'gray.3' }
+                      ]}
+                    />
+                  </Group>
+                </Card>
+              </Grid.Col>
+            </Grid>
+          </Stack>
+          ) : (
+            <Center py="xl">
+              <Text c="dimmed">No hay datos disponibles para el período seleccionado</Text>
+            </Center>
           )}
+        </Tabs.Panel>
 
-          {/* Tab: Graphs */}
-          {selectedTab === "graphs" && (
-            <div className="space-y-6">
-              {/* Chart Type Selector */}
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant={chartType === "line" ? "solid" : "bordered"}
-                  onPress={() => setChartType("line")}
-                  className={chartType === "line" ? "btn-primary" : ""}
-                >
-                  Líneas
-                </Button>
-                <Button
-                  size="sm"
-                  variant={chartType === "bar" ? "solid" : "bordered"}
-                  onPress={() => setChartType("bar")}
-                  className={chartType === "bar" ? "btn-primary" : ""}
-                >
-                  Barras
-                </Button>
-                <Button
-                  size="sm"
-                  variant={chartType === "area" ? "solid" : "bordered"}
-                  onPress={() => setChartType("area")}
-                  className={chartType === "area" ? "btn-primary" : ""}
-                >
-                  Área
-                </Button>
-              </div>
+        <Tabs.Panel value="graphs">
+          {loading ? (
+            <Center h={200}>
+              <Stack align="center" gap="sm">
+                <Loader size="lg" />
+                <Text c="dimmed">Cargando analytics...</Text>
+              </Stack>
+            </Center>
+          ) : analyticsData ? (
+            <Stack gap="lg">
+            {/* Chart Type Selector */}
+            <Group>
+              <Button
+                size="sm"
+                variant={chartType === "line" ? "filled" : "light"}
+                onClick={() => setChartType("line")}
+              >
+                Líneas
+              </Button>
+              <Button
+                size="sm"
+                variant={chartType === "bar" ? "filled" : "light"}
+                onClick={() => setChartType("bar")}
+              >
+                Barras
+              </Button>
+              <Button
+                size="sm"
+                variant={chartType === "area" ? "filled" : "light"}
+                onClick={() => setChartType("area")}
+              >
+                Área
+              </Button>
+            </Group>
 
-              {/* Main Chart */}
-              <Card className="border border-gray-200">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-foreground">Tendencia de Ingresos</h3>
-                    <div className="flex items-center gap-2">
-                      <Chip size="sm" variant="flat" className="bg-green-100 text-green-700">
-                        {formatPercentage(analyticsData.summary.monthlyGrowth)} vs mes anterior
-                      </Chip>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardBody className="pt-2">
-                  <div className="h-96">
+            {/* Main Chart */}
+            <Card withBorder>
+              <Card.Section p="lg" pb="xs">
+                <Group justify="space-between">
+                  <Title order={4}>Tendencia de Ingresos</Title>
+                  <Badge color="green" variant="light">
+                    {formatPercentage(analyticsData.summary.monthlyGrowth)} vs mes anterior
+                  </Badge>
+                </Group>
+              </Card.Section>
+              <Card.Section p="lg">
+                <div style={{ height: 384 }}>
                     {chartType === "line" && (
                       <Line data={analyticsData.revenueChart} options={chartOptions} />
                     )}
@@ -727,253 +639,278 @@ export default function AnalyticsManager() {
                         options={chartOptions} 
                       />
                     )}
+                </div>
+              </Card.Section>
+            </Card>
+
+            {/* Secondary Charts */}
+            <Grid>
+              <Grid.Col span={{ base: 12, lg: 6 }}>
+                <Card withBorder>
+                  <Title order={4} p="lg" pb="xs">Comparación Mensual</Title>
+                  <div style={{ height: 256, padding: '0 var(--mantine-spacing-lg) var(--mantine-spacing-lg)' }}>
+                    <Bar data={analyticsData.monthlyComparison} options={chartOptions} />
                   </div>
-                </CardBody>
-              </Card>
-
-              {/* Secondary Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border border-gray-200">
-                  <CardHeader className="pb-2">
-                    <h3 className="text-lg font-semibold text-foreground">Comparación Mensual</h3>
-                  </CardHeader>
-                  <CardBody className="pt-2">
-                    <div className="h-64">
-                      <Bar data={analyticsData.monthlyComparison} options={chartOptions} />
-                    </div>
-                  </CardBody>
                 </Card>
+              </Grid.Col>
 
-                <Card className="border border-gray-200">
-                  <CardHeader className="pb-2">
-                    <h3 className="text-lg font-semibold text-foreground">Estado de Reservas</h3>
-                  </CardHeader>
-                  <CardBody className="pt-2">
-                    <div className="h-64">
-                      <Doughnut 
-                        data={analyticsData.reservationsChart} 
-                        options={{ 
-                          responsive: true, 
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: 'bottom' as const
-                            }
+              <Grid.Col span={{ base: 12, lg: 6 }}>
+                <Card withBorder>
+                  <Title order={4} p="lg" pb="xs">Estado de Reservas</Title>
+                  <div style={{ height: 256, padding: '0 var(--mantine-spacing-lg) var(--mantine-spacing-lg)' }}>
+                    <Doughnut 
+                      data={analyticsData.reservationsChart} 
+                      options={{ 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'bottom' as const
                           }
-                        }} 
-                      />
-                    </div>
-                  </CardBody>
+                        }
+                      }} 
+                    />
+                  </div>
                 </Card>
-              </div>
-            </div>
+              </Grid.Col>
+            </Grid>
+          </Stack>
+          ) : (
+            <Center py="xl">
+              <Text c="dimmed">No hay datos disponibles para el período seleccionado</Text>
+            </Center>
           )}
+        </Tabs.Panel>
 
-          {/* Tab: Calendar */}
-          {selectedTab === "calendar" && (
-            <div className="space-y-6">
-              <AvailabilityCalendar
-                className="w-full"
-                onDateClick={(date, availability) => {
-                  setSelectedDate(date);
-                  setSelectedAvailability(availability);
-                  setIsDayDetailsOpen(true);
-                }}
-              />
+        <Tabs.Panel value="calendar">
+          {loading ? (
+            <Center h={200}>
+              <Stack align="center" gap="sm">
+                <Loader size="lg" />
+                <Text c="dimmed">Cargando analytics...</Text>
+              </Stack>
+            </Center>
+          ) : (
+            <Stack gap="lg">
+            <AvailabilityCalendar
+              onDateClick={(date, availability) => {
+                setSelectedDate(date);
+                setSelectedAvailability(availability);
+                setIsDayDetailsOpen(true);
+              }}
+            />
+            
+            {/* Calendar Stats */}
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <Card withBorder p="md">
+                  <Group>
+                    <ThemeIcon size="lg" radius="md" color="green">
+                      <IconCircleCheck size={24} />
+                    </ThemeIcon>
+                    <Stack gap={0}>
+                      <Text size="xl" fw={600}>15</Text>
+                      <Text size="xs" c="dimmed" tt="uppercase">
+                        Días Disponibles
+                      </Text>
+                    </Stack>
+                  </Group>
+                </Card>
+              </Grid.Col>
               
-              {/* Calendar Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="border border-gray-200">
-                  <CardBody className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                        <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Días Disponibles</p>
-                        <p className="text-xl font-bold text-foreground">15</p>
-                      </div>
-                    </div>
-                  </CardBody>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <Card withBorder p="md">
+                  <Group>
+                    <ThemeIcon size="lg" radius="md" color="yellow">
+                      <IconClock size={24} />
+                    </ThemeIcon>
+                    <Stack gap={0}>
+                      <Text size="xl" fw={600}>8</Text>
+                      <Text size="xs" c="dimmed" tt="uppercase">
+                        Parcialmente Ocupados
+                      </Text>
+                    </Stack>
+                  </Group>
                 </Card>
-                
-                <Card className="border border-gray-200">
-                  <CardBody className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                        <ClockIcon className="w-5 h-5 text-yellow-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Parcialmente Ocupados</p>
-                        <p className="text-xl font-bold text-foreground">8</p>
-                      </div>
-                    </div>
-                  </CardBody>
+              </Grid.Col>
+              
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <Card withBorder p="md">
+                  <Group>
+                    <ThemeIcon size="lg" radius="md" color="red">
+                      <IconCircleX size={24} />
+                    </ThemeIcon>
+                    <Stack gap={0}>
+                      <Text size="xl" fw={600}>7</Text>
+                      <Text size="xs" c="dimmed" tt="uppercase">
+                        Totalmente Ocupados
+                      </Text>
+                    </Stack>
+                  </Group>
                 </Card>
-                
-                <Card className="border border-gray-200">
-                  <CardBody className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                        <XCircleIcon className="w-5 h-5 text-red-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Totalmente Ocupados</p>
-                        <p className="text-xl font-bold text-foreground">7</p>
-                      </div>
-                    </div>
-                  </CardBody>
-                </Card>
-              </div>
-            </div>
+              </Grid.Col>
+            </Grid>
+          </Stack>
           )}
+        </Tabs.Panel>
 
-          {/* Tab: Distribution */}
-          {selectedTab === "distribution" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Tabs.Panel value="distribution">
+          {loading ? (
+            <Center h={200}>
+              <Stack align="center" gap="sm">
+                <Loader size="lg" />
+                <Text c="dimmed">Cargando analytics...</Text>
+              </Stack>
+            </Center>
+          ) : analyticsData ? (
+            <Grid>
+            <Grid.Col span={{ base: 12, lg: 6 }}>
               {/* Top Services */}
-              <Card className="border border-gray-200">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-foreground">Servicios Populares</h3>
-                    <HeroTooltip content="Ver todos los servicios">
-                      <Button size="sm" variant="light" isIconOnly>
-                        <ChartPieIcon className="w-4 h-4" />
-                      </Button>
-                    </HeroTooltip>
-                  </div>
-                </CardHeader>
-                <CardBody className="pt-2">
-                  <div className="space-y-3">
-                    {analyticsData.topServices.length > 0 ? (
-                      analyticsData.topServices.slice(0, 5).map((service, index) => (
-                        <div key={index} className="group hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full bg-${['green', 'blue', 'purple', 'orange', 'pink'][index]}-500`} />
-                                <p className="font-medium text-foreground text-sm">{service.name}</p>
-                              </div>
-                              <div className="flex items-center gap-4 mt-1">
-                                <span className="text-xs text-gray-500">{service.bookings} reservas</span>
-                                <span className="text-xs font-medium text-gray-700">{formatCurrency(service.revenue)}</span>
-                              </div>
-                            </div>
-                            <Chip
-                              size="sm"
-                              variant="flat"
-                              className={service.growthRate >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}
-                            >
-                              {formatPercentage(service.growthRate)}
-                            </Chip>
-                          </div>
-                          <Progress
-                            value={(service.revenue / analyticsData.summary.totalRevenue) * 100}
+              <Card withBorder>
+                <Group justify="space-between" p="lg" pb="xs">
+                  <Title order={4}>Servicios Populares</Title>
+                  <Tooltip label="Ver todos los servicios">
+                    <ActionIcon variant="light" size="sm">
+                      <IconChartPie size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+                <Stack gap="sm" p="lg" pt="xs">
+                  {analyticsData.topServices.length > 0 ? (
+                    analyticsData.topServices.slice(0, 5).map((service, index) => (
+                      <Paper key={index} p="md" withBorder radius="md">
+                        <Group justify="space-between" align="center">
+                          <Stack gap="xs">
+                            <Group gap="xs">
+                              <div 
+                                style={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: '50%',
+                                  backgroundColor: ['#22c55e', '#3b82f6', '#a855f7', '#f97316', '#ec4899'][index]
+                                }}
+                              />
+                              <Text size="sm" fw={500}>{service.name}</Text>
+                            </Group>
+                            <Group gap="md">
+                              <Text size="xs" c="dimmed">{service.bookings} reservas</Text>
+                              <Text size="xs" fw={500}>{formatCurrency(service.revenue)}</Text>
+                            </Group>
+                          </Stack>
+                          <Badge
                             size="sm"
-                            color="primary"
-                            className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          />
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center text-gray-500 py-4">No hay datos disponibles</p>
-                    )}
-                  </div>
-                </CardBody>
+                            color={service.growthRate >= 0 ? 'green' : 'red'}
+                            variant="light"
+                          >
+                            {formatPercentage(service.growthRate)}
+                          </Badge>
+                        </Group>
+                        <Progress
+                          value={(service.revenue / analyticsData.summary.totalRevenue) * 100}
+                          size="sm"
+                          color="blue"
+                          mt="xs"
+                        />
+                      </Paper>
+                    ))
+                  ) : (
+                    <Text ta="center" c="dimmed" py="lg">No hay datos disponibles</Text>
+                  )}
+                </Stack>
               </Card>
+            </Grid.Col>
 
+            <Grid.Col span={{ base: 12, lg: 6 }}>
               {/* Payment Status Distribution */}
-              <Card className="border border-gray-200">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-foreground">Distribución de Pagos</h3>
-                    <HeroTooltip content="Ver detalles">
-                      <Button size="sm" variant="light" isIconOnly>
-                        <BanknotesIcon className="w-4 h-4" />
-                      </Button>
-                    </HeroTooltip>
-                  </div>
-                </CardHeader>
-                <CardBody className="pt-2">
-                  <div className="space-y-4">
-                    {/* Chart */}
-                    <div className="h-48">
-                      <Doughnut
-                        data={{
-                          labels: ['Pagados', 'Pendientes', 'Vencidos'],
-                          datasets: [{
-                            data: [
-                              analyticsData.paymentStatus.paid,
-                              analyticsData.paymentStatus.pending,
-                              analyticsData.paymentStatus.overdue
-                            ],
-                            backgroundColor: [
-                              'rgba(34, 197, 94, 0.8)',
-                              'rgba(251, 191, 36, 0.8)',
-                              'rgba(239, 68, 68, 0.8)'
-                            ],
-                            borderWidth: 0
-                          }]
-                        }}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              position: 'right' as const,
-                              labels: {
-                                padding: 10,
-                                font: { size: 11 }
-                              }
+              <Card withBorder>
+                <Group justify="space-between" p="lg" pb="xs">
+                  <Title order={4}>Distribución de Pagos</Title>
+                  <Tooltip label="Ver detalles">
+                    <ActionIcon variant="light" size="sm">
+                      <IconCash size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+                <Stack gap="md" p="lg" pt="xs">
+                  {/* Chart */}
+                  <div style={{ height: 192 }}>
+                    <Doughnut
+                      data={{
+                        labels: ['Pagados', 'Pendientes', 'Vencidos'],
+                        datasets: [{
+                          data: [
+                            analyticsData.paymentStatus.paid,
+                            analyticsData.paymentStatus.pending,
+                            analyticsData.paymentStatus.overdue
+                          ],
+                          backgroundColor: [
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(251, 191, 36, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                          ],
+                          borderWidth: 0
+                        }]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'right' as const,
+                            labels: {
+                              padding: 10,
+                              font: { size: 11 }
                             }
                           }
-                        }}
-                      />
-                    </div>
-                    
-                    {/* Status Items */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-green-500 rounded-full" />
-                          <span className="text-sm font-medium text-gray-700">Pagados</span>
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">
-                          {formatCurrency(analyticsData.paymentStatus.paid)}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-yellow-500 rounded-full" />
-                          <span className="text-sm font-medium text-gray-700">Pendientes</span>
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">
-                          {formatCurrency(analyticsData.paymentStatus.pending)}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-red-500 rounded-full" />
-                          <span className="text-sm font-medium text-gray-700">Vencidos</span>
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">
-                          {formatCurrency(analyticsData.paymentStatus.overdue)}
-                        </span>
-                      </div>
-                    </div>
+                        }
+                      }}
+                    />
                   </div>
-                </CardBody>
+                  
+                  {/* Status Items */}
+                  <Stack gap="xs">
+                    <Group justify="space-between" p="sm">
+                      <Group gap="xs">
+                        <div style={{ width: 12, height: 12, backgroundColor: '#22c55e', borderRadius: '50%' }} />
+                        <Text size="sm" fw={500}>Pagados</Text>
+                      </Group>
+                      <Text size="sm" fw={600}>
+                        {formatCurrency(analyticsData.paymentStatus.paid)}
+                      </Text>
+                    </Group>
+                    
+                    <Group justify="space-between" p="sm">
+                      <Group gap="xs">
+                        <div style={{ width: 12, height: 12, backgroundColor: '#fbbf24', borderRadius: '50%' }} />
+                        <Text size="sm" fw={500}>Pendientes</Text>
+                      </Group>
+                      <Text size="sm" fw={600}>
+                        {formatCurrency(analyticsData.paymentStatus.pending)}
+                      </Text>
+                    </Group>
+                    
+                    <Group justify="space-between" p="sm">
+                      <Group gap="xs">
+                        <div style={{ width: 12, height: 12, backgroundColor: '#ef4444', borderRadius: '50%' }} />
+                        <Text size="sm" fw={500}>Vencidos</Text>
+                      </Group>
+                      <Text size="sm" fw={600}>
+                        {formatCurrency(analyticsData.paymentStatus.overdue)}
+                      </Text>
+                    </Group>
+                  </Stack>
+                </Stack>
               </Card>
-            </div>
+            </Grid.Col>
+          </Grid>
+          ) : (
+            <Center py="xl">
+              <Text c="dimmed">No hay datos disponibles para el período seleccionado</Text>
+            </Center>
           )}
-        </>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-600">No hay datos disponibles para el período seleccionado</p>
-        </div>
-      )}
+        </Tabs.Panel>
+      
+      </Tabs>
       
       {/* Day Details Modal */}
       <DayDetailsModal
@@ -982,6 +919,6 @@ export default function AnalyticsManager() {
         date={selectedDate}
         availability={selectedAvailability}
       />
-    </div>
+    </Stack>
   )
 }

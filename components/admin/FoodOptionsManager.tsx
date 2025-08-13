@@ -3,43 +3,32 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card,
-  CardBody,
-  CardHeader,
   Button,
-  Input,
+  TextInput,
   Textarea,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Chip,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Spinner,
+  Badge,
+  Loader,
   Switch,
-  Divider,
   Select,
-  SelectItem
-} from '@heroui/react';
+  Group,
+  Stack,
+  Text,
+  Title,
+  ActionIcon,
+  ScrollArea
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
-  PlusIcon,
-  CakeIcon,
-  PencilIcon,
-  TrashIcon,
-  EyeIcon,
-  CurrencyDollarIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
+  IconPlus,
+  IconCake,
+  IconPencil,
+  IconTrash,
+  IconEye,
+  IconCurrencyDollar,
+  IconX
+} from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 
 interface FoodExtra {
@@ -74,7 +63,7 @@ export default function FoodOptionsManager() {
   const [submitting, setSubmitting] = useState(false);
   const [editingFood, setEditingFood] = useState<FoodOption | null>(null);
   
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [opened, { open, close }] = useDisclosure(false);
   
   const [formData, setFormData] = useState<FoodFormData>({
     name: '',
@@ -125,7 +114,7 @@ export default function FoodOptionsManager() {
 
   const handleCreate = () => {
     resetForm();
-    onOpen();
+    open();
   };
 
   const handleEdit = (food: FoodOption) => {
@@ -138,7 +127,7 @@ export default function FoodOptionsManager() {
       extras: [...food.extras],
       isActive: food.isActive
     });
-    onOpen();
+    open();
   };
 
   const addExtra = () => {
@@ -204,7 +193,7 @@ export default function FoodOptionsManager() {
       if (response.ok && data.success) {
         toast.success(editingFood ? 'Opción de comida actualizada exitosamente' : 'Opción de comida creada exitosamente');
         fetchFoodOptions();
-        onClose();
+        close();
         resetForm();
       } else {
         toast.error(data.error || 'Error al guardar la opción de comida');
@@ -249,418 +238,391 @@ export default function FoodOptionsManager() {
   };
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div style={{
-          width: 'var(--space-12)',
-          height: 'var(--space-12)',
-          backgroundColor: 'var(--primary)',
-          borderRadius: 'var(--radius-lg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-            <CakeIcon className="icon-base text-white" />
+      <Group justify="space-between">
+        <Group gap="md">
+          <div 
+            style={{
+              width: 48,
+              height: 48,
+              backgroundColor: 'var(--mantine-color-orange-6)',
+              borderRadius: 'var(--mantine-radius-md)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <IconCake size={24} color="white" />
           </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground">
+          <Stack gap={0}>
+            <Title order={1} size="h2">
               Opciones de Comida
-            </h2>
-            <p className="text-sm text-neutral-600 mt-1">
+            </Title>
+            <Text size="sm" c="dimmed">
               Gestiona las opciones de alimentos y bebidas
-            </p>
-          </div>
-        </div>
-        <button
-          className="btn-primary"
-          onClick={handleCreate}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)'
-          }}
-        >
-          <PlusIcon className="icon-base" />
+            </Text>
+          </Stack>
+        </Group>
+        <Button onClick={handleCreate} leftSection={<IconPlus size={16} />}>
           Nueva Opción
-        </button>
-      </div>
+        </Button>
+      </Group>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-foreground mb-2">
-              {foodOptions.length}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--mantine-spacing-md)' }}>
+        <Card withBorder p="md" style={{ backgroundColor: 'white' }}>
+          <Group justify="space-between">
+            <Stack gap={0}>
+              <Text size="sm" fw={500} c="dimmed">Total de Opciones</Text>
+              <Text size="xl" fw={700}>{foodOptions.length}</Text>
+            </Stack>
+            <div 
+              style={{
+                width: 48,
+                height: 48,
+                backgroundColor: 'var(--mantine-color-orange-1)',
+                borderRadius: 'var(--mantine-radius-md)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <IconCake size={24} color="var(--mantine-color-orange-6)" />
             </div>
-            <div className="text-sm text-gray-600">Total de Opciones</div>
-          </CardBody>
+          </Group>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-green-600 mb-2">
-              {foodOptions.filter(f => f.isActive).length}
+        <Card withBorder p="md" style={{ backgroundColor: 'white' }}>
+          <Group justify="space-between">
+            <Stack gap={0}>
+              <Text size="sm" fw={500} c="dimmed">Opciones Activas</Text>
+              <Text size="xl" fw={700} c="green">{foodOptions.filter(f => f.isActive).length}</Text>
+            </Stack>
+            <div 
+              style={{
+                width: 48,
+                height: 48,
+                backgroundColor: 'var(--mantine-color-green-1)',
+                borderRadius: 'var(--mantine-radius-md)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <IconCake size={24} color="var(--mantine-color-green-6)" />
             </div>
-            <div className="text-sm text-gray-600">Opciones Activas</div>
-          </CardBody>
+          </Group>
         </Card>
         
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
-            <div className="text-2xl font-semibold text-blue-600 mb-2">
-              {foodOptions.reduce((sum, f) => sum + f.extras.length, 0)}
+        <Card withBorder p="md" style={{ backgroundColor: 'white' }}>
+          <Group justify="space-between">
+            <Stack gap={0}>
+              <Text size="sm" fw={500} c="dimmed">Total de Extras</Text>
+              <Text size="xl" fw={700} c="blue">{foodOptions.reduce((sum, f) => sum + f.extras.length, 0)}</Text>
+            </Stack>
+            <div 
+              style={{
+                width: 48,
+                height: 48,
+                backgroundColor: 'var(--mantine-color-blue-1)',
+                borderRadius: 'var(--mantine-radius-md)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <IconCake size={24} color="var(--mantine-color-blue-6)" />
             </div>
-            <div className="text-sm text-gray-600">Total de Extras</div>
-          </CardBody>
+          </Group>
         </Card>
       </div>
 
       {/* Food Options Table */}
-      <Card className="border border-gray-200 shadow-sm">
-        <CardBody className="p-0">
-          {loading ? (
-            <div className="flex flex-col justify-center items-center py-12">
-              <Spinner size="lg" className="text-foreground" />
-              <p className="text-gray-500 mt-4">Cargando opciones de comida...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table 
-                aria-label="Tabla de opciones de comida"
-                classNames={{
-                  wrapper: "shadow-none",
-                  th: "bg-gray-50 text-gray-700 font-semibold",
-                  td: "py-4"
-                }}
-              >
-                <TableHeader>
-                  <TableColumn>OPCIÓN</TableColumn>
-                  <TableColumn className="hidden md:table-cell">PRECIO BASE</TableColumn>
-                  <TableColumn className="hidden lg:table-cell">EXTRAS</TableColumn>
-                  <TableColumn>ESTADO</TableColumn>
-                  <TableColumn>ACCIONES</TableColumn>
-                </TableHeader>
-                <TableBody emptyContent="No hay opciones de comida registradas">
-                  {foodOptions.map((food) => (
-                    <TableRow key={food._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <CakeIcon className="w-5 h-5 text-gray-600" />
-                          </div>
-                          <div>
-                            <div className="font-semibold text-foreground">{food.name}</div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Chip
-                                size="sm"
-                                variant="flat"
-                                color={
-                                  food.category === 'main' ? 'primary' :
-                                  food.category === 'appetizer' ? 'secondary' :
-                                  food.category === 'dessert' ? 'success' : 'warning'
-                                }
-                              >
-                                {food.category === 'main' ? 'Principal' :
-                                 food.category === 'appetizer' ? 'Entrada' :
-                                 food.category === 'dessert' ? 'Postre' : 'Bebida'}
-                              </Chip>
-                            </div>
-                            {food.description && (
-                              <div className="text-sm text-gray-500 mt-1 max-w-xs truncate">
-                                {food.description}
-                              </div>
-                            )}
-                            <div className="md:hidden text-xs text-gray-500 mt-1 flex items-center gap-1">
-                              <CurrencyDollarIcon className="w-3 h-3" />
-                              {formatCurrency(food.basePrice)}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex items-center gap-2">
-                          <CurrencyDollarIcon className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium">{formatCurrency(food.basePrice)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="flex flex-wrap gap-1">
-                          {food.extras.slice(0, 2).map((extra, index) => (
-                            <Chip key={index} size="sm" variant="flat" className="bg-gray-100 text-gray-700">
-                              {extra.name}
-                            </Chip>
-                          ))}
-                          {food.extras.length > 2 && (
-                            <Chip size="sm" variant="flat" color="default">
-                              +{food.extras.length - 2} más
-                            </Chip>
-                          )}
-                          {food.extras.length === 0 && (
-                            <span className="text-sm text-gray-400">Sin extras</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          color={food.isActive ? 'success' : 'default'}
-                          variant="flat"
-                          size="sm"
+      <Card withBorder style={{ backgroundColor: 'white' }}>
+        {loading ? (
+          <Stack align="center" py="xl" gap="md">
+            <Loader size="lg" />
+            <Text c="dimmed">Cargando opciones de comida...</Text>
+          </Stack>
+        ) : (
+          <ScrollArea>
+            <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>OPCIÓN</Table.Th>
+                  <Table.Th visibleFrom="md">PRECIO BASE</Table.Th>
+                  <Table.Th visibleFrom="lg">EXTRAS</Table.Th>
+                  <Table.Th>ESTADO</Table.Th>
+                  <Table.Th>ACCIONES</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>{foodOptions.length === 0 ? (
+                <Table.Tr>
+                  <Table.Td colSpan={5}>
+                    <Text ta="center" c="dimmed" py="md">No hay opciones de comida registradas</Text>
+                  </Table.Td>
+                </Table.Tr>
+              ) : (
+                foodOptions.map((food) => (
+                  <Table.Tr key={food._id}>
+                    <Table.Td>
+                      <Group gap="sm">
+                        <div 
+                          style={{
+                            width: 40,
+                            height: 40,
+                            backgroundColor: 'var(--mantine-color-gray-1)',
+                            borderRadius: 'var(--mantine-radius-md)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
                         >
-                          {food.isActive ? 'Activo' : 'Inactivo'}
-                        </Chip>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            isIconOnly
-                            variant="light"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            onPress={() => {/* TODO: Implementar vista detallada */}}
-                          >
-                            <EyeIcon className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            isIconOnly
-                            variant="light"
-                            size="sm"
-                            className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
-                            onPress={() => handleEdit(food)}
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            isIconOnly
-                            variant="light"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onPress={() => handleDelete(food._id)}
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                          </Button>
+                          <IconCake size={20} color="var(--mantine-color-gray-6)" />
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardBody>
+                        <Stack gap={0}>
+                          <Text fw={600}>{food.name}</Text>
+                          <Group gap="xs" mt={2}>
+                            <Badge
+                              size="sm"
+                              variant="light"
+                              color={
+                                food.category === 'main' ? 'blue' :
+                                food.category === 'appetizer' ? 'grape' :
+                                food.category === 'dessert' ? 'green' : 'orange'
+                              }
+                            >
+                              {food.category === 'main' ? 'Principal' :
+                               food.category === 'appetizer' ? 'Entrada' :
+                               food.category === 'dessert' ? 'Postre' : 'Bebida'}
+                            </Badge>
+                          </Group>
+                          {food.description && (
+                            <Text size="sm" c="dimmed" style={{ maxWidth: '300px' }} truncate="end">
+                              {food.description}
+                            </Text>
+                          )}
+                          <Group gap="xs" hiddenFrom="md" mt={2}>
+                            <IconCurrencyDollar size={12} />
+                            <Text size="xs" c="dimmed">{formatCurrency(food.basePrice)}</Text>
+                          </Group>
+                        </Stack>
+                      </Group>
+                    </Table.Td>
+                    <Table.Td visibleFrom="md">
+                      <Group gap="xs">
+                        <IconCurrencyDollar size={16} color="var(--mantine-color-gray-5)" />
+                        <Text fw={500}>{formatCurrency(food.basePrice)}</Text>
+                      </Group>
+                    </Table.Td>
+                    <Table.Td visibleFrom="lg">
+                      <Group gap="xs">
+                        {food.extras.slice(0, 2).map((extra, index) => (
+                          <Badge key={index} size="sm" variant="light" color="gray">
+                            {extra.name}
+                          </Badge>
+                        ))}
+                        {food.extras.length > 2 && (
+                          <Badge size="sm" variant="light" color="gray">
+                            +{food.extras.length - 2} más
+                          </Badge>
+                        )}
+                        {food.extras.length === 0 && (
+                          <Text size="sm" c="dimmed">Sin extras</Text>
+                        )}
+                      </Group>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge
+                        color={food.isActive ? 'green' : 'gray'}
+                        variant="light"
+                        size="sm"
+                      >
+                        {food.isActive ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Group gap="xs">
+                        <ActionIcon
+                          variant="light"
+                          size="sm"
+                          color="blue"
+                          onClick={() => {/* TODO: Implementar vista detallada */}}
+                        >
+                          <IconEye size={16} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="light"
+                          size="sm"
+                          color="gray"
+                          onClick={() => handleEdit(food)}
+                        >
+                          <IconPencil size={16} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="light"
+                          size="sm"
+                          color="red"
+                          onClick={() => handleDelete(food._id)}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))
+              )}
+              </Table.Tbody>
+            </Table>
+          </ScrollArea>
+        )}
       </Card>
 
       {/* Create/Edit Modal */}
       <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size="2xl"
-        scrollBehavior="inside"
-        isDismissable={!submitting}
-        backdrop="opaque"
-        classNames={{
-          backdrop: "surface-overlay",
-          base: "surface-modal",
-          wrapper: "z-[1001] items-center justify-center p-4",
-          header: "border-b border-gray-200 bg-white",
-          body: "py-6",
-          footer: "border-t border-gray-200 bg-gray-50"
+        opened={opened}
+        onClose={close}
+        size="xl"
+        title={editingFood ? 'Editar opción de comida' : 'Nueva opción de comida'}
+        closeOnEscape={!submitting}
+        closeOnClickOutside={!submitting}
+        styles={{
+          content: {
+            maxHeight: '90vh'
+          },
+          body: {
+            maxHeight: 'calc(90vh - 140px)',
+            overflowY: 'auto'
+          }
         }}
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="px-6 py-4">
-                <h3 className="text-lg font-medium text-foreground">
-                  {editingFood ? 'Editar opción de comida' : 'Nueva opción de comida'}
-                </h3>
-              </ModalHeader>
+        <Stack gap="md">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--mantine-spacing-md)' }}>
+            <TextInput
+              label="Nombre de la opción *"
+              placeholder="Ej: Menú infantil, Buffet, Cena formal"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            />
+            
+            <TextInput
+              label="Precio base *"
+              placeholder="150"
+              type="number"
+              step="0.01"
+              value={formData.basePrice}
+              onChange={(e) => setFormData(prev => ({ ...prev, basePrice: e.target.value }))}
+              leftSection={<IconCurrencyDollar size={16} />}
+            />
+          </div>
 
-              <ModalBody>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre de la opción *
-                      </label>
-                      <Input
-                        placeholder="Ej: Menú infantil, Buffet, Cena formal"
-                        value={formData.name}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-                        variant="flat"
-                        classNames={{
-                          inputWrapper: "form-input"
-                        }}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Precio base *
-                      </label>
-                      <Input
-                        placeholder="150"
-                        type="number"
-                        step="0.01"
-                        value={formData.basePrice}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, basePrice: value }))}
-                        variant="flat"
-                        startContent={<span className="text-gray-400">$</span>}
-                        classNames={{
-                          inputWrapper: "form-input"
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      isSelected={formData.isActive}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, isActive: value }))}
-                      size="sm"
-                    />
-                    <span className="text-sm text-gray-700">Opción activa</span>
-                  </div>
+          <Group gap="sm">
+            <Switch
+              checked={formData.isActive}
+              onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.currentTarget.checked }))}
+              size="sm"
+            />
+            <Text size="sm">Opción activa</Text>
+          </Group>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción
-                    </label>
-                    <Textarea
-                      placeholder="Describe qué incluye esta opción de comida..."
-                      value={formData.description}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-                      minRows={2}
-                      variant="flat"
-                      classNames={{
-                        inputWrapper: "form-input"
-                      }}
-                    />
-                  </div>
+          <Textarea
+            label="Descripción"
+            placeholder="Describe qué incluye esta opción de comida..."
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            minRows={2}
+          />
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Categoría *
-                    </label>
-                    <Select
-                      placeholder="Selecciona una categoría"
-                      selectedKeys={[formData.category]}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as 'main' | 'appetizer' | 'dessert' | 'beverage';
-                        setFormData(prev => ({ ...prev, category: selected }));
-                      }}
-                      variant="flat"
-                      classNames={{
-                        trigger: "form-input"
-                      }}
-                    >
-                      <SelectItem key="main">Plato Principal</SelectItem>
-                      <SelectItem key="appetizer">Entrada</SelectItem>
-                      <SelectItem key="dessert">Postre</SelectItem>
-                      <SelectItem key="beverage">Bebida</SelectItem>
-                    </Select>
-                  </div>
+          <Select
+            label="Categoría *"
+            placeholder="Selecciona una categoría"
+            value={formData.category}
+            onChange={(value) => setFormData(prev => ({ ...prev, category: value as 'main' | 'appetizer' | 'dessert' | 'beverage' }))}
+            data={[
+              { value: 'main', label: 'Plato Principal' },
+              { value: 'appetizer', label: 'Entrada' },
+              { value: 'dessert', label: 'Postre' },
+              { value: 'beverage', label: 'Bebida' }
+            ]}
+          />
 
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-foreground">Extras disponibles</h4>
-                    
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1">
-                          <label className="block text-xs text-gray-500 mb-1">Nombre del extra</label>
-                          <Input
-                            placeholder="Ej: Postre adicional, Bebida premium"
-                            value={newExtra.name}
-                            onValueChange={(value) => setNewExtra(prev => ({ ...prev, name: value }))}
-                            variant="flat"
-                            size="sm"
-                            classNames={{
-                              inputWrapper: "form-input"
-                            }}
-                          />
-                        </div>
-                        <div className="w-32">
-                          <label className="block text-xs text-gray-500 mb-1">Precio</label>
-                          <Input
-                            placeholder="50"
-                            type="number"
-                            step="0.01"
-                            value={newExtra.price}
-                            onValueChange={(value) => setNewExtra(prev => ({ ...prev, price: value }))}
-                            variant="flat"
-                            size="sm"
-                            startContent={<span className="text-gray-400">$</span>}
-                            classNames={{
-                              inputWrapper: "form-input"
-                            }}
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <Button
-                            onPress={addExtra}
-                            size="sm"
-                            className="btn-primary btn-sm"
-                          >
-                            Agregar
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {formData.extras.length > 0 && (
-                      <div className="space-y-2">
-                        {formData.extras.map((extra, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-foreground">{extra.name}</span>
-                              <span className="text-xs text-gray-500">{formatCurrency(extra.price)}</span>
-                            </div>
-                            <Button
-                              isIconOnly
-                              variant="light"
-                              size="sm"
-                              onPress={() => removeExtra(index)}
-                              className="text-gray-400 hover:text-red-500"
-                            >
-                              <XMarkIcon className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </ModalBody>
-
-              <ModalFooter className="px-6 py-3">
-                <Button
-                  variant="light"
-                  onPress={onClose}
-                  isDisabled={submitting}
+          <Stack gap="sm">
+            <Text size="sm" fw={500}>Extras disponibles</Text>
+            
+            <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+              <Group align="flex-end">
+                <TextInput
+                  label="Nombre del extra"
+                  placeholder="Ej: Postre adicional, Bebida premium"
+                  value={newExtra.name}
+                  onChange={(e) => setNewExtra(prev => ({ ...prev, name: e.target.value }))}
                   size="sm"
-                  className="text-gray-600"
+                  style={{ flex: 1 }}
+                />
+                <TextInput
+                  label="Precio"
+                  placeholder="50"
+                  type="number"
+                  step="0.01"
+                  value={newExtra.price}
+                  onChange={(e) => setNewExtra(prev => ({ ...prev, price: e.target.value }))}
+                  leftSection={<IconCurrencyDollar size={16} />}
+                  size="sm"
+                  style={{ width: 120 }}
+                />
+                <Button
+                  onClick={addExtra}
+                  size="sm"
+                  color="blue"
                 >
-                  Cancelar
+                  Agregar
                 </Button>
-                <button
-                  className="btn-primary btn-sm"
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-2)'
-                  }}
-                >
-                  {submitting && <div className="loading-spinner" style={{width: 'var(--space-3)', height: 'var(--space-3)'}}></div>}
-                  {submitting ? 'Guardando...' : (editingFood ? 'Actualizar' : 'Crear')}
-                </button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+              </Group>
+            </Card>
+
+            {formData.extras.length > 0 && (
+              <Stack gap="xs">
+                {formData.extras.map((extra, index) => (
+                  <Card key={index} withBorder p="sm">
+                    <Group justify="space-between">
+                      <Group gap="md">
+                        <Text size="sm" fw={500}>{extra.name}</Text>
+                        <Text size="xs" c="dimmed">{formatCurrency(extra.price)}</Text>
+                      </Group>
+                      <ActionIcon
+                        variant="light"
+                        size="sm"
+                        color="red"
+                        onClick={() => removeExtra(index)}
+                      >
+                        <IconX size={16} />
+                      </ActionIcon>
+                    </Group>
+                  </Card>
+                ))}
+              </Stack>
+            )}
+          </Stack>
+          
+          <Group justify="flex-end" mt="lg">
+            <Button
+              variant="light"
+              onClick={close}
+              disabled={submitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              loading={submitting}
+              color="orange"
+            >
+              {submitting ? 'Guardando...' : (editingFood ? 'Actualizar' : 'Crear')}
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
-    </div>
+    </Stack>
   );
 }

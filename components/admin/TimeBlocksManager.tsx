@@ -3,32 +3,31 @@
 import React, { useState } from 'react';
 import {
   Card,
-  CardBody,
-  CardHeader,
   Button,
-  Input,
+  TextInput,
   Select,
-  SelectItem,
   Switch,
-  Chip,
+  Badge,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-  Divider,
   Checkbox,
-  CheckboxGroup
-} from '@heroui/react';
+  Group,
+  Stack,
+  Text,
+  Title,
+  ActionIcon,
+  ScrollArea,
+  NumberInput,
+  Center
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
-  ClockIcon,
-  PlusIcon,
-  TrashIcon,
-  PencilIcon,
-  CalendarDaysIcon,
-  CurrencyDollarIcon
-} from '@heroicons/react/24/outline';
+  IconClock,
+  IconPlus,
+  IconTrash,
+  IconPencil,
+  IconCalendar,
+  IconCurrencyDollar
+} from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 
 interface TimeBlock {
@@ -91,8 +90,8 @@ export default function TimeBlocksManager({
   onUpdateTimeBlocks,
   onUpdateRestDays 
 }: Props) {
-  const { isOpen: isBlockOpen, onOpen: onBlockOpen, onClose: onBlockClose } = useDisclosure();
-  const { isOpen: isRestDayOpen, onOpen: onRestDayOpen, onClose: onRestDayClose } = useDisclosure();
+  const [blockOpened, { open: openBlock, close: closeBlock }] = useDisclosure(false);
+  const [restDayOpened, { open: openRestDay, close: closeRestDay }] = useDisclosure(false);
   
   const [editingBlock, setEditingBlock] = useState<TimeBlock | null>(null);
   const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
@@ -339,666 +338,347 @@ export default function TimeBlocksManager({
   };
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       {/* Time Blocks Section */}
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ClockIcon className="w-5 h-5 text-gray-600" />
-              <h3 className="text-lg font-semibold">Bloques de Horarios</h3>
-            </div>
+      <Card withBorder>
+        <Card.Section p="md" withBorder>
+          <Group justify="space-between">
+            <Group gap="sm">
+              <IconClock size={20} />
+              <Title order={4}>Bloques de Horarios</Title>
+            </Group>
             <Button
-              onPress={() => {
+              onClick={() => {
                 resetBlockForm();
-                onBlockOpen();
+                openBlock();
               }}
               size="sm"
-              className="btn-primary"
-              startContent={<PlusIcon className="w-4 h-4" />}
+              leftSection={<IconPlus size={16} />}
             >
               Agregar Bloque
             </Button>
-          </div>
-        </CardHeader>
-        <Divider />
-        <CardBody className="pt-4">
+          </Group>
+        </Card.Section>
+        <Card.Section p="md">
           {timeBlocks.length === 0 ? (
-            <div className="text-center py-8 text-neutral-500">
-              <ClockIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p>No hay bloques de horarios configurados</p>
-              <p className="text-sm mt-1">Agrega bloques para definir horarios de reserva</p>
+            <Stack align="center" gap="sm" py="xl">
+              <IconClock size={48} color="gray" />
+              <Text c="dimmed">No hay bloques de horarios configurados</Text>
+              <Text size="sm" c="dimmed">Agrega bloques para definir horarios de reserva</Text>
               <Button
-                onPress={handleInitializeDefaultConfig}
-                className="mt-4 btn-primary"
-                startContent={<PlusIcon className="w-4 h-4" />}
+                onClick={handleInitializeDefaultConfig}
+                leftSection={<IconPlus size={16} />}
+                mt="md"
               >
                 Inicializar Configuración Por Defecto
               </Button>
-            </div>
+            </Stack>
           ) : (
-            <div className="space-y-3">
+            <Stack gap="md">
               {timeBlocks.map((block, index) => (
-                <div key={index} className="surface-card p-4 hover:shadow-md transition-all">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">{block.name}</h4>
-                      <div className="mt-2 space-y-1 text-sm">
-                        <p className="text-neutral-600">
+                <Card key={index} withBorder p="md">
+                  <Group justify="space-between" align="flex-start">
+                    <Stack gap="sm" style={{ flex: 1 }}>
+                      <Title order={5}>{block.name}</Title>
+                      <Stack gap={2}>
+                        <Text size="sm" c="dimmed">
                           Horario: {block.startTime} - {block.endTime}
-                        </p>
-                        <p className="text-neutral-600">
+                        </Text>
+                        <Text size="sm" c="dimmed">
                           Duración: {block.duration} horas {block.halfHourBreak ? '+ 30 min descanso' : ''}
-                        </p>
-                        <p className="text-neutral-600">
+                        </Text>
+                        <Text size="sm" c="dimmed">
                           Capacidad: {block.maxEventsPerBlock} {block.maxEventsPerBlock === 1 ? 'evento' : 'eventos'} por bloque
-                        </p>
-                        <div className="flex flex-wrap gap-1 mt-2">
+                        </Text>
+                        <Group gap="xs" mt="xs">
                           {block.days.map(day => (
-                            <Chip
+                            <Badge
                               key={day}
                               size="sm"
-                              variant="flat"
-                              className="bg-gray-100 text-gray-700"
+                              variant="light"
+                              color="gray"
                             >
                               {daysOfWeek.find(d => d.key === day)?.shortLabel}
-                            </Chip>
+                            </Badge>
                           ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        isIconOnly
-                        size="sm"
+                        </Group>
+                      </Stack>
+                    </Stack>
+                    <Group gap="xs">
+                      <ActionIcon
                         variant="light"
-                        onPress={() => handleEditBlock(block, index)}
-                      >
-                        <PencilIcon className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        isIconOnly
                         size="sm"
-                        variant="light"
-                        color="danger"
-                        onPress={() => handleDeleteBlock(index)}
+                        color="blue"
+                        onClick={() => handleEditBlock(block, index)}
                       >
-                        <TrashIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                        <IconPencil size={16} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="light"
+                        size="sm"
+                        color="red"
+                        onClick={() => handleDeleteBlock(index)}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Group>
+                  </Group>
+                </Card>
               ))}
-            </div>
+            </Stack>
           )}
-        </CardBody>
+        </Card.Section>
       </Card>
 
       {/* Rest Days Section */}
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarDaysIcon className="w-5 h-5 text-gray-600" />
-              <h3 className="text-lg font-semibold">Días de Descanso</h3>
-            </div>
+      <Card withBorder>
+        <Card.Section p="md" withBorder>
+          <Group justify="space-between">
+            <Group gap="sm">
+              <IconCalendar size={20} />
+              <Title order={4}>Días de Descanso</Title>
+            </Group>
             <Button
-              onPress={() => {
+              onClick={() => {
                 resetRestDayForm();
-                onRestDayOpen();
+                openRestDay();
               }}
               size="sm"
-              className="btn-primary"
-              startContent={<PlusIcon className="w-4 h-4" />}
+              leftSection={<IconPlus size={16} />}
             >
               Agregar Día
             </Button>
-          </div>
-        </CardHeader>
-        <Divider />
-        <CardBody className="pt-4">
+          </Group>
+        </Card.Section>
+        <Card.Section p="md">
           {restDays.length === 0 ? (
-            <div className="text-center py-8 text-neutral-500">
-              <CalendarDaysIcon className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
-              <p>No hay días de descanso configurados</p>
-              <p className="text-sm mt-1">Agrega días donde normalmente no trabajas</p>
+            <Stack align="center" gap="sm" py="xl">
+              <IconCalendar size={48} color="gray" />
+              <Text c="dimmed">No hay días de descanso configurados</Text>
+              <Text size="sm" c="dimmed">Agrega días donde normalmente no trabajas</Text>
               <Button
-                onPress={handleInitializeDefaultConfig}
-                className="mt-4 btn-primary"
-                startContent={<PlusIcon className="w-4 h-4" />}
+                onClick={handleInitializeDefaultConfig}
+                leftSection={<IconPlus size={16} />}
+                mt="md"
               >
                 Inicializar Configuración Por Defecto
               </Button>
-            </div>
+            </Stack>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {restDays.map((day, index) => (
-                <div key={index} className="surface-card p-4 hover:shadow-md transition-all">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">{day.name}</h4>
-                      <p className="text-sm text-neutral-600 mt-1">
-                        Cargo adicional: {formatCurrency(day.fee)}
-                      </p>
-                      <Chip
-                        size="sm"
-                        variant="flat"
-                        className={day.canBeReleased ? 'bg-green-100 text-green-700 mt-2' : 'bg-red-100 text-red-700 mt-2'}
-                      >
-                        {day.canBeReleased ? 'Se puede liberar' : 'No se puede liberar'}
-                      </Chip>
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        isIconOnly
-                        size="sm"
-                        variant="light"
-                        onPress={() => handleEditRestDay(day, index)}
-                      >
-                        <PencilIcon className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        isIconOnly
-                        size="sm"
-                        variant="light"
-                        color="danger"
-                        onPress={() => handleDeleteRestDay(index)}
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ScrollArea>
+              <Stack gap="md">
+                {restDays.map((day, index) => (
+                  <Card key={index} withBorder p="md">
+                    <Group justify="space-between" align="flex-start">
+                      <Stack gap="sm" style={{ flex: 1 }}>
+                        <Title order={5}>{day.name}</Title>
+                        <Text size="sm" c="dimmed">
+                          Cargo adicional: {formatCurrency(day.fee)}
+                        </Text>
+                        <Badge
+                          size="sm"
+                          color={day.canBeReleased ? 'green' : 'red'}
+                          variant="light"
+                        >
+                          {day.canBeReleased ? 'Se puede liberar' : 'No se puede liberar'}
+                        </Badge>
+                      </Stack>
+                      <Group gap="xs">
+                        <ActionIcon
+                          variant="light"
+                          size="sm"
+                          color="blue"
+                          onClick={() => handleEditRestDay(day, index)}
+                        >
+                          <IconPencil size={16} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="light"
+                          size="sm"
+                          color="red"
+                          onClick={() => handleDeleteRestDay(index)}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Group>
+                    </Group>
+                  </Card>
+                ))}
+              </Stack>
+            </ScrollArea>
           )}
-        </CardBody>
+        </Card.Section>
       </Card>
 
       {/* Time Block Modal */}
-      <Modal 
-        isOpen={isBlockOpen} 
-        onClose={onBlockClose}
-        size="2xl"
-        scrollBehavior="inside"
-        classNames={{
-          body: "py-6 max-h-[80vh] overflow-y-auto",
-          backdrop: "surface-overlay",
-          base: "surface-modal max-h-[90vh]",
-          header: "border-b border-gray-200 flex-shrink-0",
-          footer: "border-t border-gray-200 flex-shrink-0",
-          closeButton: "hover:bg-gray-100 active:bg-gray-200"
-        }}
+      <Modal
+        opened={blockOpened}
+        onClose={closeBlock}
+        title={editingBlock ? 'Editar Bloque de Horario' : 'Nuevo Bloque de Horario'}
+        size="xl"
+        scrollAreaComponent={ScrollArea.Autosize}
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                {editingBlock ? 'Editar Bloque de Horario' : 'Nuevo Bloque de Horario'}
-              </ModalHeader>
-              <ModalBody className="py-6">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Nombre del bloque <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      placeholder="Ej: Miércoles a Lunes - Tarde"
-                      value={blockForm.name}
-                      onValueChange={(value) => setBlockForm({ ...blockForm, name: value })}
-                      variant="bordered"
-                      classNames={{
-                        inputWrapper: "min-h-[48px]"
+        <Stack gap="lg">
+          <TextInput
+            label="Nombre del bloque"
+            placeholder="Ej: Miércoles a Lunes - Tarde"
+            value={blockForm.name}
+            onChange={(e) => setBlockForm({ ...blockForm, name: e.target.value })}
+            withAsterisk
+          />
+          
+          <Stack gap="sm">
+            <Group gap="sm">
+              <IconCalendar size={16} />
+              <Text size="sm" fw={500}>Días de la semana</Text>
+            </Group>
+            <Card withBorder p="md">
+              <Stack gap="sm">
+                <Group>
+                  {daysOfWeek.map((day) => (
+                    <Checkbox
+                      key={day.key}
+                      label={day.shortLabel}
+                      checked={blockForm.days.includes(day.key)}
+                      onChange={(e) => {
+                        const newDays = e.currentTarget.checked
+                          ? [...blockForm.days, day.key]
+                          : blockForm.days.filter(d => d !== day.key);
+                        setBlockForm({ ...blockForm, days: newDays });
                       }}
                     />
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <CalendarDaysIcon className="w-4 h-4 text-gray-600" />
-                      <label className="text-sm font-medium text-gray-700">Días de la semana</label>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                        {daysOfWeek.map((day) => {
-                          const isSelected = blockForm.days.includes(day.key);
-                          return (
-                            <div
-                              key={day.key}
-                              className={`
-                                relative cursor-pointer rounded-lg border-2 transition-all duration-200 p-3 text-center
-                                ${isSelected 
-                                  ? 'border-blue-500 bg-blue-50 shadow-sm' 
-                                  : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                                }
-                              `}
-                              onClick={() => {
-                                const newDays = isSelected 
-                                  ? blockForm.days.filter(d => d !== day.key)
-                                  : [...blockForm.days, day.key];
-                                setBlockForm({ ...blockForm, days: newDays });
-                              }}
-                            >
-                              <div className="flex flex-col items-center space-y-1">
-                                <span className={`
-                                  text-xs font-medium uppercase tracking-wide
-                                  ${isSelected ? 'text-blue-700' : 'text-gray-600'}
-                                `}>
-                                  {day.shortLabel}
-                                </span>
-                                <span className={`
-                                  text-xs
-                                  ${isSelected ? 'text-blue-600' : 'text-gray-500'}
-                                `}>
-                                  {day.label}
-                                </span>
-                              </div>
-                              {isSelected && (
-                                <div className="absolute -top-1 -right-1">
-                                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs">✓</span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-                        <span>💡</span>
-                        <span>Selecciona los días en los que este bloque de horario estará activo</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <label className="text-sm font-medium text-gray-700 mb-3 block">
-                        Configuración de Horario
-                      </label>
-                      
-                      <div className="flex gap-2 mb-4">
-                        <Button
-                          size="sm"
-                          color={timeCalculationMode === 'start' ? 'primary' : 'default'}
-                          variant={timeCalculationMode === 'start' ? 'solid' : 'bordered'}
-                          onPress={() => setTimeCalculationMode('start')}
-                          className="flex-1"
-                        >
-                          📅 Definir inicio
-                        </Button>
-                        <Button
-                          size="sm"
-                          color={timeCalculationMode === 'end' ? 'primary' : 'default'}
-                          variant={timeCalculationMode === 'end' ? 'solid' : 'bordered'}
-                          onPress={() => setTimeCalculationMode('end')}
-                          className="flex-1"
-                        >
-                          🏁 Definir fin
-                        </Button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {timeCalculationMode === 'start' ? (
-                        <>
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Hora de inicio</label>
-                            <Select
-                              placeholder="Selecciona hora"
-                              selectedKeys={new Set([blockForm.startTime])}
-                              onSelectionChange={(keys) => {
-                                const selected = Array.from(keys)[0] as string;
-                                const calculatedEndTime = calculateEndTime(selected, blockForm.duration, blockForm.halfHourBreak);
-                                setBlockForm({ 
-                                  ...blockForm, 
-                                  startTime: selected,
-                                  endTime: calculatedEndTime
-                                });
-                              }}
-                              variant="bordered"
-                              classNames={{
-                                trigger: "min-h-[48px]"
-                              }}
-                            >
-                              {timeOptions.map((time) => (
-                                <SelectItem key={time.key}>{time.label}</SelectItem>
-                              ))}
-                            </Select>
-                          </div>
-                          
-                          <div className="relative space-y-2">
-                            <label className="text-sm font-medium text-blue-600">Hora de fin</label>
-                            <Input
-                              value={blockForm.endTime}
-                              variant="bordered"
-                              isReadOnly
-                              startContent={<span className="text-sm">🕐</span>}
-                              classNames={{
-                                input: "bg-blue-50 text-blue-700 font-medium",
-                                inputWrapper: "min-h-[48px]"
-                              }}
-                            />
-                            <div className="absolute top-0 right-0">
-                              <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                                Calculada
-                              </span>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="relative space-y-2">
-                            <label className="text-sm font-medium text-blue-600">Hora de inicio</label>
-                            <Input
-                              value={blockForm.startTime}
-                              variant="bordered"
-                              isReadOnly
-                              startContent={<span className="text-sm">🕐</span>}
-                              classNames={{
-                                input: "bg-blue-50 text-blue-700 font-medium",
-                                inputWrapper: "min-h-[48px]"
-                              }}
-                            />
-                            <div className="absolute top-0 right-0">
-                              <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                                Calculada
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Hora de fin</label>
-                            <Select
-                              placeholder="Selecciona hora"
-                              selectedKeys={new Set([blockForm.endTime])}
-                              onSelectionChange={(keys) => {
-                                const selected = Array.from(keys)[0] as string;
-                                const calculatedStartTime = calculateStartTime(selected, blockForm.duration, blockForm.halfHourBreak);
-                                setBlockForm({ 
-                                  ...blockForm, 
-                                  endTime: selected,
-                                  startTime: calculatedStartTime
-                                });
-                              }}
-                              variant="bordered"
-                              startContent={<span className="text-sm">🕐</span>}
-                              classNames={{
-                                trigger: "min-h-[48px]"
-                              }}
-                            >
-                              {timeOptions.map((time) => (
-                                <SelectItem key={time.key}>{time.label}</SelectItem>
-                              ))}
-                            </Select>
-                          </div>
-                        </>
-                      )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Duración del evento</label>
-                      <Select
-                        placeholder="Selecciona duración"
-                        selectedKeys={new Set([blockForm.duration.toString()])}
-                        onSelectionChange={(keys) => {
-                          const selected = Array.from(keys)[0] as string;
-                          const newDuration = parseFloat(selected);
-                          
-                          let newForm = { ...blockForm, duration: newDuration };
-                          
-                          // Recalculate based on mode
-                          if (timeCalculationMode === 'start') {
-                            newForm.endTime = calculateEndTime(blockForm.startTime, newDuration, blockForm.halfHourBreak);
-                          } else {
-                            newForm.startTime = calculateStartTime(blockForm.endTime, newDuration, blockForm.halfHourBreak);
-                          }
-                          
-                          setBlockForm(newForm);
-                        }}
-                        variant="bordered"
-                        startContent={<span className="text-sm">⏱️</span>}
-                        classNames={{
-                          trigger: "min-h-[48px]"
-                        }}
-                      >
-                        {durationOptions.map((duration) => (
-                          <SelectItem key={duration.key}>{duration.label}</SelectItem>
-                        ))}
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Máximo de eventos por bloque</label>
-                      <Input
-                        type="number"
-                        placeholder="Ej: 1"
-                        min="1"
-                        value={blockForm.maxEventsPerBlock.toString()}
-                        onValueChange={(value) => setBlockForm({ 
-                          ...blockForm, 
-                          maxEventsPerBlock: parseInt(value) || 1 
-                        })}
-                        variant="bordered"
-                        startContent={<span className="text-sm">👥</span>}
-                        classNames={{
-                          inputWrapper: "min-h-[48px]"
-                        }}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">👋</span>
-                        <div>
-                          <span className="text-sm font-medium text-amber-800">Media hora de despedida</span>
-                          <p className="text-xs text-amber-600">Tiempo extra para que los niños se despidan</p>
-                        </div>
-                      </div>
-                      <Switch
-                        isSelected={blockForm.halfHourBreak}
-                        onValueChange={(value) => {
-                          let newForm = { ...blockForm, halfHourBreak: value };
-                          
-                          // Recalculate based on mode
-                          if (timeCalculationMode === 'start') {
-                            newForm.endTime = calculateEndTime(blockForm.startTime, blockForm.duration, value);
-                          } else {
-                            newForm.startTime = calculateStartTime(blockForm.endTime, blockForm.duration, value);
-                          }
-                          
-                          setBlockForm(newForm);
-                        }}
-                        color="warning"
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Validation display */}
-                  {(() => {
-                    const validation = validateTimeBlock(blockForm);
-                    if (!validation.valid) {
-                      return (
-                        <div className="p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0">
-                              <span className="text-xl">⚠️</span>
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-semibold text-red-800 mb-1">
-                                Configuración inválida
-                              </h4>
-                              <p className="text-sm text-red-700">{validation.error}</p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    
-                    // Show success info
-                    const startMinutes = timeToMinutes(blockForm.startTime);
-                    const endMinutes = timeToMinutes(blockForm.endTime);
-                    const totalMinutes = endMinutes - startMinutes;
-                    const requiredMinutes = (blockForm.duration * 60) + (blockForm.halfHourBreak ? 30 : 0);
-                    const remainingMinutes = totalMinutes - requiredMinutes;
-                    
-                    return (
-                      <div className="p-4 bg-green-50 border-l-4 border-green-400 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0">
-                            <span className="text-xl">✅</span>
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="text-sm font-semibold text-green-800 mb-2">
-                              Configuración válida
-                            </h4>
-                            <div className="grid grid-cols-3 gap-4 text-xs">
-                              <div className="bg-white p-2 rounded border border-green-200">
-                                <div className="text-green-600 font-medium">Tiempo total</div>
-                                <div className="text-green-700 text-sm font-semibold">
-                                  {Math.floor(totalMinutes/60)}:{(totalMinutes%60).toString().padStart(2,'0')}h
-                                </div>
-                              </div>
-                              <div className="bg-white p-2 rounded border border-green-200">
-                                <div className="text-green-600 font-medium">Requerido</div>
-                                <div className="text-green-700 text-sm font-semibold">
-                                  {Math.floor(requiredMinutes/60)}:{(requiredMinutes%60).toString().padStart(2,'0')}h
-                                </div>
-                              </div>
-                              <div className="bg-white p-2 rounded border border-green-200">
-                                <div className="text-green-600 font-medium">Margen</div>
-                                <div className="text-green-700 text-sm font-semibold">
-                                  {Math.floor(remainingMinutes/60)}:{(remainingMinutes%60).toString().padStart(2,'0')}h
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Cancelar
-                </Button>
-                <Button 
-                  className="btn-primary"
-                  onPress={handleSaveBlock}
-                >
-                  {editingBlock ? 'Actualizar' : 'Crear'}
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+                  ))}
+                </Group>
+                <Text size="xs" c="dimmed">
+                  💡 Selecciona los días en los que este bloque de horario estará activo
+                </Text>
+              </Stack>
+            </Card>
+          </Stack>
+          
+          <Stack gap="sm">
+            <Text size="sm" fw={500}>Configuración de Horario</Text>
+            <Group grow>
+              <Select
+                label="Hora de inicio"
+                placeholder="Selecciona hora de inicio"
+                value={blockForm.startTime}
+                onChange={(value) => setBlockForm({ ...blockForm, startTime: value || '14:00' })}
+                data={timeOptions.map(t => ({ value: t.key, label: t.label }))}
+              />
+              <Select
+                label="Hora de fin"
+                placeholder="Selecciona hora de fin"
+                value={blockForm.endTime}
+                onChange={(value) => setBlockForm({ ...blockForm, endTime: value || '19:00' })}
+                data={timeOptions.map(t => ({ value: t.key, label: t.label }))}
+              />
+            </Group>
+          </Stack>
+          
+          <Group grow>
+            <Select
+              label="Duración del evento"
+              placeholder="Selecciona duración"
+              value={blockForm.duration.toString()}
+              onChange={(value) => setBlockForm({ ...blockForm, duration: parseFloat(value || '3.5') })}
+              data={durationOptions.map(d => ({ value: d.key, label: d.label }))}
+            />
+            <NumberInput
+              label="Máximo de eventos por bloque"
+              placeholder="1"
+              value={blockForm.maxEventsPerBlock}
+              onChange={(value) => setBlockForm({ ...blockForm, maxEventsPerBlock: typeof value === 'number' ? value : 1 })}
+              min={1}
+            />
+          </Group>
+          
+          <Group>
+            <Switch
+              label="Media hora de despedida"
+              description="Tiempo extra para que los niños se despidan"
+              checked={blockForm.halfHourBreak}
+              onChange={(e) => setBlockForm({ ...blockForm, halfHourBreak: e.currentTarget.checked })}
+            />
+          </Group>
+          
+          <Group justify="flex-end" mt="lg">
+            <Button variant="light" onClick={closeBlock}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveBlock}>
+              {editingBlock ? 'Actualizar' : 'Crear'}
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
 
       {/* Rest Day Modal */}
-      <Modal 
-        isOpen={isRestDayOpen} 
-        onClose={onRestDayClose}
+      <Modal
+        opened={restDayOpened}
+        onClose={closeRestDay}
+        title={editingRestDay ? 'Editar Día de Descanso' : 'Nuevo Día de Descanso'}
         size="lg"
-        classNames={{
-          body: "py-6",
-          backdrop: "surface-overlay",
-          base: "surface-modal",
-          header: "border-b border-gray-200",
-          footer: "border-t border-gray-200",
-          closeButton: "hover:bg-gray-100 active:bg-gray-200"
-        }}
       >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                {editingRestDay ? 'Editar Día de Descanso' : 'Nuevo Día de Descanso'}
-              </ModalHeader>
-              <ModalBody>
-                <div className="space-y-4">
-                  <Select
-                    label="Día de la semana"
-                    selectedKeys={new Set([restDayForm.day.toString()])}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as string;
-                      const dayNum = parseInt(selected);
-                      const dayName = daysOfWeek.find(d => d.key === dayNum)?.label || '';
-                      setRestDayForm({ 
-                        ...restDayForm, 
-                        day: dayNum,
-                        name: dayName
-                      });
-                    }}
-                    variant="bordered"
-                  >
-                    {daysOfWeek.map((day) => (
-                      <SelectItem key={day.key.toString()}>{day.label}</SelectItem>
-                    ))}
-                  </Select>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Cargo adicional</label>
-                    <div className="relative">
-                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
-                        <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
-                      </div>
-                      <Input
-                        type="number"
-                        step="100"
-                        value={restDayForm.fee.toString()}
-                        onValueChange={(value) => setRestDayForm({ 
-                          ...restDayForm, 
-                          fee: parseFloat(value) || 0 
-                        })}
-                        variant="bordered"
-                        placeholder="1500.00"
-                        classNames={{
-                          input: "pl-8"
-                        }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      Cargo adicional: {formatCurrency(restDayForm.fee)}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">Se puede liberar con costo adicional</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Permite reservar este día pagando el cargo extra
-                      </p>
-                    </div>
-                    <Switch
-                      isSelected={restDayForm.canBeReleased}
-                      onValueChange={(value) => setRestDayForm({ 
-                        ...restDayForm, 
-                        canBeReleased: value 
-                      })}
-                    />
-                  </div>
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Cancelar
-                </Button>
-                <Button 
-                  className="btn-primary"
-                  onPress={handleSaveRestDay}
-                >
-                  {editingRestDay ? 'Actualizar' : 'Crear'}
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+        <Stack gap="lg">
+          <Select
+            label="Día de la semana"
+            placeholder="Selecciona día"
+            value={restDayForm.day.toString()}
+            onChange={(value) => {
+              const dayNum = parseInt(value || '0');
+              const dayName = daysOfWeek.find(d => d.key === dayNum)?.label || '';
+              setRestDayForm({ 
+                ...restDayForm, 
+                day: dayNum,
+                name: dayName
+              });
+            }}
+            data={daysOfWeek.map(day => ({ value: day.key.toString(), label: day.label }))}
+          />
+          
+          <NumberInput
+            label="Cargo adicional"
+            placeholder="1500.00"
+            value={restDayForm.fee}
+            onChange={(value) => setRestDayForm({ 
+              ...restDayForm, 
+              fee: typeof value === 'number' ? value : 0 
+            })}
+            leftSection={<IconCurrencyDollar size={16} />}
+            min={0}
+            step={100}
+            description={`Cargo adicional: ${formatCurrency(restDayForm.fee)}`}
+          />
+          
+          <Card withBorder p="md">
+            <Group justify="space-between">
+              <Stack gap={2}>
+                <Text size="sm" fw={500}>Se puede liberar con costo adicional</Text>
+                <Text size="xs" c="dimmed">
+                  Permite reservar este día pagando el cargo extra
+                </Text>
+              </Stack>
+              <Switch
+                checked={restDayForm.canBeReleased}
+                onChange={(e) => setRestDayForm({ 
+                  ...restDayForm, 
+                  canBeReleased: e.currentTarget.checked 
+                })}
+              />
+            </Group>
+          </Card>
+          
+          <Group justify="flex-end" mt="lg">
+            <Button variant="light" onClick={closeRestDay}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveRestDay}>
+              {editingRestDay ? 'Actualizar' : 'Crear'}
+            </Button>
+          </Group>
+        </Stack>
       </Modal>
-    </div>
+    </Stack>
   );
 }

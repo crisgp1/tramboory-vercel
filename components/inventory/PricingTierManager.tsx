@@ -2,21 +2,39 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  Plus,
-  Edit3,
-  Trash2,
-  DollarSign,
-  Tag,
-  BarChart3,
-  Eye,
-  X,
-  ChevronDown,
-  Loader2
-} from 'lucide-react'
-import { Modal, ModalFooter, ModalActions, ModalButton } from '@/components/shared/modals'
-import { Spinner } from '@heroui/react'
+  Paper,
+  Button,
+  TextInput,
+  Textarea,
+  Select,
+  Modal,
+  Table,
+  Badge,
+  Loader,
+  Switch,
+  Group,
+  Stack,
+  Text,
+  Title,
+  ActionIcon,
+  ScrollArea,
+  Card,
+  Grid,
+  Center,
+  ThemeIcon,
+  NumberInput
+} from "@mantine/core"
+import { useDisclosure } from '@mantine/hooks'
+import {
+  IconPlus,
+  IconPencil,
+  IconTrash,
+  IconCurrencyDollar,
+  IconTag,
+  IconChartBar,
+  IconEye
+} from "@tabler/icons-react"
 import toast from "react-hot-toast"
-import NordicTable from "@/components/ui/NordicTable"
 
 interface PricingTier {
   _id?: string
@@ -75,7 +93,7 @@ function PricingTierModal({
     isActive: true,
     priority: 1
   })
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -99,7 +117,7 @@ function PricingTierModal({
     })
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast.error('El nombre es requerido')
       return
@@ -139,133 +157,138 @@ function PricingTierModal({
       return
     }
 
-    onSuccess(formData)
-    onClose()
+    setSubmitting(true)
+    try {
+      onSuccess(formData)
+      onClose()
+    } finally {
+      setSubmitting(false)
+    }
   }
-
-  if (!isOpen) return null
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={isOpen}
       onClose={onClose}
       title={mode === 'create' ? 'Nuevo Nivel de Precios' : 'Editar Nivel de Precios'}
-      icon={Tag}
       size="lg"
-      footer={
-        <ModalFooter>
-          <ModalActions>
-            <ModalButton
-              onClick={onClose}
-              disabled={loading}
-              variant="secondary"
-            >
-              Cancelar
-            </ModalButton>
-            <ModalButton
-              onClick={handleSubmit}
-              loading={loading}
-              variant="primary"
-            >
-              {mode === 'create' ? 'Crear Nivel' : 'Guardar Cambios'}
-            </ModalButton>
-          </ModalActions>
-        </ModalFooter>
-      }
+      closeOnEscape={!submitting}
+      closeOnClickOutside={!submitting}
     >
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Nombre del Nivel *"
+      <Stack gap="md">
+        <TextInput
+          label="Nombre del Nivel *"
+          placeholder="Ej: Mayorista, Distribuidor"
           value={formData.name}
           onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-          className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500"
         />
         
-        <input
-          type="text"
+        <Textarea
+          label="Descripción"
           placeholder="Descripción opcional del nivel"
           value={formData.description || ''}
           onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500"
+          minRows={2}
         />
         
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            type="number"
-            placeholder="Cantidad Mínima *"
-            value={formData.minQuantity.toString()}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              minQuantity: parseInt(e.target.value) || 1
-            }))}
-            min="1"
-            className="glass-input px-4 py-3 text-slate-800 placeholder-slate-500"
-          />
-          
-          <input
-            type="number"
-            placeholder="Cantidad Máxima (opcional)"
-            value={formData.maxQuantity?.toString() || ''}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              maxQuantity: e.target.value ? parseInt(e.target.value) : undefined
-            }))}
-            min={formData.minQuantity + 1}
-            className="glass-input px-4 py-3 text-slate-800 placeholder-slate-500"
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="relative">
-            <select
-              value={formData.discountType}
-              onChange={(e) => setFormData(prev => ({
+        <Grid>
+          <Grid.Col span={6}>
+            <NumberInput
+              label="Cantidad Mínima *"
+              placeholder="1"
+              value={formData.minQuantity}
+              onChange={(value) => setFormData(prev => ({
                 ...prev,
-                discountType: e.target.value as 'percentage' | 'fixed_amount'
+                minQuantity: typeof value === 'number' ? value : 1
               }))}
-              className="glass-input w-full px-4 py-3 pr-8 text-slate-800 appearance-none cursor-pointer"
-            >
-              <option value="percentage">Porcentaje (%)</option>
-              <option value="fixed_amount">Monto Fijo ($)</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
-          </div>
-          
-          <div className="relative">
-            <input
-              type="number"
-              placeholder="Valor del Descuento *"
-              value={formData.discountValue.toString()}
-              onChange={(e) => setFormData(prev => ({
-                ...prev,
-                discountValue: parseFloat(e.target.value) || 0
-              }))}
-              min="0.01"
-              step="0.01"
-              className="glass-input px-4 py-3 pr-12 text-slate-800 placeholder-slate-500"
+              min={1}
             />
-            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm">
-              {formData.discountType === 'percentage' ? '%' : '$'}
-            </span>
-          </div>
-        </div>
+          </Grid.Col>
+          <Grid.Col span={6}>
+            <NumberInput
+              label="Cantidad Máxima"
+              placeholder="Opcional"
+              value={formData.maxQuantity || ''}
+              onChange={(value) => setFormData(prev => ({
+                ...prev,
+                maxQuantity: typeof value === 'number' ? value : undefined
+              }))}
+              min={formData.minQuantity + 1}
+            />
+          </Grid.Col>
+        </Grid>
         
-        <div>
-          <input
-            type="number"
-            placeholder="Prioridad"
-            value={formData.priority.toString()}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              priority: parseInt(e.target.value) || 1
-            }))}
-            min="1"
-            className="glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500"
+        <Grid>
+          <Grid.Col span={6}>
+            <Select
+              label="Tipo de Descuento"
+              value={formData.discountType}
+              onChange={(value) => setFormData(prev => ({
+                ...prev,
+                discountType: value as 'percentage' | 'fixed_amount'
+              }))}
+              data={[
+                { value: 'percentage', label: 'Porcentaje (%)' },
+                { value: 'fixed_amount', label: 'Monto Fijo ($)' }
+              ]}
+            />
+          </Grid.Col>
+          <Grid.Col span={6}>
+            <NumberInput
+              label="Valor del Descuento *"
+              placeholder="0"
+              value={formData.discountValue}
+              onChange={(value) => setFormData(prev => ({
+                ...prev,
+                discountValue: typeof value === 'number' ? value : 0
+              }))}
+              min={0.01}
+              step={0.01}
+              rightSection={
+                <Text size="sm" c="dimmed">
+                  {formData.discountType === 'percentage' ? '%' : '$'}
+                </Text>
+              }
+            />
+          </Grid.Col>
+        </Grid>
+        
+        <NumberInput
+          label="Prioridad"
+          description="Orden de aplicación (menor número = mayor prioridad)"
+          value={formData.priority}
+          onChange={(value) => setFormData(prev => ({
+            ...prev,
+            priority: typeof value === 'number' ? value : 1
+          }))}
+          min={1}
+        />
+        
+        <Group gap="sm" mt="sm">
+          <Switch
+            checked={formData.isActive}
+            onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.currentTarget.checked }))}
+            size="sm"
           />
-          <p className="text-xs text-slate-500 mt-1">Orden de aplicación (menor número = mayor prioridad)</p>
-        </div>
-      </div>
+          <Text size="sm">Nivel activo</Text>
+        </Group>
+        
+        <Group justify="flex-end" mt="lg">
+          <Button
+            variant="light"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            loading={submitting}
+          >
+            {mode === 'create' ? 'Crear Nivel' : 'Guardar Cambios'}
+          </Button>
+        </Group>
+      </Stack>
     </Modal>
   )
 }
@@ -277,7 +300,7 @@ export default function PricingTierManager() {
   const [loading, setLoading] = useState(false)
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [opened, { open, close }] = useDisclosure(false)
 
   useEffect(() => {
     fetchProducts()
@@ -334,13 +357,13 @@ export default function PricingTierManager() {
   const handleCreateTier = () => {
     setSelectedTier(null)
     setModalMode('create')
-    setIsModalOpen(true)
+    open()
   }
 
   const handleEditTier = (tier: PricingTier) => {
     setSelectedTier(tier)
     setModalMode('edit')
-    setIsModalOpen(true)
+    open()
   }
 
   const handleDeleteTier = (tier: PricingTier) => {
@@ -428,310 +451,210 @@ export default function PricingTierManager() {
     return `${tier.minQuantity}+`
   }
 
-  const columns = [
-    { key: "tier", label: "Nivel" },
-    { key: "quantity", label: "Cantidad", width: "w-28", align: "center" as const },
-    { key: "discount", label: "Descuento", width: "w-28", align: "center" as const },
-    { key: "finalPrice", label: "Precio Final", width: "w-32", align: "right" as const },
-    { key: "savings", label: "Ahorro", width: "w-28", align: "right" as const },
-    { key: "status", label: "Estado", width: "w-24", align: "center" as const }
-  ]
-
-  const actions = [
-    {
-      key: "edit",
-      label: "Editar",
-      icon: <Edit3 className="w-4 h-4" />,
-      color: "primary" as const,
-      onClick: handleEditTier
-    },
-    {
-      key: "delete",
-      label: "Eliminar",
-      icon: <Trash2 className="w-4 h-4" />,
-      color: "danger" as const,
-      onClick: handleDeleteTier
-    }
-  ]
-
-  const renderCell = (tier: PricingTier, columnKey: string) => {
-    if (!productPricing) return null
-    
-    const discountedPrice = calculateDiscountedPrice(productPricing.basePrice, tier)
-    const savings = productPricing.basePrice - discountedPrice
-    const savingsPercentage = (savings / productPricing.basePrice) * 100
-
-    switch (columnKey) {
-      case "tier": {
-        return (
-          <div>
-            <p className="font-medium text-gray-900">{tier.name}</p>
-            {tier.description && (
-              <p className="text-sm text-gray-500">{tier.description}</p>
-            )}
-            <p className="text-xs text-gray-400">Prioridad: {tier.priority}</p>
-          </div>
-        )
-      }
-      case "quantity": {
-        return (
-          <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-            {getQuantityRange(tier)}
-          </span>
-        )
-      }
-      case "discount": {
-        return (
-          <span className="font-medium text-red-600">
-            {tier.discountType === 'percentage' 
-              ? `${tier.discountValue}%`
-              : formatCurrency(tier.discountValue, productPricing.currency)
-            }
-          </span>
-        )
-      }
-      case "finalPrice": {
-        return (
-          <span className="font-bold text-green-600">
-            {formatCurrency(discountedPrice, productPricing.currency)}
-          </span>
-        )
-      }
-      case "savings": {
-        return (
-          <div>
-            <p className="font-medium text-green-600">
-              {formatCurrency(savings, productPricing.currency)}
-            </p>
-            <p className="text-xs text-gray-500">
-              ({savingsPercentage.toFixed(1)}%)
-            </p>
-          </div>
-        )
-      }
-      case "status": {
-        return (
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-            tier.isActive ? 'bg-green-100/80 text-green-800' : 'bg-gray-100/80 text-gray-800'
-          }`}>
-            {tier.isActive ? 'Activo' : 'Inactivo'}
-          </span>
-        )
-      }
-      default: {
-        return null
-      }
-    }
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header glassmorphism */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800">Gestión de Precios Escalonados</h2>
-            <p className="text-slate-600">Configura precios por volumen para productos</p>
-          </div>
-        </div>
-      </div>
+    <Stack gap="lg">
+      {/* Header */}
+      <Paper p="lg" withBorder>
+        <Group justify="space-between">
+          <Group gap="md">
+            <ThemeIcon size="lg" radius="md" color="blue">
+              <IconTag size={24} />
+            </ThemeIcon>
+            <Stack gap={0}>
+              <Title order={2}>Gestión de Precios Escalonados</Title>
+              <Text size="sm" c="dimmed">Configura precios por volumen para productos</Text>
+            </Stack>
+          </Group>
+        </Group>
+      </Paper>
 
-      {/* Product Selection glassmorphism */}
-      <div className="glass-card p-4">
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <select
-              value={selectedProduct}
-              onChange={(e) => setSelectedProduct(e.target.value)}
-              className="glass-input w-full px-4 py-3 pr-8 text-slate-800 appearance-none cursor-pointer"
-            >
-              <option value="">Elige un producto para configurar precios</option>
-              {products.map((product, index) => (
-                <option key={product._id || `product-${index}`} value={product._id}>
-                  {product.name} ({product.sku}) - {formatCurrency(product.basePrice)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
-          </div>
+      {/* Product Selection */}
+      <Paper p="md" withBorder>
+        <Group>
+          <Select
+            placeholder="Elige un producto para configurar precios"
+            value={selectedProduct}
+            onChange={(value) => setSelectedProduct(value || '')}
+            data={products
+              .filter(product => product._id && product.name && product.sku)
+              .map(product => ({
+                value: product._id,
+                label: `${product.name} (${product.sku}) - ${formatCurrency(product.basePrice || 0)}`
+              }))}
+            style={{ flexGrow: 1 }}
+          />
           
           {selectedProduct && (
-            <button
+            <Button
               onClick={handleCreateTier}
-              className="glass-button px-6 py-3 flex items-center gap-2 text-sm font-medium"
+              leftSection={<IconPlus size={16} />}
             >
-              <Plus className="w-4 h-4" />
               Nuevo Nivel
-            </button>
+            </Button>
           )}
-        </div>
-      </div>
+        </Group>
+      </Paper>
 
-      {/* Product Pricing glassmorphism */}
+      {/* Product Pricing */}
       {productPricing && (
-        <div className="glass-card overflow-hidden">
-          <div className="p-6 border-b border-white/20">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-100/80 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">{productPricing.productName}</h3>
-                  <p className="text-sm text-gray-600">
+        <Card withBorder>
+          <Card.Section p="lg" withBorder>
+            <Group justify="space-between">
+              <Group gap="md">
+                <ThemeIcon size="md" radius="md" color="blue" variant="light">
+                  <IconCurrencyDollar size={20} />
+                </ThemeIcon>
+                <Stack gap={0}>
+                  <Text fw={600}>{productPricing.productName}</Text>
+                  <Text size="sm" c="dimmed">
                     SKU: {productPricing.productSku} | 
                     Precio Base: {formatCurrency(productPricing.basePrice, productPricing.currency)}
-                  </p>
-                </div>
-              </div>
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-blue-100/80 text-blue-800">
-                <BarChart3 className="w-3 h-3" />
+                  </Text>
+                </Stack>
+              </Group>
+              <Badge
+                size="lg"
+                leftSection={<IconChartBar size={16} />}
+                color="blue"
+                variant="light"
+              >
                 {productPricing.tiers.length} niveles
-              </span>
-            </div>
-          </div>
+              </Badge>
+            </Group>
+          </Card.Section>
           
-          <div className="p-6">
-            {/* Vista Desktop - Tabla Nordic */}
-            <div className="hidden lg:block">
-              {productPricing.tiers.length > 0 ? (
-                <NordicTable
-                  columns={columns}
-                  data={productPricing.tiers}
-                  renderCell={renderCell}
-                  actions={actions}
-                  loading={loading}
-                  emptyMessage="No hay niveles de precios configurados"
-                />
-              ) : (
-                <div className="text-center py-8 text-slate-500">
-                  <DollarSign className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p>No hay niveles de precios configurados</p>
-                  <button
+          <Card.Section p="lg">
+            {loading ? (
+              <Center py="xl">
+                <Stack align="center" gap="sm">
+                  <Loader size="lg" />
+                  <Text c="dimmed">Cargando niveles...</Text>
+                </Stack>
+              </Center>
+            ) : productPricing.tiers.length === 0 ? (
+              <Center py="xl">
+                <Stack align="center" gap="sm">
+                  <ThemeIcon size="xl" radius="md" color="gray" variant="light">
+                    <IconCurrencyDollar size={32} />
+                  </ThemeIcon>
+                  <Title order={4}>No hay niveles de precios configurados</Title>
+                  <Button
                     onClick={handleCreateTier}
-                    className="glass-button-secondary mt-3 px-4 py-2 flex items-center gap-2 text-sm font-medium mx-auto"
+                    leftSection={<IconPlus size={16} />}
+                    variant="light"
                   >
-                    <Plus className="w-4 h-4" />
                     Crear primer nivel
-                  </button>
-                </div>
-              )}
-            </div>
+                  </Button>
+                </Stack>
+              </Center>
+            ) : (
+              <ScrollArea>
+                <Table>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>NIVEL</Table.Th>
+                      <Table.Th>CANTIDAD</Table.Th>
+                      <Table.Th>DESCUENTO</Table.Th>
+                      <Table.Th>PRECIO FINAL</Table.Th>
+                      <Table.Th>AHORRO</Table.Th>
+                      <Table.Th>ESTADO</Table.Th>
+                      <Table.Th>ACCIONES</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {productPricing.tiers.map((tier) => {
+                      const discountedPrice = calculateDiscountedPrice(productPricing.basePrice, tier)
+                      const savings = productPricing.basePrice - discountedPrice
+                      const savingsPercentage = (savings / productPricing.basePrice) * 100
 
-            {/* Vista Mobile - Cards */}
-            <div className="lg:hidden">
-              {loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <Spinner label="Cargando niveles..." />
-                </div>
-              ) : productPricing.tiers.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <DollarSign className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p>No hay niveles de precios configurados</p>
-                  <button
-                    onClick={handleCreateTier}
-                    className="glass-button-secondary mt-3 px-4 py-2 flex items-center gap-2 text-sm font-medium mx-auto"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Crear primer nivel
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {productPricing.tiers.map((tier) => {
-                    const discountedPrice = calculateDiscountedPrice(productPricing.basePrice, tier)
-                    const savings = productPricing.basePrice - discountedPrice
-                    const savingsPercentage = (savings / productPricing.basePrice) * 100
-                    
-                    return (
-                      <div key={tier._id} className="glass-card p-4 hover:shadow-lg transition-all duration-200">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <p className="font-medium text-gray-900">{tier.name}</p>
+                      return (
+                        <Table.Tr key={tier._id}>
+                          <Table.Td>
+                            <Stack gap={0}>
+                              <Text fw={600}>{tier.name}</Text>
                               {tier.description && (
-                                <p className="text-sm text-gray-500">{tier.description}</p>
+                                <Text size="sm" c="dimmed">{tier.description}</Text>
                               )}
-                              <p className="text-xs text-gray-400">Prioridad: {tier.priority}</p>
-                            </div>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              tier.isActive ? 'bg-green-100/80 text-green-800' : 'bg-gray-100/80 text-gray-800'
-                            }`}>
+                              <Text size="xs" c="dimmed">Prioridad: {tier.priority}</Text>
+                            </Stack>
+                          </Table.Td>
+                          <Table.Td>
+                            <Badge variant="light" color="gray" size="sm">
+                              {getQuantityRange(tier)}
+                            </Badge>
+                          </Table.Td>
+                          <Table.Td>
+                            <Text fw={500} c="red">
+                              {tier.discountType === 'percentage' 
+                                ? `${tier.discountValue}%`
+                                : formatCurrency(tier.discountValue, productPricing.currency)
+                              }
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Text fw={700} c="green">
+                              {formatCurrency(discountedPrice, productPricing.currency)}
+                            </Text>
+                          </Table.Td>
+                          <Table.Td>
+                            <Stack gap={0}>
+                              <Text fw={500} c="green">
+                                {formatCurrency(savings, productPricing.currency)}
+                              </Text>
+                              <Text size="xs" c="dimmed">
+                                ({savingsPercentage.toFixed(1)}%)
+                              </Text>
+                            </Stack>
+                          </Table.Td>
+                          <Table.Td>
+                            <Badge
+                              color={tier.isActive ? 'green' : 'gray'}
+                              variant="light"
+                              size="sm"
+                            >
                               {tier.isActive ? 'Activo' : 'Inactivo'}
-                            </span>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase tracking-wide">Cantidad</p>
-                              <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded inline-block">
-                                {getQuantityRange(tier)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase tracking-wide">Descuento</p>
-                              <p className="font-medium text-red-600">
-                                {tier.discountType === 'percentage' 
-                                  ? `${tier.discountValue}%`
-                                  : formatCurrency(tier.discountValue, productPricing.currency)
-                                }
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase tracking-wide">Precio Final</p>
-                              <p className="font-bold text-green-600">
-                                {formatCurrency(discountedPrice, productPricing.currency)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase tracking-wide">Ahorro</p>
-                              <div>
-                                <p className="font-medium text-green-600">
-                                  {formatCurrency(savings, productPricing.currency)}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  ({savingsPercentage.toFixed(1)}%)
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditTier(tier)}
-                              className="glass-button flex-1 px-3 py-2 flex items-center justify-center gap-2 text-sm font-medium"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTier(tier)}
-                              className="glass-button-icon p-2 rounded-lg text-red-600 hover:text-red-800 hover:bg-red-50/50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+                            </Badge>
+                          </Table.Td>
+                          <Table.Td>
+                            <Group gap="xs">
+                              <ActionIcon
+                                variant="light"
+                                size="sm"
+                                color="blue"
+                                onClick={() => handleEditTier(tier)}
+                              >
+                                <IconPencil size={16} />
+                              </ActionIcon>
+                              <ActionIcon
+                                variant="light"
+                                size="sm"
+                                color="red"
+                                onClick={() => handleDeleteTier(tier)}
+                              >
+                                <IconTrash size={16} />
+                              </ActionIcon>
+                            </Group>
+                          </Table.Td>
+                        </Table.Tr>
+                      )
+                    })}
+                  </Table.Tbody>
+                </Table>
+              </ScrollArea>
+            )}
+          </Card.Section>
+        </Card>
       )}
 
       {/* Modal */}
       <PricingTierModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={opened}
+        onClose={close}
         tier={selectedTier}
         mode={modalMode}
         onSuccess={handleTierSuccess}
         existingTiers={productPricing?.tiers || []}
       />
-    </div>
+    </Stack>
   )
 }

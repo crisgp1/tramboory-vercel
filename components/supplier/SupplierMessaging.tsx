@@ -2,24 +2,25 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  Card,
-  CardBody,
+  Paper,
   Button,
-  Input,
+  TextInput,
   Avatar,
-  Chip,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
+  Badge,
+  Menu,
   Textarea,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure
-} from "@heroui/react";
+  Group,
+  Stack,
+  Text,
+  Title,
+  ActionIcon,
+  Center,
+  Loader,
+  ScrollArea,
+  Divider
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import {
   ChatBubbleLeftIcon,
   PaperAirplaneIcon,
@@ -79,7 +80,7 @@ export default function SupplierMessaging({ supplierId }: SupplierMessagingProps
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [opened, { open, close }] = useDisclosure(false);
 
   useEffect(() => {
     fetchConversations();
@@ -251,9 +252,9 @@ export default function SupplierMessaging({ supplierId }: SupplierMessagingProps
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "high": return "danger";
-      case "medium": return "warning";
-      default: return "default";
+      case "high": return "red";
+      case "medium": return "yellow";
+      default: return "gray";
     }
   };
 
@@ -264,195 +265,250 @@ export default function SupplierMessaging({ supplierId }: SupplierMessagingProps
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="grid grid-cols-4 gap-4 h-96">
-            <div className="bg-gray-200 rounded"></div>
-            <div className="col-span-3 bg-gray-200 rounded"></div>
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)', padding: '1.5rem' }}>
+        <Stack gap="md">
+          <div style={{ height: '2rem', backgroundColor: 'var(--mantine-color-gray-2)', borderRadius: 'var(--mantine-radius-sm)', width: '25%' }}></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '1rem', height: '24rem' }}>
+            <div style={{ backgroundColor: 'var(--mantine-color-gray-2)', borderRadius: 'var(--mantine-radius-sm)' }}></div>
+            <div style={{ backgroundColor: 'var(--mantine-color-gray-2)', borderRadius: 'var(--mantine-radius-sm)' }}></div>
           </div>
-        </div>
+        </Stack>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Mensajes</h1>
-          <p className="text-gray-600">Comunícate directamente con compradores</p>
+      <Paper shadow="sm" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+        <div style={{ padding: '1rem 1.5rem' }}>
+          <Title order={2}>Mensajes</Title>
+          <Text c="dimmed">Comunícate directamente con compradores</Text>
         </div>
-      </div>
+      </Paper>
 
-      <div className="flex h-[calc(100vh-120px)]">
+      <div style={{ display: 'flex', height: 'calc(100vh - 120px)' }}>
         {/* Lista de conversaciones */}
-        <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+        <div style={{ width: '33.333333%', backgroundColor: 'white', borderRight: '1px solid var(--mantine-color-gray-3)', display: 'flex', flexDirection: 'column' }}>
           {/* Búsqueda */}
-          <div className="p-4 border-b border-gray-200">
-            <Input
+          <div style={{ padding: '1rem', borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+            <TextInput
               placeholder="Buscar conversaciones..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
+              onChange={(e) => setSearchTerm(e.currentTarget.value)}
+              leftSection={<MagnifyingGlassIcon className="w-4 h-4" />}
             />
           </div>
 
           {/* Lista */}
-          <div className="flex-1 overflow-y-auto">
+          <ScrollArea style={{ flex: 1 }}>
             {filteredConversations.map((conversation) => (
               <div
                 key={conversation.id}
                 onClick={() => setSelectedConversation(conversation)}
-                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedConversation?.id === conversation.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                }`}
+                style={{
+                  padding: '1rem',
+                  borderBottom: '1px solid var(--mantine-color-gray-1)',
+                  cursor: 'pointer',
+                  backgroundColor: selectedConversation?.id === conversation.id ? 'var(--mantine-color-blue-0)' : 'transparent',
+                  borderLeft: selectedConversation?.id === conversation.id ? '4px solid var(--mantine-color-blue-5)' : 'none',
+                  transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedConversation?.id !== conversation.id) {
+                    e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-0)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedConversation?.id !== conversation.id) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
+                }}
               >
-                <div className="flex items-start gap-3">
-                  <div className="relative">
+                <Group align="flex-start" gap="md">
+                  <div style={{ position: 'relative' }}>
                     <Avatar
                       name={conversation.participantName}
                       size="md"
-                      className="flex-shrink-0"
+                      style={{ flexShrink: 0 }}
                     />
                     {conversation.isOnline && (
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                      <div style={{ 
+                        position: 'absolute', 
+                        bottom: 0, 
+                        right: 0, 
+                        width: '0.75rem', 
+                        height: '0.75rem', 
+                        backgroundColor: '#22c55e', 
+                        borderRadius: '50%', 
+                        border: '2px solid white' 
+                      }}></div>
                     )}
                   </div>
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900 truncate">
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Group justify="space-between" align="flex-start" mb="xs">
+                      <Group gap="xs">
+                        <Text fw={500} truncate>
                           {conversation.participantName}
-                        </h3>
+                        </Text>
                         {conversation.priority !== "low" && (
-                          <Chip
+                          <Badge
                             size="sm"
                             color={getPriorityColor(conversation.priority)}
-                            variant="flat"
+                            variant="light"
                           >
                             {conversation.priority}
-                          </Chip>
+                          </Badge>
                         )}
-                      </div>
-                      <span className="text-xs text-gray-500 flex-shrink-0">
+                      </Group>
+                      <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
                         {formatTimeAgo(conversation.lastMessageTime)}
-                      </span>
-                    </div>
+                      </Text>
+                    </Group>
                     
-                    <p className="text-sm text-gray-600 mb-1">
+                    <Text size="sm" c="dimmed" mb="xs">
                       {conversation.title}
-                    </p>
+                    </Text>
                     
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-500 truncate flex-1 mr-2">
+                    <Group justify="space-between" align="center">
+                      <Text size="sm" c="dimmed" truncate style={{ flex: 1, marginRight: '0.5rem' }}>
                         {conversation.lastMessage}
-                      </p>
+                      </Text>
                       {conversation.unreadCount > 0 && (
-                        <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-red-500 rounded-full">
+                        <Badge
+                          size="sm"
+                          color="red"
+                          variant="filled"
+                          style={{ 
+                            minWidth: '1.25rem',
+                            height: '1.25rem',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
                           {conversation.unreadCount}
-                        </span>
+                        </Badge>
                       )}
-                    </div>
+                    </Group>
                   </div>
-                </div>
+                </Group>
               </div>
             ))}
-          </div>
+          </ScrollArea>
         </div>
 
         {/* Área de conversación */}
-        <div className="flex-1 flex flex-col">
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {selectedConversation ? (
             <>
               {/* Header de conversación */}
-              <div className="bg-white border-b border-gray-200 px-6 py-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
+              <Paper shadow="none" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)', padding: '1rem 1.5rem' }}>
+                <Group justify="space-between">
+                  <Group gap="md">
                     <Avatar
                       name={selectedConversation.participantName}
                       size="md"
                     />
                     <div>
-                      <h2 className="font-semibold text-gray-900">
+                      <Text fw={600}>
                         {selectedConversation.participantName}
-                      </h2>
-                      <p className="text-sm text-gray-500">
+                      </Text>
+                      <Text size="sm" c="dimmed">
                         {selectedConversation.participantRole} - {selectedConversation.participantDepartment}
-                      </p>
+                      </Text>
                     </div>
                     {selectedConversation.isOnline && (
-                      <Chip size="sm" color="success" variant="flat">
+                      <Badge size="sm" color="green" variant="light">
                         En línea
-                      </Chip>
+                      </Badge>
                     )}
-                  </div>
+                  </Group>
                   
-                  <div className="flex items-center gap-2">
-                    <Button isIconOnly variant="light" size="sm">
+                  <Group gap="xs">
+                    <ActionIcon variant="light" size="sm">
                       <PhoneIcon className="w-5 h-5" />
-                    </Button>
-                    <Button isIconOnly variant="light" size="sm">
+                    </ActionIcon>
+                    <ActionIcon variant="light" size="sm">
                       <VideoCameraIcon className="w-5 h-5" />
-                    </Button>
-                    <Button isIconOnly variant="light" size="sm" onPress={onOpen}>
+                    </ActionIcon>
+                    <ActionIcon variant="light" size="sm" onClick={open}>
                       <InformationCircleIcon className="w-5 h-5" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+                    </ActionIcon>
+                  </Group>
+                </Group>
+              </Paper>
 
               {/* Mensajes */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.senderRole === 'supplier' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`max-w-xs lg:max-w-md ${message.senderRole === 'supplier' ? 'order-2' : 'order-1'}`}>
-                      <div
-                        className={`px-4 py-2 rounded-lg ${
-                          message.senderRole === 'supplier'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-200 text-gray-900'
-                        }`}
-                      >
-                        <p className="text-sm">{message.content}</p>
+              <ScrollArea style={{ flex: 1, padding: '1.5rem' }}>
+                <Stack gap="md">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: message.senderRole === 'supplier' ? 'flex-end' : 'flex-start'
+                      }}
+                    >
+                      <div style={{ 
+                        maxWidth: '24rem', 
+                        order: message.senderRole === 'supplier' ? 2 : 1 
+                      }}>
+                        <div
+                          style={{
+                            padding: '0.75rem 1rem',
+                            borderRadius: 'var(--mantine-radius-lg)',
+                            backgroundColor: message.senderRole === 'supplier' 
+                              ? 'var(--mantine-color-blue-5)' 
+                              : 'var(--mantine-color-gray-2)',
+                            color: message.senderRole === 'supplier' ? 'white' : 'var(--mantine-color-dark-9)'
+                          }}
+                        >
+                          <Text size="sm">{message.content}</Text>
+                        </div>
+                        <Text 
+                          size="xs" 
+                          c="dimmed" 
+                          mt="xs"
+                          style={{ 
+                            textAlign: message.senderRole === 'supplier' ? 'right' : 'left' 
+                          }}
+                        >
+                          {formatTimeAgo(message.timestamp)}
+                        </Text>
                       </div>
-                      <p className={`text-xs text-gray-500 mt-1 ${message.senderRole === 'supplier' ? 'text-right' : 'text-left'}`}>
-                        {formatTimeAgo(message.timestamp)}
-                      </p>
+                      
+                      {message.senderRole !== 'supplier' && (
+                        <Avatar
+                          name={message.senderName}
+                          size="sm"
+                          style={{ order: 1, marginRight: '0.5rem', marginTop: '0.5rem' }}
+                        />
+                      )}
                     </div>
-                    
-                    {message.senderRole !== 'supplier' && (
-                      <Avatar
-                        name={message.senderName}
-                        size="sm"
-                        className="order-1 mr-2 mt-2"
-                      />
-                    )}
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </Stack>
+              </ScrollArea>
 
               {/* Input de mensaje */}
-              <div className="bg-white border-t border-gray-200 p-4">
-                <div className="flex items-end gap-2">
-                  <Button isIconOnly variant="light" size="sm">
+              <Paper shadow="none" style={{ borderTop: '1px solid var(--mantine-color-gray-3)', padding: '1rem' }}>
+                <Group align="flex-end" gap="sm">
+                  <ActionIcon variant="light" size="sm">
                     <PaperClipIcon className="w-5 h-5" />
-                  </Button>
+                  </ActionIcon>
                   
-                  <div className="flex-1">
+                  <div style={{ flex: 1 }}>
                     <Textarea
                       placeholder="Escribe tu mensaje..."
                       value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
+                      onChange={(e) => setNewMessage(e.currentTarget.value)}
                       minRows={1}
                       maxRows={4}
-                      onKeyPress={(e) => {
+                      autosize
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           sendMessage();
@@ -461,80 +517,72 @@ export default function SupplierMessaging({ supplierId }: SupplierMessagingProps
                     />
                   </div>
                   
-                  <Button isIconOnly variant="light" size="sm">
+                  <ActionIcon variant="light" size="sm">
                     <FaceSmileIcon className="w-5 h-5" />
-                  </Button>
+                  </ActionIcon>
                   
                   <Button
-                    color="primary"
-                    isIconOnly
-                    onPress={sendMessage}
-                    isDisabled={!newMessage.trim()}
+                    onClick={sendMessage}
+                    disabled={!newMessage.trim()}
+                    size="sm"
+                    px="xs"
                   >
                     <PaperAirplaneIcon className="w-5 h-5" />
                   </Button>
-                </div>
-              </div>
+                </Group>
+              </Paper>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <ChatBubbleLeftIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Selecciona una conversación para comenzar</p>
-              </div>
-            </div>
+            <Center style={{ flex: 1, backgroundColor: 'var(--mantine-color-gray-0)' }}>
+              <Stack align="center" gap="md">
+                <ChatBubbleLeftIcon style={{ width: '4rem', height: '4rem', color: 'var(--mantine-color-gray-4)' }} />
+                <Text c="dimmed">Selecciona una conversación para comenzar</Text>
+              </Stack>
+            </Center>
           )}
         </div>
       </div>
 
       {/* Modal de información */}
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalContent>
-          {(onClose) => selectedConversation && (
-            <>
-              <ModalHeader>
-                Información de la Conversación
-              </ModalHeader>
-              <ModalBody>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Participante</h4>
-                    <div className="flex items-center gap-3">
-                      <Avatar name={selectedConversation.participantName} />
-                      <div>
-                        <p className="font-medium">{selectedConversation.participantName}</p>
-                        <p className="text-sm text-gray-500">
-                          {selectedConversation.participantRole} - {selectedConversation.participantDepartment}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {selectedConversation.orderId && (
-                    <div>
-                      <h4 className="font-semibold mb-2">Orden Relacionada</h4>
-                      <Chip color="primary" variant="flat">
-                        {selectedConversation.orderId}
-                      </Chip>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <h4 className="font-semibold mb-2">Prioridad</h4>
-                    <Chip color={getPriorityColor(selectedConversation.priority)} variant="flat">
-                      {selectedConversation.priority}
-                    </Chip>
-                  </div>
+      <Modal opened={opened} onClose={close} title="Información de la Conversación">
+        {selectedConversation && (
+          <Stack gap="md">
+            <div>
+              <Text fw={600} mb="sm">Participante</Text>
+              <Group gap="md">
+                <Avatar name={selectedConversation.participantName} />
+                <div>
+                  <Text fw={500}>{selectedConversation.participantName}</Text>
+                  <Text size="sm" c="dimmed">
+                    {selectedConversation.participantRole} - {selectedConversation.participantDepartment}
+                  </Text>
                 </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button color="default" variant="light" onPress={onClose}>
-                  Cerrar
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+              </Group>
+            </div>
+            
+            {selectedConversation.orderId && (
+              <div>
+                <Text fw={600} mb="sm">Orden Relacionada</Text>
+                <Badge variant="light">
+                  {selectedConversation.orderId}
+                </Badge>
+              </div>
+            )}
+            
+            <div>
+              <Text fw={600} mb="sm">Prioridad</Text>
+              <Badge color={getPriorityColor(selectedConversation.priority)} variant="light">
+                {selectedConversation.priority}
+              </Badge>
+            </div>
+
+            <Group justify="flex-end" mt="lg">
+              <Button variant="light" onClick={close}>
+                Cerrar
+              </Button>
+            </Group>
+          </Stack>
+        )}
       </Modal>
     </div>
   );
