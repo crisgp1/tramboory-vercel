@@ -4,14 +4,11 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
+  Menu,
   Button,
-  Chip,
+  Badge,
   Avatar
-} from '@heroui/react';
+} from '@mantine/core';
 import {
   Cog6ToothIcon,
   BuildingStorefrontIcon,
@@ -151,10 +148,10 @@ export default function AdminQuickNav({ variant = 'header', className = '' }: Ad
               whileTap={{ scale: 0.95 }}
             >
               <Button
-                variant="flat"
+                variant="light"
                 color={item.color}
-                startContent={<Icon className="w-4 h-4" />}
-                onPress={() => handleNavigation(item.href)}
+                leftSection={<Icon className="w-4 h-4" />}
+                onClick={() => handleNavigation(item.href)}
                 className="text-sm"
               >
                 {item.label}
@@ -163,45 +160,44 @@ export default function AdminQuickNav({ variant = 'header', className = '' }: Ad
           );
         })}
         {availableItems.length > 4 && (
-          <Dropdown isOpen={isOpen} onOpenChange={setIsOpen}>
-            <DropdownTrigger>
-              <Button variant="flat" color="default" isIconOnly>
+          <Menu opened={isOpen} onChange={setIsOpen}>
+            <Menu.Target>
+              <Button variant="light" color="gray">
                 <ChevronDownIcon className="w-4 h-4" />
               </Button>
-            </DropdownTrigger>
-            <DropdownMenu>
+            </Menu.Target>
+            <Menu.Dropdown>
               {availableItems.slice(4).map((item) => {
                 const Icon = item.icon;
                 return (
-                  <DropdownItem
+                  <Menu.Item
                     key={item.key}
-                    startContent={<Icon className="w-4 h-4" />}
-                    description={item.description}
-                    onPress={() => handleNavigation(item.href)}
+                    leftSection={<Icon className="w-4 h-4" />}
+                    onClick={() => handleNavigation(item.href)}
                   >
                     {item.label}
-                  </DropdownItem>
+                  </Menu.Item>
                 );
               })}
-            </DropdownMenu>
-          </Dropdown>
+            </Menu.Dropdown>
+          </Menu>
         )}
       </div>
     );
   }
 
   return (
-    <Dropdown isOpen={isOpen} onOpenChange={setIsOpen} placement="bottom-end">
-      <DropdownTrigger>
+    <Menu opened={isOpen} onChange={setIsOpen}>
+      <Menu.Target>
         <motion.div
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className={className}
         >
           <Button
-            variant="flat"
-            color="primary"
-            startContent={
+            variant="light"
+            color="blue"
+            leftSection={
               <div className="flex items-center gap-2">
                 <Avatar
                   src={user?.imageUrl}
@@ -209,17 +205,17 @@ export default function AdminQuickNav({ variant = 'header', className = '' }: Ad
                   size="sm"
                   className="w-6 h-6"
                 />
-                <Chip
+                <Badge
                   size="sm"
                   color={getRoleColor()}
-                  variant="flat"
-                  startContent={<ShieldCheckIcon className="w-3 h-3" />}
+                  variant="outline"
+                  leftSection={<ShieldCheckIcon className="w-3 h-3" />}
                 >
                   {getRoleDisplayName()}
-                </Chip>
+                </Badge>
               </div>
             }
-            endContent={
+            rightSection={
               <motion.div
                 animate={{ rotate: isOpen ? 180 : 0 }}
                 transition={{ duration: 0.2 }}
@@ -232,60 +228,38 @@ export default function AdminQuickNav({ variant = 'header', className = '' }: Ad
             <span className="hidden sm:inline">Panel Admin</span>
           </Button>
         </motion.div>
-      </DropdownTrigger>
+      </Menu.Target>
 
-      <DropdownMenu
-        aria-label="Admin Navigation"
-        className="w-72"
-        itemClasses={{
-          base: "gap-4",
-          description: "text-default-500"
-        }}
-      >
-        <DropdownItem
-          key="users"
-          onPress={() => handleNavigation('/dashboard/usuarios')}
-          className="hover:bg-gray-50"
+      <Menu.Dropdown className="w-72">
+        <Menu.Item
+          onClick={() => handleNavigation('/dashboard/usuarios')}
         >
           Usuarios
-        </DropdownItem>
-        <DropdownItem
-          key="inventory"
-          onPress={() => handleNavigation('/dashboard/inventario')}
-          className="hover:bg-gray-50"
+        </Menu.Item>
+        <Menu.Item
+          onClick={() => handleNavigation('/dashboard/inventario')}
         >
           Inventario
-        </DropdownItem>
-        <DropdownItem
-          key="finances"
-          onPress={() => handleNavigation('/dashboard/finanzas')}
-          className="hover:bg-gray-50"
+        </Menu.Item>
+        <Menu.Item
+          onClick={() => handleNavigation('/dashboard/finanzas')}
         >
           Finanzas
-        </DropdownItem>
+        </Menu.Item>
 
-        <DropdownItem
-          key="divider"
-          className="opacity-0 cursor-default"
-          isReadOnly
-        >
-          <div className="w-full h-px bg-gray-200 my-1" />
-        </DropdownItem>
+        <Menu.Divider />
 
-        <DropdownItem
-          key="settings"
-          startContent={
+        <Menu.Item
+          leftSection={
             <div className="p-2 rounded-lg bg-gray-100 text-gray-600">
               <Cog6ToothIcon className="w-4 h-4" />
             </div>
           }
-          description="Configuración del sistema"
-          onPress={() => handleNavigation('/dashboard/configuracion')}
-          className="hover:bg-gray-50"
+          onClick={() => handleNavigation('/dashboard/configuracion')}
         >
           <span className="font-medium">Configuración</span>
-        </DropdownItem>
-      </DropdownMenu>
-    </Dropdown>
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
   );
 }

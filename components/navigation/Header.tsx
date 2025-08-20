@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { FiMenu, FiX } from 'react-icons/fi'
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs'
-import { Button } from '@heroui/react'
+import { Button } from '@mantine/core'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)

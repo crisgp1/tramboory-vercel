@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ParticlesBackground } from '@/components/decorative/ParticlesBackground'
-import { Card, CardHeader, CardBody, Button, Chip } from '@heroui/react'
+import { Card, Button, Badge } from '@mantine/core'
 
 export const metadata: Metadata = {
   title: 'Nosotros - Tramboory',
@@ -156,9 +156,9 @@ export default function NosotrosPage() {
           </div>
           
           <div>
-            <Chip className="mb-4 bg-tramboory-yellow-500 text-tramboory-purple-900">
+            <Badge className="mb-4 bg-tramboory-yellow-500 text-tramboory-purple-900">
               Nuestra Historia
-            </Chip>
+            </Badge>
             <h2 className="text-3xl font-funhouse font-bold mb-6 text-tramboory-yellow-300">
               La magia detrás de Tramboory
             </h2>
@@ -182,29 +182,29 @@ export default function NosotrosPage() {
       <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20 z-10 relative">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card className="bg-gradient-to-br from-tramboory-purple-800/50 to-tramboory-purple-900/50 backdrop-blur-sm border-tramboory-purple-300/20 text-white overflow-hidden">
-            <CardHeader>
+            <Card.Section>
               <h3 className="text-2xl font-funhouse text-tramboory-yellow-300">
                 Nuestra Misión
               </h3>
-            </CardHeader>
-            <CardBody>
+            </Card.Section>
+            <Card.Section>
               <p className="text-white/80">
                 Crear experiencias mágicas y memorables para los niños y sus familias, ofreciendo un entorno seguro, divertido y estimulante donde puedan celebrar momentos especiales con creatividad y excelencia en cada detalle.
               </p>
-            </CardBody>
+            </Card.Section>
           </Card>
           
           <Card className="bg-gradient-to-br from-tramboory-purple-800/50 to-tramboory-purple-900/50 backdrop-blur-sm border-tramboory-purple-300/20 text-white overflow-hidden">
-            <CardHeader>
+            <Card.Section>
               <h3 className="text-2xl font-funhouse text-tramboory-yellow-300">
                 Nuestra Visión
               </h3>
-            </CardHeader>
-            <CardBody>
+            </Card.Section>
+            <Card.Section>
               <p className="text-white/80">
                 Ser reconocidos como el referente en celebraciones infantiles, expandiendo nuestra presencia y concepto innovador, manteniendo siempre nuestro compromiso con la calidad, la creatividad y la felicidad de cada niño que nos visita.
               </p>
-            </CardBody>
+            </Card.Section>
           </Card>
         </div>
       </section>
@@ -226,13 +226,13 @@ export default function NosotrosPage() {
               key={index}
               className="bg-white/10 backdrop-blur-sm border-tramboory-purple-300/20 text-white overflow-hidden hover:transform hover:-translate-y-2 transition-all duration-300"
             >
-              <CardBody className="p-6">
+              <Card.Section className="p-6">
                 <div className={`w-16 h-16 rounded-full mb-4 flex items-center justify-center text-2xl bg-gradient-to-br ${value.color}`}>
                   {value.icon}
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-tramboory-yellow-300">{value.title}</h3>
                 <p className="text-white/80">{value.description}</p>
-              </CardBody>
+              </Card.Section>
             </Card>
           ))}
         </div>
@@ -331,7 +331,7 @@ export default function NosotrosPage() {
               key={index}
               className="bg-white/10 backdrop-blur-sm border-tramboory-purple-300/20 text-white overflow-hidden"
             >
-              <CardBody className="p-6">
+              <Card.Section className="p-6">
                 <svg className="w-10 h-10 text-tramboory-yellow-400 mb-4" fill="currentColor" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
                 </svg>
@@ -342,7 +342,7 @@ export default function NosotrosPage() {
                   <p className="font-medium text-tramboory-yellow-300">{testimonial.author}</p>
                   <p className="text-white/60 text-sm">{testimonial.role}</p>
                 </div>
-              </CardBody>
+              </Card.Section>
             </Card>
           ))}
         </div>

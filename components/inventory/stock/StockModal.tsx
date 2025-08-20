@@ -437,13 +437,13 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
           {/* Current Stock Info */}
           <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
             <Stack gap="xs">
-              <Text weight={500} size="sm">Stock Actual</Text>
+              <Text fw={500} size="sm">Stock Actual</Text>
               <Group>
-                <Text size="sm" color="dimmed">Disponible:</Text>
-                <Text weight={600}>{stockItem.available_quantity || 0} {stockItem.unit}</Text>
-                <Text size="sm" color="dimmed">•</Text>
-                <Text size="sm" color="dimmed">Reservado:</Text>
-                <Text weight={600}>{stockItem.reserved_quantity || 0} {stockItem.unit}</Text>
+                <Text size="sm" c="dimmed">Disponible:</Text>
+                <Text fw={600}>{stockItem.available_quantity || 0} {stockItem.unit}</Text>
+                <Text size="sm" c="dimmed">•</Text>
+                <Text size="sm" c="dimmed">Reservado:</Text>
+                <Text fw={600}>{stockItem.reserved_quantity || 0} {stockItem.unit}</Text>
               </Group>
             </Stack>
           </Card>
@@ -461,26 +461,26 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
               <Stack gap="xs">
                 <Group>
                   <IconCalculator size={16} />
-                  <Text weight={500} size="sm">Cálculo de Stock</Text>
+                  <Text fw={500} size="sm">Cálculo de Stock</Text>
                 </Group>
                 <Group>
                   <Text size="sm">{stockItem.available_quantity || 0}</Text>
-                  <Text size="sm" color="dimmed">
-                    {movementType === MovementType.ENTRADA ? '+' : 
+                  <Text size="sm" c="dimmed">
+                    {movementType === MovementType.ENTRADA ? '+' :
                      movementType === MovementType.AJUSTE ? '=' : '-'}
                   </Text>
                   <Text size="sm">{parseFloat(quantity) || 0}</Text>
-                  <Text size="sm" color="dimmed">=</Text>
-                  <Text 
-                    weight={600} 
+                  <Text size="sm" c="dimmed">=</Text>
+                  <Text
+                    fw={600}
                     size="sm"
-                    color={resultingStock < 0 ? 'red' : 'green'}
+                    c={resultingStock < 0 ? 'red' : 'green'}
                   >
                     {resultingStock} {stockItem.unit}
                   </Text>
                 </Group>
                 {resultingStock < 0 && (
-                  <Text size="xs" color="red">
+                  <Text size="xs" c="red">
                     ⚠️ El stock no puede ser negativo
                   </Text>
                 )}
@@ -503,7 +503,7 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
             ]}
             required
             error={errors.movementType}
-            icon={<IconArrowsUpDown size={16} />}
+            leftSection={<IconArrowsUpDown size={16} />}
           />
 
           {/* Quantity */}
@@ -520,12 +520,12 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
               }
             }}
             min={0}
-            precision={2}
+            decimalScale={2}
             step={0.01}
             required
             error={errors.quantity}
-            rightSection={<Text size="sm" color="dimmed">{stockItem.unit}</Text>}
-            icon={<IconHash size={16} />}
+            rightSection={<Text size="sm" c="dimmed">{stockItem.unit}</Text>}
+            leftSection={<IconHash size={16} />}
             description={movementType && quantity && resultingStock !== null ? 
               `Resultado: ${resultingStock} ${stockItem.unit}` : undefined
             }
@@ -539,7 +539,7 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
             onChange={(e) => setReason(e.currentTarget.value)}
             required
             error={errors.reason}
-            icon={<IconFileText size={16} />}
+            leftSection={<IconFileText size={16} />}
           />
 
           {/* Additional fields for specific movement types */}
@@ -551,7 +551,7 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
                 placeholder="Ingresa el ID del lote"
                 value={batchId}
                 onChange={(e) => setBatchId(e.currentTarget.value)}
-                icon={<IconTag size={16} />}
+                leftSection={<IconTag size={16} />}
               />
 
               {/* Cost per unit */}
@@ -561,10 +561,10 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
                 value={costPerUnit ? parseFloat(costPerUnit) : ''}
                 onChange={(value) => setCostPerUnit(value?.toString() || '')}
                 min={0}
-                precision={2}
+                decimalScale={2}
                 step={0.01}
-                icon={<IconCurrencyDollar size={16} />}
-                rightSection={<Text size="sm" color="dimmed">MXN</Text>}
+                leftSection={<IconCurrencyDollar size={16} />}
+                rightSection={<Text size="sm" c="dimmed">MXN</Text>}
               />
 
               {/* Expiry Date */}
@@ -574,7 +574,7 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.currentTarget.value)}
                 type="date"
-                icon={<IconCalendar size={16} />}
+                leftSection={<IconCalendar size={16} />}
               />
             </>
           )}
@@ -587,7 +587,7 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
             onChange={(e) => setNotes(e.currentTarget.value)}
             minRows={2}
             maxRows={4}
-            icon={<IconFileText size={16} />}
+            leftSection={<IconFileText size={16} />}
           />
         </Stack>
 

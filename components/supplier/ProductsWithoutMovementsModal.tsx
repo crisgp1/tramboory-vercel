@@ -104,7 +104,7 @@ export default function ProductsWithoutMovementsModal({
       <td>
         <Group>
           <IconPackage size={20} className="text-gray-500" />
-          <Text weight={500}>{product.name}</Text>
+          <Text fw={500}>{product.name}</Text>
         </Group>
       </td>
       <td>
@@ -189,8 +189,8 @@ export default function ProductsWithoutMovementsModal({
                 title="Productos que requieren configuración inicial"
                 color="orange"
               >
-                Estos productos no tienen movimientos de inventario registrados. 
-                Haz clic en "Iniciar Movimientos" para configurar el stock inicial.
+                Estos productos no tienen movimientos de inventario registrados.
+                Haz clic en &quot;Iniciar Movimientos&quot; para configurar el stock inicial.
               </Alert>
 
               {/* Products Table */}

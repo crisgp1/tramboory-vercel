@@ -161,17 +161,17 @@ export default function SupplierPenaltyModal({
       title={getTitle()}
       size="lg"
     >
-      <Stack spacing="md">
+      <Stack gap="md">
         {/* Subtitle */}
         {supplier && (
-          <Text size="sm" color="dimmed">{supplier.name} • {supplier.code}</Text>
+          <Text size="sm" c="dimmed">{supplier.name} • {supplier.code}</Text>
         )}
         
         {/* Información del Proveedor */}
         <Paper p="md" withBorder>
           <Group mb="sm">
             <IconUser size={20} className="text-orange-600" />
-            <Text weight={600}>Proveedor Afectado</Text>
+            <Text fw={600}>Proveedor Afectado</Text>
           </Group>
 
           {supplier && (
@@ -180,10 +180,10 @@ export default function SupplierPenaltyModal({
                 <IconUser size={24} />
               </Avatar>
               <div>
-                <Text weight={600}>{supplier.name}</Text>
-                <Text size="sm" color="dimmed">Código: {supplier.code}</Text>
+                <Text fw={600}>{supplier.name}</Text>
+                <Text size="sm" c="dimmed">Código: {supplier.code}</Text>
                 {supplier.contactInfo?.contactPerson && (
-                  <Text size="sm" color="dimmed">Contacto: {supplier.contactInfo.contactPerson}</Text>
+                  <Text size="sm" c="dimmed">Contacto: {supplier.contactInfo.contactPerson}</Text>
                 )}
               </div>
             </Group>
@@ -194,7 +194,7 @@ export default function SupplierPenaltyModal({
         <Paper p="md" withBorder>
           <Group mb="md">
             <IconAlertTriangle size={20} className="text-red-600" />
-            <Text weight={600}>Detalles de la Penalización</Text>
+            <Text fw={600}>Detalles de la Penalización</Text>
           </Group>
 
           <Stack>
@@ -233,16 +233,16 @@ export default function SupplierPenaltyModal({
                     const IconComponent = iconMap[conceptConfig.icon] || IconFileText
                     return <IconComponent size={20} className="text-orange-600" />
                   })()}
-                  <Text weight={600} color="orange">{conceptConfig.label}</Text>
+                  <Text fw={600} c="orange">{conceptConfig.label}</Text>
                 </Group>
-                <Text size="sm" color="orange" mb="xs">{conceptConfig.description}</Text>
-                <Group spacing="xs">
-                  <Text size="xs" color="orange">
-                    <Text span weight={500}>Puntos base:</Text> {(conceptConfig as any)?.basePoints || 0}
+                <Text size="sm" c="orange" mb="xs">{conceptConfig.description}</Text>
+                <Group gap="xs">
+                  <Text size="xs" c="orange">
+                    <Text span fw={500}>Puntos base:</Text> {(conceptConfig as any)?.basePoints || 0}
                   </Text>
-                  <Text size="xs" color="orange">•</Text>
-                  <Text size="xs" color="orange">
-                    <Text span weight={500}>Categoría:</Text> {conceptConfig.category}
+                  <Text size="xs" c="orange">•</Text>
+                  <Text size="xs" c="orange">
+                    <Text span fw={500}>Categoría:</Text> {conceptConfig.category}
                   </Text>
                 </Group>
               </Paper>
@@ -254,9 +254,20 @@ export default function SupplierPenaltyModal({
               placeholder="Selecciona la fecha"
               required
               value={incidentDate ? new Date(incidentDate) : null}
-              onChange={(value) => setIncidentDate(value ? value.toISOString().split('T')[0] : '')}
+              onChange={(value) => {
+                if (value) {
+                  try {
+                    const date = new Date(value);
+                    setIncidentDate(date.toISOString().split('T')[0]);
+                  } catch {
+                    setIncidentDate('');
+                  }
+                } else {
+                  setIncidentDate('');
+                }
+              }}
               maxDate={new Date()}
-              icon={<IconCalendar size={16} />}
+              leftSection={<IconCalendar size={16} />}
             />
 
             {/* Descripción */}
@@ -285,9 +296,9 @@ export default function SupplierPenaltyModal({
               value={economicImpact ? parseFloat(economicImpact) : ''}
               onChange={(value) => setEconomicImpact(value ? value.toString() : '')}
               min={0}
-              precision={2}
+              decimalScale={2}
               step={0.01}
-              icon={<IconCurrencyDollar size={16} />}
+              leftSection={<IconCurrencyDollar size={16} />}
               description="Monto aproximado del impacto económico causado por el incidente"
             />
           </Stack>
@@ -298,29 +309,29 @@ export default function SupplierPenaltyModal({
           <Paper p="md" withBorder style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
             <Group mb="sm">
               <IconCalculator size={20} className="text-red-600" />
-              <Text weight={600} color="red">Resumen de Penalización</Text>
+              <Text fw={600} c="red">Resumen de Penalización</Text>
             </Group>
             
-            <Stack spacing="xs">
-              <Group position="apart">
-                <Text color="red">Puntos base del concepto:</Text>
-                <Text weight={600} color="red">{(conceptConfig as any)?.basePoints || 0}</Text>
+            <Stack gap="xs">
+              <Group justify="space-between">
+                <Text c="red">Puntos base del concepto:</Text>
+                <Text fw={600} c="red">{(conceptConfig as any)?.basePoints || 0}</Text>
               </Group>
-              <Group position="apart">
-                <Text color="red">Multiplicador de severidad:</Text>
-                <Text weight={600} color="red">x{(severityConfig as any)?.multiplier || 1}</Text>
+              <Group justify="space-between">
+                <Text c="red">Multiplicador de severidad:</Text>
+                <Text fw={600} c="red">x{(severityConfig as any)?.multiplier || 1}</Text>
               </Group>
-              <Divider color="red.2" />
-              <Group position="apart">
-                <Text size="lg" weight={600} color="red">Total de puntos:</Text>
-                <Text size="xl" weight={700} color="red">{calculatePenaltyPoints()}</Text>
+              <Divider c="red.2" />
+              <Group justify="space-between">
+                <Text size="lg" fw={600} c="red">Total de puntos:</Text>
+                <Text size="xl" fw={700} c="red">{calculatePenaltyPoints()}</Text>
               </Group>
               
               {severityConfig && (
                 <Badge 
                   fullWidth 
                   size="lg" 
-                  color={selectedSeverity === 'low' ? 'yellow' : selectedSeverity === 'medium' ? 'orange' : selectedSeverity === 'high' ? 'red' : 'gray'}
+                  c={selectedSeverity.toString().toLowerCase() === 'low' ? 'yellow' : selectedSeverity.toString().toLowerCase() === 'medium' ? 'orange' : selectedSeverity.toString().toLowerCase() === 'high' ? 'red' : 'gray'}
                 >
                   Severidad: {severityConfig.label}
                 </Badge>
@@ -331,11 +342,11 @@ export default function SupplierPenaltyModal({
 
         {/* Error message */}
         {!selectedConcept || !selectedSeverity || !incidentDate || !description ? (
-          <Text color="red" size="sm">Completa todos los campos requeridos</Text>
+          <Text c="red" size="sm">Completa todos los campos requeridos</Text>
         ) : null}
 
         {/* Footer Actions */}
-        <Group position="right">
+        <Group justify="flex-end">
           <Button
             onClick={handleClose}
             disabled={loading}

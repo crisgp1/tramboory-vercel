@@ -3,7 +3,7 @@
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Card, CardBody, Button, Spinner } from '@heroui/react';
+import { Card, Button, Loader } from '@mantine/core';
 import { SparklesIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
 
 export default function WelcomePage() {
@@ -45,7 +45,7 @@ export default function WelcomePage() {
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <Spinner size="lg" />
+        <Loader size="lg" />
       </div>
     );
   }
@@ -53,7 +53,7 @@ export default function WelcomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
       <Card className="max-w-md w-full border-0 shadow-2xl bg-white/90 backdrop-blur-sm">
-        <CardBody className="p-8 text-center">
+        <Card.Section className="p-8 text-center">
           {/* Icono de bienvenida */}
           <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <SparklesIcon className="w-10 h-10 text-white" />
@@ -84,8 +84,8 @@ export default function WelcomePage() {
           {/* Botones de acción */}
           <div className="space-y-3">
             <Button
-              startContent={<CalendarDaysIcon className="w-5 h-5" />}
-              onPress={handleCreateReservation}
+              leftSection={<CalendarDaysIcon className="w-5 h-5" />}
+              onClick={handleCreateReservation}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
               size="lg"
             >
@@ -93,14 +93,14 @@ export default function WelcomePage() {
             </Button>
             
             <Button
-              onPress={handleViewReservations}
+              onClick={handleViewReservations}
               variant="bordered"
               className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Ver Mis Reservaciones
             </Button>
           </div>
-        </CardBody>
+        </Card.Section>
       </Card>
     </div>
   );

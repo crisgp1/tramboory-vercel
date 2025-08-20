@@ -4,10 +4,18 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Card,
-  CardBody,
   Button,
-  Spinner
-} from '@heroui/react';
+  Loader,
+  Center,
+  Stack,
+  Title,
+  Text,
+  Group,
+  Box,
+  SimpleGrid,
+  ActionIcon,
+  Affix
+} from '@mantine/core';
 import {
   PlusIcon,
   SparklesIcon
@@ -59,68 +67,69 @@ export default function ClientMainContent({ onViewReservation }: ClientMainConte
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="flex flex-col items-center">
-          <Spinner size="lg" color="default" />
-          <p className="text-gray-600 mt-4">
+      <Center className="min-h-screen bg-gray-50">
+        <Stack align="center">
+          <Loader size="lg" color="gray" />
+          <Text c="dimmed">
             Cargando reservaciones...
-          </p>
-        </div>
-      </div>
+          </Text>
+        </Stack>
+      </Center>
     );
   }
 
   if (reservations.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-screen bg-gray-50 p-8">
-        <Card className="border border-gray-200 shadow-sm bg-white max-w-lg w-full">
-          <CardBody className="p-12">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-4xl">📅</span>
-              </div>
-              
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                No hay reservaciones
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Aún no tienes reservaciones programadas.
-              </p>
-              <Button
-                startContent={<PlusIcon className="w-4 h-4" />}
-                onPress={() => router.push('/reservaciones/nueva')}
-                className="bg-gray-900 text-white hover:bg-gray-800 transition-colors duration-200"
-                size="md"
-              >
-                Nueva Reserva
-              </Button>
-            </div>
-          </CardBody>
+      <Center className="min-h-screen bg-gray-50 p-8">
+        <Card shadow="sm" radius="lg" withBorder className="max-w-lg w-full" padding="xl">
+          <Stack align="center" gap="lg">
+            <Center className="w-20 h-20 bg-gray-100 rounded-full">
+              <Text size="2rem">📅</Text>
+            </Center>
+            
+            <Title order={3} ta="center">
+              No hay reservaciones
+            </Title>
+            <Text c="dimmed" ta="center">
+              Aún no tienes reservaciones programadas.
+            </Text>
+            <Button
+              leftSection={<PlusIcon className="w-4 h-4" />}
+              onClick={() => router.push('/reservaciones/nueva')}
+              color="dark"
+              size="md"
+            >
+              Nueva Reserva
+            </Button>
+          </Stack>
         </Card>
-      </div>
+      </Center>
     );
   }
 
   return (
-    <div className="flex-1 bg-gray-50 min-h-screen">
+    <Box className="flex-1 bg-gray-50 min-h-screen">
       {/* Mobile Header - solo visible en pantallas pequeñas */}
-      <div className="lg:hidden">
+      <Box className="lg:hidden">
         <SimpleHeader title="Mis Reservaciones" />
-      </div>
+      </Box>
       
-      <div className="p-6 lg:p-8">
+      <Box p={{ base: 'md', lg: 'xl' }}>
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+        <Stack mb="xl">
+          <Title order={2}>
             Mis Reservaciones
-          </h1>
-          <p className="text-gray-600">
+          </Title>
+          <Text c="dimmed">
             {reservations.length} {reservations.length === 1 ? 'reservación' : 'reservaciones'}
-          </p>
-        </div>
+          </Text>
+        </Stack>
 
         {/* Reservations Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+        <SimpleGrid
+          cols={{ base: 1, sm: 2, lg: 2, xl: 3 }}
+          spacing={{ base: 'md', sm: 'lg' }}
+        >
           {reservations.map((reservation) => (
             <ClientReservationCard
               key={reservation._id}
@@ -128,20 +137,22 @@ export default function ClientMainContent({ onViewReservation }: ClientMainConte
               onView={onViewReservation}
             />
           ))}
-        </div>
+        </SimpleGrid>
 
         {/* Floating Action Button for mobile */}
-        <div className="fixed bottom-6 right-6 lg:hidden">
-          <Button
-            isIconOnly
-            onPress={() => router.push('/reservaciones/nueva')}
-            className="w-14 h-14 bg-gray-900 text-white hover:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-200 rounded-full"
-            size="lg"
+        <Affix position={{ bottom: 24, right: 24 }} className="lg:hidden">
+          <ActionIcon
+            onClick={() => router.push('/reservaciones/nueva')}
+            size="xl"
+            radius="xl"
+            color="dark"
+            variant="filled"
+            className="shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <PlusIcon className="w-6 h-6" />
-          </Button>
-        </div>
-      </div>
-    </div>
+          </ActionIcon>
+        </Affix>
+      </Box>
+    </Box>
   );
 }

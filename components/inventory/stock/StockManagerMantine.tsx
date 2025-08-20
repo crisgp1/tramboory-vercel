@@ -131,8 +131,8 @@ export default function StockManagerMantine() {
           <Group>
             <IconCube size={20} className="text-blue-600" />
             <div>
-              <Text weight={500}>{item.product?.name || 'Producto sin nombre'}</Text>
-              <Text size="sm" color="dimmed">{item.product?.category || 'Sin categoría'}</Text>
+              <Text fw={500}>{item.product?.name || 'Producto sin nombre'}</Text>
+              <Text size="sm" c="dimmed">{item.product?.category || 'Sin categoría'}</Text>
             </div>
           </Group>
         </td>
@@ -142,16 +142,16 @@ export default function StockManagerMantine() {
           </Badge>
         </td>
         <td>
-          <Group spacing="xs">
+          <Group gap="xs">
             <IconMapPin size={16} />
             <Text size="sm">{item.location_id}</Text>
           </Group>
         </td>
         <td>
-          <Text weight={600}>{item.available_quantity} {item.unit}</Text>
+          <Text fw={600}>{item.available_quantity} {item.unit}</Text>
         </td>
         <td>
-          <Text color="orange">{item.reserved_quantity} {item.unit}</Text>
+          <Text c="orange">{item.reserved_quantity} {item.unit}</Text>
         </td>
         <td>
           <Badge color={status.color} variant="light">
@@ -161,15 +161,15 @@ export default function StockManagerMantine() {
         <td>
           {item.last_movement ? (
             <div>
-              <Text size="sm" weight={500}>{item.last_movement.movement_type}</Text>
-              <Text size="xs" color="dimmed">{formatDate(item.last_movement.created_at)}</Text>
+              <Text size="sm" fw={500}>{item.last_movement.movement_type}</Text>
+              <Text size="xs" c="dimmed">{formatDate(item.last_movement.created_at)}</Text>
             </div>
           ) : (
-            <Text size="sm" color="dimmed">Sin movimientos</Text>
+            <Text size="sm" c="dimmed">Sin movimientos</Text>
           )}
         </td>
         <td>
-          <Group spacing={0}>
+          <Group gap={0}>
             <ActionIcon 
               variant="light" 
               onClick={() => handleStockAction('adjust', item)}
@@ -185,20 +185,20 @@ export default function StockManagerMantine() {
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
-                  <Menu.Item 
-                    icon={<IconArrowUp size={14} />}
+                  <Menu.Item
+                    leftSection={<IconArrowUp size={14} />}
                     onClick={() => handleStockAction('in', item)}
                   >
                     Entrada
                   </Menu.Item>
-                  <Menu.Item 
-                    icon={<IconArrowDown size={14} />}
+                  <Menu.Item
+                    leftSection={<IconArrowDown size={14} />}
                     onClick={() => handleStockAction('out', item)}
                   >
                     Salida
                   </Menu.Item>
-                  <Menu.Item 
-                    icon={<IconArrowsRightLeft size={14} />}
+                  <Menu.Item
+                    leftSection={<IconArrowsRightLeft size={14} />}
                     onClick={() => handleStockAction('transfer', item)}
                   >
                     Transferir
@@ -213,13 +213,13 @@ export default function StockManagerMantine() {
   })
 
   return (
-    <Stack spacing="md">
+    <Stack gap="md">
       {/* Header */}
       <Card>
-        <Group position="apart">
+        <Group justify="space-between">
           <div>
             <Title order={3}>Gestión de Stock</Title>
-            <Text color="dimmed" size="sm">
+            <Text c="dimmed" size="sm">
               {stockItems.length} productos en inventario
             </Text>
           </div>
@@ -237,15 +237,15 @@ export default function StockManagerMantine() {
 
       {/* Filters */}
       <Card>
-        <Stack spacing="sm">
-          <Text weight={500}>Filtros</Text>
+        <Stack gap="sm">
+          <Text fw={500}>Filtros</Text>
           
           <Group grow>
             <TextInput
               placeholder="Buscar productos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.currentTarget.value)}
-              icon={<IconSearch size={16} />}
+              leftSection={<IconSearch size={16} />}
             />
             
             <Select
@@ -282,7 +282,7 @@ export default function StockManagerMantine() {
           <Center style={{ height: 200 }}>
             <Stack align="center">
               <Loader />
-              <Text color="dimmed">Cargando inventario...</Text>
+              <Text c="dimmed">Cargando inventario...</Text>
             </Stack>
           </Center>
         ) : (
@@ -306,7 +306,7 @@ export default function StockManagerMantine() {
                     <Center style={{ padding: 40 }}>
                       <Stack align="center">
                         <IconCube size={48} className="text-gray-400" />
-                        <Text color="dimmed">No se encontraron productos</Text>
+                        <Text c="dimmed">No se encontraron productos</Text>
                       </Stack>
                     </Center>
                   </td>

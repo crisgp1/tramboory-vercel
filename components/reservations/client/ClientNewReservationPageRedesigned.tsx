@@ -5,25 +5,18 @@ import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import {
   Button,
-  Input,
+  TextInput,
   Select,
-  SelectItem,
   Textarea,
   Card,
-  CardBody,
-  Chip,
+  Badge,
   Divider,
   Progress,
-  RadioGroup,
   Radio,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
   Avatar
-} from '@heroui/react';
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
   CheckIcon,
   CakeIcon,
@@ -132,7 +125,7 @@ type Step = 'basic' | 'package' | 'food' | 'extras' | 'payment' | 'confirmation'
 export default function ClientNewReservationPageRedesigned() {
   const { user } = useUser();
   const router = useRouter();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [opened, { open, close }] = useDisclosure();
   
   const [currentStep, setCurrentStep] = useState<Step>('basic');
   const [formData, setFormData] = useState<FormData>({
@@ -514,15 +507,16 @@ Para cualquier duda, contacta:
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nombre del niño/a
                 </label>
-                <Input
+                <TextInput
                   placeholder="Ej: Sofía García"
                   value={formData.childName}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, childName: value }))}
-                  variant="flat"
+                  onChange={(event) => setFormData(prev => ({ ...prev, childName: event.target.value }))}
                   size="lg"
-                  classNames={{
-                    input: "text-gray-900",
-                    inputWrapper: "bg-gray-50 hover:bg-gray-100 data-[hover=true]:bg-gray-100"
+                  styles={{
+                    input: {
+                      backgroundColor: '#f9fafb',
+                      '&:hover': { backgroundColor: '#f3f4f6' }
+                    }
                   }}
                 />
               </div>
@@ -533,24 +527,20 @@ Para cualquier duda, contacta:
                 </label>
                 <Select
                   placeholder="Selecciona la edad"
-                  selectedKeys={formData.childAge ? [formData.childAge] : []}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0] as string;
-                    setFormData(prev => ({ ...prev, childAge: selected }));
-                  }}
-                  variant="flat"
+                  value={formData.childAge}
+                  onChange={(value) => setFormData(prev => ({ ...prev, childAge: value || '' }))}
                   size="lg"
-                  classNames={{
-                    trigger: "bg-gray-50 hover:bg-gray-100",
-                    value: "text-gray-900"
+                  data={Array.from({ length: 15 }, (_, i) => ({
+                    value: (i + 1).toString(),
+                    label: `${i + 1} ${i + 1 === 1 ? 'año' : 'años'}`
+                  }))}
+                  styles={{
+                    input: {
+                      backgroundColor: '#f9fafb',
+                      '&:hover': { backgroundColor: '#f3f4f6' }
+                    }
                   }}
-                >
-                  {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                    <SelectItem key={age.toString()}>
-                      {age} {age === 1 ? 'año' : 'años'}
-                    </SelectItem>
-                  ))}
-                </Select>
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -590,24 +580,20 @@ Para cualquier duda, contacta:
                   </label>
                   <Select
                     placeholder="Selecciona la hora"
-                    selectedKeys={formData.eventTime ? [formData.eventTime] : []}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as string;
-                      setFormData(prev => ({ ...prev, eventTime: selected }));
-                    }}
-                    variant="flat"
+                    value={formData.eventTime}
+                    onChange={(value) => setFormData(prev => ({ ...prev, eventTime: value || '' }))}
                     size="lg"
-                    classNames={{
-                      trigger: "bg-gray-50 hover:bg-gray-100",
-                      value: "text-gray-900"
+                    data={timeSlots.map((time) => ({
+                      value: time,
+                      label: `${time} hrs`
+                    }))}
+                    styles={{
+                      input: {
+                        backgroundColor: '#f9fafb',
+                        '&:hover': { backgroundColor: '#f3f4f6' }
+                      }
                     }}
-                  >
-                    {timeSlots.map((time) => (
-                      <SelectItem key={time}>
-                        {time} hrs
-                      </SelectItem>
-                    ))}
-                  </Select>
+                  />
                 </div>
               </div>
 
@@ -618,12 +604,13 @@ Para cualquier duda, contacta:
                 <Textarea
                   placeholder="Alergias, solicitudes especiales, temas preferidos..."
                   value={formData.specialComments}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, specialComments: value }))}
+                  onChange={(event) => setFormData(prev => ({ ...prev, specialComments: event.target.value }))}
                   minRows={3}
-                  variant="flat"
-                  classNames={{
-                    input: "text-gray-900",
-                    inputWrapper: "bg-gray-50 hover:bg-gray-100"
+                  styles={{
+                    input: {
+                      backgroundColor: '#f9fafb',
+                      '&:hover': { backgroundColor: '#f3f4f6' }
+                    }
                   }}
                 />
               </div>
@@ -732,11 +719,11 @@ Para cualquier duda, contacta:
                         <h4 className="font-semibold text-gray-900 mb-1">{option.name}</h4>
                         <p className="text-sm text-gray-600 mb-2">{option.description}</p>
                         <div className="flex items-center gap-2">
-                          <Chip size="sm" variant="flat" className="bg-gray-100">
-                            {option.category === 'main' ? 'Principal' : 
+                          <Badge size="sm" variant="light" className="bg-gray-100">
+                            {option.category === 'main' ? 'Principal' :
                              option.category === 'appetizer' ? 'Entrada' :
                              option.category === 'dessert' ? 'Postre' : 'Bebida'}
-                          </Chip>
+                          </Badge>
                           <span className="text-sm font-semibold text-green-600">
                             +${option.basePrice.toLocaleString()}
                           </span>
@@ -888,66 +875,72 @@ Para cualquier duda, contacta:
               <p className="text-gray-600">Selecciona tu método de pago preferido</p>
             </div>
 
-            <RadioGroup
+            <Radio.Group
               value={formData.paymentMethod}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as 'transfer' | 'cash' | 'card' }))}
+              onChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as 'transfer' | 'cash' | 'card' }))}
             >
               <div className="space-y-3">
-                <Radio 
+                <div className="p-4 rounded-xl border-2 hover:border-pink-300" style={{
+                  borderColor: formData.paymentMethod === 'transfer' ? '#ec4899' : '#d1d5db',
+                  backgroundColor: formData.paymentMethod === 'transfer' ? '#fdf2f8' : 'white'
+                }}>
+                <Radio
                   value="transfer"
-                  classNames={{
-                    base: "max-w-full m-0 p-4 rounded-xl border-2 data-[selected=true]:border-pink-500 data-[selected=true]:bg-pink-50",
-                    label: "w-full"
-                  }}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-3">
-                      <BanknotesIcon className="w-6 h-6 text-blue-500" />
-                      <div>
-                        <p className="font-medium text-gray-900">Transferencia bancaria</p>
-                        <p className="text-sm text-gray-600">Recibirás los datos bancarios por correo</p>
+                  label={
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-3">
+                        <BanknotesIcon className="w-6 h-6 text-blue-500" />
+                        <div>
+                          <p className="font-medium text-gray-900">Transferencia bancaria</p>
+                          <p className="text-sm text-gray-600">Recibirás los datos bancarios por correo</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Radio>
+                  }
+                />
+                </div>
                 
-                <Radio 
+                <div className="p-4 rounded-xl border-2 hover:border-pink-300" style={{
+                  borderColor: formData.paymentMethod === 'cash' ? '#ec4899' : '#d1d5db',
+                  backgroundColor: formData.paymentMethod === 'cash' ? '#fdf2f8' : 'white'
+                }}>
+                <Radio
                   value="cash"
-                  classNames={{
-                    base: "max-w-full m-0 p-4 rounded-xl border-2 data-[selected=true]:border-pink-500 data-[selected=true]:bg-pink-50",
-                    label: "w-full"
-                  }}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-3">
-                      <BanknotesIcon className="w-6 h-6 text-green-500" />
-                      <div>
-                        <p className="font-medium text-gray-900">Efectivo</p>
-                        <p className="text-sm text-gray-600">Paga el día de tu evento</p>
+                  label={
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-3">
+                        <BanknotesIcon className="w-6 h-6 text-green-500" />
+                        <div>
+                          <p className="font-medium text-gray-900">Efectivo</p>
+                          <p className="text-sm text-gray-600">Paga el día de tu evento</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Radio>
+                  }
+                />
+                </div>
                 
-                <Radio 
+                <div className="p-4 rounded-xl border-2 hover:border-pink-300" style={{
+                  borderColor: formData.paymentMethod === 'card' ? '#ec4899' : '#d1d5db',
+                  backgroundColor: formData.paymentMethod === 'card' ? '#fdf2f8' : 'white'
+                }}>
+                <Radio
                   value="card"
-                  classNames={{
-                    base: "max-w-full m-0 p-4 rounded-xl border-2 data-[selected=true]:border-pink-500 data-[selected=true]:bg-pink-50",
-                    label: "w-full"
-                  }}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-3">
-                      <CreditCardIcon className="w-6 h-6 text-purple-500" />
-                      <div>
-                        <p className="font-medium text-gray-900">Tarjeta de crédito o débito</p>
-                        <p className="text-sm text-gray-600">Paga con tarjeta el día del evento</p>
+                  label={
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-3">
+                        <CreditCardIcon className="w-6 h-6 text-purple-500" />
+                        <div>
+                          <p className="font-medium text-gray-900">Tarjeta de crédito o débito</p>
+                          <p className="text-sm text-gray-600">Paga con tarjeta el día del evento</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Radio>
+                  }
+                />
+                </div>
               </div>
-            </RadioGroup>
+            </Radio.Group>
           </div>
         );
 
@@ -962,8 +955,7 @@ Para cualquier duda, contacta:
               <p className="text-gray-600">Tu reserva ha sido confirmada</p>
             </div>
 
-            <Card className="border-0 shadow-sm bg-gray-50">
-              <CardBody className="p-6">
+            <Card style={{ border: 'none', backgroundColor: '#f9fafb' }} padding="xl">
                 <div className="text-center mb-6">
                   <p className="text-sm text-gray-600 mb-1">Número de reserva</p>
                   <p className="text-2xl font-mono font-bold text-gray-900">{reservationId}</p>
@@ -990,25 +982,24 @@ Para cualquier duda, contacta:
                     <span className="font-medium">{formData.eventTime} hrs</span>
                   </div>
                 </div>
-              </CardBody>
             </Card>
 
             <div className="space-y-3">
               <Button
-                color="primary"
+                color="blue"
                 size="lg"
-                startContent={<DocumentTextIcon className="w-5 h-5" />}
-                onPress={generatePaymentSlip}
-                className="w-full"
+                leftSection={<DocumentTextIcon className="w-5 h-5" />}
+                onClick={generatePaymentSlip}
+                style={{ width: '100%' }}
               >
                 Descargar ficha de pago
               </Button>
               
               <Button
-                variant="bordered"
+                variant="outline"
                 size="lg"
-                onPress={() => router.push('/reservaciones')}
-                className="w-full"
+                onClick={() => router.push('/reservaciones')}
+                style={{ width: '100%' }}
               >
                 Ver mis reservas
               </Button>
@@ -1089,44 +1080,42 @@ Para cualquier duda, contacta:
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-2">
-            <Card className="border-0 shadow-sm">
-              <CardBody className="p-6 lg:p-8">
+            <Card style={{ border: 'none' }} padding="xl">
                 {renderStepContent()}
-              </CardBody>
             </Card>
 
             {/* Navigation */}
             {currentStep !== 'confirmation' && (
               <div className="flex justify-between mt-6">
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   size="lg"
-                  startContent={<ArrowLeftIcon className="w-5 h-5" />}
-                  onPress={handlePrevious}
-                  isDisabled={currentStepIndex === 0}
-                  className="min-w-32"
+                  leftSection={<ArrowLeftIcon className="w-5 h-5" />}
+                  onClick={handlePrevious}
+                  disabled={currentStepIndex === 0}
+                  style={{ minWidth: '8rem' }}
                 >
                   Atrás
                 </Button>
 
                 {currentStep === 'payment' ? (
                   <Button
-                    color="primary"
+                    color="blue"
                     size="lg"
-                    onPress={handleSubmit}
-                    isLoading={loading}
-                    className="min-w-40"
+                    onClick={handleSubmit}
+                    loading={loading}
+                    style={{ minWidth: '10rem' }}
                   >
                     {loading ? 'Confirmando...' : 'Confirmar reserva'}
                   </Button>
                 ) : (
                   <Button
-                    color="primary"
+                    color="blue"
                     size="lg"
-                    endContent={<ArrowRightIcon className="w-5 h-5" />}
-                    onPress={handleNext}
-                    isDisabled={!validateCurrentStep()}
-                    className="min-w-32"
+                    rightSection={<ArrowRightIcon className="w-5 h-5" />}
+                    onClick={handleNext}
+                    disabled={!validateCurrentStep()}
+                    style={{ minWidth: '8rem' }}
                   >
                     Continuar
                   </Button>
@@ -1138,8 +1127,7 @@ Para cualquier duda, contacta:
           {/* Summary Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-24">
-              <Card className="border-0 shadow-sm">
-                <CardBody className="p-6">
+              <Card style={{ border: 'none' }} padding="xl">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen de tu reserva</h3>
                   
                   <div className="space-y-4">
@@ -1231,17 +1219,14 @@ Para cualquier duda, contacta:
                       <p className="text-xs text-gray-500 mt-2">*Precio en pesos mexicanos (MXN)</p>
                     </>
                   )}
-                </CardBody>
               </Card>
 
               {/* Help Card */}
-              <Card className="border-0 shadow-sm mt-4">
-                <CardBody className="p-4">
+              <Card style={{ border: 'none', marginTop: '1rem' }} padding="lg">
                   <p className="text-sm font-medium text-gray-900 mb-2">¿Necesitas ayuda?</p>
                   <p className="text-sm text-gray-600">
                     Llámanos al <a href="tel:5512345678" className="text-pink-600 font-medium">(55) 1234-5678</a>
                   </p>
-                </CardBody>
               </Card>
             </div>
           </div>

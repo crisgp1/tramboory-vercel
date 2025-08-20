@@ -469,18 +469,19 @@ export default function SystemConfigManager() {
           icon={<IconAlertTriangle size={16} />}
           title="Cambios sin guardar"
           color="orange"
-          action={
+        >
+          <div className="flex items-center justify-between">
+            <span>Tienes cambios sin guardar en la configuración del sistema.</span>
             <Button
               variant="outline"
               size="sm"
               onClick={handleSave}
               loading={saving}
+              className="ml-4"
             >
               Guardar ahora
             </Button>
-          }
-        >
-          Tienes cambios sin guardar en la configuración del sistema.
+          </div>
         </Alert>
       )}
     </Stack>

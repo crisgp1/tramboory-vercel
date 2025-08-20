@@ -303,18 +303,18 @@ export default function ProductManagerNordic({ searchQuery = "" }: ProductManage
 
   return (
     <Card>
-      <Stack spacing="md">
+      <Stack gap="md">
         {/* Header Actions */}
-        <Group position="apart">
+        <Group justify="space-between">
           <Group>
             <TextInput
               placeholder="Buscar productos..."
               value={localSearch}
               onChange={(e) => setLocalSearch(e.currentTarget.value)}
-              icon={<IconSearch size={16} />}
+              leftSection={<IconSearch size={16} />}
               style={{ width: 320 }}
             />
-            <Button variant="light" leftIcon={<IconFilter size={16} />}>
+            <Button variant="light" leftSection={<IconFilter size={16} />}>
               Filtros
             </Button>
           </Group>
@@ -322,7 +322,7 @@ export default function ProductManagerNordic({ searchQuery = "" }: ProductManage
           {canEdit && (
             <Button
               onClick={handleCreate}
-              leftIcon={<IconPlus size={16} />}
+              leftSection={<IconPlus size={16} />}
             >
               Nuevo Producto
             </Button>
@@ -331,7 +331,7 @@ export default function ProductManagerNordic({ searchQuery = "" }: ProductManage
 
         {/* Products Table */}
         {loading ? (
-          <Group position="center" style={{ padding: 40 }}>
+          <Group justify="center" style={{ padding: 40 }}>
             <Loader />
           </Group>
         ) : (

@@ -8,13 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
   Card,
-  CardBody,
-  CardHeader,
-  Input,
+  TextInput,
   Button,
-  Link,
+  Anchor,
   Divider
-} from "@heroui/react"
+} from "@mantine/core"
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import toast from "react-hot-toast"
 
@@ -107,98 +105,89 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   if (pendingVerification) {
     return (
       <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-col gap-3 pb-0">
+        <Card.Section className="flex flex-col gap-3 pb-0">
           <h1 className="text-2xl font-bold text-center">Verificar Email</h1>
           <p className="text-small text-default-500 text-center">
             Ingresa el código que enviamos a tu email
           </p>
-        </CardHeader>
+        </Card.Section>
         
-        <CardBody className="gap-4">
-          <Input
+        <Card.Section className="gap-4">
+          <TextInput
             value={code}
             label="Código de verificación"
             placeholder="Ingresa el código de 6 dígitos"
-            variant="bordered"
             onChange={(e) => setCode(e.target.value)}
           />
           
           <Button
-            onPress={onPressVerify}
-            color="primary"
+            onClick={onPressVerify}
+            color="blue"
             size="lg"
-            isLoading={isLoading}
+            loading={isLoading}
             className="w-full"
           >
             {isLoading ? "Verificando..." : "Verificar Email"}
           </Button>
 
           <div className="text-center">
-            <Link
-              as="button"
+            <Anchor
+              component="button"
               size="sm"
-              onPress={() => setPendingVerification(false)}
+              onClick={() => setPendingVerification(false)}
               className="text-default-500"
             >
               Volver atrás
-            </Link>
+            </Anchor>
           </div>
-        </CardBody>
+        </Card.Section>
       </Card>
     )
   }
 
   return (
     <Card className="w-full max-w-md">
-      <CardHeader className="flex flex-col gap-3 pb-0">
+      <Card.Section className="flex flex-col gap-3 pb-0">
         <h1 className="text-2xl font-bold text-center">Crear Cuenta</h1>
         <p className="text-small text-default-500 text-center">
           Completa los datos para registrarte
         </p>
-      </CardHeader>
+      </Card.Section>
       
-      <CardBody className="gap-4">
+      <Card.Section className="gap-4">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex gap-2">
-            <Input
+            <TextInput
               {...register("firstName")}
               type="text"
               label="Nombre"
               placeholder="Tu nombre"
-              variant="bordered"
-              isInvalid={!!errors.firstName}
-              errorMessage={errors.firstName?.message}
+              error={errors.firstName?.message}
             />
             
-            <Input
+            <TextInput
               {...register("lastName")}
               type="text"
               label="Apellido"
               placeholder="Tu apellido"
-              variant="bordered"
-              isInvalid={!!errors.lastName}
-              errorMessage={errors.lastName?.message}
+              error={errors.lastName?.message}
             />
           </div>
 
-          <Input
+          <TextInput
             {...register("email")}
             type="email"
             label="Email"
             placeholder="tu@email.com"
-            variant="bordered"
-            isInvalid={!!errors.email}
-            errorMessage={errors.email?.message}
+            error={errors.email?.message}
           />
           
-          <Input
+          <TextInput
             {...register("password")}
             label="Contraseña"
             placeholder="Mínimo 6 caracteres"
-            variant="bordered"
-            isInvalid={!!errors.password}
-            errorMessage={errors.password?.message}
-            endContent={
+            error={errors.password?.message}
+            rightSection={
               <button
                 className="focus:outline-none"
                 type="button"
@@ -214,14 +203,12 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
             type={isVisible ? "text" : "password"}
           />
 
-          <Input
+          <TextInput
             {...register("confirmPassword")}
             label="Confirmar contraseña"
             placeholder="Repite tu contraseña"
-            variant="bordered"
-            isInvalid={!!errors.confirmPassword}
-            errorMessage={errors.confirmPassword?.message}
-            endContent={
+            error={errors.confirmPassword?.message}
+            rightSection={
               <button
                 className="focus:outline-none"
                 type="button"
@@ -239,9 +226,9 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
 
           <Button
             type="submit"
-            color="primary"
+            color="blue"
             size="lg"
-            isLoading={isLoading}
+            loading={isLoading}
             className="w-full"
           >
             {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
@@ -254,16 +241,16 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           <span className="text-small text-default-500">
             ¿Ya tienes cuenta?{" "}
           </span>
-          <Link
-            as="button"
+          <Anchor
+            component="button"
             size="sm"
-            onPress={onSwitchToLogin}
+            onClick={onSwitchToLogin}
             className="text-primary"
           >
             Iniciar sesión
-          </Link>
+          </Anchor>
         </div>
-      </CardBody>
+      </Card.Section>
     </Card>
   )
 }

@@ -5,14 +5,11 @@ import { useUser } from "@clerk/nextjs"
 import { useRole } from "@/hooks/useRole"
 import {
   Card,
-  CardBody,
-  CardHeader,
   Select,
-  SelectItem,
   Button,
-  Chip,
+  Badge,
   Divider
-} from "@heroui/react"
+} from "@mantine/core"
 import { UserRole, ROLES } from "@/lib/roles"
 import toast from "react-hot-toast"
 
@@ -98,25 +95,25 @@ export default function RoleManager({
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      <Card.Section>
         <div className="flex flex-col gap-2">
           <h3 className="text-lg font-semibold">Gestión de Roles</h3>
           <p className="text-small text-default-500">
             Usuario: {userName}
           </p>
         </div>
-      </CardHeader>
+      </Card.Section>
       
-      <CardBody className="gap-4">
+      <Card.Section className="gap-4">
         <div className="flex items-center gap-3">
           <span className="text-small font-medium">Rol actual:</span>
-          <Chip 
+          <Badge 
             color={getRoleColor(currentRole || "customer")}
-            variant="flat"
+            variant="outline"
             size="sm"
           >
             {ROLES[currentRole || "customer"].label}
-          </Chip>
+          </Badge>
         </div>
 
         <Divider />
@@ -125,24 +122,16 @@ export default function RoleManager({
           <Select
             label="Nuevo rol"
             placeholder="Selecciona un rol"
-            selectedKeys={[selectedRole]}
-            onSelectionChange={(keys) => {
-              const role = Array.from(keys)[0] as UserRole
-              setSelectedRole(role)
+            value={selectedRole}
+            onChange={(value) => {
+              setSelectedRole(value as UserRole)
             }}
-            variant="bordered"
-          >
-            {availableRoles.map(([roleKey, roleInfo]) => (
-              <SelectItem key={roleKey}>
-                <div className="flex flex-col">
-                  <span className="font-medium">{roleInfo.label}</span>
-                  <span className="text-tiny text-default-400">
-                    {roleInfo.description}
-                  </span>
-                </div>
-              </SelectItem>
-            ))}
-          </Select>
+            data={availableRoles.map(([roleKey, roleInfo]) => ({
+              value: roleKey,
+              label: roleInfo.label,
+              description: roleInfo.description
+            }))}
+          />
 
           {selectedRole && selectedRole !== currentRole && (
             <div className="p-3 bg-default-50 rounded-lg">
@@ -151,9 +140,9 @@ export default function RoleManager({
               </h4>
               <div className="flex flex-wrap gap-1">
                 {ROLES[selectedRole].permissions.map((permission) => (
-                  <Chip key={permission} size="sm" variant="flat">
+                  <Badge key={permission} size="sm" variant="outline">
                     {permission === "*" ? "Todos los permisos" : permission}
-                  </Chip>
+                  </Badge>
                 ))}
               </div>
             </div>
@@ -161,15 +150,15 @@ export default function RoleManager({
 
           <Button
             color="primary"
-            onPress={handleRoleChange}
-            isLoading={isLoading}
-            isDisabled={selectedRole === currentRole || !selectedRole}
+            onClick={handleRoleChange}
+            loading={isLoading}
+            disabled={selectedRole === currentRole || !selectedRole}
             className="w-full"
           >
             {isLoading ? "Actualizando..." : "Actualizar Rol"}
           </Button>
         </div>
-      </CardBody>
+      </Card.Section>
     </Card>
   )
 }

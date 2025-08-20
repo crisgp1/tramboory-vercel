@@ -3,7 +3,7 @@
 import React from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRole } from '@/hooks/useRole'
-import { Card, CardBody, Chip, Button } from '@heroui/react'
+import { Card, Badge, Button } from '@mantine/core'
 import { UserRole, ROLES } from '@/lib/roles'
 import { useAdvancedRole, RoleManager } from '@/lib/role-utils'
 
@@ -15,9 +15,9 @@ export default function RoleDiagnostic() {
   if (!isLoaded) {
     return (
       <Card className="max-w-2xl mx-auto">
-        <CardBody className="p-6">
+        <Card.Section className="p-6">
           <p>Cargando información del usuario...</p>
-        </CardBody>
+        </Card.Section>
       </Card>
     )
   }
@@ -25,9 +25,9 @@ export default function RoleDiagnostic() {
   if (!user) {
     return (
       <Card className="max-w-2xl mx-auto">
-        <CardBody className="p-6">
+        <Card.Section className="p-6">
           <p className="text-red-600">No hay usuario autenticado</p>
-        </CardBody>
+        </Card.Section>
       </Card>
     )
   }
@@ -37,7 +37,7 @@ export default function RoleDiagnostic() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Card>
-        <CardBody className="p-6">
+        <Card.Section className="p-6">
           <h2 className="text-xl font-bold mb-4">🔍 Diagnóstico de Roles - Tramboory</h2>
           
           {/* Información del Usuario */}
@@ -56,13 +56,13 @@ export default function RoleDiagnostic() {
               <h3 className="font-semibold mb-2">Información de Rol</h3>
               <div className="space-y-2 text-sm">
                 <p><strong>Rol Actual:</strong> 
-                  <Chip 
+                  <Badge 
                     size="sm" 
                     className="ml-2"
-                    color={role === "admin" ? "danger" : role === "customer" ? "default" : "primary"}
+                    color={role === "admin" ? "red" : role === "customer" ? "gray" : "blue"}
                   >
                     {role}
-                  </Chip>
+                  </Badge>
                 </p>
                 <p><strong>Etiqueta:</strong> {roleInfo?.label || 'No definida'}</p>
                 <p><strong>Descripción:</strong> {roleInfo?.description || 'No disponible'}</p>
@@ -89,21 +89,21 @@ export default function RoleDiagnostic() {
           <div className="mb-6">
             <h3 className="font-semibold mb-2">Verificaciones de Rol</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              <Chip color={isAdmin ? "success" : "default"} variant="flat">
+              <Badge color={isAdmin ? "green" : "gray"} variant="outline">
                 Admin: {isAdmin ? "✅" : "❌"}
-              </Chip>
-              <Chip color={isGerente ? "success" : "default"} variant="flat">
+              </Badge>
+              <Badge color={isGerente ? "green" : "gray"} variant="outline">
                 Gerente: {isGerente ? "✅" : "❌"}
-              </Chip>
-              <Chip color={isProveedor ? "success" : "default"} variant="flat">
+              </Badge>
+              <Badge color={isProveedor ? "green" : "gray"} variant="outline">
                 Proveedor: {isProveedor ? "✅" : "❌"}
-              </Chip>
-              <Chip color={isVendedor ? "success" : "default"} variant="flat">
+              </Badge>
+              <Badge color={isVendedor ? "green" : "gray"} variant="outline">
                 Vendedor: {isVendedor ? "✅" : "❌"}
-              </Chip>
-              <Chip color={isCustomer ? "success" : "default"} variant="flat">
+              </Badge>
+              <Badge color={isCustomer ? "green" : "gray"} variant="outline">
                 Customer: {isCustomer ? "✅" : "❌"}
-              </Chip>
+              </Badge>
             </div>
           </div>
 
@@ -112,9 +112,9 @@ export default function RoleDiagnostic() {
             <h3 className="font-semibold mb-2">Permisos del Rol</h3>
             <div className="flex flex-wrap gap-2">
               {roleInfo?.permissions.map((permission, index) => (
-                <Chip key={index} size="sm" variant="flat" color="primary">
+                <Badge key={index} size="sm" variant="outline" color="blue">
                   {permission}
-                </Chip>
+                </Badge>
               ))}
             </div>
           </div>
@@ -125,19 +125,19 @@ export default function RoleDiagnostic() {
             <div className="space-y-2">
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                 <span>/dashboard</span>
-                <Chip 
+                <Badge 
                   size="sm" 
-                  color={role !== "customer" ? "success" : "danger"}
-                  variant="flat"
+                  color={role !== "customer" ? "green" : "red"}
+                  variant="outline"
                 >
                   {role !== "customer" ? "✅ Permitido" : "❌ Bloqueado"}
-                </Chip>
+                </Badge>
               </div>
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                 <span>/reservaciones</span>
-                <Chip size="sm" color="success" variant="flat">
+                <Badge size="sm" color="green" variant="outline">
                   ✅ Permitido
-                </Chip>
+                </Badge>
               </div>
             </div>
           </div>
@@ -155,13 +155,13 @@ export default function RoleDiagnostic() {
               ].map((item, index) => (
                 <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <span>{item.section}</span>
-                  <Chip 
+                  <Badge 
                     size="sm" 
-                    color={item.allowed ? "success" : "danger"}
-                    variant="flat"
+                    color={item.allowed ? "green" : "red"}
+                    variant="outline"
                   >
                     {item.allowed ? "✅ Permitido" : "❌ Bloqueado"}
-                  </Chip>
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -211,7 +211,7 @@ export default function RoleDiagnostic() {
                 size="sm"
                 color="primary"
                 variant="flat"
-                onPress={() => window.location.reload()}
+                onClick={() => window.location.reload()}
               >
                 Recargar Página
               </Button>
@@ -219,7 +219,7 @@ export default function RoleDiagnostic() {
                 size="sm"
                 color="secondary"
                 variant="flat"
-                onPress={() => refreshUser()}
+                onClick={() => refreshUser()}
               >
                 Actualizar Usuario
               </Button>
@@ -227,7 +227,7 @@ export default function RoleDiagnostic() {
                 size="sm"
                 color="warning"
                 variant="flat"
-                onPress={() => debugCurrentUser(user)}
+                onClick={() => debugCurrentUser(user)}
               >
                 Debug Completo
               </Button>
@@ -235,7 +235,7 @@ export default function RoleDiagnostic() {
                 size="sm"
                 color="success"
                 variant="flat"
-                onPress={() => {
+                onClick={() => {
                   navigator.clipboard.writeText(JSON.stringify({
                     userId: user.id,
                     role: role,
@@ -252,7 +252,7 @@ export default function RoleDiagnostic() {
                   size="sm"
                   color="danger"
                   variant="flat"
-                  onPress={async () => {
+                  onClick={async () => {
                     const success = await forceRoleUpdate(user.id, "admin")
                     if (success) {
                       alert("Rol actualizado a admin. La página se recargará.")
@@ -266,7 +266,7 @@ export default function RoleDiagnostic() {
               )}
             </div>
           </div>
-        </CardBody>
+        </Card.Section>
       </Card>
     </div>
   )

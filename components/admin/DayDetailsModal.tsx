@@ -3,18 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Button,
   Card,
-  CardBody,
-  Chip,
-  Divider,
   Badge,
   Skeleton
-} from '@heroui/react';
+} from '@mantine/core';
 import {
   CalendarDaysIcon,
   ClockIcon,
@@ -29,7 +22,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface DayDetailsModalProps {
-  isOpen: boolean;
+  opened: boolean;
   onClose: () => void;
   date: Date | null;
   availability: any;
@@ -81,15 +74,15 @@ interface DayDetails {
   }>;
 }
 
-export default function DayDetailsModal({ isOpen, onClose, date, availability }: DayDetailsModalProps) {
+export default function DayDetailsModal({ opened, onClose, date, availability }: DayDetailsModalProps) {
   const [dayDetails, setDayDetails] = useState<DayDetails | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && date) {
+    if (opened && date) {
       fetchDayDetails();
     }
-  }, [isOpen, date]);
+  }, [opened, date]);
 
   const fetchDayDetails = async () => {
     if (!date) {
@@ -142,13 +135,13 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'success';
+        return 'green';
       case 'pending':
-        return 'warning';
+        return 'yellow';
       case 'cancelled':
-        return 'danger';
+        return 'red';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -168,13 +161,13 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
   const getPaymentColor = (paymentStatus: string) => {
     switch (paymentStatus) {
       case 'paid':
-        return 'success';
+        return 'green';
       case 'pending':
-        return 'warning';
+        return 'yellow';
       case 'overdue':
-        return 'danger';
+        return 'red';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -191,36 +184,27 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={opened}
       onClose={onClose}
       size="4xl"
-      scrollBehavior="inside"
-      classNames={{
-        backdrop: "surface-overlay",
-        base: "surface-modal",
-        header: "border-b border-gray-200",
-        body: "p-6",
-        footer: "border-t border-gray-200"
-      }}
-    >
-      <ModalContent>
-        <ModalHeader className="px-6 py-4">
-          <div className="flex items-center gap-3">
-            <CalendarDaysIcon className="w-6 h-6 text-blue-500" />
-            <div>
-              <h3 className="text-xl font-semibold text-foreground">
-                Detalles del Día
-              </h3>
-              {date && (
-                <p className="text-sm text-gray-600 capitalize">
-                  {formatDate(date)}
-                </p>
-              )}
-            </div>
+      className="surface-modal"
+      title={
+        <div className="flex items-center gap-3">
+          <CalendarDaysIcon className="w-6 h-6 text-blue-500" />
+          <div>
+            <h3 className="text-xl font-semibold text-foreground">
+              Detalles del Día
+            </h3>
+            {date && (
+              <p className="text-sm text-gray-600 capitalize">
+                {formatDate(date)}
+              </p>
+            )}
           </div>
-        </ModalHeader>
-        
-        <ModalBody>
+        </div>
+      }
+    >
+      <div className="p-6">
           {loading ? (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -238,8 +222,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
             <div className="space-y-6">
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="surface-card">
-                  <CardBody className="p-4">
+                <Card className="surface-card" padding="md">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Horarios Disponibles</p>
@@ -251,11 +234,9 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                         <ClockIcon className="w-6 h-6 text-blue-600" />
                       </div>
                     </div>
-                  </CardBody>
                 </Card>
 
-                <Card className="surface-card">
-                  <CardBody className="p-4">
+                <Card className="surface-card" padding="md">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Reservaciones</p>
@@ -267,11 +248,9 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                         <UserIcon className="w-6 h-6 text-green-600" />
                       </div>
                     </div>
-                  </CardBody>
                 </Card>
 
-                <Card className="surface-card">
-                  <CardBody className="p-4">
+                <Card className="surface-card" padding="md">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-600">Ingresos</p>
@@ -283,14 +262,13 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                         <CurrencyDollarIcon className="w-6 h-6 text-purple-600" />
                       </div>
                     </div>
-                  </CardBody>
                 </Card>
               </div>
 
               {/* Rest Day Warning */}
               {dayDetails.isRestDay && (
                 <Card className="border border-amber-200 bg-amber-50">
-                  <CardBody className="p-4">
+                  <Card.Section className="p-4">
                     <div className="flex items-center gap-3">
                       <ExclamationTriangleIcon className="w-6 h-6 text-amber-600" />
                       <div>
@@ -302,7 +280,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                         </p>
                       </div>
                     </div>
-                  </CardBody>
+                  </Card.Section>
                 </Card>
               )}
 
@@ -311,7 +289,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                 <h4 className="text-lg font-semibold text-foreground">Bloques de Horarios</h4>
                 {dayDetails.timeBlocks.map((block, index) => (
                   <Card key={index} className="surface-card">
-                    <CardBody className="p-4">
+                    <Card.Section className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div>
                           <h5 className="font-medium text-foreground">{block.name}</h5>
@@ -319,13 +297,13 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                             {block.startTime} - {block.endTime} (Duración: {block.duration}h)
                           </p>
                         </div>
-                        <Chip
+                        <Badge
                           size="sm"
-                          variant="flat"
-                          color={block.slots.some(s => s.available) ? 'success' : 'danger'}
+                          variant="light"
+                          color={block.slots.some(s => s.available) ? 'green' : 'red'}
                         >
                           {block.slots.filter(s => s.available).length} disponibles
-                        </Chip>
+                        </Badge>
                       </div>
                       
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -357,7 +335,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                           </div>
                         ))}
                       </div>
-                    </CardBody>
+                    </Card.Section>
                   </Card>
                 ))}
               </div>
@@ -369,28 +347,28 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                   <div className="space-y-3">
                     {dayDetails.reservations.map((reservation) => (
                       <Card key={reservation._id} className="surface-card">
-                        <CardBody className="p-4">
+                        <Card.Section className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
                                 <h5 className="font-medium text-foreground">
                                   {reservation.customer.name}
                                 </h5>
-                                <Chip
+                                <Badge
                                   size="sm"
                                   color={getStatusColor(reservation.status)}
-                                  variant="flat"
-                                  startContent={getStatusIcon(reservation.status)}
+                                  variant="light"
+                                  leftSection={getStatusIcon(reservation.status)}
                                 >
                                   {reservation.status}
-                                </Chip>
-                                <Chip
+                                </Badge>
+                                <Badge
                                   size="sm"
                                   color={getPaymentColor(reservation.paymentStatus)}
-                                  variant="flat"
+                                  variant="light"
                                 >
                                   {reservation.paymentStatus}
-                                </Chip>
+                                </Badge>
                               </div>
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -423,22 +401,22 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
                                 size="sm"
                                 variant="light"
                                 color="primary"
-                                startContent={<EyeIcon className="w-4 h-4" />}
+                                leftSection={<EyeIcon className="w-4 h-4" />}
                               >
                                 Ver detalles
                               </Button>
                             </div>
                           </div>
-                        </CardBody>
+                        </Card.Section>
                       </Card>
                     ))}
                   </div>
                 ) : (
                   <Card className="surface-card">
-                    <CardBody className="p-8 text-center">
+                    <Card.Section className="p-8 text-center">
                       <CalendarDaysIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                       <p className="text-gray-600">No hay reservaciones para este día</p>
-                    </CardBody>
+                    </Card.Section>
                   </Card>
                 )}
               </div>
@@ -448,17 +426,7 @@ export default function DayDetailsModal({ isOpen, onClose, date, availability }:
               <p className="text-gray-600">No se pudieron cargar los detalles del día</p>
             </div>
           )}
-        </ModalBody>
-        
-        <ModalFooter className="px-6 py-4">
-          <Button
-            variant="light"
-            onPress={onClose}
-          >
-            Cerrar
-          </Button>
-        </ModalFooter>
-      </ModalContent>
+        </div>
     </Modal>
   );
 }

@@ -17,7 +17,8 @@ import {
   Text,
   Title,
   ActionIcon,
-  ScrollArea
+  ScrollArea,
+  Menu
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -141,8 +142,8 @@ export default function EventThemeManager() {
 
     const packageData: ThemePackage = {
       name: newPackage.name.trim(),
-      pieces: parseInt(newPackage.pieces),
-      price: parseFloat(newPackage.price)
+      pieces: parseInt(newPackage.pieces) || 0,
+      price: parseFloat(newPackage.price) || 0
     };
 
     setFormData(prev => ({
@@ -284,7 +285,7 @@ export default function EventThemeManager() {
           </div>
         </div>
         <Button
-          leftSection={<PlusIcon className="w-4 h-4" />}
+          leftSection={<IconPlus className="w-4 h-4" />}
           onClick={handleCreate}
           className="btn-primary text-white hover:bg-gray-800"
           size="lg"
@@ -296,71 +297,66 @@ export default function EventThemeManager() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
+          <Card.Section className="text-center p-6">
             <div className="text-2xl font-semibold text-gray-900 mb-2">
               {eventThemes.length}
             </div>
             <div className="text-sm text-gray-600">Total de Temas</div>
-          </CardBody>
+          </Card.Section>
         </Card>
         
         <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
+          <Card.Section className="text-center p-6">
             <div className="text-2xl font-semibold text-green-600 mb-2">
               {eventThemes.filter(t => t.isActive).length}
             </div>
             <div className="text-sm text-gray-600">Temas Activos</div>
-          </CardBody>
+          </Card.Section>
         </Card>
         
         <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
+          <Card.Section className="text-center p-6">
             <div className="text-2xl font-semibold text-blue-600 mb-2">
               {eventThemes.reduce((sum, t) => sum + (t.packages?.length || 0), 0)}
             </div>
             <div className="text-sm text-gray-600">Total de Paquetes</div>
-          </CardBody>
+          </Card.Section>
         </Card>
         
         <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardBody className="text-center p-6">
+          <Card.Section className="text-center p-6">
             <div className="text-2xl font-semibold text-purple-600 mb-2">
               {eventThemes.reduce((sum, t) => sum + (t.themes?.length || 0), 0)}
             </div>
             <div className="text-sm text-gray-600">Variaciones de Tema</div>
-          </CardBody>
+          </Card.Section>
         </Card>
       </div>
 
       {/* Event Themes Table */}
       <Card className="border border-gray-200 shadow-sm">
-        <CardBody className="p-0">
+        <Card.Section className="p-0">
           {loading ? (
             <div className="flex flex-col justify-center items-center py-12">
-              <Spinner size="lg" className="text-gray-900" />
+              <Loader size="lg" className="text-gray-900" />
               <p className="text-gray-500 mt-4">Cargando temas de evento...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table 
-                aria-label="Tabla de temas de evento"
-                classNames={{
-                  wrapper: "shadow-none",
-                  th: "bg-gray-50 text-gray-700 font-semibold",
-                  td: "py-4"
-                }}
-              >
-                <TableHeader>
-                  <TableColumn>TEMA</TableColumn>
-                  <TableColumn className="hidden md:table-cell">PAQUETES</TableColumn>
-                  <TableColumn className="hidden lg:table-cell">VARIACIONES</TableColumn>
-                  <TableColumn>ESTADO</TableColumn>
-                  <TableColumn>ACCIONES</TableColumn>
-                </TableHeader>
-                <TableBody emptyContent="No hay temas de evento registrados">
+              <Table>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>TEMA</Table.Th>
+                    <Table.Th className="hidden md:table-cell">PAQUETES</Table.Th>
+                    <Table.Th className="hidden lg:table-cell">VARIACIONES</Table.Th>
+                    <Table.Th>ESTADO</Table.Th>
+                    <Table.Th>ACCIONES</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
                   {eventThemes.map((theme) => (
-                    <TableRow key={theme._id}>
-                      <TableCell>
+                    <Table.Tr key={theme._id}>
+                      <Table.Td>
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                             <BuildingStorefrontIcon className="w-5 h-5 text-gray-600" />
@@ -374,213 +370,159 @@ export default function EventThemeManager() {
                             )}
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
+                      </Table.Td>
+                      <Table.Td className="hidden md:table-cell">
                         <div className="flex flex-wrap gap-1">
                           {(theme.packages || []).slice(0, 2).map((pkg, index) => (
-                            <Chip key={index} size="sm" variant="flat" className="bg-gray-100 text-gray-700">
+                            <Badge key={index} size="sm" variant="flat" className="bg-gray-100 text-gray-700">
                               {pkg.name}
-                            </Chip>
+                            </Badge>
                           ))}
                           {(theme.packages?.length || 0) > 2 && (
-                            <Chip size="sm" variant="flat" color="default">
+                            <Badge size="sm" variant="flat" color="default">
                               +{(theme.packages?.length || 0) - 2} más
-                            </Chip>
+                            </Badge>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
+                      </Table.Td>
+                      <Table.Td className="hidden lg:table-cell">
                         <div className="flex flex-wrap gap-1">
                           {(theme.themes || []).slice(0, 3).map((themeVariation, index) => (
-                            <Chip key={index} size="sm" variant="flat" className="bg-blue-100 text-blue-700">
+                            <Badge key={index} size="sm" variant="flat" className="bg-blue-100 text-blue-700">
                               {themeVariation}
-                            </Chip>
+                            </Badge>
                           ))}
                           {(theme.themes?.length || 0) > 3 && (
-                            <Chip size="sm" variant="flat" color="default">
+                            <Badge size="sm" variant="flat" color="default">
                               +{(theme.themes?.length || 0) - 3} más
-                            </Chip>
+                            </Badge>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge
                           color={theme.isActive ? 'success' : 'default'}
                           variant="flat"
                           size="sm"
                         >
                           {theme.isActive ? 'Activo' : 'Inactivo'}
-                        </Chip>
-                      </TableCell>
-                      <TableCell>
-                        <Dropdown>
-                          <DropdownTrigger>
-                            <Button
-                              isIconOnly
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Menu>
+                          <Menu.Target>
+                            <ActionIcon
                               variant="light"
                               size="sm"
                               className="text-gray-600 hover:text-gray-900"
                             >
-                              <EllipsisVerticalIcon className="w-4 h-4" />
-                            </Button>
-                          </DropdownTrigger>
-                          <DropdownMenu>
-                            <DropdownItem
-                              key="edit"
-                              startContent={<PencilIcon className="w-4 h-4" />}
-                              onPress={() => handleEdit(theme)}
+                              <IconDots className="w-4 h-4" />
+                            </ActionIcon>
+                          </Menu.Target>
+                          <Menu.Dropdown>
+                            <Menu.Item
+                              leftSection={<IconPencil className="w-4 h-4" />}
+                              onClick={() => handleEdit(theme)}
                             >
                               Editar
-                            </DropdownItem>
-                            <DropdownItem
-                              key="delete"
-                              className="text-danger"
-                              color="danger"
-                              startContent={<TrashIcon className="w-4 h-4" />}
-                              onPress={() => handleDelete(theme._id)}
+                            </Menu.Item>
+                            <Menu.Item
+                              className="text-red-600"
+                              color="red"
+                              leftSection={<IconTrash className="w-4 h-4" />}
+                              onClick={() => handleDelete(theme._id)}
                             >
                               Eliminar
-                            </DropdownItem>
-                          </DropdownMenu>
-                        </Dropdown>
-                      </TableCell>
-                    </TableRow>
+                            </Menu.Item>
+                          </Menu.Dropdown>
+                        </Menu>
+                      </Table.Td>
+                    </Table.Tr>
                   ))}
-                </TableBody>
+                </Table.Tbody>
               </Table>
             </div>
           )}
-        </CardBody>
+        </Card.Section>
       </Card>
 
       {/* Create/Edit Modal */}
       <Modal
-        isOpen={isOpen}
-        close={close}
-        size="3xl"
-        scrollBehavior="inside"
-        isDismissable={!submitting}
-        backdrop="opaque"
-        classNames={{
-          backdrop: "surface-overlay",
-          base: "surface-modal shadow-2xl border-0",
-          wrapper: "z-[1001] items-center justify-center p-4",
-          header: "border-b border-gray-200 bg-white",
-          body: "py-6",
-          footer: "border-t border-gray-200 bg-gray-50"
-        }}
+        opened={opened}
+        onClose={close}
+        size="xl"
+        title={editingTheme ? 'Editar tema' : 'Nuevo tema'}
+        scrollAreaComponent={ScrollArea.Autosize}
       >
-        <ModalContent>
-          {(close) => (
-            <>
-              <ModalHeader className="px-6 py-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {editingTheme ? 'Editar tema' : 'Nuevo tema'}
-                </h3>
-              </ModalHeader>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <TextInput
+                label="Nombre del tema *"
+                placeholder="Ej: Princesas, Superhéroes"
+                value={formData.name}
+                onChange={(event) => setFormData(prev => ({ ...prev, name: event.currentTarget.value }))}
+              />
+            </div>
+            
+            <div className="flex items-center gap-3 pt-6">
+              <Switch
+                checked={formData.isActive}
+                onChange={(event) => setFormData(prev => ({ ...prev, isActive: event.currentTarget.checked }))}
+              />
+              <span className="text-sm text-gray-700">Tema activo</span>
+            </div>
+          </div>
+          
+          <div>
+            <Textarea
+              label="Descripción"
+              placeholder="Describe el tema y lo que incluye..."
+              value={formData.description}
+              onChange={(event) => setFormData(prev => ({ ...prev, description: event.currentTarget.value }))}
+              minRows={2}
+            />
+          </div>
 
-              <ModalBody>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre del tema *
-                      </label>
-                      <Input
-                        placeholder="Ej: Princesas, Superhéroes"
-                        value={formData.name}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-                        variant="flat"
-                        classNames={{
-                          input: "text-gray-900",
-                          inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                        }}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center gap-3 pt-6">
-                      <Switch
-                        isSelected={formData.isActive}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, isActive: value }))}
-                        size="sm"
-                      />
-                      <span className="text-sm text-gray-700">Tema activo</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción
-                    </label>
-                    <Textarea
-                      placeholder="Describe el tema y lo que incluye..."
-                      value={formData.description}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-                      minRows={2}
-                      variant="flat"
-                      classNames={{
-                        input: "text-gray-900",
-                        inputWrapper: "bg-gray-50 border-0 hover:bg-gray-100 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-900"
-                      }}
-                    />
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-gray-900">Paquetes de decoración</h4>
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium text-gray-900">Paquetes de decoración</h4>
                     
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                         <div>
                           <label className="block text-xs text-gray-500 mb-1">Nombre del paquete</label>
-                          <Input
+                          <TextInput
                             placeholder="Básico"
                             value={newPackage.name}
-                            onValueChange={(value) => setNewPackage(prev => ({ ...prev, name: value }))}
-                            variant="flat"
+                            onChange={(event) => setNewPackage(prev => ({ ...prev, name: event.currentTarget.value }))}
                             size="sm"
-                            classNames={{
-                              input: "text-gray-900",
-                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
-                            }}
                           />
                         </div>
                         <div>
                           <label className="block text-xs text-gray-500 mb-1">Número de piezas</label>
-                          <Input
+                          <TextInput
                             placeholder="15"
                             type="number"
                             value={newPackage.pieces}
-                            onValueChange={(value) => setNewPackage(prev => ({ ...prev, pieces: value }))}
-                            variant="flat"
+                            onChange={(event) => setNewPackage(prev => ({ ...prev, pieces: event.currentTarget.value }))}
                             size="sm"
-                            classNames={{
-                              input: "text-gray-900",
-                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
-                            }}
                           />
                         </div>
                         <div>
                           <label className="block text-xs text-gray-500 mb-1">Precio</label>
-                          <Input
+                          <TextInput
                             placeholder="500"
                             type="number"
                             step="0.01"
                             value={newPackage.price}
-                            onValueChange={(value) => setNewPackage(prev => ({ ...prev, price: value }))}
-                            variant="flat"
+                            onChange={(event) => setNewPackage(prev => ({ ...prev, price: event.currentTarget.value }))}
                             size="sm"
-                            startContent={<span className="text-gray-400">$</span>}
-                            classNames={{
-                              input: "text-gray-900",
-                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
-                            }}
                           />
                         </div>
                         <div className="flex items-end">
                           <Button
-                            onPress={addPackage}
+                            onClick={addPackage}
                             size="sm"
-                            className="btn-primary text-white w-full"
                           >
                             Agregar
                           </Button>
@@ -598,13 +540,12 @@ export default function EventThemeManager() {
                               <span className="text-xs text-gray-500">{formatCurrency(pkg.price)}</span>
                             </div>
                             <Button
-                              isIconOnly
                               variant="light"
                               size="sm"
-                              onPress={() => removePackage(index)}
+                              onClick={() => removePackage(index)}
                               className="text-gray-400 hover:text-red-500"
                             >
-                              <XMarkIcon className="w-4 h-4" />
+                              <IconX className="w-4 h-4" />
                             </Button>
                           </div>
                         ))}
@@ -619,23 +560,17 @@ export default function EventThemeManager() {
                       <div className="flex gap-3">
                         <div className="flex-1">
                           <label className="block text-xs text-gray-500 mb-1">Nombre de la variación</label>
-                          <Input
+                          <TextInput
                             placeholder="Ej: Rosa, Azul, Dorado"
                             value={newTheme}
-                            onValueChange={setNewTheme}
-                            variant="flat"
+                            onChange={(event) => setNewTheme(event.currentTarget.value)}
                             size="sm"
-                            classNames={{
-                              input: "text-gray-900",
-                              inputWrapper: "bg-white border-0 hover:bg-gray-100 focus-within:ring-1 focus-within:ring-gray-900"
-                            }}
                           />
                         </div>
                         <div className="flex items-end">
                           <Button
-                            onPress={addTheme}
+                            onClick={addTheme}
                             size="sm"
-                            className="btn-primary text-white"
                           >
                             Agregar
                           </Button>
@@ -649,13 +584,12 @@ export default function EventThemeManager() {
                           <div key={index} className="flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-full">
                             <span className="text-sm text-gray-900">{theme}</span>
                             <Button
-                              isIconOnly
                               variant="light"
                               size="sm"
-                              onPress={() => removeTheme(index)}
+                              onClick={() => removeTheme(index)}
                               className="text-gray-400 hover:text-red-500 w-4 h-4 min-w-4"
                             >
-                              <XMarkIcon className="w-3 h-3" />
+                              <IconX className="w-3 h-3" />
                             </Button>
                           </div>
                         ))}
@@ -663,30 +597,22 @@ export default function EventThemeManager() {
                     )}
                   </div>
                 </div>
-              </ModalBody>
 
-              <ModalFooter className="px-6 py-3">
-                <Button
-                  variant="light"
-                  onPress={close}
-                  isDisabled={submitting}
-                  size="sm"
-                  className="text-gray-600"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onPress={handleSubmit}
-                  isLoading={submitting}
-                  size="sm"
-                  className="btn-primary text-white"
-                >
-                  {submitting ? 'Guardando...' : (editingTheme ? 'Actualizar' : 'Crear')}
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
+                <Group justify="flex-end" mt="xl">
+                  <Button
+                    variant="light"
+                    onClick={close}
+                    disabled={submitting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    loading={submitting}
+                  >
+                    {submitting ? 'Guardando...' : (editingTheme ? 'Actualizar' : 'Crear')}
+                  </Button>
+                </Group>
       </Modal>
     </div>
   );

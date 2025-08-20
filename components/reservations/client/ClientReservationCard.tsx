@@ -3,13 +3,16 @@
 import React from 'react';
 import {
   Card,
-  CardBody,
   Button,
-  Chip,
-  Avatar,
   Badge,
-  Tooltip
-} from '@heroui/react';
+  Avatar,
+  Tooltip,
+  Group,
+  Text,
+  Stack,
+  Box,
+  Divider
+} from '@mantine/core';
 import {
   EyeIcon,
   CalendarDaysIcon,
@@ -31,15 +34,15 @@ export default function ClientReservationCard({ reservation, onView }: ClientRes
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'success';
+        return 'green';
       case 'pending':
-        return 'warning';
+        return 'yellow';
       case 'cancelled':
-        return 'danger';
+        return 'red';
       case 'completed':
-        return 'primary';
+        return 'blue';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -102,107 +105,116 @@ export default function ClientReservationCard({ reservation, onView }: ClientRes
   const isPast = daysUntil < 0;
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-200 border border-gray-200 bg-white overflow-hidden">
-      <CardBody className="p-0">
-        {/* Header with gradient and status */}
-        <div className="relative p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <Avatar
-                name={reservation.child.name}
-                className="bg-white/20 text-white border border-white/30"
-                size="sm"
-              />
-              <div>
-                <h3 className="text-lg font-semibold">
-                  {reservation.child.name}
-                </h3>
-                <p className="text-white/80 text-sm">
-                  {reservation.child.age} {reservation.child.age === 1 ? 'año' : 'años'}
-                </p>
-              </div>
-            </div>
-            
-            <Chip
-              color={getStatusColor(reservation.status)}
-              variant="flat"
-              size="sm"
-              className="bg-white/20 backdrop-blur-sm text-white"
+    <Card 
+      shadow="sm" 
+      padding="0" 
+      radius="lg"
+      withBorder
+      className="hover:shadow-lg transition-all duration-200"
+    >
+      {/* Header with gradient and status */}
+      <Box className="relative p-4 bg-gradient-to-r from-purple-500 to-pink-500">
+        <Group justify="space-between" align="flex-start" mb="sm">
+          <Group gap="sm">
+            <Avatar
+              size="md"
+              radius="xl"
+              color="white"
+              className="bg-white/20 border border-white/30"
             >
-              {getStatusText(reservation.status)}
-            </Chip>
-          </div>
-
-          {/* Package info */}
-          {reservation.package && (
-            <div className="text-sm text-white/90">
-              {reservation.package.name}
+              {reservation.child.name.charAt(0).toUpperCase()}
+            </Avatar>
+            <div>
+              <Text size="lg" fw={600} c="white">
+                {reservation.child.name}
+              </Text>
+              <Text size="sm" c="white" opacity={0.8}>
+                {reservation.child.age} {reservation.child.age === 1 ? 'año' : 'años'}
+              </Text>
             </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="p-4 space-y-4">
-          {/* Date and Time */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  {formatDate(reservation.eventDate)}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {reservation.eventTime}
-                </p>
-              </div>
-            </div>
-
-            {/* Package and Guests */}
-            {reservation.package && (
-              <div className="flex items-center gap-3">
-                <UserGroupIcon className="w-4 h-4 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    Hasta {reservation.package.maxGuests} invitados
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Price */}
-            <div className="flex items-center gap-3">
-              <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
-              <div>
-                <p className="text-lg font-semibold text-gray-900">
-                  {formatPrice(reservation.pricing?.total || 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Special comments preview */}
-          {reservation.specialComments && (
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500 mb-1">Comentarios</p>
-              <p className="text-sm text-gray-700 line-clamp-2">
-                {reservation.specialComments}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer with action */}
-        <div className="p-4 pt-0">
-          <Button
-            onPress={() => onView(reservation)}
-            className="w-full bg-gray-900 text-white hover:bg-gray-800 transition-colors duration-200"
-            size="md"
-            startContent={<EyeIcon className="w-4 h-4" />}
+          </Group>
+          
+          <Badge
+            color={getStatusColor(reservation.status)}
+            variant="light"
+            size="sm"
+            radius="md"
+            className="bg-white/20 backdrop-blur-sm"
           >
-            Ver Detalles
-          </Button>
-        </div>
-      </CardBody>
+            {getStatusEmoji(reservation.status)} {getStatusText(reservation.status)}
+          </Badge>
+        </Group>
+
+        {/* Package info */}
+        {reservation.package && (
+          <Text size="sm" c="white" opacity={0.9}>
+            {reservation.package.name}
+          </Text>
+        )}
+      </Box>
+
+      {/* Content */}
+      <Stack p="md" gap="sm">
+        {/* Date and Time */}
+        <Group gap="sm">
+          <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
+          <div>
+            <Text size="sm" fw={500}>
+              {formatDate(reservation.eventDate)}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {reservation.eventTime}
+            </Text>
+          </div>
+        </Group>
+
+        {/* Package and Guests */}
+        {reservation.package && (
+          <Group gap="sm">
+            <UserGroupIcon className="w-4 h-4 text-gray-400" />
+            <Text size="sm" fw={500}>
+              Hasta {reservation.package.maxGuests} invitados
+            </Text>
+          </Group>
+        )}
+
+        {/* Price */}
+        <Group gap="sm">
+          <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
+          <Text size="lg" fw={600}>
+            {formatPrice(reservation.pricing?.total || 0)}
+          </Text>
+        </Group>
+
+        {/* Special comments preview */}
+        {reservation.specialComments && (
+          <>
+            <Divider />
+            <div>
+              <Text size="xs" c="dimmed" mb={4}>
+                Comentarios
+              </Text>
+              <Text size="sm" lineClamp={2}>
+                {reservation.specialComments}
+              </Text>
+            </div>
+          </>
+        )}
+      </Stack>
+
+      {/* Footer with action */}
+      <Box p="md" pt={0}>
+        <Button
+          onClick={() => onView(reservation)}
+          fullWidth
+          variant="filled"
+          color="dark"
+          size="md"
+          leftSection={<EyeIcon className="w-4 h-4" />}
+        >
+          Ver Detalles
+        </Button>
+      </Box>
     </Card>
   );
 }

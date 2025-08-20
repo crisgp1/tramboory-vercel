@@ -2,7 +2,7 @@
 
 import { SignIn, SignUp } from "@clerk/nextjs"
 import { useState } from "react"
-import { Button } from "@heroui/react"
+import { Button } from "@mantine/core"
 
 type AuthView = "signin" | "signup"
 
@@ -14,16 +14,16 @@ export default function AuthContainer() {
       <div className="w-full max-w-md">
         <div className="mb-6 flex justify-center gap-2">
           <Button
-            color={currentView === "signin" ? "primary" : "default"}
-            variant={currentView === "signin" ? "solid" : "bordered"}
-            onPress={() => setCurrentView("signin")}
+            color={currentView === "signin" ? "blue" : "gray"}
+            variant={currentView === "signin" ? "filled" : "outline"}
+            onClick={() => setCurrentView("signin")}
           >
             Iniciar Sesión
           </Button>
           <Button
-            color={currentView === "signup" ? "primary" : "default"}
-            variant={currentView === "signup" ? "solid" : "bordered"}
-            onPress={() => setCurrentView("signup")}
+            color={currentView === "signup" ? "blue" : "gray"}
+            variant={currentView === "signup" ? "filled" : "outline"}
+            onClick={() => setCurrentView("signup")}
           >
             Crear Cuenta
           </Button>

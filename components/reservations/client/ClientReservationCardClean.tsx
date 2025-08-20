@@ -4,16 +4,15 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Card,
-  CardBody,
-  Chip,
+  Badge,
   Button,
   Avatar,
   Divider,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem
-} from '@heroui/react';
+  Menu,
+  MenuTarget,
+  MenuDropdown,
+  MenuItem
+} from '@mantine/core';
 import {
   CalendarDaysIcon,
   ClockIcon,
@@ -153,56 +152,56 @@ export default function ClientReservationCardClean({
         transition={{ duration: 0.2 }}
       >
         <Card className="hover:shadow-lg transition-all duration-300 border-0 shadow-sm">
-          <CardBody className="p-0">
+          <div className="p-0">
             <div className="flex flex-col sm:flex-row">
               {/* Date Badge */}
-              <div className="flex-shrink-0 p-6 bg-gray-50 sm:w-32 flex sm:flex-col items-center justify-center text-center border-r border-gray-100">
-                <div className="text-2xl font-bold text-gray-900">{dateInfo.day}</div>
-                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">{dateInfo.month}</div>
-                <div className="text-xs text-gray-400 mt-1">{dateInfo.weekday}</div>
+              <div className="flex-shrink-0 p-4 sm:p-6 bg-gray-50 sm:w-32 flex flex-row sm:flex-col items-center justify-center text-center border-b sm:border-b-0 sm:border-r border-gray-100">
+                <div className="text-xl sm:text-2xl font-bold text-gray-900">{dateInfo.day}</div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider ml-2 sm:ml-0">{dateInfo.month}</div>
+                <div className="text-xs text-gray-400 ml-2 sm:ml-0 sm:mt-1">{dateInfo.weekday}</div>
               </div>
               
               {/* Content */}
-              <div className="flex-1 p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex-1">
+              <div className="flex-1 p-4 sm:p-6">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         <Avatar
                           name={reservation.child.name}
                           size="sm"
-                          className="bg-pink-100 text-pink-700"
+                          className="bg-pink-100 text-pink-700 flex-shrink-0"
                         />
-                        <div>
-                          <h3 className="font-semibold text-gray-900 text-lg">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-gray-900 text-base sm:text-lg truncate">
                             Fiesta de {reservation.child.name}
                           </h3>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs sm:text-sm text-gray-600">
                             {reservation.child.age} {reservation.child.age === 1 ? 'año' : 'años'}
                           </p>
                         </div>
                       </div>
-                      <Chip 
-                        size="sm" 
-                        variant="flat"
-                        className={`${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border`}
+                      <Badge
+                        size="sm"
+                        variant="light"
+                        className={`${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border flex-shrink-0 text-xs`}
                       >
                         {statusConfig.label}
-                      </Chip>
+                      </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <CalendarDaysIcon className="w-4 h-4" />
-                        <span>{dateInfo.fullDate}</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-4">
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                        <CalendarDaysIcon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="truncate">{dateInfo.fullDate}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <ClockIcon className="w-4 h-4" />
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                        <ClockIcon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                         <span>{reservation.eventTime}</span>
                       </div>
                       {reservation.package && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <UserGroupIcon className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                          <UserGroupIcon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                           <span>Hasta {reservation.package.maxGuests} invitados</span>
                         </div>
                       )}
@@ -210,59 +209,60 @@ export default function ClientReservationCardClean({
                     
                     {reservation.package && (
                       <div className="flex items-center gap-2 mb-2">
-                        <SparklesIcon className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm font-medium text-gray-900">{reservation.package.name}</span>
+                        <SparklesIcon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm font-medium text-gray-900 truncate">{reservation.package.name}</span>
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-gray-900">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 pt-3 sm:pt-0 border-t sm:border-t-0">
+                    <div className="text-left sm:text-right flex-1 sm:flex-initial">
+                      <div className="text-lg sm:text-xl font-bold text-gray-900">
                         {formatPrice(reservation.pricing?.total || 0)}
                       </div>
                       <div className="text-xs text-gray-500">Total</div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      <Dropdown isOpen={calendarDropdownOpen} onOpenChange={setCalendarDropdownOpen}>
-                        <DropdownTrigger>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Menu opened={calendarDropdownOpen} onChange={setCalendarDropdownOpen}>
+                        <MenuTarget>
                           <Button
-                            variant="bordered"
+                            variant="default"
                             size="sm"
-                            isIconOnly
-                            className="border-gray-300 hover:border-gray-400"
+                            className="border-gray-300 hover:border-gray-400 flex-1 sm:flex-initial"
                           >
                             <CalendarIcon className="w-4 h-4" />
+                            <span className="sm:hidden ml-2 text-xs">Calendario</span>
                           </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu>
+                        </MenuTarget>
+                        <MenuDropdown>
                           {calendarOptions.map((option) => (
-                            <DropdownItem
+                            <MenuItem
                               key={option.key}
-                              startContent={<span className="text-sm">{option.icon}</span>}
-                              onPress={() => handleCalendarExport(option.key as any)}
+                              leftSection={<span className="text-sm">{option.icon}</span>}
+                              onClick={() => handleCalendarExport(option.key as any)}
                             >
                               {option.label}
-                            </DropdownItem>
+                            </MenuItem>
                           ))}
-                        </DropdownMenu>
-                      </Dropdown>
+                        </MenuDropdown>
+                      </Menu>
                       
                       <Button
-                        variant="bordered"
+                        variant="default"
                         size="sm"
-                        onPress={() => onView(reservation)}
-                        className="border-gray-300 hover:border-gray-400"
+                        onClick={() => onView(reservation)}
+                        className="border-gray-300 hover:border-gray-400 flex-1 sm:flex-initial"
                       >
-                        Ver detalles
+                        <span className="hidden sm:inline">Ver detalles</span>
+                        <span className="sm:hidden">Ver</span>
                       </Button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </CardBody>
+          </div>
         </Card>
       </motion.div>
     );
@@ -274,25 +274,25 @@ export default function ClientReservationCardClean({
       transition={{ duration: 0.2 }}
     >
       <Card className="hover:shadow-xl transition-all duration-300 border-0 shadow-sm overflow-hidden group">
-        <CardBody className="p-0">
+        <div className="p-0">
           {/* Hero Image Area (Mock) */}
-          <div className="relative h-48 bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-500 overflow-hidden">
+          <div className="relative h-40 sm:h-48 bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-500 overflow-hidden">
             <div className="absolute inset-0 bg-black/20" />
             
             {/* Status Badge */}
             <div className="absolute top-3 left-3">
-              <Chip 
-                size="sm" 
-                variant="solid"
+              <Badge
+                size="sm"
+                variant="filled"
                 className="bg-white/90 text-gray-800 backdrop-blur-sm"
               >
                 {statusConfig.label}
-              </Chip>
+              </Badge>
             </div>
             
             {/* Date Badge */}
-            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-lg p-2 text-center min-w-[50px]">
-              <div className="text-lg font-bold text-gray-900">{dateInfo.day}</div>
+            <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-white/90 backdrop-blur-sm rounded-lg p-1.5 sm:p-2 text-center min-w-[40px] sm:min-w-[50px]">
+              <div className="text-sm sm:text-lg font-bold text-gray-900">{dateInfo.day}</div>
               <div className="text-xs font-medium text-gray-600 uppercase -mt-1">{dateInfo.month}</div>
             </div>
             
@@ -319,20 +319,20 @@ export default function ClientReservationCardClean({
           </div>
           
           {/* Content */}
-          <div className="p-4 space-y-3">
+          <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
             {/* Title */}
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3 flex-1">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 <Avatar
                   name={reservation.child.name}
                   size="sm"
                   className="bg-pink-100 text-pink-700 flex-shrink-0"
                 />
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-gray-900 truncate">
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                     Fiesta de {reservation.child.name}
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     {reservation.child.age} {reservation.child.age === 1 ? 'año' : 'años'}
                   </p>
                 </div>
@@ -374,49 +374,48 @@ export default function ClientReservationCardClean({
             {/* Price and Actions */}
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-base sm:text-lg font-bold text-gray-900">
                   {formatPrice(reservation.pricing?.total || 0)}
                 </div>
                 <div className="text-xs text-gray-500">Total</div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <Dropdown>
-                  <DropdownTrigger>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Menu>
+                  <MenuTarget>
                     <Button
                       size="sm"
-                      variant="flat"
-                      isIconOnly
-                      className="bg-gray-100 hover:bg-gray-200"
+                      variant="light"
+                      className="bg-gray-100 hover:bg-gray-200 p-1 sm:p-2"
                     >
-                      <CalendarIcon className="w-4 h-4" />
+                      <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu>
+                  </MenuTarget>
+                  <MenuDropdown>
                     {calendarOptions.map((option) => (
-                      <DropdownItem
+                      <MenuItem
                         key={option.key}
-                        startContent={<span className="text-sm">{option.icon}</span>}
-                        onPress={() => handleCalendarExport(option.key as any)}
+                        leftSection={<span className="text-sm">{option.icon}</span>}
+                        onClick={() => handleCalendarExport(option.key as any)}
                       >
                         {option.label}
-                      </DropdownItem>
+                      </MenuItem>
                     ))}
-                  </DropdownMenu>
-                </Dropdown>
+                  </MenuDropdown>
+                </Menu>
                 
                 <Button
                   size="sm"
-                  onPress={() => onView(reservation)}
-                  className="bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-                  startContent={<EyeIcon className="w-4 h-4" />}
+                  onClick={() => onView(reservation)}
+                  className="bg-gray-900 text-white hover:bg-gray-800 transition-colors text-xs sm:text-sm px-2 sm:px-3"
+                  leftSection={<EyeIcon className="w-3 h-3 sm:w-4 sm:h-4" />}
                 >
                   Ver
                 </Button>
               </div>
             </div>
           </div>
-        </CardBody>
+        </div>
       </Card>
     </motion.div>
   );

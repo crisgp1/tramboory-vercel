@@ -5,24 +5,19 @@ import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import {
   Button,
-  Input,
+  TextInput,
   Select,
-  SelectItem,
   Textarea,
   Card,
-  CardBody,
-  Chip,
+  Badge,
   Divider,
   Progress,
-  RadioGroup,
   Radio,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure
-} from '@heroui/react';
+  Group,
+  Text
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
   CheckIcon,
   CakeIcon,
@@ -139,7 +134,7 @@ type Step = 'basic' | 'package' | 'food' | 'extras' | 'payment' | 'confirmation'
 export default function ClientNewReservationPage() {
   const { user } = useUser();
   const router = useRouter();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, { open: onOpen, close: onClose }] = useDisclosure();
   
   const [currentStep, setCurrentStep] = useState<Step>('basic');
   const [formData, setFormData] = useState<FormData>({
@@ -618,15 +613,20 @@ Para cualquier duda, contacta:
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Nombre del niño/a *
                 </label>
-                <Input
+                <TextInput
                   placeholder="Ej: Sofía"
                   value={formData.childName}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, childName: value }))}
-                  variant="bordered"
+                  onChange={(event) => setFormData(prev => ({ ...prev, childName: event.target.value }))}
                   size="lg"
-                  classNames={{
-                    input: "text-gray-900 text-lg",
-                    inputWrapper: "border-2 border-pink-200 hover:border-pink-300 focus-within:border-pink-500 bg-white"
+                  styles={{
+                    input: {
+                      fontSize: '1.125rem',
+                      backgroundColor: 'white',
+                      borderWidth: '2px',
+                      borderColor: '#f9a8d4',
+                      '&:hover': { borderColor: '#f472b6' },
+                      '&:focus': { borderColor: '#ec4899' }
+                    }
                   }}
                 />
               </div>
@@ -636,24 +636,24 @@ Para cualquier duda, contacta:
                 </label>
                 <Select
                   placeholder="Selecciona la edad"
-                  selectedKeys={formData.childAge ? [formData.childAge] : []}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0] as string;
-                    setFormData(prev => ({ ...prev, childAge: selected }));
-                  }}
-                  variant="bordered"
+                  value={formData.childAge}
+                  onChange={(value) => setFormData(prev => ({ ...prev, childAge: value || '' }))}
                   size="lg"
-                  classNames={{
-                    trigger: "border-2 border-pink-200 hover:border-pink-300 focus-within:border-pink-500 bg-white",
-                    value: "text-gray-900 text-lg"
+                  data={Array.from({ length: 15 }, (_, i) => ({
+                    value: (i + 1).toString(),
+                    label: `${i + 1} ${i + 1 === 1 ? 'año' : 'años'}`
+                  }))}
+                  styles={{
+                    input: {
+                      fontSize: '1.125rem',
+                      backgroundColor: 'white',
+                      borderWidth: '2px',
+                      borderColor: '#f9a8d4',
+                      '&:hover': { borderColor: '#f472b6' },
+                      '&:focus': { borderColor: '#ec4899' }
+                    }
                   }}
-                >
-                  {Array.from({ length: 15 }, (_, i) => i + 1).map((age) => (
-                    <SelectItem key={age.toString()}>
-                      {age} {age === 1 ? 'año' : 'años'}
-                    </SelectItem>
-                  ))}
-                </Select>
+                />
               </div>
             </div>
 
@@ -698,12 +698,20 @@ Para cualquier duda, contacta:
                         <Button
                           key={time}
                           size="sm"
-                          variant={formData.eventTime === time ? "solid" : "bordered"}
-                          color={formData.eventTime === time ? "primary" : "default"}
-                          onPress={() => {
+                          variant={formData.eventTime === time ? "filled" : "outline"}
+                          color={formData.eventTime === time ? "pink" : "gray"}
+                          onClick={() => {
                             setFormData(prev => ({ ...prev, eventTime: time }));
                           }}
-                          className={formData.eventTime === time ? 'bg-pink-500 text-white' : 'border-pink-300 hover:bg-pink-50'}
+                          styles={{
+                            root: formData.eventTime === time ? {
+                              backgroundColor: '#ec4899',
+                              color: 'white'
+                            } : {
+                              borderColor: '#f472b6',
+                              '&:hover': { backgroundColor: '#fdf2f8' }
+                            }
+                          }}
                         >
                           {time}
                         </Button>
@@ -723,20 +731,20 @@ Para cualquier duda, contacta:
                             <Button
                               key={slot.time}
                               size="sm"
-                              isDisabled={!slot.available}
-                              variant={formData.eventTime === slot.time ? "solid" : "bordered"}
-                              color={formData.eventTime === slot.time ? "primary" : "default"}
-                              onPress={() => {
+                              disabled={!slot.available}
+                              variant={formData.eventTime === slot.time ? "filled" : "outline"}
+                              color={formData.eventTime === slot.time ? "pink" : "gray"}
+                              onClick={() => {
                                 setFormData(prev => ({ ...prev, eventTime: slot.time }));
                                 setSelectedBlock(block.blockName);
                               }}
-                              className={`${
-                                slot.available 
-                                  ? formData.eventTime === slot.time 
-                                    ? 'bg-pink-500 text-white' 
-                                    : 'border-pink-300 hover:bg-pink-50'
-                                  : 'opacity-50 cursor-not-allowed'
-                              }`}
+                              styles={{
+                                root: slot.available
+                                  ? formData.eventTime === slot.time
+                                    ? { backgroundColor: '#ec4899', color: 'white' }
+                                    : { borderColor: '#f472b6', '&:hover': { backgroundColor: '#fdf2f8' } }
+                                  : { opacity: 0.5, cursor: 'not-allowed' }
+                              }}
                             >
                               <div className="text-center">
                                 <p className="font-medium">{slot.time}</p>
@@ -771,12 +779,16 @@ Para cualquier duda, contacta:
               <Textarea
                 placeholder="Solicitudes especiales, alergias, decoración específica, etc. (opcional)"
                 value={formData.specialComments}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, specialComments: value }))}
+                onChange={(event) => setFormData(prev => ({ ...prev, specialComments: event.target.value }))}
                 minRows={3}
-                variant="bordered"
-                classNames={{
-                  input: "text-gray-900",
-                  inputWrapper: "border-2 border-pink-200 hover:border-pink-300 focus-within:border-pink-500 bg-white"
+                styles={{
+                  input: {
+                    backgroundColor: 'white',
+                    borderWidth: '2px',
+                    borderColor: '#f9a8d4',
+                    '&:hover': { borderColor: '#f472b6' },
+                    '&:focus': { borderColor: '#ec4899' }
+                  }
                 }}
               />
             </div>
@@ -804,15 +816,17 @@ Para cualquier duda, contacta:
                 {packages.map((pkg) => (
                   <Card
                     key={pkg._id}
-                    isPressable
-                    onPress={() => setFormData(prev => ({ ...prev, packageId: pkg._id }))}
-                    className={`border-2 transition-all duration-300 hover:shadow-lg ${
-                      formData.packageId === pkg._id
-                        ? 'border-purple-500 bg-purple-50 shadow-lg ring-2 ring-purple-200'
-                        : 'border-gray-200 hover:border-purple-300'
-                    }`}
+                    onClick={() => setFormData(prev => ({ ...prev, packageId: pkg._id }))}
+                    style={{
+                      cursor: 'pointer',
+                      borderWidth: '2px',
+                      transition: 'all 0.3s',
+                      borderColor: formData.packageId === pkg._id ? '#8b5cf6' : '#d1d5db',
+                      backgroundColor: formData.packageId === pkg._id ? '#f3f4f6' : 'white',
+                      boxShadow: formData.packageId === pkg._id ? '0 10px 15px -3px rgba(139, 92, 246, 0.1)' : undefined
+                    }}
+                    padding="xl"
                   >
-                    <CardBody className="p-6">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h3 className="font-bold text-lg text-gray-900 mb-1">
@@ -845,7 +859,6 @@ Para cualquier duda, contacta:
                           </span>
                         </div>
                       </div>
-                    </CardBody>
                   </Card>
                 ))}
               </div>
@@ -871,15 +884,16 @@ Para cualquier duda, contacta:
                 {foodOptions.map((option) => (
                   <Card
                     key={option._id}
-                    isPressable
-                    onPress={() => setFormData(prev => ({ ...prev, foodOptionId: option._id }))}
-                    className={`border-2 transition-all duration-300 ${
-                      formData.foodOptionId === option._id
-                        ? 'border-indigo-500 bg-indigo-50 shadow-lg'
-                        : 'border-gray-200 hover:border-indigo-300'
-                    }`}
+                    onClick={() => setFormData(prev => ({ ...prev, foodOptionId: option._id }))}
+                    style={{
+                      cursor: 'pointer',
+                      borderWidth: '2px',
+                      transition: 'all 0.3s',
+                      borderColor: formData.foodOptionId === option._id ? '#6366f1' : '#d1d5db',
+                      backgroundColor: formData.foodOptionId === option._id ? '#eef2ff' : 'white'
+                    }}
+                    padding="lg"
                   >
-                    <CardBody className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-900">{option.name}</h4>
@@ -892,7 +906,6 @@ Para cualquier duda, contacta:
                           <CheckIcon className="w-5 h-5 text-indigo-500" />
                         )}
                       </div>
-                    </CardBody>
                   </Card>
                 ))}
               </div>
@@ -905,15 +918,16 @@ Para cualquier duda, contacta:
                 {eventThemes.map((theme) => (
                   <Card
                     key={theme._id}
-                    isPressable
-                    onPress={() => setFormData(prev => ({ ...prev, eventThemeId: theme._id, selectedThemePackage: '' }))}
-                    className={`border-2 transition-all duration-300 ${
-                      formData.eventThemeId === theme._id
-                        ? 'border-indigo-500 bg-indigo-50 shadow-lg'
-                        : 'border-gray-200 hover:border-indigo-300'
-                    }`}
+                    onClick={() => setFormData(prev => ({ ...prev, eventThemeId: theme._id, selectedThemePackage: '' }))}
+                    style={{
+                      cursor: 'pointer',
+                      borderWidth: '2px',
+                      transition: 'all 0.3s',
+                      borderColor: formData.eventThemeId === theme._id ? '#6366f1' : '#d1d5db',
+                      backgroundColor: formData.eventThemeId === theme._id ? '#eef2ff' : 'white'
+                    }}
+                    padding="lg"
                   >
-                    <CardBody className="p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-900">{theme.name}</h4>
@@ -954,7 +968,6 @@ Para cualquier duda, contacta:
                           </div>
                         </div>
                       )}
-                    </CardBody>
                   </Card>
                 ))}
               </div>
@@ -977,8 +990,7 @@ Para cualquier duda, contacta:
               {extraServices.map((service) => (
                 <Card
                   key={service._id}
-                  isPressable
-                  onPress={() => {
+                  onClick={() => {
                     const isSelected = formData.selectedExtraServices.includes(service._id);
                     if (isSelected) {
                       setFormData(prev => ({
@@ -992,21 +1004,23 @@ Para cualquier duda, contacta:
                       }));
                     }
                   }}
-                  className={`border-2 transition-all duration-300 ${
-                    formData.selectedExtraServices.includes(service._id)
-                      ? 'border-emerald-500 bg-emerald-50 shadow-lg'
-                      : 'border-gray-200 hover:border-emerald-300'
-                  }`}
+                  style={{
+                    cursor: 'pointer',
+                    borderWidth: '2px',
+                    transition: 'all 0.3s',
+                    borderColor: formData.selectedExtraServices.includes(service._id) ? '#10b981' : '#d1d5db',
+                    backgroundColor: formData.selectedExtraServices.includes(service._id) ? '#ecfdf5' : 'white'
+                  }}
+                  padding="lg"
                 >
-                  <CardBody className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">{service.name}</h4>
                         <p className="text-sm text-gray-600 mb-2">{service.description}</p>
                         <div className="flex items-center gap-2">
-                          <Chip size="sm" color="secondary" variant="flat">
+                          <Badge size="sm" color="grape" variant="light">
                             {service.category}
-                          </Chip>
+                          </Badge>
                           <span className="text-sm font-semibold text-green-600">
                             ${service.price.toLocaleString()}
                           </span>
@@ -1016,7 +1030,6 @@ Para cualquier duda, contacta:
                         <CheckIcon className="w-5 h-5 text-emerald-500" />
                       )}
                     </div>
-                  </CardBody>
                 </Card>
               ))}
             </div>
@@ -1026,14 +1039,24 @@ Para cualquier duda, contacta:
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Servicios Seleccionados</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedExtras.map((service) => (
-                    <Chip
+                    <Badge
                       key={service._id}
-                      onClose={() => removeExtraService(service._id)}
-                      variant="flat"
-                      color="primary"
+                      variant="light"
+                      color="blue"
+                      rightSection={
+                        <Button
+                          size="xs"
+                          variant="subtle"
+                          color="gray"
+                          onClick={() => removeExtraService(service._id)}
+                          px={4}
+                        >
+                          ×
+                        </Button>
+                      }
                     >
                       {service.name} - ${service.price.toLocaleString()}
-                    </Chip>
+                    </Badge>
                   ))}
                 </div>
               </div>
@@ -1053,8 +1076,7 @@ Para cualquier duda, contacta:
             </div>
 
             {/* Resumen de la reserva */}
-            <Card className="border-2 border-gray-200">
-              <CardBody className="p-6">
+            <Card style={{ borderWidth: '2px', borderColor: '#d1d5db' }} padding="xl">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen de tu Reserva</h3>
                 
                 <div className="space-y-3">
@@ -1111,46 +1133,56 @@ Para cualquier duda, contacta:
                   <span>Total:</span>
                   <span className="text-green-600">{formatPrice(calculateTotal())}</span>
                 </div>
-              </CardBody>
             </Card>
 
             {/* Métodos de pago */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Selecciona tu método de pago</h3>
-              <RadioGroup
+              <Radio.Group
                 value={formData.paymentMethod}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as 'transfer' | 'cash' | 'card' }))}
+                onChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as 'transfer' | 'cash' | 'card' }))}
               >
-                <Radio value="transfer" className="mb-3">
-                  <div className="flex items-center gap-3">
-                    <BanknotesIcon className="w-6 h-6 text-blue-500" />
-                    <div>
-                      <p className="font-medium">Transferencia Bancaria</p>
-                      <p className="text-sm text-gray-600">Pago seguro mediante transferencia</p>
-                    </div>
-                  </div>
-                </Radio>
-                
-                <Radio value="cash" className="mb-3">
-                  <div className="flex items-center gap-3">
-                    <BanknotesIcon className="w-6 h-6 text-green-500" />
-                    <div>
-                      <p className="font-medium">Efectivo</p>
-                      <p className="text-sm text-gray-600">Pago en efectivo el día del evento</p>
-                    </div>
-                  </div>
-                </Radio>
-                
-                <Radio value="card">
-                  <div className="flex items-center gap-3">
-                    <CreditCardIcon className="w-6 h-6 text-purple-500" />
-                    <div>
-                      <p className="font-medium">Tarjeta de Crédito/Débito</p>
-                      <p className="text-sm text-gray-600">Pago con tarjeta el día del evento</p>
-                    </div>
-                  </div>
-                </Radio>
-              </RadioGroup>
+                <Group mt="xs" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+                  <Radio
+                    value="transfer"
+                    label={
+                      <div className="flex items-center gap-3">
+                        <BanknotesIcon className="w-6 h-6 text-blue-500" />
+                        <div>
+                          <p className="font-medium">Transferencia Bancaria</p>
+                          <p className="text-sm text-gray-600">Pago seguro mediante transferencia</p>
+                        </div>
+                      </div>
+                    }
+                  />
+                  
+                  <Radio
+                    value="cash"
+                    label={
+                      <div className="flex items-center gap-3">
+                        <BanknotesIcon className="w-6 h-6 text-green-500" />
+                        <div>
+                          <p className="font-medium">Efectivo</p>
+                          <p className="text-sm text-gray-600">Pago en efectivo el día del evento</p>
+                        </div>
+                      </div>
+                    }
+                  />
+                  
+                  <Radio
+                    value="card"
+                    label={
+                      <div className="flex items-center gap-3">
+                        <CreditCardIcon className="w-6 h-6 text-purple-500" />
+                        <div>
+                          <p className="font-medium">Tarjeta de Crédito/Débito</p>
+                          <p className="text-sm text-gray-600">Pago con tarjeta el día del evento</p>
+                        </div>
+                      </div>
+                    }
+                  />
+                </Group>
+              </Radio.Group>
             </div>
           </div>
         );
@@ -1166,8 +1198,7 @@ Para cualquier duda, contacta:
               <p className="text-gray-600">Tu reserva ha sido creada exitosamente</p>
             </div>
 
-            <Card className="border-2 border-green-200 bg-green-50">
-              <CardBody className="p-6">
+            <Card style={{ borderWidth: '2px', borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }} padding="xl">
                 <div className="text-center mb-4">
                   <h3 className="text-xl font-bold text-green-800 mb-2">
                     ¡Felicidades! Tu evento está reservado
@@ -1206,28 +1237,27 @@ Para cualquier duda, contacta:
                     <span className="font-bold text-green-600">{formatPrice(calculateTotal())}</span>
                   </div>
                 </div>
-              </CardBody>
             </Card>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
-                color="primary"
-                variant="solid"
+                color="blue"
+                variant="filled"
                 size="lg"
-                startContent={<DocumentTextIcon className="w-5 h-5" />}
-                onPress={generatePaymentSlip}
-                className="flex-1"
+                leftSection={<DocumentTextIcon className="w-5 h-5" />}
+                onClick={generatePaymentSlip}
+                style={{ flex: 1 }}
               >
                 Descargar Ficha de Pago
               </Button>
               
               <Button
-                color="secondary"
-                variant="bordered"
+                color="gray"
+                variant="outline"
                 size="lg"
-                startContent={<CalendarDaysIcon className="w-5 h-5" />}
-                onPress={() => router.push('/reservaciones')}
-                className="flex-1"
+                leftSection={<CalendarDaysIcon className="w-5 h-5" />}
+                onClick={() => router.push('/reservaciones')}
+                style={{ flex: 1 }}
               >
                 Ver Mis Reservas
               </Button>
@@ -1314,44 +1344,42 @@ Para cualquier duda, contacta:
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto">
-          <Card className="border-0 shadow-xl">
-            <CardBody className="p-8">
+          <Card style={{ border: 'none', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }} padding="xl">
               {renderStepContent()}
-            </CardBody>
           </Card>
 
           {/* Navigation Buttons */}
           {currentStep !== 'confirmation' && (
             <div className="flex justify-between mt-8">
               <Button
-                variant="bordered"
+                variant="outline"
                 size="lg"
-                startContent={<ArrowLeftIcon className="w-5 h-5" />}
-                onPress={handlePrevious}
-                isDisabled={currentStepIndex === 0}
-                className="min-w-32"
+                leftSection={<ArrowLeftIcon className="w-5 h-5" />}
+                onClick={handlePrevious}
+                disabled={currentStepIndex === 0}
+                style={{ minWidth: '8rem' }}
               >
                 Anterior
               </Button>
 
               {currentStep === 'payment' ? (
                 <Button
-                  color="success"
+                  color="green"
                   size="lg"
-                  endContent={<CheckIcon className="w-5 h-5" />}
-                  onPress={handleSubmit}
-                  isLoading={loading}
-                  className="min-w-32"
+                  rightSection={<CheckIcon className="w-5 h-5" />}
+                  onClick={handleSubmit}
+                  loading={loading}
+                  style={{ minWidth: '8rem' }}
                 >
                   {loading ? 'Creando...' : 'Confirmar Reserva'}
                 </Button>
               ) : (
                 <Button
-                  color="primary"
+                  color="blue"
                   size="lg"
-                  endContent={<ArrowRightIcon className="w-5 h-5" />}
-                  onPress={handleNext}
-                  className="min-w-32"
+                  rightSection={<ArrowRightIcon className="w-5 h-5" />}
+                  onClick={handleNext}
+                  style={{ minWidth: '8rem' }}
                 >
                   Siguiente
                 </Button>

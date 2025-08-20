@@ -121,7 +121,7 @@ export default function TimeBlocksManager({
     setEditingBlock(block);
     setEditingBlockIndex(index);
     setBlockForm(block);
-    onBlockOpen();
+    openBlock();
   };
 
   const handleDeleteBlock = (index: number) => {
@@ -154,7 +154,7 @@ export default function TimeBlocksManager({
     }
     
     onUpdateTimeBlocks(newBlocks);
-    onBlockClose();
+    closeBlock();
     resetBlockForm();
   };
 
@@ -162,7 +162,7 @@ export default function TimeBlocksManager({
     setEditingRestDay(day);
     setEditingRestDayIndex(index);
     setRestDayForm(day);
-    onRestDayOpen();
+    openRestDay();
   };
 
   const handleDeleteRestDay = (index: number) => {
@@ -189,7 +189,7 @@ export default function TimeBlocksManager({
     }
     
     onUpdateRestDays(newDays);
-    onRestDayClose();
+    closeRestDay();
     resetRestDayForm();
   };
 

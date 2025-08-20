@@ -6,8 +6,13 @@ import { useRouter } from 'next/navigation';
 import {
   Button,
   Avatar,
-  Divider
-} from '@heroui/react';
+  Divider,
+  Stack,
+  Group,
+  Text,
+  Box,
+  Title
+} from '@mantine/core';
 import {
   PlusIcon,
   EyeIcon,
@@ -20,131 +25,87 @@ export default function ClientSidebar() {
   const router = useRouter();
 
   return (
-    <div className="surface-elevated" style={{
-      width: '18rem',
-      height: '100%',
-      borderRight: `0.0625rem solid var(--border-default)`,
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <Box
+      className="bg-white"
+      w={288}
+      h="100%"
+      style={{
+        borderRight: '1px solid #e5e7eb',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
       {/* Professional User Profile Section */}
-      <div className="surface-elevated" style={{
-        padding: 'var(--space-6)',
-        borderBottom: `0.0625rem solid var(--border-default)`
-      }}>
-        <div className="flex items-center" style={{
-          gap: 'var(--space-3)',
-          marginBottom: 'var(--space-6)'
-        }}>
+      <Box p="lg" className="border-b border-gray-200">
+        <Group gap="sm" mb="lg">
           <Avatar
             src={user?.imageUrl}
-            name={user?.fullName || user?.firstName || 'Usuario'}
             size="md"
-            style={{
-              border: `0.125rem solid var(--border-default)`
-            }}
-          />
+            radius="xl"
+            className="border-2 border-gray-200"
+          >
+            {user?.firstName?.charAt(0) || 'U'}
+          </Avatar>
           <div className="flex-1">
-            <h2 style={{
-              fontSize: 'var(--text-base)',
-              fontWeight: '600',
-              marginBottom: 'var(--space-1)'
-            }}>
+            <Text size="sm" fw={600}>
               {user?.firstName || 'Usuario'}
-            </h2>
-            <p className="text-neutral-500" style={{
-              fontSize: 'var(--text-sm)'
-            }}>
+            </Text>
+            <Text size="xs" c="dimmed">
               Mis reservaciones
-            </p>
+            </Text>
           </div>
-        </div>
-      </div>
+        </Group>
+      </Box>
 
       {/* Professional Main Actions */}
-      <div style={{
-        padding: 'var(--space-6)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-3)'
-      }}>
-        <button
-          className="btn-primary"
+      <Stack p="lg" gap="sm">
+        <Button
+          leftSection={<PlusIcon className="w-4 h-4" />}
           onClick={() => router.push('/reservaciones/nueva')}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            justifyContent: 'center'
-          }}
+          fullWidth
+          variant="filled"
+          color="dark"
         >
-          <PlusIcon className="icon-base" />
           Nueva Reserva
-        </button>
+        </Button>
         
-        <button
-          className="btn-secondary"
+        <Button
+          leftSection={<EyeIcon className="w-4 h-4" />}
           onClick={() => router.push('/reservaciones')}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            justifyContent: 'center'
-          }}
+          fullWidth
+          variant="light"
+          color="dark"
         >
-          <EyeIcon className="icon-base" />
           Consultar Reservas
-        </button>
-      </div>
+        </Button>
+      </Stack>
 
-      <div style={{
-        height: '0.0625rem',
-        backgroundColor: 'var(--border-default)',
-        margin: '0 var(--space-6)'
-      }} />
+      <Divider mx="lg" />
 
       {/* Professional Footer */}
-      <div style={{
-        marginTop: 'auto',
-        padding: 'var(--space-6)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-4)'
-      }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-2)'
-        }}>
-          <button
-            className="btn-tertiary"
+      <Stack mt="auto" p="lg" gap="md">
+        <Stack gap="xs">
+          <Button
+            leftSection={<HomeIcon className="w-4 h-4" />}
             onClick={() => router.push('/')}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-2)',
-              justifyContent: 'flex-start'
-            }}
+            fullWidth
+            variant="subtle"
+            color="gray"
+            justify="flex-start"
           >
-            <HomeIcon className="icon-sm" />
             Inicio
-          </button>
-          <LogoutButton 
-            variant="light" 
-            color="danger" 
+          </Button>
+          <LogoutButton
+            variant="light"
+            color="danger"
             size="sm"
             className="w-full justify-start"
           />
-        </div>
-        <p className="text-neutral-400 text-center" style={{
-          fontSize: 'var(--text-xs)'
-        }}>
+        </Stack>
+        <Text size="xs" c="dimmed" ta="center">
           Tramboory © 2025
-        </p>
-      </div>
-    </div>
+        </Text>
+      </Stack>
+    </Box>
   );
 }

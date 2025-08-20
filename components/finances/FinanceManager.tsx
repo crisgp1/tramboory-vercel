@@ -463,7 +463,7 @@ export default function FinanceManager() {
 
       {/* Modal de nueva transacción */}
       <NewFinanceModal
-        isOpen={isNewModalOpen}
+        opened={isNewModalOpen}
         onClose={onNewModalClose}
         onSubmit={handleNewFinanceSubmit}
         availableTags={availableTags}

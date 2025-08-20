@@ -3,22 +3,18 @@
 import React, { useState } from 'react';
 import {
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Button,
   Card,
-  CardBody,
-  Chip,
+  Badge,
   Divider,
-  Input,
+  TextInput,
   Textarea,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem
-} from '@heroui/react';
+  Input,
+  Menu,
+  MenuTarget,
+  MenuDropdown,
+  MenuItem
+} from '@mantine/core';
 import {
   CalendarDaysIcon,
   ClockIcon,
@@ -41,13 +37,13 @@ import { exportToCalendar } from '@/lib/calendar-export';
 import toast from 'react-hot-toast';
 
 interface ClientReservationModalProps {
-  isOpen: boolean;
+  opened: boolean;
   onClose: () => void;
   reservation: Reservation | null;
 }
 
 export default function ClientReservationModal({
-  isOpen,
+  opened,
   onClose,
   reservation
 }: ClientReservationModalProps) {
@@ -73,15 +69,15 @@ export default function ClientReservationModal({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'success';
+        return 'green';
       case 'pending':
-        return 'warning';
+        return 'yellow';
       case 'cancelled':
-        return 'danger';
+        return 'red';
       case 'completed':
-        return 'primary';
+        return 'blue';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -192,61 +188,59 @@ export default function ClientReservationModal({
 
   return (
     <Modal
-      isOpen={isOpen}
+      opened={opened}
       onClose={onClose}
-      size="3xl"
-      scrollBehavior="inside"
-      backdrop="opaque"
-      placement="center"
-      classNames={{
-        backdrop: "bg-gray-900/20",
-        base: "bg-white border border-gray-200 max-h-[90vh] my-4",
-        wrapper: "z-[1001] items-center justify-center p-4 overflow-y-auto",
-        header: "border-b border-gray-100 bg-gradient-to-r from-pink-50 to-purple-50 flex-shrink-0",
-        body: "p-0 overflow-y-auto max-h-[calc(90vh-140px)]",
-        footer: "border-t border-gray-100 bg-gray-50/50 flex-shrink-0"
+      size="xl"
+      centered
+      overlayProps={{
+        opacity: 0.55,
+        blur: 3,
+      }}
+      styles={{
+        content: { maxWidth: '64rem' },
+        body: { padding: 0 }
       }}
     >
-      <ModalContent>
-        <ModalHeader className="px-6 py-4">
+      <div>
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-pink-50 to-purple-50">
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
-                <span className="text-2xl">🎂</span>
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-lg sm:text-2xl">🎂</span>
               </div>
-              <div>
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+              <div className="min-w-0">
+                <h3 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent truncate">
                   Fiesta de {reservation.child.name}
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   Una celebración mágica e inolvidable ✨
                 </p>
               </div>
             </div>
-            <Chip
+            <Badge
               color={getStatusColor(reservation.status)}
-              variant="flat"
-              size="lg"
-              className="font-semibold"
+              variant="light"
+              size="md"
+              className="font-semibold flex-shrink-0 text-xs sm:text-sm"
             >
               {getStatusText(reservation.status)}
-            </Chip>
+            </Badge>
           </div>
-        </ModalHeader>
-
-        <ModalBody>
-          <div className="p-6">
+              </div>
+          
+              <div className="p-0 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="p-4 sm:p-6">
             {/* Grid principal con información organizada */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 mb-6">
               
               {/* Columna 1: Información del festejado y evento */}
-              <div className="lg:col-span-2 space-y-4">
+              <div className="xl:col-span-2 space-y-4">
                 
                 {/* Festejado - Card compacta */}
                 <Card className="border border-pink-200 bg-gradient-to-r from-pink-50 to-rose-50 shadow-sm hover:shadow-md transition-shadow">
-                  <CardBody className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="p-3 sm:p-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-bold text-lg">
                           {reservation.child.name.charAt(0).toUpperCase()}
                         </span>
@@ -262,49 +256,49 @@ export default function ClientReservationModal({
                         </p>
                       </div>
                     </div>
-                  </CardBody>
+                  </div>
                 </Card>
 
                 {/* Información del evento - Grid interno */}
                 <Card className="border border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50 shadow-sm hover:shadow-md transition-shadow">
-                  <CardBody className="p-4">
+                  <div className="p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <CalendarDaysIcon className="w-4 h-4 text-purple-600" />
                       <span className="text-xs font-medium text-purple-600 uppercase tracking-wide">Cuándo será</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-purple-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <CalendarDaysIcon className="w-4 h-4 text-purple-700" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-purple-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <CalendarDaysIcon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-700" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-xs text-gray-500 font-medium">Fecha</p>
-                          <p className="font-semibold text-gray-900 text-sm">{formatDate(reservation.eventDate)}</p>
+                          <p className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{formatDate(reservation.eventDate)}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-indigo-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <ClockIcon className="w-4 h-4 text-indigo-700" />
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-indigo-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <ClockIcon className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-700" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-xs text-gray-500 font-medium">Hora</p>
-                          <p className="font-semibold text-gray-900 text-sm">{reservation.eventTime}</p>
+                          <p className="font-semibold text-gray-900 text-xs sm:text-sm">{reservation.eventTime}</p>
                         </div>
                       </div>
                     </div>
-                  </CardBody>
+                  </div>
                 </Card>
 
                 {/* Comentarios especiales si existen */}
                 {reservation.specialComments && (
                   <Card className="border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 shadow-sm hover:shadow-md transition-shadow">
-                    <CardBody className="p-4">
+                    <div className="p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <ChatBubbleLeftRightIcon className="w-4 h-4 text-blue-600" />
                         <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Detalles especiales</span>
                       </div>
                       <p className="text-gray-700 text-sm leading-relaxed">{reservation.specialComments}</p>
-                    </CardBody>
+                    </div>
                   </Card>
                 )}
               </div>
@@ -312,7 +306,7 @@ export default function ClientReservationModal({
               {/* Columna 2: Resumen de precios */}
               <div className="space-y-4">
                 <Card className="border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-sm hover:shadow-md transition-shadow">
-                  <CardBody className="p-4">
+                  <div className="p-4">
                     <div className="flex items-center gap-2 mb-4">
                       <CurrencyDollarIcon className="w-4 h-4 text-emerald-600" />
                       <span className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Resumen</span>
@@ -404,20 +398,20 @@ export default function ClientReservationModal({
                         </div>
                       </div>
                     </div>
-                  </CardBody>
+                  </div>
                 </Card>
               </div>
             </div>
 
             {/* Sección de servicios detallados - Grid expandido */}
             <Card className="border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardBody className="p-4">
+              <div className="p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <SparklesIcon className="w-4 h-4 text-gray-600" />
                   <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Tu paquete incluye</span>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {/* Paquete principal */}
                   <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-4 border border-emerald-200">
                     <div className="flex items-start gap-3">
@@ -478,12 +472,12 @@ export default function ClientReservationModal({
                     </div>
                   )}
                 </div>
-              </CardBody>
+              </div>
             </Card>
 
             {/* Sección de información de pago */}
             <Card className="border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm hover:shadow-md transition-shadow mt-6">
-              <CardBody className="p-4">
+              <div className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <CreditCardIcon className="w-4 h-4 text-blue-600" />
@@ -492,10 +486,10 @@ export default function ClientReservationModal({
                   {!showPaymentSection && reservation.status === 'pending' && (
                     <Button
                       size="sm"
-                      color="primary"
-                      variant="flat"
-                      onPress={() => setShowPaymentSection(true)}
-                      startContent={<DocumentArrowUpIcon className="w-4 h-4" />}
+                      color="blue"
+                      variant="light"
+                      onClick={() => setShowPaymentSection(true)}
+                      leftSection={<DocumentArrowUpIcon className="w-4 h-4" />}
                     >
                       Enviar comprobante
                     </Button>
@@ -503,7 +497,7 @@ export default function ClientReservationModal({
                 </div>
 
                 {/* Información bancaria */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                   <div className="bg-white rounded-lg p-4 border border-blue-200">
                     <h5 className="font-semibold text-gray-900 text-sm mb-3">Datos para transferencia</h5>
                     <div className="space-y-3 text-sm">
@@ -590,7 +584,7 @@ export default function ClientReservationModal({
                       </p>
                       <div className="flex items-center justify-center gap-2 mt-1">
                         <span className="text-xs text-yellow-800 font-medium">
-                          "Fiesta {reservation.child.name} - {uniqueReference}"
+                          &quot;Fiesta {reservation.child.name} - {uniqueReference}&quot;
                         </span>
                         <button
                           onClick={() => navigator.clipboard.writeText(`Fiesta ${reservation.child.name} - ${uniqueReference}`)}
@@ -652,13 +646,9 @@ export default function ClientReservationModal({
                         <Input
                           placeholder="Ej: 123456789"
                           value={paymentReference}
-                          onValueChange={setPaymentReference}
+                          onChange={(e) => setPaymentReference(e.target.value)}
                           size="sm"
-                          variant="bordered"
-                          classNames={{
-                            input: "text-sm",
-                            inputWrapper: "border-gray-300"
-                          }}
+                          className="text-sm border-gray-300"
                         />
                       </div>
 
@@ -670,33 +660,29 @@ export default function ClientReservationModal({
                         <Textarea
                           placeholder="Cualquier información adicional sobre el pago..."
                           value={paymentNotes}
-                          onValueChange={setPaymentNotes}
+                          onChange={(e) => setPaymentNotes(e.target.value)}
                           size="sm"
-                          variant="bordered"
                           minRows={2}
                           maxRows={4}
-                          classNames={{
-                            input: "text-sm",
-                            inputWrapper: "border-gray-300"
-                          }}
+                          className="text-sm border-gray-300"
                         />
                       </div>
 
                       {/* Botones de acción */}
                       <div className="flex gap-3 pt-2">
                         <Button
-                          color="primary"
-                          onPress={handlePaymentSubmit}
-                          isLoading={isUploading}
-                          isDisabled={!paymentScreenshot}
-                          startContent={!isUploading && <DocumentArrowUpIcon className="w-4 h-4" />}
+                          color="blue"
+                          onClick={handlePaymentSubmit}
+                          loading={isUploading}
+                          disabled={!paymentScreenshot}
+                          leftSection={!isUploading && <DocumentArrowUpIcon className="w-4 h-4" />}
                           size="sm"
                         >
                           {isUploading ? 'Enviando...' : 'Enviar comprobante'}
                         </Button>
                         <Button
                           variant="light"
-                          onPress={() => {
+                          onClick={() => {
                             setShowPaymentSection(false);
                             setPaymentScreenshot(null);
                             setPaymentReference('');
@@ -722,86 +708,82 @@ export default function ClientReservationModal({
                     </div>
                   </div>
                 )}
-              </CardBody>
+              </div>
             </Card>
           </div>
-        </ModalBody>
-
-        <ModalFooter className="px-6 py-4">
-          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            </div>
+        
+            <div className="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
             <Button
-              variant="flat"
-              color="success"
-              startContent={<DocumentTextIcon className="w-4 h-4" />}
-              onPress={handleDownloadInvoice}
+              variant="light"
+              color="green"
+              leftSection={<DocumentTextIcon className="w-4 h-4" />}
+              onClick={handleDownloadInvoice}
             >
               Descargar factura
             </Button>
             
-            <Dropdown>
-              <DropdownTrigger>
+            <Menu>
+              <MenuTarget>
                 <Button
-                  variant="bordered"
-                  startContent={<CalendarIcon className="w-4 h-4" />}
+                  variant="default"
+                  leftSection={<CalendarIcon className="w-4 h-4" />}
                   className="border-gray-300 hover:border-gray-400"
                 >
                   Agregar al calendario
                 </Button>
-              </DropdownTrigger>
-              <DropdownMenu>
-                <DropdownItem
-                  key="google"
-                  startContent={<span className="text-sm">📅</span>}
-                  onPress={() => {
+              </MenuTarget>
+              <MenuDropdown>
+                <MenuItem
+                  leftSection={<span className="text-sm">📅</span>}
+                  onClick={() => {
                     exportToCalendar(reservation!, 'google');
                     toast.success('Evento exportado a Google Calendar');
                   }}
                 >
                   Google Calendar
-                </DropdownItem>
-                <DropdownItem
-                  key="outlook"
-                  startContent={<span className="text-sm">📧</span>}
-                  onPress={() => {
+                </MenuItem>
+                <MenuItem
+                  leftSection={<span className="text-sm">📧</span>}
+                  onClick={() => {
                     exportToCalendar(reservation!, 'outlook');
                     toast.success('Evento exportado a Outlook');
                   }}
                 >
                   Outlook
-                </DropdownItem>
-                <DropdownItem
-                  key="yahoo"
-                  startContent={<span className="text-sm">🟣</span>}
-                  onPress={() => {
+                </MenuItem>
+                <MenuItem
+                  leftSection={<span className="text-sm">🟣</span>}
+                  onClick={() => {
                     exportToCalendar(reservation!, 'yahoo');
                     toast.success('Evento exportado a Yahoo Calendar');
                   }}
                 >
                   Yahoo Calendar
-                </DropdownItem>
-                <DropdownItem
-                  key="ical"
-                  startContent={<span className="text-sm">📋</span>}
-                  onPress={() => {
+                </MenuItem>
+                <MenuItem
+                  leftSection={<span className="text-sm">📋</span>}
+                  onClick={() => {
                     exportToCalendar(reservation!, 'ical');
                     toast.success('Archivo iCal descargado');
                   }}
                 >
                   Descargar iCal
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+                </MenuItem>
+              </MenuDropdown>
+            </Menu>
             
             <Button
-              onPress={onClose}
+              onClick={onClose}
               className="bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 flex-1"
               size="lg"
             >
               ¡Perfecto! 🎉
             </Button>
-          </div>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+              </div>
+              </div>
+            </div>
+          </Modal>
   );
 }

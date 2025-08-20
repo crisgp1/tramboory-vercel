@@ -8,13 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
   Card,
-  CardBody,
-  CardHeader,
-  Input,
+  TextInput,
   Button,
-  Link,
+  Anchor,
   Divider
-} from "@heroui/react"
+} from "@mantine/core"
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
 import toast from "react-hot-toast"
 
@@ -76,33 +74,29 @@ export default function LoginForm({
 
   return (
     <Card className="w-full max-w-md">
-      <CardHeader className="flex flex-col gap-3 pb-0">
+      <Card.Section className="flex flex-col gap-3 pb-0">
         <h1 className="text-2xl font-bold text-center">Iniciar Sesión</h1>
         <p className="text-small text-default-500 text-center">
           Ingresa tus credenciales para acceder
         </p>
-      </CardHeader>
+      </Card.Section>
       
-      <CardBody className="gap-4">
+      <Card.Section className="gap-4">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <Input
+          <TextInput
             {...register("email")}
             type="email"
             label="Email"
             placeholder="tu@email.com"
-            variant="bordered"
-            isInvalid={!!errors.email}
-            errorMessage={errors.email?.message}
+            error={errors.email?.message}
           />
           
-          <Input
+          <TextInput
             {...register("password")}
             label="Contraseña"
             placeholder="Ingresa tu contraseña"
-            variant="bordered"
-            isInvalid={!!errors.password}
-            errorMessage={errors.password?.message}
-            endContent={
+            error={errors.password?.message}
+            rightSection={
               <button
                 className="focus:outline-none"
                 type="button"
@@ -120,9 +114,9 @@ export default function LoginForm({
 
           <Button
             type="submit"
-            color="primary"
+            color="blue"
             size="lg"
-            isLoading={isLoading}
+            loading={isLoading}
             className="w-full"
           >
             {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
@@ -130,14 +124,14 @@ export default function LoginForm({
         </form>
 
         <div className="flex justify-center">
-          <Link
-            as="button"
+          <Anchor
+            component="button"
             size="sm"
-            onPress={onSwitchToForgotPassword}
+            onClick={onSwitchToForgotPassword}
             className="text-primary"
           >
             ¿Olvidaste tu contraseña?
-          </Link>
+          </Anchor>
         </div>
 
         <Divider />
@@ -146,16 +140,16 @@ export default function LoginForm({
           <span className="text-small text-default-500">
             ¿No tienes cuenta?{" "}
           </span>
-          <Link
-            as="button"
+          <Anchor
+            component="button"
             size="sm"
-            onPress={onSwitchToRegister}
+            onClick={onSwitchToRegister}
             className="text-primary"
           >
             Crear cuenta
-          </Link>
+          </Anchor>
         </div>
-      </CardBody>
+      </Card.Section>
     </Card>
   )
 }

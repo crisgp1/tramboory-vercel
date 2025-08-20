@@ -9,30 +9,27 @@ import AdminQuickNav from '@/components/navigation/AdminQuickNav';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import {
   Button,
-  Input,
+  TextInput,
   Select,
-  SelectItem,
   Textarea,
   Card,
-  CardBody,
-  CardHeader,
-  CardFooter,
-  Chip,
+  Badge,
   Divider,
   Progress,
-  RadioGroup,
   Radio,
+  RadioGroup,
   Avatar,
   Skeleton,
-  DatePicker,
-  Spacer,
+  Space,
   Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure
-} from '@heroui/react';
+  Box,
+  Group,
+  Text,
+  SimpleGrid,
+  Center
+} from '@mantine/core';
+import { DatePicker } from '@mantine/dates';
+import { useDisclosure } from '@mantine/hooks';
 import {
   CheckIcon,
   CakeIcon,
@@ -57,8 +54,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckIconSolid } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
-import CustomCalendar from '../CustomCalendar';
-import "../modern-calendar.css";
 
 interface FormData {
   childName: string;
@@ -74,6 +69,54 @@ interface FormData {
   specialComments: string;
   paymentMethod: 'transfer' | 'cash' | 'card';
 }
+
+// localStorage utilities for form persistence
+const STORAGE_KEY = 'tramboory-reservation-form';
+
+const saveFormDataToStorage = (formData: FormData) => {
+  try {
+    const dataToSave = {
+      ...formData,
+      eventDate: formData.eventDate ? formData.eventDate.toISOString() : null
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  } catch (error) {
+    // Silently handle localStorage errors (e.g., quota exceeded, private browsing)
+  }
+};
+
+const loadFormDataFromStorage = (): Partial<FormData> | null => {
+  try {
+    if (typeof window === 'undefined') return null;
+    
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return null;
+    
+    const parsed = JSON.parse(saved);
+    
+    // Convert eventDate string back to Date object
+    if (parsed.eventDate) {
+      parsed.eventDate = new Date(parsed.eventDate);
+      // Validate the date
+      if (isNaN(parsed.eventDate.getTime())) {
+        parsed.eventDate = null;
+      }
+    }
+    
+    return parsed;
+  } catch (error) {
+    // Silently handle localStorage errors
+    return null;
+  }
+};
+
+const clearFormDataFromStorage = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    // Silently handle localStorage errors
+  }
+};
 
 interface TimeSlot {
   time: string;
@@ -172,22 +215,27 @@ const scaleIn = {
 export default function ClientNewReservationPageAnimated() {
   const { user } = useUser();
   const router = useRouter();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [opened, { open, close }] = useDisclosure();
   
   const [currentStep, setCurrentStep] = useState<Step>('basic');
-  const [formData, setFormData] = useState<FormData>({
-    childName: '',
-    childAge: '',
-    eventDate: null,
-    eventTime: '',
-    packageId: '',
-    foodOptionId: '',
-    selectedFoodExtras: [],
-    eventThemeId: '',
-    selectedThemePackage: '',
-    selectedExtraServices: [],
-    specialComments: '',
-    paymentMethod: 'transfer'
+  
+  // Initialize formData with data from localStorage if available
+  const [formData, setFormData] = useState<FormData>(() => {
+    const savedData = loadFormDataFromStorage();
+    return {
+      childName: savedData?.childName || '',
+      childAge: savedData?.childAge || '',
+      eventDate: savedData?.eventDate || null,
+      eventTime: savedData?.eventTime || '',
+      packageId: savedData?.packageId || '',
+      foodOptionId: savedData?.foodOptionId || '',
+      selectedFoodExtras: savedData?.selectedFoodExtras || [],
+      eventThemeId: savedData?.eventThemeId || '',
+      selectedThemePackage: savedData?.selectedThemePackage || '',
+      selectedExtraServices: savedData?.selectedExtraServices || [],
+      specialComments: savedData?.specialComments || '',
+      paymentMethod: savedData?.paymentMethod || 'transfer'
+    };
   });
   
   const [loading, setLoading] = useState(false);
@@ -213,6 +261,21 @@ export default function ClientNewReservationPageAnimated() {
     { key: 'payment', title: 'Pago', description: 'Confirma tu reserva', icon: CreditCardIcon },
     { key: 'confirmation', title: 'Listo', description: '¡Confirmado!', icon: CheckIcon }
   ];
+
+  // Auto-save form data to localStorage whenever formData changes
+  useEffect(() => {
+    // Don't save if we're on confirmation step (form completed)
+    if (currentStep !== 'confirmation') {
+      saveFormDataToStorage(formData);
+    }
+  }, [formData, currentStep]);
+
+  // Clear localStorage when form is successfully submitted
+  useEffect(() => {
+    if (currentStep === 'confirmation' && reservationId) {
+      clearFormDataFromStorage();
+    }
+  }, [currentStep, reservationId]);
 
   const currentStepIndex = steps.findIndex(step => step.key === currentStep);
 
@@ -314,10 +377,25 @@ export default function ClientNewReservationPageAnimated() {
     }
   };
 
-  const fetchTimeSlots = async (date: Date) => {
+  const fetchTimeSlots = async (date: Date | string | null) => {
+    if (!date) return;
+    
     setLoadingSlots(true);
     try {
-      const dateStr = date.toISOString().split('T')[0];
+      // Convert to Date object safely - best practice from StackOverflow
+      let dateObj: Date;
+      if (date instanceof Date) {
+        dateObj = date;
+      } else {
+        dateObj = new Date(date);
+        // Validate the date is not Invalid Date
+        if (isNaN(dateObj.getTime())) {
+          console.error('Invalid date provided to fetchTimeSlots:', date);
+          return;
+        }
+      }
+      
+      const dateStr = dateObj.toISOString().split('T')[0];
       const response = await fetch(`/api/reservations/available-blocks?date=${dateStr}`);
       const data = await response.json();
       
@@ -416,9 +494,10 @@ export default function ClientNewReservationPageAnimated() {
     setLoading(true);
     
     try {
+      const eventDate = getEventDate();
       const reservationData = {
         packageId: formData.packageId,
-        eventDate: formData.eventDate ? formData.eventDate.toISOString() : '',
+        eventDate: eventDate ? eventDate.toISOString() : '',
         eventTime: formData.eventTime,
         customer: {
           name: user.fullName || `${user.firstName} ${user.lastName}`.trim(),
@@ -464,6 +543,24 @@ export default function ClientNewReservationPageAnimated() {
     }
   };
 
+  // Helper function to ensure we have a Date object - following StackOverflow best practices
+  const getEventDate = (): Date | null => {
+    if (!formData.eventDate) return null;
+    
+    if (formData.eventDate instanceof Date) {
+      return formData.eventDate;
+    }
+    
+    const dateObj = new Date(formData.eventDate);
+    // Validate the date is not Invalid Date
+    if (isNaN(dateObj.getTime())) {
+      console.error('Invalid date in formData.eventDate:', formData.eventDate);
+      return null;
+    }
+    
+    return dateObj;
+  };
+
   // Get selected package details
   const selectedPackage = (packages || []).find(pkg => pkg._id === formData.packageId);
   const selectedFood = foodOptions.find(food => food._id === formData.foodOptionId);
@@ -474,8 +571,9 @@ export default function ClientNewReservationPageAnimated() {
   const calculateTotal = () => {
     let total = 0;
     
-    if (selectedPackage && formData.eventDate) {
-      const isWeekend = formData.eventDate.getDay() === 0 || formData.eventDate.getDay() === 6;
+    const eventDate = getEventDate();
+    if (selectedPackage && eventDate) {
+      const isWeekend = eventDate.getDay() === 0 || eventDate.getDay() === 6;
       total += isWeekend ? selectedPackage.pricing?.weekend || 0 : selectedPackage.pricing?.weekday || 0;
     }
     
@@ -545,8 +643,9 @@ export default function ClientNewReservationPageAnimated() {
     const referenceNumber = `REF-${Date.now()}`;
     
     // Extract complex expressions
-    const packagePrice = selectedPackage && formData.eventDate ? 
-      (formData.eventDate.getDay() === 0 || formData.eventDate.getDay() === 6 ? 
+    const eventDate = getEventDate();
+    const packagePrice = selectedPackage && eventDate ? 
+      (eventDate.getDay() === 0 || eventDate.getDay() === 6 ? 
         selectedPackage.pricing?.weekend || 0 : selectedPackage.pricing?.weekday || 0) : 0;
     
     const paymentMethodText = formData.paymentMethod === 'transfer' ? 'Transferencia Bancaria' :
@@ -562,7 +661,7 @@ Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}
 DATOS DEL EVENTO:
 - Festejado/a: ${formData.childName}
 - Edad: ${formData.childAge} años
-- Fecha: ${formData.eventDate ? formData.eventDate.toLocaleDateString('es-ES') : 'N/A'}
+- Fecha: ${getEventDate()?.toLocaleDateString('es-ES') || 'N/A'}
 - Hora: ${formData.eventTime}
 
 PAQUETE SELECCIONADO:
@@ -652,8 +751,7 @@ Para cualquier duda, contacta:
             animate="animate"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="space-y-6"
-            style={{ transform: 'scale(0.9)' }}
+            className="space-y-4 sm:space-y-6"
           >
             {/* Modern Header Section */}
             <motion.div
@@ -676,7 +774,7 @@ Para cualquier duda, contacta:
                 initial={{ opacity: 0, y: 1.875 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
               >
                 <div className="space-y-2">
                   <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
@@ -684,22 +782,38 @@ Para cualquier duda, contacta:
                     Nombre del festejado/a
                     <span className="text-rose-500">*</span>
                   </label>
-                  <Input
+                  <TextInput
                     placeholder="Ej: Sofía"
                     value={formData.childName}
-                    onValueChange={(value) => {
+                    onChange={(event) => {
+                      const value = event.currentTarget.value;
                       // Regex to allow only letters, spaces, accents, and hyphens
                       const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-]*$/;
                       if (nameRegex.test(value)) {
                         setFormData(prev => ({ ...prev, childName: value }));
                       }
                     }}
-                    variant="bordered"
+                    variant="default"
                     size="lg"
                     radius="lg"
-                    classNames={{
-                      input: "text-gray-900 text-sm sm:text-base placeholder:text-gray-400",
-                      inputWrapper: "border-1.5 border-gray-200/70 hover:border-rose-300 focus-within:border-rose-500 bg-white/50 backdrop-blur-lg h-10 sm:h-12 rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
+                    className="text-gray-900 text-sm sm:text-base"
+                    styles={{
+                      input: {
+                        border: '1.5px solid rgb(229 231 235 / 0.7)',
+                        backgroundColor: 'rgb(255 255 255 / 0.5)',
+                        backdropFilter: 'blur(16px)',
+                        borderRadius: '12px',
+                        height: '48px',
+                        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+                        transition: 'all 300ms',
+                        '&:hover': {
+                          borderColor: 'rgb(251 113 133 / 0.5)',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        },
+                        '&:focus': {
+                          borderColor: 'rgb(244 63 94)',
+                        }
+                      }
                     }}
                   />
                 </div>
@@ -711,11 +825,12 @@ Para cualquier duda, contacta:
                     <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
-                    <Input
+                    <TextInput
                       type="number"
                       placeholder="Ej: 5"
                       value={formData.childAge}
-                      onValueChange={(value) => {
+                      onChange={(event) => {
+                        const value = event.currentTarget.value;
                         // Ensure the value is within valid range (1-15)
                         const numValue = parseInt(value);
                         if (value === '' || (numValue >= 1 && numValue <= 15)) {
@@ -724,14 +839,29 @@ Para cualquier duda, contacta:
                       }}
                       min={1}
                       max={15}
-                      variant="bordered"
+                      variant="default"
                       size="lg"
                       radius="lg"
-                      classNames={{
-                        input: "text-gray-900 text-sm sm:text-base placeholder:text-gray-400",
-                        inputWrapper: "border-1.5 border-gray-200/70 hover:border-rose-300 focus-within:border-rose-500 bg-white/50 backdrop-blur-lg h-10 sm:h-12 rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
+                      className="text-gray-900"
+                      styles={{
+                        input: {
+                          border: '1.5px solid rgb(229 231 235 / 0.7)',
+                          backgroundColor: 'rgb(255 255 255 / 0.5)',
+                          backdropFilter: 'blur(16px)',
+                          borderRadius: '12px',
+                          height: '48px',
+                          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+                          transition: 'all 300ms',
+                          '&:hover': {
+                            borderColor: 'rgb(251 113 133 / 0.5)',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                          },
+                          '&:focus': {
+                            borderColor: 'rgb(244 63 94)',
+                          }
+                        }
                       }}
-                      endContent={
+                      rightSection={
                         <div className="flex flex-col">
                           <button
                             type="button"
@@ -788,13 +918,30 @@ Para cualquier duda, contacta:
                 <Textarea
                   placeholder="Alergias, solicitudes especiales, decoración preferida, cumpleaños temático..."
                   value={formData.specialComments}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, specialComments: value }))}
+                  onChange={(event) => {
+                    const value = event.currentTarget.value;
+                    setFormData(prev => ({ ...prev, specialComments: value }));
+                  }}
                   minRows={3}
-                  variant="bordered"
+                  variant="default"
                   radius="lg"
-                  classNames={{
-                    input: "text-gray-900 placeholder:text-gray-400 text-xs sm:text-sm",
-                    inputWrapper: "border-1.5 border-gray-200/70 hover:border-rose-300 focus-within:border-rose-500 bg-white/50 backdrop-blur-lg rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
+                  className="text-gray-900"
+                  styles={{
+                    input: {
+                      border: '1.5px solid rgb(229 231 235 / 0.7)',
+                      backgroundColor: 'rgb(255 255 255 / 0.5)',
+                      backdropFilter: 'blur(16px)',
+                      borderRadius: '12px',
+                      boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+                      transition: 'all 300ms',
+                      '&:hover': {
+                        borderColor: 'rgb(251 113 133 / 0.5)',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      },
+                      '&:focus': {
+                        borderColor: 'rgb(244 63 94)',
+                      }
+                    }
                   }}
                 />
               </motion.div>
@@ -811,8 +958,7 @@ Para cualquier duda, contacta:
             animate="animate"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="space-y-6"
-            style={{ transform: 'scale(0.9)' }}
+            className="space-y-4 sm:space-y-6"
           >
             {/* Header Section */}
             <motion.div
@@ -851,13 +997,95 @@ Para cualquier duda, contacta:
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-white/50 backdrop-blur-lg rounded-xl shadow-lg border border-gray-100/70 overflow-hidden">
-                      <CustomCalendar
-                        selectedDate={formData.eventDate}
-                        onDateSelect={(date) => setFormData(prev => ({ ...prev, eventDate: date }))}
-                        availability={availability}
+                    <div className="w-full">
+                      <DatePicker
+                        value={formData.eventDate}
+                        onChange={(dateString: string | null) => {
+                          const date = dateString ? new Date(dateString) : null;
+                          setFormData(prev => ({ ...prev, eventDate: date }));
+                        }}
                         minDate={new Date()}
+                        size="lg"
+                        getDayProps={(date: any) => {
+                          const dateString = date?.toISOString ? date.toISOString().split('T')[0] : String(date);
+                          const status = availability[dateString];
+                          
+                          if (status === 'unavailable') {
+                            return {
+                              disabled: true,
+                              style: {
+                                backgroundColor: '#fecaca',
+                                color: '#dc2626',
+                                textDecoration: 'line-through',
+                                opacity: 0.8,
+                                fontWeight: '500',
+                                cursor: 'not-allowed'
+                              }
+                            };
+                          }
+                          if (status === 'limited') {
+                            return {
+                              style: {
+                                backgroundColor: '#fef08a',
+                                color: '#92400e',
+                                fontWeight: '600',
+                                border: '1px solid #d97706'
+                              }
+                            };
+                          }
+                          if (status === 'available') {
+                            return {
+                              style: {
+                                backgroundColor: '#d1fae5',
+                                color: '#15803d',
+                                fontWeight: '600',
+                                border: '1px solid #22c55e'
+                              }
+                            };
+                          }
+                          return {};
+                        }}
+                        className="w-full"
+                        style={{
+                          width: '100%'
+                        }}
                       />
+                      
+                      {/* Enhanced Responsive Availability Legend */}
+                      <Box mt="sm" p="md" className="bg-gradient-to-r from-white/80 to-gray-50/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-sm">
+                        <Group gap="xs" mb="sm">
+                          <Center className="w-2 h-2 bg-blue-500 rounded-full" />
+                          <Text size="sm" fw={700}>
+                            Disponibilidad:
+                          </Text>
+                        </Group>
+                        <SimpleGrid cols={{ base: 1, xs: 3 }} spacing="xs">
+                          <Group gap="xs" p="xs" className="rounded-lg bg-emerald-50/80 border border-emerald-200/50">
+                            <Center className="w-4 h-4 bg-emerald-200 rounded-full border border-emerald-400 border-2">
+                              <Center className="w-1.5 h-1.5 bg-emerald-600 rounded-full" />
+                            </Center>
+                            <Text size="xs" fw={600} c="green.8" className="truncate">
+                              Disponible
+                            </Text>
+                          </Group>
+                          <Group gap="xs" p="xs" className="rounded-lg bg-yellow-50/80 border border-yellow-200/50">
+                            <Center className="w-4 h-4 bg-yellow-200 rounded-full border border-yellow-400 border-2">
+                              <Center className="w-1.5 h-1.5 bg-yellow-600 rounded-full" />
+                            </Center>
+                            <Text size="xs" fw={600} c="yellow.8" className="truncate">
+                              Limitado
+                            </Text>
+                          </Group>
+                          <Group gap="xs" p="xs" className="rounded-lg bg-red-50/80 border border-red-200/50">
+                            <Center className="w-4 h-4 bg-red-200 rounded-full border border-red-400 border-2">
+                              <Center className="w-1.5 h-1.5 bg-red-600 rounded-full" />
+                            </Center>
+                            <Text size="xs" fw={600} c="red.8" className="truncate">
+                              No disponible
+                            </Text>
+                          </Group>
+                        </SimpleGrid>
+                      </Box>
                     </div>
                   )}
                 </div>
@@ -889,7 +1117,7 @@ Para cualquier duda, contacta:
                   <p className="text-blue-700 font-medium text-sm">Cargando horarios disponibles...</p>
                 </div>
               ) : availableSlots && availableSlots.slots && availableSlots.slots.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                   {availableSlots.slots.map((slot) => (
                     <motion.button
                       key={slot.time}
@@ -901,7 +1129,7 @@ Para cualquier duda, contacta:
                         }
                       }}
                       disabled={!slot.available}
-                      className={`p-3 rounded-xl border-1.5 transition-all duration-200 min-h-16 ${
+                      className={`p-2 sm:p-3 rounded-xl border-1.5 transition-all duration-200 min-h-12 sm:min-h-16 ${
                         formData.eventTime === slot.time
                           ? 'border-blue-500 bg-gradient-to-br from-blue-50/90 to-indigo-50/90 backdrop-blur-sm shadow-lg'
                           : slot.available
@@ -910,7 +1138,7 @@ Para cualquier duda, contacta:
                       }`}
                     >
                       <div className="text-center">
-                        <p className={`text-base font-bold ${
+                        <p className={`text-sm sm:text-base font-bold ${
                           formData.eventTime === slot.time
                             ? 'text-blue-600'
                             : slot.available
@@ -921,10 +1149,14 @@ Para cualquier duda, contacta:
                         </p>
                         {slot.available ? (
                           <span className="text-xs text-emerald-600 font-medium mt-0.5 block">
-                            Disponible
+                            <span className="hidden sm:inline">Disponible</span>
+                            <span className="sm:hidden">✓</span>
                           </span>
                         ) : (
-                          <span className="text-xs text-red-500 font-medium mt-0.5 block">No disponible</span>
+                          <span className="text-xs text-red-500 font-medium mt-0.5 block">
+                            <span className="hidden sm:inline">No disponible</span>
+                            <span className="sm:hidden">✗</span>
+                          </span>
                         )}
                       </div>
                     </motion.button>
@@ -950,8 +1182,7 @@ Para cualquier duda, contacta:
             animate="animate"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="space-y-6"
-            style={{ transform: 'scale(0.9)' }}
+            className="space-y-4 sm:space-y-6"
           >
             {/* Header Section */}
             <motion.div
@@ -981,7 +1212,7 @@ Para cualquier duda, contacta:
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4">
                   {packages.map((pkg) => (
                     <motion.div
                       key={pkg._id}
@@ -1037,8 +1268,7 @@ Para cualquier duda, contacta:
             animate="animate"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="space-y-6"
-            style={{ transform: 'scale(0.9)' }}
+            className="space-y-4 sm:space-y-6"
           >
             {/* Header Section */}
             <motion.div
@@ -1068,7 +1298,7 @@ Para cualquier duda, contacta:
                   ))}
                 </div>
               ) : foodOptions.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4">
                   {foodOptions.map((food) => (
                     <motion.div
                       key={food._id}
@@ -1089,9 +1319,9 @@ Para cualquier duda, contacta:
                           <h3 className="font-bold text-sm text-gray-900 mb-1">{food.name}</h3>
                           <p className="text-xs text-gray-600 mb-2">{food.description}</p>
                           <div className="flex items-center justify-between">
-                            <Chip size="sm" variant="flat" className="bg-emerald-100 text-emerald-700 text-xs">
+                            <Badge size="sm" variant="light" className="bg-emerald-100 text-emerald-700 text-xs">
                               {food.category}
-                            </Chip>
+                            </Badge>
                             <span className="text-sm font-bold text-gray-900">{formatPrice(food.basePrice)}</span>
                           </div>
                         </div>
@@ -1123,7 +1353,7 @@ Para cualquier duda, contacta:
               </h2>
               
               {eventThemes.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4">
                   {eventThemes.map((theme) => (
                     <motion.div
                       key={theme._id}
@@ -1205,8 +1435,7 @@ Para cualquier duda, contacta:
             animate="animate"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="space-y-6"
-            style={{ transform: 'scale(0.9)' }}
+            className="space-y-4 sm:space-y-6"
           >
             {/* Header Section */}
             <motion.div
@@ -1236,7 +1465,7 @@ Para cualquier duda, contacta:
                   ))}
                 </div>
               ) : extraServices.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4">
                   {extraServices.map((service) => (
                     <motion.div
                       key={service._id}
@@ -1262,9 +1491,9 @@ Para cualquier duda, contacta:
                           <h3 className="font-bold text-sm text-gray-900 mb-1">{service.name}</h3>
                           <p className="text-xs text-gray-600 mb-2">{service.description}</p>
                           <div className="flex items-center justify-between">
-                            <Chip size="sm" variant="flat" className="bg-amber-100 text-amber-700 text-xs">
+                            <Badge size="sm" variant="light" className="bg-amber-100 text-amber-700 text-xs">
                               {service.category}
-                            </Chip>
+                            </Badge>
                             <span className="text-sm font-bold text-gray-900">{formatPrice(service.price)}</span>
                           </div>
                         </div>
@@ -1293,8 +1522,7 @@ Para cualquier duda, contacta:
             animate="animate"
             exit="exit"
             transition={{ duration: 0.4 }}
-            className="space-y-6"
-            style={{ transform: 'scale(0.9)' }}
+            className="space-y-4 sm:space-y-6"
           >
             {/* Header Section */}
             <motion.div
@@ -1319,65 +1547,75 @@ Para cualquier duda, contacta:
             >
               <RadioGroup
                 value={formData.paymentMethod}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as 'transfer' | 'cash' | 'card' }))}
-                className="space-y-3"
+                onChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as 'transfer' | 'cash' | 'card' }))}
               >
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  className={`p-4 rounded-xl border-1.5 transition-all duration-300 ${
-                    formData.paymentMethod === 'transfer'
-                      ? 'border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg'
-                      : 'border-gray-200/70 hover:border-green-300 bg-white/50 backdrop-blur-lg'
-                  }`}
-                >
-                  <Radio value="transfer" className="w-full">
-                    <div className="flex items-center gap-3 w-full">
-                      <BanknotesIcon className="w-5 h-5 text-green-500" />
-                      <div className="flex-1">
-                        <p className="font-semibold text-sm text-gray-900">Transferencia Bancaria</p>
-                        <p className="text-xs text-gray-600">Pago seguro mediante transferencia</p>
-                      </div>
-                    </div>
-                  </Radio>
-                </motion.div>
+                <div className="space-y-3">
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    className={`p-4 rounded-xl border-1.5 transition-all duration-300 ${
+                      formData.paymentMethod === 'transfer'
+                        ? 'border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg'
+                        : 'border-gray-200/70 hover:border-green-300 bg-white/50 backdrop-blur-lg'
+                    }`}
+                  >
+                    <Radio
+                      value="transfer"
+                      label={
+                        <div className="flex items-center gap-3 w-full">
+                          <BanknotesIcon className="w-5 h-5 text-green-500" />
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm text-gray-900">Transferencia Bancaria</p>
+                            <p className="text-xs text-gray-600">Pago seguro mediante transferencia</p>
+                          </div>
+                        </div>
+                      }
+                    />
+                  </motion.div>
 
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  className={`p-4 rounded-xl border-1.5 transition-all duration-300 ${
-                    formData.paymentMethod === 'cash'
-                      ? 'border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg'
-                      : 'border-gray-200/70 hover:border-green-300 bg-white/50 backdrop-blur-lg'
-                  }`}
-                >
-                  <Radio value="cash" className="w-full">
-                    <div className="flex items-center gap-3 w-full">
-                      <BanknotesIcon className="w-5 h-5 text-green-500" />
-                      <div className="flex-1">
-                        <p className="font-semibold text-sm text-gray-900">Efectivo</p>
-                        <p className="text-xs text-gray-600">Pago en efectivo el día del evento</p>
-                      </div>
-                    </div>
-                  </Radio>
-                </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    className={`p-4 rounded-xl border-1.5 transition-all duration-300 ${
+                      formData.paymentMethod === 'cash'
+                        ? 'border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg'
+                        : 'border-gray-200/70 hover:border-green-300 bg-white/50 backdrop-blur-lg'
+                    }`}
+                  >
+                    <Radio
+                      value="cash"
+                      label={
+                        <div className="flex items-center gap-3 w-full">
+                          <BanknotesIcon className="w-5 h-5 text-green-500" />
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm text-gray-900">Efectivo</p>
+                            <p className="text-xs text-gray-600">Pago en efectivo el día del evento</p>
+                          </div>
+                        </div>
+                      }
+                    />
+                  </motion.div>
 
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  className={`p-4 rounded-xl border-1.5 transition-all duration-300 ${
-                    formData.paymentMethod === 'card'
-                      ? 'border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg'
-                      : 'border-gray-200/70 hover:border-green-300 bg-white/50 backdrop-blur-lg'
-                  }`}
-                >
-                  <Radio value="card" className="w-full">
-                    <div className="flex items-center gap-3 w-full">
-                      <CreditCardIcon className="w-5 h-5 text-green-500" />
-                      <div className="flex-1">
-                        <p className="font-semibold text-sm text-gray-900">Tarjeta de Crédito/Débito</p>
-                        <p className="text-xs text-gray-600">Pago con tarjeta bancaria</p>
-                      </div>
-                    </div>
-                  </Radio>
-                </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    className={`p-4 rounded-xl border-1.5 transition-all duration-300 ${
+                      formData.paymentMethod === 'card'
+                        ? 'border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg'
+                        : 'border-gray-200/70 hover:border-green-300 bg-white/50 backdrop-blur-lg'
+                    }`}
+                  >
+                    <Radio
+                      value="card"
+                      label={
+                        <div className="flex items-center gap-3 w-full">
+                          <CreditCardIcon className="w-5 h-5 text-green-500" />
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm text-gray-900">Tarjeta de Crédito/Débito</p>
+                            <p className="text-xs text-gray-600">Pago con tarjeta bancaria</p>
+                          </div>
+                        </div>
+                      }
+                    />
+                  </motion.div>
+                </div>
               </RadioGroup>
             </motion.div>
 
@@ -1397,7 +1635,7 @@ Para cualquier duda, contacta:
                 <div className="flex justify-between">
                   <span className="text-gray-600">Fecha:</span>
                   <span className="font-semibold text-gray-900">
-                    {formData.eventDate?.toLocaleDateString('es-ES')} a las {formData.eventTime}
+                    {getEventDate()?.toLocaleDateString('es-ES') || 'Fecha no seleccionada'} a las {formData.eventTime}
                   </span>
                 </div>
                 {selectedPackage && (
@@ -1425,8 +1663,7 @@ Para cualquier duda, contacta:
             animate="animate"
             exit="exit"
             transition={{ duration: 0.6 }}
-            className="text-center space-y-6"
-            style={{ transform: 'scale(0.9)' }}
+            className="text-center space-y-4 sm:space-y-6"
           >
             {/* Success Animation */}
             <motion.div
@@ -1473,7 +1710,7 @@ Para cualquier duda, contacta:
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Fecha:</span>
                   <span className="text-sm font-semibold text-gray-900">
-                    {formData.eventDate?.toLocaleDateString('es-ES')}
+                    {getEventDate()?.toLocaleDateString('es-ES') || 'Fecha no seleccionada'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -1496,19 +1733,19 @@ Para cualquier duda, contacta:
             >
               <Button
                 size="lg"
-                onPress={generatePaymentSlip}
+                onClick={generatePaymentSlip}
                 className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all font-semibold"
-                radius="full"
-                startContent={<DocumentTextIcon className="w-4 h-4" />}
+                radius="xl"
+                leftSection={<DocumentTextIcon className="w-4 h-4" />}
               >
                 Descargar ficha de pago
               </Button>
               <Button
                 size="lg"
-                variant="bordered"
-                onPress={() => router.push('/reservaciones')}
+                variant="outline"
+                onClick={() => router.push('/reservaciones')}
                 className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 font-semibold"
-                radius="full"
+                radius="xl"
               >
                 Ver mis reservaciones
               </Button>
@@ -1544,7 +1781,7 @@ Para cualquier duda, contacta:
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50" style={{ transform: 'scale(0.9)', transformOrigin: 'top left' }}>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       {/* Modern Header */}
       <motion.div
         initial={{ y: -6.25 }}
@@ -1637,22 +1874,22 @@ Para cualquier duda, contacta:
                       </div>
                     </div>
                   </div>
-                  <Chip
+                  <Badge
                     size="sm"
-                    variant="flat"
+                    variant="light"
                     className="bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700 border border-rose-200 text-xs"
                   >
                     {currentStepIndex + 1} de {steps.length}
-                  </Chip>
+                  </Badge>
                 </div>
                 <Progress
                   value={((currentStepIndex + 1) / steps.length) * 100}
                   size="sm"
-                  classNames={{
-                    track: "bg-gray-200",
-                    indicator: "bg-gradient-to-r from-rose-400 to-pink-600"
-                  }}
                   className="shadow-sm"
+                  styles={{
+                    root: { backgroundColor: 'rgb(229 231 235)' },
+                    section: { background: 'linear-gradient(to right, rgb(251 113 133), rgb(219 39 119))' }
+                  }}
                 />
               </div>
             </div>
@@ -1675,11 +1912,11 @@ Para cualquier duda, contacta:
               transition={{ duration: 0.6, ease: "easeOut" }}
             >
               <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-xl overflow-visible rounded-xl">
-                <CardBody className="p-6 lg:p-8 overflow-visible">
+                <div className="p-6 lg:p-8 overflow-visible">
                   <AnimatePresence mode="wait">
                     {renderStepContent()}
                   </AnimatePresence>
-                </CardBody>
+                </div>
               </Card>
 
               {/* Navigation */}
@@ -1688,7 +1925,7 @@ Para cualquier duda, contacta:
                   initial={{ opacity: 0, y: 1.25 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center mt-6 gap-3 sm:gap-0"
+                  className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center mt-4 sm:mt-6 gap-3 sm:gap-4"
                 >
                   <motion.div
                     whileHover={{ scale: 1.02 }}
@@ -1696,13 +1933,13 @@ Para cualquier duda, contacta:
                     className="order-2 sm:order-1"
                   >
                     <Button
-                      variant="bordered"
+                      variant="outline"
                       size="lg"
-                      startContent={<ArrowLeftIcon className="w-4 h-4" />}
-                      onPress={handlePrevious}
-                      isDisabled={currentStepIndex === 0}
-                      className="w-full sm:min-w-32 border-1.5 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 font-semibold"
-                      radius="full"
+                      leftSection={<ArrowLeftIcon className="w-4 h-4" />}
+                      onClick={handlePrevious}
+                      disabled={currentStepIndex === 0}
+                      className="w-full sm:w-auto sm:min-w-32 border-1.5 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 font-semibold"
+                      radius="xl"
                     >
                       Anterior
                     </Button>
@@ -1716,10 +1953,10 @@ Para cualquier duda, contacta:
                     >
                       <Button
                         size="lg"
-                        onPress={handleSubmit}
-                        isLoading={loading}
-                        className="w-full sm:min-w-40 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-xl hover:shadow-2xl transition-all font-semibold"
-                        radius="full"
+                        onClick={handleSubmit}
+                        loading={loading}
+                        className="w-full sm:w-auto sm:min-w-40 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-xl hover:shadow-2xl transition-all font-semibold"
+                        radius="xl"
                       >
                         {loading ? 'Confirmando...' : '✨ Confirmar reserva'}
                       </Button>
@@ -1732,11 +1969,11 @@ Para cualquier duda, contacta:
                     >
                       <Button
                         size="lg"
-                        endContent={<ArrowRightIcon className="w-4 h-4" />}
-                        onPress={handleNext}
-                        isDisabled={!validateCurrentStep()}
-                        className="w-full sm:min-w-32 bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-xl hover:shadow-2xl transition-all font-semibold disabled:opacity-50"
-                        radius="full"
+                        rightSection={<ArrowRightIcon className="w-4 h-4" />}
+                        onClick={handleNext}
+                        disabled={!validateCurrentStep()}
+                        className="w-full sm:w-auto sm:min-w-32 bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-xl hover:shadow-2xl transition-all font-semibold disabled:opacity-50"
+                        radius="xl"
                       >
                         Continuar
                       </Button>
@@ -1756,7 +1993,7 @@ Para cualquier duda, contacta:
               className="sticky top-20"
             >
               <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-xl rounded-xl overflow-hidden">
-                <CardBody className="p-6">
+                <div className="p-6">
                   <motion.h3
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -1797,11 +2034,11 @@ Para cualquier duda, contacta:
                           <p className="text-xs font-semibold text-blue-700">Fecha y hora</p>
                         </div>
                         <p className="font-bold text-gray-900 text-sm">
-                          {formData.eventDate.toLocaleDateString('es-ES', {
+                          {getEventDate()?.toLocaleDateString('es-ES', {
                             weekday: 'long',
                             day: 'numeric',
                             month: 'long'
-                          })}
+                          }) || 'Fecha no seleccionada'}
                           {formData.eventTime && (
                             <span className="text-blue-600"> a las {formData.eventTime}</span>
                           )}
@@ -1832,7 +2069,7 @@ Para cualquier duda, contacta:
                       <p className="text-xs text-emerald-600 font-medium">Pesos mexicanos (MXN)</p>
                     </motion.div>
                   )}
-                </CardBody>
+                </div>
               </Card>
             </motion.div>
           </div>

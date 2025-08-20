@@ -3,15 +3,10 @@
 import React from "react"
 import { 
   Table, 
-  TableHeader, 
-  TableColumn, 
-  TableBody, 
-  TableRow, 
-  TableCell,
   Pagination,
-  Spinner,
-  Chip
-} from "@heroui/react"
+  Loader,
+  Badge
+} from "@mantine/core"
 import { nordicTokens } from './tokens'
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline"
 import NordicButton from './NordicButton'
@@ -64,85 +59,50 @@ export default function NordicTable({
     <div className={`w-full ${className}`}>
       <Table
         aria-label="Tabla de datos"
-        classNames={{
-          wrapper: `
-            bg-[${nordicTokens.colors.background.primary}]
-            shadow-[${nordicTokens.shadow.sm}]
-            border border-[${nordicTokens.colors.border.secondary}]
-            rounded-[${nordicTokens.radius.lg}]
-            p-0
-          `,
-          th: `
-            bg-[${nordicTokens.colors.background.secondary}]
-            text-[${nordicTokens.colors.text.secondary}]
-            text-[${nordicTokens.typography.fontSize.xs}]
-            font-[${nordicTokens.typography.fontWeight.semibold}]
-            uppercase
-            tracking-wide
-            border-b border-[${nordicTokens.colors.border.secondary}]
-            px-[${nordicTokens.spacing.lg}]
-            py-[${nordicTokens.spacing.md}]
-            first:rounded-tl-[${nordicTokens.radius.lg}]
-            last:rounded-tr-[${nordicTokens.radius.lg}]
-          `,
-          td: `
-            text-[${nordicTokens.colors.text.primary}]
-            text-[${nordicTokens.typography.fontSize.sm}]
-            px-[${nordicTokens.spacing.lg}]
-            py-[${nordicTokens.spacing.lg}]
-            border-b border-[${nordicTokens.colors.border.secondary}]
-            last:border-r-0
-          `,
-          tbody: `
-            [&>tr:hover]:bg-[${nordicTokens.colors.background.secondary}]/50
-            [&>tr:last-child>td]:border-b-0
-          `
-        }}
+        className="border border-gray-200 rounded-lg"
       >
-        <TableHeader>
-          {[
-            ...columns.map((column) => (
-              <TableColumn 
+        <Table.Thead>
+          <Table.Tr>
+            {columns.map((column) => (
+              <Table.Th 
                 key={column.key}
-                align={column.align || 'start'}
+                style={{ textAlign: column.align || 'left' }}
               >
                 {column.label}
-              </TableColumn>
-            )),
-            ...(hasActions ? [
-              <TableColumn key="actions" align="center">
+              </Table.Th>
+            ))}
+            {hasActions && (
+              <Table.Th style={{ textAlign: 'center' }}>
                 <span className="sr-only">Acciones</span>
-              </TableColumn>
-            ] : [])
-          ]}
-        </TableHeader>
-        <TableBody
-          isLoading={loading}
-          loadingContent={<Spinner color="primary" />}
-          emptyContent={
-            <div className={`
-              py-[${nordicTokens.spacing['4xl']}]
-              text-center
-            `}>
-              <p className={`
-                text-[${nordicTokens.colors.text.tertiary}]
-                text-[${nordicTokens.typography.fontSize.sm}]
-              `}>
-                {emptyMessage}
-              </p>
-            </div>
-          }
-        >
-          {data.map((item, index) => (
-            <TableRow key={index}>
-              {[
-                ...columns.map((column) => (
-                  <TableCell key={column.key}>
+              </Table.Th>
+            )}
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {loading ? (
+            <Table.Tr>
+              <Table.Td colSpan={columns.length + (hasActions ? 1 : 0)} style={{ textAlign: 'center', padding: '2rem' }}>
+                <Loader size="sm" />
+              </Table.Td>
+            </Table.Tr>
+          ) : data.length === 0 ? (
+            <Table.Tr>
+              <Table.Td colSpan={columns.length + (hasActions ? 1 : 0)} style={{ textAlign: 'center', padding: '2rem' }}>
+                <p className="text-slate-500 text-sm">
+                  {emptyMessage}
+                </p>
+              </Table.Td>
+            </Table.Tr>
+          ) : (
+            data.map((item, index) => (
+              <Table.Tr key={index}>
+                {columns.map((column) => (
+                  <Table.Td key={column.key}>
                     {renderCell(item, column.key)}
-                  </TableCell>
-                )),
-                ...(hasActions ? [
-                  <TableCell key="actions">
+                  </Table.Td>
+                ))}
+                {hasActions && (
+                  <Table.Td>
                     <div className="flex items-center justify-center gap-1">
                       {actions
                         ?.filter(action => !action.isVisible || action.isVisible(item))
@@ -151,51 +111,28 @@ export default function NordicTable({
                             key={action.key}
                             variant={action.variant || 'ghost'}
                             size="sm"
-                            onPress={() => action.onClick(item)}
+                            {...{ onClick: () => action.onClick(item) }}
                             className="min-w-[32px] w-8 h-8 p-0"
-                            title={action.label}
                           >
                             {action.icon || <EllipsisVerticalIcon className="w-4 h-4" />}
                           </NordicButton>
                         ))}
                     </div>
-                  </TableCell>
-                ] : [])
-              ]}
-            </TableRow>
-          ))}
-        </TableBody>
+                  </Table.Td>
+                )}
+              </Table.Tr>
+            ))
+          )}
+        </Table.Tbody>
       </Table>
 
       {pagination && (
-        <div className={`
-          flex justify-center 
-          mt-[${nordicTokens.spacing['2xl']}]
-        `}>
+        <div className="flex justify-center mt-8">
           <Pagination
             total={Math.ceil(pagination.total / (pagination.pageSize || 10))}
-            page={pagination.current}
+            value={pagination.current}
             onChange={pagination.onChange}
-            classNames={{
-              wrapper: "gap-1",
-              item: `
-                bg-[${nordicTokens.colors.background.primary}]
-                text-[${nordicTokens.colors.text.secondary}]
-                border border-[${nordicTokens.colors.border.primary}]
-                rounded-[${nordicTokens.radius.md}]
-                hover:bg-[${nordicTokens.colors.background.secondary}]
-                min-w-[36px] 
-                h-[36px]
-              `,
-              cursor: `
-                bg-[${nordicTokens.colors.text.primary}]
-                text-white
-                border border-[${nordicTokens.colors.text.primary}]
-                rounded-[${nordicTokens.radius.md}]
-                min-w-[36px] 
-                h-[36px]
-              `
-            }}
+            size="sm"
           />
         </div>
       )}
@@ -245,19 +182,12 @@ export function NordicStatusChip({
   const styles = getVariantStyles()
 
   return (
-    <Chip
+    <Badge
       size="sm"
-      className={`
-        text-[${nordicTokens.typography.fontSize.xs}]
-        font-[${nordicTokens.typography.fontWeight.medium}]
-        px-[${nordicTokens.spacing.sm}]
-        py-[${nordicTokens.spacing.xs}]
-        rounded-[${nordicTokens.radius.sm}]
-        border
-      `}
+      className="text-xs font-medium px-2 py-1 rounded border"
       style={styles}
     >
       {label || status}
-    </Chip>
+    </Badge>
   )
 }

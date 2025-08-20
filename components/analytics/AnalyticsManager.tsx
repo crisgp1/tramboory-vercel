@@ -914,7 +914,7 @@ export default function AnalyticsManager() {
       
       {/* Day Details Modal */}
       <DayDetailsModal
-        isOpen={isDayDetailsOpen}
+        opened={isDayDetailsOpen}
         onClose={() => setIsDayDetailsOpen(false)}
         date={selectedDate}
         availability={selectedAvailability}

@@ -1,10 +1,10 @@
 "use client"
 
 import React from 'react'
-import { Input, InputProps } from '@heroui/react'
+import { TextInput, TextInputProps } from '@mantine/core'
 import { nordicTokens } from './tokens'
 
-interface NordicInputProps extends Omit<InputProps, 'variant'> {
+interface NordicInputProps extends Omit<TextInputProps, 'variant'> {
   error?: boolean
   helperText?: string
 }
@@ -17,50 +17,24 @@ export default function NordicInput({
 }: NordicInputProps) {
   return (
     <div className="w-full">
-      <Input
+      <TextInput
         {...props}
-        variant="flat"
         className={className}
-        classNames={{
-          base: "w-full",
-          mainWrapper: "w-full",
-          inputWrapper: `
-            bg-[${nordicTokens.colors.background.primary}]
-            border 
-            ${error 
-              ? `border-[${nordicTokens.colors.border.error}]` 
-              : `border-[${nordicTokens.colors.border.primary}]`
-            }
-            rounded-[${nordicTokens.radius.md}]
-            px-[${nordicTokens.spacing.md}]
-            py-[${nordicTokens.spacing.sm}]
-            min-h-[44px]
-            shadow-none
-            hover:border-[${nordicTokens.colors.text.secondary}]
-            focus-within:border-[${nordicTokens.colors.border.focus}]
-            focus-within:ring-1
-            focus-within:ring-[${nordicTokens.colors.border.focus}]/20
-            transition-all duration-[${nordicTokens.transition.fast}]
-            group-data-[focus=true]:border-[${nordicTokens.colors.border.focus}]
-            group-data-[focus=true]:ring-1
-            group-data-[focus=true]:ring-[${nordicTokens.colors.border.focus}]/20
-          `,
-          input: `
-            text-[${nordicTokens.colors.text.primary}]
-            text-[${nordicTokens.typography.fontSize.sm}]
-            font-[${nordicTokens.typography.fontFamily.primary}]
-            placeholder:text-[${nordicTokens.colors.text.tertiary}]
-            bg-transparent
-            outline-none
-            border-none
-            shadow-none
-          `,
-          label: `
-            text-[${nordicTokens.colors.text.secondary}]
-            text-[${nordicTokens.typography.fontSize.sm}]
-            font-[${nordicTokens.typography.fontWeight.medium}]
-            mb-[${nordicTokens.spacing.xs}]
-          `
+        styles={{
+          input: {
+            backgroundColor: 'white',
+            border: error ? '1px solid #ef4444' : '1px solid #d1d5db',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            minHeight: '44px',
+            fontSize: '14px'
+          },
+          label: {
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#64748b',
+            marginBottom: '4px'
+          }
         }}
       />
       {helperText && (

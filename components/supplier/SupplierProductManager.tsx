@@ -1528,7 +1528,7 @@ export default function SupplierProductManager() {
               <div>
                 <Text size="sm" fw={500} mb="xs">Etiquetas del Producto</Text>
                 <Text size="xs" c="dimmed" mb="md">
-                  Palabras clave que faciliten la búsqueda del producto (ej: "ofertas", "nuevo", "premium", "eco-friendly")
+                  Palabras clave que faciliten la búsqueda del producto (ej: &quot;ofertas&quot;, &quot;nuevo&quot;, &quot;premium&quot;, &quot;eco-friendly&quot;)
                 </Text>
                 
                 {newProduct.tags.length > 0 && (

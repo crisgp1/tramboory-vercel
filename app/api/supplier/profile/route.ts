@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { SupabaseInventoryClientService } from "@/lib/supabase/inventory-client";
+import { UserRole } from "@/lib/roles";
 
 /**
  * GET /api/supplier/profile
@@ -15,16 +16,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Get user role first
-    const roleResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/users/${userId}/role`, {
-      cache: "no-store"
-    });
-    
-    if (!roleResponse.ok) {
-      return NextResponse.json({ error: "Error al obtener rol del usuario" }, { status: 500 });
-    }
-    
-    const { role } = await roleResponse.json();
+    // Get user role directly from Clerk
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(userId);
+    const role = (user.publicMetadata?.role as UserRole) || "customer";
     
     // Check if user has supplier, admin, or manager role
     if (role !== "proveedor" && role !== "admin" && role !== "gerente") {
@@ -68,16 +63,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Get user role
-    const roleResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/api/users/${userId}/role`, {
-      cache: "no-store"
-    });
-    
-    if (!roleResponse.ok) {
-      return NextResponse.json({ error: "Error al obtener rol del usuario" }, { status: 500 });
-    }
-    
-    const { role } = await roleResponse.json();
+    // Get user role directly from Clerk
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(userId);
+    const role = (user.publicMetadata?.role as UserRole) || "customer";
     
     if (role !== "proveedor" && role !== "admin" && role !== "gerente") {
       return NextResponse.json({ error: "No tiene permisos de proveedor" }, { status: 403 });

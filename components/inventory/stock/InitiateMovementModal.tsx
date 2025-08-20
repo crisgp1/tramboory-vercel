@@ -8,7 +8,7 @@ import {
   IconCurrencyDollar,
   IconCalendar,
   IconTag,
-  IconExclamationTriangle,
+  IconAlertTriangle,
   IconCheck,
   IconX
 } from "@tabler/icons-react"

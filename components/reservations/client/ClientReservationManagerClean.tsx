@@ -6,15 +6,17 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Button,
-  Input,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Chip,
+  TextInput,
+  Menu,
+  MenuTarget,
+  MenuDropdown,
+  MenuItem,
+  Badge,
   Skeleton,
-  Divider
-} from '@heroui/react';
+  Divider,
+  Input
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -58,7 +60,7 @@ export default function ClientReservationManagerClean() {
   const [sortBy, setSortBy] = useState('date-asc');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [opened, { open, close }] = useDisclosure(false);
 
   useEffect(() => {
     if (user) {
@@ -154,12 +156,12 @@ export default function ClientReservationManagerClean() {
 
   const handleViewReservation = (reservation: Reservation) => {
     setSelectedReservation(reservation);
-    setIsModalOpen(true);
+    open();
   };
 
   const handleCloseModal = () => {
     setSelectedReservation(null);
-    setIsModalOpen(false);
+    close();
   };
 
   const filteredReservations = getFilteredReservations();
@@ -213,32 +215,44 @@ export default function ClientReservationManagerClean() {
         className="sticky top-0 z-40 bg-white border-b border-gray-200"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between py-3 sm:py-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <button
                 onClick={() => router.push('/')}
-                className="text-pink-500 text-2xl font-bold hover:text-pink-600 transition-colors"
+                className="text-pink-500 text-xl sm:text-2xl font-bold hover:text-pink-600 transition-colors"
               >
                 Tramboory
               </button>
-              <div className="hidden md:block w-px h-6 bg-gray-300" />
-              <div className="hidden md:block">
-                <h1 className="text-xl font-semibold text-gray-900">Tus reservaciones</h1>
-                <p className="text-sm text-gray-600">
+              <div className="hidden lg:block w-px h-6 bg-gray-300" />
+              <div className="hidden lg:block">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Tus reservaciones</h1>
+                <p className="text-xs sm:text-sm text-gray-600">
                   {reservations.length} {reservations.length === 1 ? 'reservación' : 'reservaciones'}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <AdminQuickNav variant="header" />
               <Button
-                color="primary"
-                startContent={<PlusIcon className="w-4 h-4" />}
-                onPress={() => router.push('/reservaciones/nueva')}
-                className="bg-pink-500 hover:bg-pink-600"
+                leftSection={<PlusIcon className="w-4 h-4 animate-sparkle" />}
+                onClick={() => router.push('/reservaciones/nueva')}
+                className="bg-gradient-rainbow text-white font-bold shadow-2xl hover:shadow-3xl border-0 relative overflow-hidden"
+                size="sm"
+                styles={{
+                  root: {
+                    background: 'linear-gradient(45deg, #ec4899, #8b5cf6, #6366f1, #06b6d4)',
+                    backgroundSize: '400% 400%',
+                    boxShadow: '0 8px 32px rgba(236, 72, 153, 0.4), 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(99, 102, 241, 0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    padding: '8px 12px'
+                  }
+                }}
               >
-                <span className="hidden sm:inline">Nueva reserva</span>
+                <span className="hidden md:inline">✨ Nueva reserva ✨</span>
+                <span className="md:hidden">✨ Nueva ✨</span>
               </Button>
             </div>
           </div>
@@ -246,35 +260,33 @@ export default function ClientReservationManagerClean() {
       </motion.div>
 
       {/* Search and Filters */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <motion.div 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex flex-col lg:flex-row gap-4 mb-6"
+          className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6"
         >
           {/* Search */}
-          <div className="flex-1 max-w-md">
+          <div className="flex-1 max-w-full md:max-w-md">
             <Input
               placeholder="Buscar por nombre, paquete..."
               value={searchQuery}
-              onValueChange={setSearchQuery}
-              startContent={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
-              variant="bordered"
-              classNames={{
-                input: "text-sm",
-                inputWrapper: "border-gray-300 hover:border-gray-400 focus-within:border-pink-500"
-              }}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              leftSection={<MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />}
+              variant="default"
+              size="md"
+              className="text-sm border-gray-300 hover:border-gray-400 focus:border-pink-500"
             />
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center border border-gray-300 rounded-lg p-1">
+          <div className="flex items-center border border-gray-300 rounded-lg p-1 order-3 md:order-2">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === 'grid' 
-                  ? 'bg-gray-900 text-white' 
+              className={`p-1.5 sm:p-2 rounded-md transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-gray-900 text-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -282,9 +294,9 @@ export default function ClientReservationManagerClean() {
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === 'list' 
-                  ? 'bg-gray-900 text-white' 
+              className={`p-1.5 sm:p-2 rounded-md transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-gray-900 text-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -293,33 +305,37 @@ export default function ClientReservationManagerClean() {
           </div>
 
           {/* Sort Dropdown */}
-          <Dropdown>
-            <DropdownTrigger>
-              <Button 
-                variant="bordered" 
-                startContent={<AdjustmentsHorizontalIcon className="w-4 h-4" />}
-                className="border-gray-300 hover:border-gray-400"
+          <Menu>
+            <MenuTarget>
+              <Button
+                variant="default"
+                leftSection={<AdjustmentsHorizontalIcon className="w-4 h-4" />}
+                className="border-gray-300 hover:border-gray-400 order-2 md:order-3"
+                size="sm"
               >
-                Ordenar
+                <span className="hidden sm:inline">Ordenar</span>
+                <span className="sm:hidden">Orden</span>
               </Button>
-            </DropdownTrigger>
-            <DropdownMenu 
-              selectedKeys={[sortBy]}
-              onSelectionChange={(keys) => setSortBy(Array.from(keys)[0] as string)}
-            >
+            </MenuTarget>
+            <MenuDropdown>
               {sortOptions.map((option) => (
-                <DropdownItem key={option.key}>{option.label}</DropdownItem>
+                <MenuItem
+                  key={option.key}
+                  onClick={() => setSortBy(option.key)}
+                >
+                  {option.label}
+                </MenuItem>
               ))}
-            </DropdownMenu>
-          </Dropdown>
+            </MenuDropdown>
+          </Menu>
         </motion.div>
 
         {/* Filter Chips */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="flex flex-wrap gap-2 mb-8"
+          className="flex flex-wrap gap-2 mb-6 sm:mb-8"
         >
           {filterOptions.map((filter) => {
             const count = filterCounts[filter.key as keyof typeof filterCounts];
@@ -327,14 +343,14 @@ export default function ClientReservationManagerClean() {
               <button
                 key={filter.key}
                 onClick={() => setActiveFilter(filter.key)}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
                   activeFilter === filter.key
                     ? 'bg-gray-900 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 {filter.label}
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                <span className={`text-xs px-1 sm:px-1.5 py-0.5 rounded-full ${
                   activeFilter === filter.key
                     ? 'bg-white/20 text-white'
                     : 'bg-gray-300 text-gray-600'
@@ -367,13 +383,24 @@ export default function ClientReservationManagerClean() {
             </p>
             {(!searchQuery && activeFilter === 'all') && (
               <Button
-                color="primary"
-                size="lg"
-                startContent={<PlusIcon className="w-5 h-5" />}
-                onPress={() => router.push('/reservaciones/nueva')}
-                className="bg-pink-500 hover:bg-pink-600"
+                size="xl"
+                leftSection={<PlusIcon className="w-6 h-6 animate-sparkle" />}
+                onClick={() => router.push('/reservaciones/nueva')}
+                className="bg-gradient-rainbow text-white font-black shadow-2xl hover:shadow-3xl border-0 px-8 py-6 rounded-2xl relative overflow-hidden"
+                styles={{
+                  root: {
+                    background: 'linear-gradient(45deg, #ec4899, #8b5cf6, #6366f1, #06b6d4, #10b981)',
+                    backgroundSize: '500% 500%',
+                    boxShadow: '0 12px 40px rgba(236, 72, 153, 0.5), 0 0 30px rgba(139, 92, 246, 0.4), 0 0 50px rgba(99, 102, 241, 0.3)',
+                    border: 'none',
+                    borderRadius: '16px',
+                    fontSize: '18px',
+                    fontWeight: '900',
+                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+                  }
+                }}
               >
-                Crear tu primera reserva
+                🎉✨ Crear tu primera reserva ✨🎉
               </Button>
             )}
           </motion.div>
@@ -386,8 +413,8 @@ export default function ClientReservationManagerClean() {
               layout
               className={
                 viewMode === 'grid'
-                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-                  : 'space-y-4'
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'
+                  : 'space-y-3 sm:space-y-4'
               }
             >
               {filteredReservations.map((reservation, index) => (
@@ -412,18 +439,33 @@ export default function ClientReservationManagerClean() {
       </div>
 
       {/* Floating Action Button (Mobile) */}
-      <div className="fixed bottom-6 right-6 lg:hidden z-50">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 md:hidden z-50">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", delay: 0.5 }}
         >
           <Button
-            isIconOnly
-            color="primary"
-            size="lg"
-            onPress={() => router.push('/reservaciones/nueva')}
-            className="w-14 h-14 bg-pink-500 hover:bg-pink-600 shadow-lg"
+            size="xl"
+            onClick={() => router.push('/reservaciones/nueva')}
+            className="bg-gradient-rainbow text-white shadow-2xl hover:shadow-3xl border-0 rounded-full relative overflow-hidden flex-shrink-0"
+            styles={{
+              root: {
+                width: '64px',
+                height: '64px',
+                minWidth: '64px',
+                minHeight: '64px',
+                aspectRatio: '1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(45deg, #ec4899, #8b5cf6, #6366f1, #06b6d4)',
+                backgroundSize: '400% 400%',
+                boxShadow: '0 12px 40px rgba(236, 72, 153, 0.6), 0 0 40px rgba(139, 92, 246, 0.5), 0 0 60px rgba(99, 102, 241, 0.4)',
+                border: 'none',
+                borderRadius: '50%'
+              }
+            }}
           >
             <PlusIcon className="w-6 h-6" />
           </Button>
@@ -432,7 +474,7 @@ export default function ClientReservationManagerClean() {
 
       {/* Reservation Modal */}
       <ClientReservationModal
-        isOpen={isModalOpen}
+        opened={opened}
         onClose={handleCloseModal}
         reservation={selectedReservation}
       />

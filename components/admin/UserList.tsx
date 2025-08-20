@@ -5,22 +5,12 @@ import { useUser } from "@clerk/nextjs"
 import { useRole } from "@/hooks/useRole"
 import {
   Card,
-  CardBody,
-  CardHeader,
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Chip,
+  Badge,
   Button,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  useDisclosure
-} from "@heroui/react"
+  Modal
+} from "@mantine/core"
+import { useDisclosure } from "@mantine/hooks"
 import { UserRole, ROLES } from "@/lib/roles"
 import RoleManager from "./RoleManager"
 import { CogIcon } from "@heroicons/react/24/outline"
@@ -41,7 +31,7 @@ export default function UserList() {
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [isOpen, { open: onOpen, close: onClose }] = useDisclosure(false)
 
   // Solo admin y gerente pueden ver la lista de usuarios
   if (!isAdmin && !isGerente) {
@@ -116,10 +106,10 @@ export default function UserList() {
   if (isLoading) {
     return (
       <Card>
-        <CardBody className="text-center py-8">
+        <Card.Section className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Cargando usuarios...</p>
-        </CardBody>
+        </Card.Section>
       </Card>
     )
   }
@@ -167,13 +157,13 @@ export default function UserList() {
                   </div>
                   <div className="table-cell">{user.emailAddress}</div>
                   <div className="table-cell">
-                    <Chip 
+                    <Badge 
                       color={getRoleColor(user.role)}
-                      variant="flat"
+                      variant="outline"
                       size="sm"
                     >
                       {ROLES[user.role].label}
-                    </Chip>
+                    </Badge>
                   </div>
                   <div className="table-cell">
                     <span style={{fontSize: 'var(--text-sm)'}}>
@@ -210,17 +200,8 @@ export default function UserList() {
       </div>
 
       {/* Professional Modal for Role Management */}
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <ModalContent className="surface-modal">
-          <ModalHeader style={{
-            padding: 'var(--space-6)',
-            borderBottom: `0.0625rem solid var(--border-default)`,
-            fontSize: 'var(--text-lg)',
-            fontWeight: '600'
-          }}>
-            Gestionar Usuario: {selectedUser?.firstName} {selectedUser?.lastName}
-          </ModalHeader>
-          <ModalBody style={{padding: 'var(--space-6)'}}>
+      <Modal opened={isOpen} onClose={onClose} size="lg" title={`Gestionar Usuario: ${selectedUser?.firstName} ${selectedUser?.lastName}`}>
+        <div style={{padding: 'var(--space-6)'}}>
             {selectedUser && (
               <RoleManager
                 targetUserId={selectedUser.id}
@@ -229,8 +210,7 @@ export default function UserList() {
                 onRoleUpdated={handleRoleUpdated}
               />
             )}
-          </ModalBody>
-        </ModalContent>
+        </div>
       </Modal>
     </>
   )

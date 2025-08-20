@@ -3,13 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card,
-  CardBody,
-  CardHeader,
   Button,
-  Chip,
   Skeleton,
   Tooltip
-} from '@heroui/react';
+} from '@mantine/core';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -143,27 +140,25 @@ export default function AvailabilityCalendar({ className = '', onDateClick }: Pr
     const dateKey = format(date, 'yyyy-MM-dd');
     const dayAvailability = availability[dateKey];
     
-    if (!dayAvailability) return null;
+    if (!dayAvailability) return '';
 
     const formattedDate = format(date, 'EEEE, d MMMM yyyy', { locale: es });
     
-    return (
-      <div className="text-sm">
-        <p className="font-medium mb-1">{formattedDate}</p>
-        <div className="space-y-1">
-          <p>Horarios disponibles: {dayAvailability.availableSlots}/{dayAvailability.totalSlots}</p>
-          {dayAvailability.hasReservations && (
-            <p className="text-blue-600">• Tiene reservaciones</p>
-          )}
-          {dayAvailability.isRestDay && (
-            <p className="text-amber-600">• Día de descanso (${dayAvailability.restDayFee?.toLocaleString() || 0})</p>
-          )}
-          {!dayAvailability.available && (
-            <p className="text-red-600">• Completamente ocupado</p>
-          )}
-        </div>
-      </div>
-    );
+    let tooltip = `${formattedDate}\nHorarios disponibles: ${dayAvailability.availableSlots}/${dayAvailability.totalSlots}`;
+    
+    if (dayAvailability.hasReservations) {
+      tooltip += '\n• Tiene reservaciones';
+    }
+    
+    if (dayAvailability.isRestDay) {
+      tooltip += `\n• Día de descanso ($${dayAvailability.restDayFee?.toLocaleString() || 0})`;
+    }
+    
+    if (!dayAvailability.available) {
+      tooltip += '\n• Completamente ocupado';
+    }
+    
+    return tooltip;
   };
 
   const monthStart = startOfMonth(currentDate);
@@ -191,8 +186,8 @@ export default function AvailabilityCalendar({ className = '', onDateClick }: Pr
   }, { totalDays: 0, availableDays: 0, daysWithReservations: 0, restDays: 0 });
 
   return (
-    <Card className={`${className}`}>
-      <CardHeader className="pb-3">
+    <Card className={`${className}`} padding="lg">
+      <Card.Section className="pb-3 p-6">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
             <CalendarDaysIcon className="w-6 h-6 text-blue-500" />
@@ -208,10 +203,9 @@ export default function AvailabilityCalendar({ className = '', onDateClick }: Pr
           
           <div className="flex items-center gap-2">
             <Button
-              isIconOnly
-              variant="light"
+              variant="subtle"
               size="sm"
-              onPress={goToPreviousMonth}
+              onClick={goToPreviousMonth}
               className="text-gray-600 hover:text-gray-900"
             >
               <ChevronLeftIcon className="w-4 h-4" />
@@ -219,27 +213,26 @@ export default function AvailabilityCalendar({ className = '', onDateClick }: Pr
             
             <Button
               size="sm"
-              variant="flat"
-              onPress={goToToday}
+              variant="light"
+              onClick={goToToday}
               className="text-blue-600 hover:text-blue-700"
             >
               Hoy
             </Button>
             
             <Button
-              isIconOnly
-              variant="light"
+              variant="subtle"
               size="sm"
-              onPress={goToNextMonth}
+              onClick={goToNextMonth}
               className="text-gray-600 hover:text-gray-900"
             >
               <ChevronRightIcon className="w-4 h-4" />
             </Button>
           </div>
         </div>
-      </CardHeader>
+      </Card.Section>
       
-      <CardBody className="pt-0">
+      <Card.Section className="pt-0 p-6">
         {/* Statistics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div className="text-center p-3 bg-blue-50 rounded-lg">
@@ -287,10 +280,10 @@ export default function AvailabilityCalendar({ className = '', onDateClick }: Pr
                 return (
                   <Tooltip
                     key={date.toISOString()}
-                    content={getDayTooltip(date)}
-                    placement="top"
+                    label={getDayTooltip(date)}
+                    position="top"
                     className="max-w-xs"
-                    isDisabled={!dayAvailability || isPastDate}
+                    disabled={!dayAvailability || isPastDate}
                   >
                     <div
                       className={getDayStyle(date)}
@@ -345,7 +338,7 @@ export default function AvailabilityCalendar({ className = '', onDateClick }: Pr
             </div>
           </div>
         </div>
-      </CardBody>
+      </Card.Section>
     </Card>
   );
 }

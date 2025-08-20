@@ -7,11 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
   Card,
-  CardBody,
-  CardHeader,
-  Input,
+  TextInput,
   Button
-} from "@heroui/react"
+} from "@mantine/core"
 import { ArrowLeftIcon } from "@heroicons/react/24/outline"
 import toast from "react-hot-toast"
 
@@ -58,11 +56,11 @@ export default function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordForm
   if (isSubmitted) {
     return (
       <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-col gap-3 pb-0">
+        <Card.Section className="flex flex-col gap-3 pb-0">
           <h1 className="text-2xl font-bold text-center">Email Enviado</h1>
-        </CardHeader>
+        </Card.Section>
         
-        <CardBody className="gap-4 text-center">
+        <Card.Section className="gap-4 text-center">
           <div className="flex flex-col gap-4">
             <p className="text-default-600">
               Hemos enviado un enlace de recuperación a:
@@ -76,45 +74,43 @@ export default function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordForm
           </div>
 
           <Button
-            color="primary"
+            color="blue"
             variant="light"
-            onPress={onBackToLogin}
-            startContent={<ArrowLeftIcon className="w-4 h-4" />}
+            onClick={onBackToLogin}
+            leftSection={<ArrowLeftIcon className="w-4 h-4" />}
           >
             Volver al inicio de sesión
           </Button>
-        </CardBody>
+        </Card.Section>
       </Card>
     )
   }
 
   return (
     <Card className="w-full max-w-md">
-      <CardHeader className="flex flex-col gap-3 pb-0">
+      <Card.Section className="flex flex-col gap-3 pb-0">
         <h1 className="text-2xl font-bold text-center">Recuperar Contraseña</h1>
         <p className="text-small text-default-500 text-center">
           Ingresa tu email para recibir un enlace de recuperación
         </p>
-      </CardHeader>
+      </Card.Section>
       
-      <CardBody className="gap-4">
+      <Card.Section className="gap-4">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <Input
+          <TextInput
             {...register("email")}
             type="email"
             label="Email"
             placeholder="tu@email.com"
-            variant="bordered"
-            isInvalid={!!errors.email}
-            errorMessage={errors.email?.message}
+            error={errors.email?.message}
             description="Te enviaremos un enlace para restablecer tu contraseña"
           />
 
           <Button
             type="submit"
-            color="primary"
+            color="blue"
             size="lg"
-            isLoading={isLoading}
+            loading={isLoading}
             className="w-full"
           >
             {isLoading ? "Enviando..." : "Enviar Enlace"}
@@ -125,14 +121,14 @@ export default function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordForm
           <Button
             variant="light"
             size="sm"
-            onPress={onBackToLogin}
+            onClick={onBackToLogin}
             className="text-default-500"
-            startContent={<ArrowLeftIcon className="w-4 h-4" />}
+            leftSection={<ArrowLeftIcon className="w-4 h-4" />}
           >
             Volver al inicio de sesión
           </Button>
         </div>
-      </CardBody>
+      </Card.Section>
     </Card>
   )
 }

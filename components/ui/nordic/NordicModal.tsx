@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalProps } from '@heroui/react'
+import { Modal, ModalProps } from '@mantine/core'
 import { nordicTokens } from './tokens'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import NordicButton from './NordicButton'
@@ -44,64 +44,54 @@ export default function NordicModal({
       {...props}
       onClose={onClose}
       className={className}
-      classNames={{
-        backdrop: "bg-black/30 backdrop-blur-md",
-        wrapper: "items-center justify-center p-4",
-        base: `
-          ${getSizeClasses()}
-          w-full
-          glass-modal
-          m-0
-        `,
-        header: `
-          px-6
-          pt-6
-          pb-4
-          border-none
-        `,
-        body: `
-          px-6
-          py-0
-          max-h-[70vh]
-          overflow-y-auto
-        `,
-        footer: `
-          px-6
-          pt-4
-          pb-6
-          border-none
-          justify-end
-          gap-3
-        `
+      size={size === '2xl' ? 'xl' : size}
+      styles={{
+        overlay: {
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          backdropFilter: 'blur(4px)'
+        },
+        content: {
+          maxHeight: '90vh',
+          overflow: 'hidden'
+        },
+        header: {
+          padding: '24px 24px 16px',
+          borderBottom: 'none'
+        },
+        body: {
+          padding: '0 24px',
+          maxHeight: '70vh',
+          overflow: 'auto'
+        }
       }}
-    >
-      <ModalContent>
-        {(onClose) => (
-          <>
-            {(title || showCloseButton) && (
-              <ModalHeader className="relative">
-                {title && (
-                  <h2 className="text-2xl font-semibold text-slate-800 leading-tight m-0">
-                    {title}
-                  </h2>
-                )}
-                {showCloseButton && (
-                  <button
-                    onClick={onClose}
-                    className="absolute top-0 right-0 p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                  >
-                    <XMarkIcon className="w-5 h-5 text-slate-500" />
-                  </button>
-                )}
-              </ModalHeader>
+      title={
+        title ? (
+          <div className="relative w-full">
+            <h2 className="text-2xl font-semibold text-slate-800 leading-tight m-0">
+              {title}
+            </h2>
+            {showCloseButton && (
+              <button
+                onClick={onClose}
+                className="absolute top-0 right-0 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5 text-slate-500" />
+              </button>
             )}
-            
-            <ModalBody>
-              {children}
-            </ModalBody>
-          </>
-        )}
-      </ModalContent>
+          </div>
+        ) : showCloseButton ? (
+          <div className="relative w-full">
+            <button
+              onClick={onClose}
+              className="absolute top-0 right-0 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <XMarkIcon className="w-5 h-5 text-slate-500" />
+            </button>
+          </div>
+        ) : undefined
+      }
+    >
+      {children}
     </Modal>
   )
 }
@@ -111,13 +101,13 @@ export function NordicModalFooter({
   children,
   className = '',
   ...props 
-}: React.ComponentProps<typeof ModalFooter>) {
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <ModalFooter 
+    <div 
       {...props}
-      className={`px-6 pt-4 pb-6 border-none justify-end gap-3 ${className}`}
+      className={`px-6 pt-4 pb-6 border-none flex justify-end gap-3 ${className}`}
     >
       {children}
-    </ModalFooter>
+    </div>
   )
 }

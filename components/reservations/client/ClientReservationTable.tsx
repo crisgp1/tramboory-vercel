@@ -3,16 +3,16 @@
 import React from 'react';
 import {
   Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Chip,
   Button,
   Card,
-  CardBody
-} from '@heroui/react';
+  Badge,
+  Stack,
+  Group,
+  Text,
+  ActionIcon,
+  Box,
+  Skeleton
+} from '@mantine/core';
 import {
   EyeIcon,
   CalendarDaysIcon,
@@ -34,15 +34,15 @@ export default function ClientReservationTable({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'success';
+        return 'green';
       case 'pending':
-        return 'warning';
+        return 'yellow';
       case 'cancelled':
-        return 'danger';
+        return 'red';
       case 'completed':
-        return 'primary';
+        return 'blue';
       default:
-        return 'default';
+        return 'gray';
     }
   };
 
@@ -79,147 +79,155 @@ export default function ClientReservationTable({
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <Stack gap="md">
         {[...Array(3)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2 flex-1">
-                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
-                <div className="h-8 bg-gray-200 rounded w-20"></div>
-              </div>
-            </CardBody>
+          <Card key={i} shadow="sm" padding="lg" radius="md" withBorder>
+            <Group justify="space-between">
+              <Stack gap="xs" style={{ flex: 1 }}>
+                <Skeleton height={16} width="33%" radius="sm" />
+                <Skeleton height={12} width="50%" radius="sm" />
+              </Stack>
+              <Skeleton height={32} width={80} radius="sm" />
+            </Group>
           </Card>
         ))}
-      </div>
+      </Stack>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <Stack gap="md">
       {/* Vista móvil - Cards */}
-      <div className="block md:hidden space-y-4">
-        {reservations.map((reservation) => (
-          <Card key={reservation._id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <CardBody className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-1">
+      <Box className="block md:hidden">
+        <Stack gap="md">
+          {reservations.map((reservation) => (
+            <Card 
+              key={reservation._id} 
+              shadow="lg" 
+              padding="lg" 
+              radius="md" 
+              withBorder
+              className="hover:shadow-xl transition-all duration-300"
+            >
+              <Group justify="space-between" align="flex-start" mb="md">
+                <Stack gap="xs" style={{ flex: 1 }}>
+                  <Text size="lg" fw={600}>
                     Fiesta de {reservation.child.name}
-                  </h3>
-                  <div className="flex items-center text-gray-600 text-sm mb-2">
-                    <CalendarDaysIcon className="w-4 h-4 mr-2" />
-                    {formatDate(reservation.eventDate)}
-                  </div>
-                  <div className="flex items-center text-gray-600 text-sm mb-3">
-                    <ClockIcon className="w-4 h-4 mr-2" />
-                    {reservation.eventTime}
-                  </div>
-                  <div className="text-lg font-semibold text-green-600">
+                  </Text>
+                  <Group gap="xs">
+                    <CalendarDaysIcon className="w-4 h-4" />
+                    <Text size="sm" c="dimmed">
+                      {formatDate(reservation.eventDate)}
+                    </Text>
+                  </Group>
+                  <Group gap="xs">
+                    <ClockIcon className="w-4 h-4" />
+                    <Text size="sm" c="dimmed">
+                      {reservation.eventTime}
+                    </Text>
+                  </Group>
+                  <Text size="lg" fw={600} c="green">
                     {formatPrice(reservation.pricing?.total || 0)}
-                  </div>
-                </div>
-                <Chip
+                  </Text>
+                </Stack>
+                <Badge
                   color={getStatusColor(reservation.status)}
-                  variant="flat"
+                  variant="light"
                   size="sm"
-                  className="mb-2"
                 >
                   {getStatusText(reservation.status)}
-                </Chip>
-              </div>
+                </Badge>
+              </Group>
               <Button
-                startContent={<EyeIcon className="w-4 h-4" />}
-                onPress={() => onView(reservation)}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
+                leftSection={<EyeIcon className="w-4 h-4" />}
+                onClick={() => onView(reservation)}
+                fullWidth
+                variant="gradient"
+                gradient={{ from: 'blue', to: 'purple' }}
                 size="sm"
               >
                 Ver Detalles
               </Button>
-            </CardBody>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </Stack>
+      </Box>
 
       {/* Vista desktop - Tabla */}
-      <div className="hidden md:block">
-        <Table
-          aria-label="Tabla de reservaciones del cliente"
-          classNames={{
-            wrapper: "shadow-lg rounded-lg border-0",
-            th: "bg-gradient-to-r from-blue-50 to-purple-50 text-gray-700 font-semibold",
-            td: "py-4"
-          }}
-        >
-          <TableHeader>
-            <TableColumn>EVENTO</TableColumn>
-            <TableColumn>FECHA Y HORA</TableColumn>
-            <TableColumn>PAQUETE</TableColumn>
-            <TableColumn>TOTAL</TableColumn>
-            <TableColumn>ESTADO</TableColumn>
-            <TableColumn>ACCIONES</TableColumn>
-          </TableHeader>
-          <TableBody>
-            {reservations.map((reservation) => (
-              <TableRow key={reservation._id} className="hover:bg-gray-50 transition-colors">
-                <TableCell>
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      Fiesta de {reservation.child.name}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {reservation.child.age} {reservation.child.age === 1 ? 'año' : 'años'}
-                    </p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {formatDate(reservation.eventDate)}
-                    </p>
-                    <p className="text-sm text-gray-600 flex items-center">
-                      <ClockIcon className="w-3 h-3 mr-1" />
-                      {reservation.eventTime}
-                    </p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <p className="font-medium text-gray-900">
-                    {reservation.package?.name || 'Paquete personalizado'}
-                  </p>
-                </TableCell>
-                <TableCell>
-                  <p className="font-semibold text-green-600 text-lg">
-                    {formatPrice(reservation.pricing?.total || 0)}
-                  </p>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    color={getStatusColor(reservation.status)}
-                    variant="flat"
-                    size="sm"
-                  >
-                    {getStatusText(reservation.status)}
-                  </Chip>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    isIconOnly
-                    variant="light"
-                    onPress={() => onView(reservation)}
-                    className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                    size="sm"
-                  >
-                    <EyeIcon className="w-4 h-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+      <Box className="hidden md:block">
+        <Card shadow="lg" radius="md" withBorder p={0}>
+          <Table striped highlightOnHover>
+            <Table.Thead className="bg-gradient-to-r from-blue-50 to-purple-50">
+              <Table.Tr>
+                <Table.Th>EVENTO</Table.Th>
+                <Table.Th>FECHA Y HORA</Table.Th>
+                <Table.Th>PAQUETE</Table.Th>
+                <Table.Th>TOTAL</Table.Th>
+                <Table.Th>ESTADO</Table.Th>
+                <Table.Th>ACCIONES</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {reservations.map((reservation) => (
+                <Table.Tr key={reservation._id}>
+                  <Table.Td>
+                    <Stack gap={4}>
+                      <Text fw={600}>
+                        Fiesta de {reservation.child.name}
+                      </Text>
+                      <Text size="sm" c="dimmed">
+                        {reservation.child.age} {reservation.child.age === 1 ? 'año' : 'años'}
+                      </Text>
+                    </Stack>
+                  </Table.Td>
+                  <Table.Td>
+                    <Stack gap={4}>
+                      <Text fw={500}>
+                        {formatDate(reservation.eventDate)}
+                      </Text>
+                      <Group gap={4}>
+                        <ClockIcon className="w-3 h-3" />
+                        <Text size="sm" c="dimmed">
+                          {reservation.eventTime}
+                        </Text>
+                      </Group>
+                    </Stack>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text fw={500}>
+                      {reservation.package?.name || 'Paquete personalizado'}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="lg" fw={600} c="green">
+                      {formatPrice(reservation.pricing?.total || 0)}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge
+                      color={getStatusColor(reservation.status)}
+                      variant="light"
+                      size="sm"
+                    >
+                      {getStatusText(reservation.status)}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    <ActionIcon
+                      variant="light"
+                      color="blue"
+                      onClick={() => onView(reservation)}
+                      size="sm"
+                    >
+                      <EyeIcon className="w-4 h-4" />
+                    </ActionIcon>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Card>
+      </Box>
+    </Stack>
   );
 }

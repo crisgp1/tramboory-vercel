@@ -3,7 +3,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth()
@@ -12,7 +12,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const invitationId = params.id
+    const { id: invitationId } = await params
 
     if (!invitationId) {
       return NextResponse.json({ error: "Invitation ID is required" }, { status: 400 })

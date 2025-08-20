@@ -5,17 +5,13 @@ import { UserButton, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/hooks/useRole';
 import {
-  Navbar as NextUINavbar,
-  NavbarBrand,
-  NavbarContent,
-  NavbarItem,
   Button,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Chip
-} from '@heroui/react';
+  Menu,
+  Badge,
+  Group,
+  Text,
+  Flex
+} from '@mantine/core';
 import {
   HomeIcon,
   CalendarDaysIcon,
@@ -30,25 +26,23 @@ export default function Navbar() {
 
   if (!isLoaded) {
     return (
-      <NextUINavbar className="bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <NavbarBrand>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">T</span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-              Tramboory
-            </span>
+      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">T</span>
           </div>
-        </NavbarBrand>
-      </NextUINavbar>
+          <span className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+            Tramboory
+          </span>
+        </div>
+      </nav>
     );
   }
 
   if (!user) {
     return (
-      <NextUINavbar className="bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <NavbarBrand>
+      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-2">
+        <Group justify="space-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">T</span>
@@ -57,25 +51,21 @@ export default function Navbar() {
               Tramboory
             </span>
           </div>
-        </NavbarBrand>
-        <NavbarContent justify="end">
-          <NavbarItem>
-            <Button
-              onPress={() => router.push('/')}
-              variant="light"
-              className="text-gray-600 hover:text-gray-800"
-            >
-              Iniciar Sesión
-            </Button>
-          </NavbarItem>
-        </NavbarContent>
-      </NextUINavbar>
+          <Button
+            onClick={() => router.push('/')}
+            variant="light"
+            className="text-gray-600 hover:text-gray-800"
+          >
+            Iniciar Sesión
+          </Button>
+        </Group>
+      </nav>
     );
   }
 
   return (
-    <NextUINavbar className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
-      <NavbarBrand>
+    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm px-4 py-2">
+      <Group justify="space-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/dashboard')}>
           <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">T</span>
@@ -84,56 +74,50 @@ export default function Navbar() {
             Tramboory
           </span>
         </div>
-      </NavbarBrand>
 
-      <NavbarContent className="hidden sm:flex gap-4" justify="center">
-        {/* Solo mostrar Dashboard para roles no-customer */}
-        {role !== "customer" && (
-          <NavbarItem>
+        <Group className="hidden sm:flex" gap="md">
+          {/* Solo mostrar Dashboard para roles no-customer */}
+          {role !== "customer" && (
             <Button
               variant="light"
-              onPress={() => router.push('/dashboard')}
-              startContent={<HomeIcon className="w-4 h-4" />}
+              onClick={() => router.push('/dashboard')}
+              leftSection={<HomeIcon className="w-4 h-4" />}
               className="text-gray-600 hover:text-gray-800"
             >
               Dashboard
             </Button>
-          </NavbarItem>
-        )}
-        <NavbarItem>
+          )}
           <Button
             variant="light"
-            onPress={() => router.push('/reservaciones')}
-            startContent={<CalendarDaysIcon className="w-4 h-4" />}
+            onClick={() => router.push('/reservaciones')}
+            leftSection={<CalendarDaysIcon className="w-4 h-4" />}
             className="text-gray-600 hover:text-gray-800"
           >
             {role === "customer" ? "Mis Celebraciones" : "Reservas"}
           </Button>
-        </NavbarItem>
-      </NavbarContent>
+        </Group>
 
-      <NavbarContent justify="end">
-        <NavbarItem className="hidden sm:flex">
-          <div className="flex items-center gap-3">
+        <Group>
+          <div className="hidden sm:flex items-center gap-3">
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
+              <Text size="sm" fw={500} c="gray.9">
                 ¡Hola, {user.firstName}!
-              </p>
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-gray-600">
+              </Text>
+              <Group gap="xs">
+                <Text size="xs" c="gray.6">
                   {user.primaryEmailAddress?.emailAddress}
-                </p>
-                <Chip 
-                  size="sm" 
-                  variant="flat"
-                  color={role === "admin" ? "danger" : role === "customer" ? "default" : "primary"}
+                </Text>
+                <Badge
+                  size="sm"
+                  variant="light"
+                  c={role === "admin" ? "red" : role === "customer" ? "gray" : "blue"}
                 >
-                  {role === "customer" ? "Cliente" : 
-                   role === "admin" ? "Admin" : 
-                   role === "gerente" ? "Gerente" : 
+                  {role === "customer" ? "Cliente" :
+                   role === "admin" ? "Admin" :
+                   role === "gerente" ? "Gerente" :
                    role === "proveedor" ? "Proveedor" : "Vendedor"}
-                </Chip>
-              </div>
+                </Badge>
+              </Group>
             </div>
             <UserButton
               appearance={{
@@ -146,16 +130,15 @@ export default function Navbar() {
               afterSignOutUrl="/"
             />
           </div>
-        </NavbarItem>
-        
-        {/* Mobile menu */}
-        <NavbarItem className="sm:hidden">
-          <Dropdown>
-            <DropdownTrigger>
+          
+          {/* Mobile menu */}
+          <div className="sm:hidden">
+            <Menu>
+            <Menu.Target>
               <Button
                 variant="light"
                 className="p-0 min-w-0"
-                endContent={<ChevronDownIcon className="w-4 h-4" />}
+                rightSection={<ChevronDownIcon className="w-4 h-4" />}
               >
                 <UserButton
                   appearance={{
@@ -166,34 +149,35 @@ export default function Navbar() {
                   afterSignOutUrl="/"
                 />
               </Button>
-            </DropdownTrigger>
-            <DropdownMenu aria-label="Menu de navegación">
+            </Menu.Target>
+            <Menu.Dropdown>
               {[
                 ...(role !== "customer" ? [{
                   key: "dashboard",
                   icon: HomeIcon,
                   label: "Dashboard",
-                  onPress: () => router.push('/dashboard')
+                  onClick: () => router.push('/dashboard')
                 }] : []),
                 {
                   key: "reservations",
                   icon: CalendarDaysIcon,
                   label: role === "customer" ? "Mis Celebraciones" : "Reservas",
-                  onPress: () => router.push('/reservaciones')
+                  onClick: () => router.push('/reservaciones')
                 }
               ].map(item => (
-                <DropdownItem
+                <Menu.Item
                   key={item.key}
-                  startContent={<item.icon className="w-4 h-4" />}
-                  onPress={item.onPress}
+                  leftSection={<item.icon className="w-4 h-4" />}
+                  onClick={item.onClick}
                 >
                   {item.label}
-                </DropdownItem>
+                </Menu.Item>
               ))}
-            </DropdownMenu>
-          </Dropdown>
-        </NavbarItem>
-      </NavbarContent>
-    </NextUINavbar>
+            </Menu.Dropdown>
+            </Menu>
+          </div>
+        </Group>
+      </Group>
+    </nav>
   );
 }

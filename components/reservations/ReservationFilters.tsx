@@ -196,7 +196,7 @@ export default function ReservationFilters({
                       color="blue"
                       rightSection={<ActionIcon size="xs" variant="transparent" onClick={() => onSearchChange('')}><IconX size={10} /></ActionIcon>}
                     >
-                      "{searchTerm}"
+                      &quot;{searchTerm}&quot;
                     </Badge>
                   )}
                   

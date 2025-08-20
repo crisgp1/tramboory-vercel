@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Button, ButtonProps } from '@heroui/react'
+import { Button, ButtonProps } from '@mantine/core'
 import { nordicTokens } from './tokens'
 
 interface NordicButtonProps extends Omit<ButtonProps, 'variant' | 'color'> {

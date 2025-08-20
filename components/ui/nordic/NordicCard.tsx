@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Card, CardProps, CardBody } from '@heroui/react'
+import { Card, CardProps } from '@mantine/core'
 import { nordicTokens } from './tokens'
 
 interface NordicCardProps extends Omit<CardProps, 'shadow'> {
@@ -67,9 +67,9 @@ export default function NordicCard({
         ${className}
       `}
     >
-      <CardBody className={`${getPaddingStyles()} overflow-visible`}>
+      <div className={`${getPaddingStyles()} overflow-visible`}>
         {children}
-      </CardBody>
+      </div>
     </Card>
   )
 }

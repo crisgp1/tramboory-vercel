@@ -2,7 +2,8 @@
 
 import React, { useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { useDisclosure } from '@heroui/react';
+import { useDisclosure } from '@mantine/hooks';
+import { Box } from '@mantine/core';
 import toast from 'react-hot-toast';
 import { useReservationStore } from '@/stores/reservationStore';
 import ClientSidebar from './ClientSidebar';
@@ -19,7 +20,7 @@ export default function ClientReservationManager() {
     setSelectedReservation
   } = useReservationStore();
   
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [opened, { open, close }] = useDisclosure(false);
 
   useEffect(() => {
     if (user) {
@@ -48,32 +49,32 @@ export default function ClientReservationManager() {
 
   const handleView = (reservation: Reservation) => {
     setSelectedReservation(reservation);
-    onOpen();
+    open();
   };
 
   const handleCloseModal = () => {
     setSelectedReservation(null);
-    onClose();
+    close();
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <Box className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className="hidden lg:block">
+      <Box className="hidden lg:block">
         <ClientSidebar />
-      </div>
+      </Box>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <Box className="flex-1 overflow-auto">
         <ClientMainContent onViewReservation={handleView} />
-      </div>
+      </Box>
 
       {/* Modal de detalles */}
       <ClientReservationModal
-        isOpen={isOpen}
+        opened={opened}
         onClose={handleCloseModal}
         reservation={selectedReservation}
       />
-    </div>
+    </Box>
   );
 }

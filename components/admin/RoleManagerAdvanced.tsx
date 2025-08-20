@@ -7,13 +7,11 @@ import { useAdvancedRole } from '@/lib/role-utils'
 import { UserRole, ROLES } from '@/lib/roles'
 import {
   Card,
-  CardBody,
   Button,
   Select,
-  SelectItem,
-  Input,
-  Chip
-} from '@heroui/react'
+  TextInput,
+  Badge
+} from '@mantine/core'
 import { UserIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
 
 export default function RoleManagerAdvanced() {
@@ -28,13 +26,13 @@ export default function RoleManagerAdvanced() {
   if (!isAdmin) {
     return (
       <Card>
-        <CardBody className="p-6 text-center">
+        <Card.Section className="p-6 text-center">
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <UserIcon className="w-6 h-6 text-red-600" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Acceso Denegado</h3>
           <p className="text-gray-600">Solo los administradores pueden gestionar roles</p>
-        </CardBody>
+        </Card.Section>
       </Card>
     )
   }
@@ -86,7 +84,7 @@ export default function RoleManagerAdvanced() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardBody className="p-6">
+        <Card.Section className="p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
               <Cog6ToothIcon className="w-5 h-5 text-blue-600" />
@@ -101,7 +99,7 @@ export default function RoleManagerAdvanced() {
           <div className="bg-blue-50 p-4 rounded-lg mb-6">
             <h3 className="font-semibold mb-2">Tu Información</h3>
             <div className="flex items-center gap-3">
-              <Chip color="danger" variant="flat">Admin</Chip>
+              <Badge color="red" variant="outline">Admin</Badge>
               <span className="text-sm">{user?.fullName}</span>
               <span className="text-xs text-gray-600">{user?.id}</span>
             </div>
@@ -110,45 +108,42 @@ export default function RoleManagerAdvanced() {
           {/* Formulario de Actualización de Roles */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="md:col-span-2">
-              <Input
+              <TextInput
                 label="ID del Usuario"
                 placeholder="user_xxxxxxxxxxxxxxxxx"
                 value={targetUserId}
-                onValueChange={setTargetUserId}
-                startContent={<UserIcon className="w-4 h-4 text-gray-400" />}
+                onChange={(e) => setTargetUserId(e.target.value)}
+                leftSection={<UserIcon className="w-4 h-4 text-gray-400" />}
                 description="Ingresa el ID del usuario de Clerk"
               />
             </div>
             <div>
               <Select
                 label="Nuevo Rol"
-                selectedKeys={[selectedRole]}
-                onSelectionChange={(keys) => {
-                  const selected = Array.from(keys)[0] as UserRole
-                  setSelectedRole(selected)
+                value={selectedRole}
+                onChange={(value) => {
+                  setSelectedRole(value as UserRole)
                 }}
-              >
-                {Object.entries(ROLES).map(([roleKey, roleInfo]) => (
-                  <SelectItem key={roleKey}>
-                    {roleInfo.label}
-                  </SelectItem>
-                ))}
-              </Select>
+                data={Object.entries(ROLES).map(([roleKey, roleInfo]) => ({
+                  value: roleKey,
+                  label: roleInfo.label
+                }))}
+              />
             </div>
           </div>
 
           <div className="flex gap-3 mb-6">
             <Button
-              color="primary"
-              onPress={handleRoleUpdate}
-              isLoading={isLoading}
-              isDisabled={!targetUserId.trim()}
+              color="blue"
+              onClick={handleRoleUpdate}
+              loading={isLoading}
+              disabled={!targetUserId.trim()}
             >
               Actualizar Rol
             </Button>
             <Button
-              variant="flat"
-              onPress={() => {
+              variant="light"
+              onClick={() => {
                 setTargetUserId("")
                 setSelectedRole("customer")
               }}
@@ -164,16 +159,16 @@ export default function RoleManagerAdvanced() {
               {quickActions.map((action, index) => (
                 <Button
                   key={index}
-                  color={action.color}
-                  variant="flat"
+                  color={action.color === 'danger' ? 'red' : action.color === 'primary' ? 'blue' : 'gray'}
+                  variant="light"
                   className="h-auto p-4"
-                  onPress={() => {
+                  onClick={() => {
                     setSelectedRole(action.role)
                     if (targetUserId.trim()) {
                       handleRoleUpdate()
                     }
                   }}
-                  isDisabled={!targetUserId.trim()}
+                  disabled={!targetUserId.trim()}
                 >
                   <div className="text-center">
                     <div className="font-semibold">{action.title}</div>
@@ -191,9 +186,9 @@ export default function RoleManagerAdvanced() {
               {Object.entries(ROLES).map(([roleKey, roleInfo]) => (
                 <div key={roleKey} className="p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
-                    <Chip size="sm" variant="flat">
+                    <Badge size="sm" variant="outline">
                       {roleInfo.label}
-                    </Chip>
+                    </Badge>
                   </div>
                   <p className="text-xs text-gray-600">{roleInfo.description}</p>
                   <div className="mt-2">
@@ -215,7 +210,7 @@ export default function RoleManagerAdvanced() {
               ))}
             </div>
           </div>
-        </CardBody>
+        </Card.Section>
       </Card>
     </div>
   )
