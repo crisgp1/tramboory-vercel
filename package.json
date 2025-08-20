@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",
+    "@clerk/backend": "^2.9.3",
     "@clerk/nextjs": "^6.23.0",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.1.1",

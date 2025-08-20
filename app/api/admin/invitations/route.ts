@@ -54,21 +54,58 @@ export async function POST(request: NextRequest) {
       metadata = {}
     } = body
 
+    // Validaciones mejoradas
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
+    }
+
+    // Validar rol
+    const validRoles = ["customer", "admin", "proveedor", "vendedor", "gerente"] as UserRole[]
+    if (!validRoles.includes(role as UserRole)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 })
+    }
+
+    // Construir URL de redirección segura
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    const finalRedirectUrl = redirectUrl || `${baseUrl}/auth/sign-up`
+
+    // Limpiar y validar metadata para Clerk
+    const cleanMetadata: Record<string, any> = {
+      role: role as UserRole,
+      invitedBy: userId,
+      invitedAt: new Date().toISOString()
+    }
+
+    // Agregar metadata adicional solo si son valores válidos
+    Object.entries(metadata).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        // Convertir a string si no es un tipo primitivo válido
+        if (typeof value === 'object') {
+          cleanMetadata[key] = JSON.stringify(value)
+        } else {
+          cleanMetadata[key] = String(value)
+        }
+      }
+    })
+
+    console.log('Creating invitation with data:', {
+      emailAddress: email,
+      redirectUrl: finalRedirectUrl,
+      publicMetadata: cleanMetadata
+    })
 
     // Create invitation with metadata using the correct Clerk method
     const client = await clerkClient()
     const invitation = await client.invitations.createInvitation({
       emailAddress: email,
-      redirectUrl: redirectUrl || `${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation`,
-      publicMetadata: {
-        role: role as UserRole,
-        invitedBy: userId,
-        invitedAt: new Date().toISOString(),
-        ...metadata
-      }
+      redirectUrl: finalRedirectUrl,
+      publicMetadata: cleanMetadata
     })
 
     let supplierResult = null;
@@ -136,7 +173,60 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Error creating invitation:", error)
     
+    // Log full error for debugging
+    console.error("Full error object:", {
+      message: error.message,
+      status: error.status,
+      clerkTraceId: error.clerkTraceId,
+      errors: error.errors,
+      clerkError: error.clerkError
+    })
+    
     // Handle specific Clerk errors
+    if (error.clerkError && error.status) {
+      switch (error.status) {
+        case 422:
+          // Unprocessable Entity - validation errors
+          const validationErrors = error.errors || []
+          const errorMessages = validationErrors.map((err: any) => err.message || err.longMessage || 'Validation error').join(', ')
+          return NextResponse.json(
+            {
+              error: "Validation error",
+              details: errorMessages || "Invalid data provided for invitation",
+              clerkTraceId: error.clerkTraceId
+            },
+            { status: 422 }
+          )
+        
+        case 409:
+          return NextResponse.json(
+            { error: "User with this email already exists or has a pending invitation" },
+            { status: 409 }
+          )
+        
+        case 400:
+          return NextResponse.json(
+            {
+              error: "Bad request",
+              details: error.message || "Invalid request data",
+              clerkTraceId: error.clerkTraceId
+            },
+            { status: 400 }
+          )
+        
+        default:
+          return NextResponse.json(
+            {
+              error: "Clerk API error",
+              details: error.message || "Unknown error from Clerk",
+              clerkTraceId: error.clerkTraceId
+            },
+            { status: error.status }
+          )
+      }
+    }
+    
+    // Handle other specific errors
     if (error.message?.includes('already exists')) {
       return NextResponse.json(
         { error: "User with this email already exists or has a pending invitation" },
@@ -144,8 +234,12 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    // Generic error fallback
     return NextResponse.json(
-      { error: "Error creating invitation" },
+      {
+        error: "Error creating invitation",
+        details: error.message || "An unexpected error occurred"
+      },
       { status: 500 }
     )
   }
