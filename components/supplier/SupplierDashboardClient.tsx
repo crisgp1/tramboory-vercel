@@ -36,6 +36,7 @@ import { es } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { UnifiedSupplier, SupplierStatus, SupplierType } from "@/lib/types/supplier.types";
 import { formatSupplierDisplay, needsProfileCompletion } from "@/lib/utils/supplier.utils";
+import AdminQuickNav from "@/components/navigation/AdminQuickNav";
 
 // Updated types for unified supplier system
 interface SupplierDashboardProps {
@@ -289,10 +290,15 @@ export default function SupplierDashboardClient({
   
   return (
     <>
-      {/* Bienvenida y alertas */}
+      {/* Header con QuickNav */}
       <div style={{ marginBottom: '2rem' }}>
-        <Title order={2} mb="xs">Bienvenido, {supplierDisplay.displayName}</Title>
-        <Text c="dimmed">Aquí tienes un resumen de tu actividad reciente y estado actual.</Text>
+        <Group justify="space-between" align="flex-start" mb="md">
+          <div>
+            <Title order={2} mb="xs">Bienvenido, {supplierDisplay.displayName}</Title>
+            <Text c="dimmed">Aquí tienes un resumen de tu actividad reciente y estado actual.</Text>
+          </div>
+          <AdminQuickNav variant="header" />
+        </Group>
         
         {/* Alertas según el estado */}
         <Stack gap="sm" mt="md">

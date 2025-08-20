@@ -187,79 +187,81 @@ export default function AdminQuickNav({ variant = 'header', className = '' }: Ad
   }
 
   return (
-    <Menu opened={isOpen} onChange={setIsOpen}>
-      <Menu.Target>
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={className}
-        >
-          <Button
-            variant="light"
-            color="blue"
-            leftSection={
-              <div className="flex items-center gap-2">
-                <Avatar
-                  src={user?.imageUrl}
-                  name={user?.firstName || 'Admin'}
-                  size="sm"
-                  className="w-6 h-6"
-                />
-                <Badge
-                  size="sm"
-                  color={getRoleColor()}
-                  variant="outline"
-                  leftSection={<ShieldCheckIcon className="w-3 h-3" />}
-                >
-                  {getRoleDisplayName()}
-                </Badge>
-              </div>
-            }
-            rightSection={
-              <motion.div
-                animate={{ rotate: isOpen ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDownIcon className="w-4 h-4" />
-              </motion.div>
-            }
-            className="bg-white/80 backdrop-blur-sm border border-gray-200 hover:bg-white"
+    <div className={`inline-flex items-center ${className}`}>
+      <Menu opened={isOpen} onChange={setIsOpen}>
+        <Menu.Target>
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="inline-flex"
           >
-            <span className="hidden sm:inline">Panel Admin</span>
-          </Button>
-        </motion.div>
-      </Menu.Target>
+            <Button
+              variant="light"
+              color="blue"
+              size="sm"
+              rightSection={
+                <motion.div
+                  animate={{ rotate: isOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-shrink-0"
+                >
+                  <ChevronDownIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                </motion.div>
+              }
+              className="bg-white/90 backdrop-blur-sm border border-gray-200 hover:bg-white shadow-sm hover:shadow-md transition-all duration-200 flex-shrink-0"
+              styles={{
+                root: {
+                  minWidth: 'auto',
+                  padding: '4px 6px',
+                  height: '28px',
+                  fontSize: '11px'
+                },
+                inner: {
+                  gap: '3px'
+                }
+              }}
+            >
+              {/* Text responsive: icon on mobile, short text on tablet, full text on desktop */}
+              <span className="inline sm:hidden">👤</span>
+              <span className="hidden sm:inline lg:hidden text-xs">Vistas</span>
+              <span className="hidden lg:inline text-xs">Panel</span>
+            </Button>
+          </motion.div>
+        </Menu.Target>
 
-      <Menu.Dropdown className="w-72">
-        <Menu.Item
-          onClick={() => handleNavigation('/dashboard/usuarios')}
-        >
-          Usuarios
-        </Menu.Item>
-        <Menu.Item
-          onClick={() => handleNavigation('/dashboard/inventario')}
-        >
-          Inventario
-        </Menu.Item>
-        <Menu.Item
-          onClick={() => handleNavigation('/dashboard/finanzas')}
-        >
-          Finanzas
-        </Menu.Item>
-
-        <Menu.Divider />
-
-        <Menu.Item
-          leftSection={
-            <div className="p-2 rounded-lg bg-gray-100 text-gray-600">
-              <Cog6ToothIcon className="w-4 h-4" />
+        <Menu.Dropdown className="w-48 sm:w-64 lg:w-72 shadow-lg border border-gray-200">
+          <Menu.Item
+            onClick={() => handleNavigation('/dashboard')}
+            leftSection={<ChartBarIcon className="w-4 h-4" />}
+            className="hover:bg-gray-50"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+              <span className="font-medium text-gray-900">Admin</span>
+              <span className="text-xs text-gray-500 hidden lg:inline">Panel de administración</span>
             </div>
-          }
-          onClick={() => handleNavigation('/dashboard/configuracion')}
-        >
-          <span className="font-medium">Configuración</span>
-        </Menu.Item>
-      </Menu.Dropdown>
-    </Menu>
+          </Menu.Item>
+          <Menu.Item
+            onClick={() => handleNavigation('/proveedor')}
+            leftSection={<BuildingStorefrontIcon className="w-4 h-4" />}
+            className="hover:bg-gray-50"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+              <span className="font-medium text-gray-900">Proveedor</span>
+              <span className="text-xs text-gray-500 hidden lg:inline">Vista de proveedor</span>
+            </div>
+          </Menu.Item>
+          <Menu.Item
+            onClick={() => handleNavigation('/reservaciones')}
+            leftSection={<CalendarDaysIcon className="w-4 h-4" />}
+            className="hover:bg-gray-50"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+              <span className="font-medium text-gray-900">Cliente</span>
+              <span className="text-xs text-gray-500 hidden lg:inline">Vista de cliente</span>
+            </div>
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    </div>
   );
 }

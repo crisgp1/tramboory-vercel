@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { useUser, useClerk } from "@clerk/nextjs"
-import { 
+import {
   AppShell,
   Text,
   Title,
@@ -19,7 +19,7 @@ import {
   UnstyledButton,
   Flex
 } from "@mantine/core"
-import { 
+import {
   IconLogout,
   IconUser,
   IconMenu2,
@@ -41,6 +41,7 @@ import FinanceManager from "@/components/finances/FinanceManager"
 import InventoryManager from "@/components/inventory/InventoryManager"
 import UserManagement from "@/components/dashboard/sections/UserManagement"
 import AnalyticsManager from "@/components/analytics/AnalyticsManager"
+import AdminQuickNav from "@/components/navigation/AdminQuickNav"
 
 type MenuItem = {
   id: string
@@ -240,15 +241,17 @@ export default function Dashboard() {
           </Group>
           
           <Group>
+            <AdminQuickNav variant="header" />
+            
             <ActionIcon variant="subtle" size="lg">
               <IconBell size={20} />
             </ActionIcon>
             
             <Menu shadow="md" width={250}>
               <Menu.Target>
-                <Avatar 
-                  src={user.imageUrl} 
-                  size="sm" 
+                <Avatar
+                  src={user.imageUrl}
+                  size="sm"
                   style={{ cursor: 'pointer' }}
                   radius="xl"
                 >
@@ -265,7 +268,7 @@ export default function Dashboard() {
                   </Stack>
                 </Menu.Item>
                 <Menu.Divider />
-                <Menu.Item 
+                <Menu.Item
                   leftSection={<IconLogout size={16} />}
                   onClick={handleSignOut}
                   c="red"
