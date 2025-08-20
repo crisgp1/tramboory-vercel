@@ -99,8 +99,8 @@ export default function ProductsWithoutMovementsModal({
     onClose()
   }
 
-  const rows = productsWithoutMovements.map((product) => (
-    <tr key={product._id}>
+  const rows = productsWithoutMovements.map((product, index) => (
+    <tr key={product._id || product.sku || `product-${index}`}>
       <td>
         <Group>
           <IconPackage size={20} className="text-gray-500" />
@@ -126,7 +126,7 @@ export default function ProductsWithoutMovementsModal({
           leftSection={<IconPlus size={16} />}
           size="sm"
           color="orange"
-          variant="light"
+          variant="filled"
         >
           Iniciar Movimientos
         </Button>

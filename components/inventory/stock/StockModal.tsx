@@ -404,34 +404,6 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
           </Alert>
         )}
 
-        {/* Footer with Actions */}
-        <Group justify="space-between">
-          <Stack gap={0}>
-            {Object.keys(errors).length > 0 && !errors.submit && (
-              <Text size="sm" c="red">Por favor corrige los errores antes de continuar</Text>
-            )}
-          </Stack>
-          
-          <Group>
-            <Button
-              variant="light"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            
-            <Button
-              onClick={handleSubmit}
-              disabled={loading || !movementType || !quantity || !reason || (resultingStock !== null && resultingStock < 0)}
-              loading={loading}
-              color={resultingStock !== null && resultingStock < 0 ? 'red' : 'blue'}
-            >
-              {resultingStock !== null && resultingStock < 0 ? 'Stock Insuficiente' : 'Registrar Movimiento'}
-            </Button>
-          </Group>
-        </Group>
-
         {/* Stock Adjustment Form */}
         <Stack gap="md">
           {/* Current Stock Info */}
@@ -590,6 +562,34 @@ export default function StockModalGlass({ isOpen, onClose, stockItem, onSuccess 
             leftSection={<IconFileText size={16} />}
           />
         </Stack>
+
+        {/* Footer with Actions */}
+        <Group justify="space-between" pt="lg">
+          <Stack gap={0}>
+            {Object.keys(errors).length > 0 && !errors.submit && (
+              <Text size="sm" c="red">Por favor corrige los errores antes de continuar</Text>
+            )}
+          </Stack>
+          
+          <Group>
+            <Button
+              variant="light"
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || !movementType || !quantity || !reason || (resultingStock !== null && resultingStock < 0)}
+              loading={loading}
+              color={resultingStock !== null && resultingStock < 0 ? 'red' : 'blue'}
+            >
+              {resultingStock !== null && resultingStock < 0 ? 'Stock Insuficiente' : 'Registrar Movimiento'}
+            </Button>
+          </Group>
+        </Group>
 
       </Stack>
     </Modal>

@@ -13,6 +13,19 @@ import {
   X,
   Loader2
 } from 'lucide-react'
+import {
+  Modal,
+  Stack,
+  Group,
+  Text,
+  Button,
+  Paper,
+  Grid,
+  Alert,
+  List,
+  Center,
+  Loader
+} from "@mantine/core"
 import { useRole } from "@/hooks/useRole"
 import ProductModal from "./ProductModal"
 import { PRODUCT_CATEGORIES } from "@/types/inventory"
@@ -358,179 +371,144 @@ export default function ProductManager() {
         />
       )}
 
-      {/* Modal de gestión de eliminación - Glassmorphism */}
-      {isDeleteModalOpen && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm"
-          style={{
-            background: 'rgba(248, 250, 252, 0.85)',
-            backdropFilter: 'blur(3px)',
-            WebkitBackdropFilter: 'blur(3px)',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: '100vw',
-            height: '100vh',
-            transform: 'none',
-            zoom: 1
-          }}
-        >
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Análisis de Eliminación de Producto
-                  </h3>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                disabled={deletionLoading}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-200px)]">
-            <div className="space-y-4">
-              <div>
-                <p className="text-gray-900 font-medium">
-                  Producto: <span className="text-blue-600">{selectedProduct?.name}</span>
-                </p>
-                <p className="text-sm text-gray-500">
-                  SKU: {selectedProduct?.sku || 'N/A'}
-                </p>
-              </div>
-
-              {deletionLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-                    <span className="text-gray-600">Analizando dependencias...</span>
-                  </div>
-                </div>
-              ) : deletionAnalysis ? (
-                <div className="space-y-4">
-                  {/* Status Cards */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className={`p-3 rounded-lg border ${
-                      deletionAnalysis.canDeactivate 
-                        ? 'bg-green-50 border-green-200' 
-                        : 'bg-red-50 border-red-200'
-                    }`}>
-                      <p className="text-sm font-medium text-gray-900">Eliminación Lógica</p>
-                      <p className={`text-xs ${
-                        deletionAnalysis.canDeactivate 
-                          ? 'text-green-600' 
-                          : 'text-red-600'
-                      }`}>
-                        {deletionAnalysis.canDeactivate ? '✓ Disponible' : '✗ Bloqueada'}
-                      </p>
-                    </div>
-                    <div className={`p-3 rounded-lg border ${
-                      deletionAnalysis.canDelete 
-                        ? 'bg-green-50 border-green-200' 
-                        : 'bg-red-50 border-red-200'
-                    }`}>
-                      <p className="text-sm font-medium text-gray-900">Eliminación Física</p>
-                      <p className={`text-xs ${
-                        deletionAnalysis.canDelete 
-                          ? 'text-green-600' 
-                          : 'text-red-600'
-                      }`}>
-                        {deletionAnalysis.canDelete ? '✓ Disponible' : '✗ Bloqueada'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Blockers */}
-                  {deletionAnalysis.blockers && deletionAnalysis.blockers.length > 0 && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-amber-800 mb-2">
-                        ⚠️ Dependencias Encontradas:
-                      </h4>
-                      <ul className="text-sm text-amber-700 space-y-1">
-                        {deletionAnalysis.blockers.map((blocker: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="text-amber-500">•</span>
-                            {blocker}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Recommendation */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-blue-800 mb-2">
-                      💡 Recomendación:
-                    </h4>
-                    <p className="text-sm text-blue-700">
-                      {deletionAnalysis.analysis?.recommendation || 
-                       (deletionAnalysis.canDelete 
-                         ? 'Puede eliminarse físicamente sin afectar la integridad de datos.'
-                         : 'Use eliminación lógica (desactivar) para preservar el historial.')}
-                    </p>
-                  </div>
-
-                  {/* Industry Standard Note */}
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <p className="text-xs text-gray-600">
-                      <strong>Estándar Industrial:</strong> {deletionAnalysis.analysis?.industry_standard || 
-                      'SAP, Odoo y NetSuite recomiendan eliminación lógica para productos con historial.'}
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-              <div className="flex justify-end gap-3">
-                <SecondaryButton
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  disabled={deletionLoading}
-                >
-                  Cancelar
-                </SecondaryButton>
-                
-                {deletionAnalysis?.canDeactivate && (
-                  <SecondaryButton
-                    onClick={() => confirmDelete(false)}
-                    disabled={deletionLoading}
-                    loading={deletionLoading}
-                    icon={Trash2}
-                    className="bg-amber-600 text-white hover:bg-amber-700 border-amber-600"
-                  >
-                    Desactivar (Recomendado)
-                  </SecondaryButton>
-                )}
-                
-                {deletionAnalysis?.canDelete && (
-                  <DangerButton
-                    onClick={() => confirmDelete(true)}
-                    disabled={deletionLoading}
-                    loading={deletionLoading}
-                    icon={Trash2}
-                  >
-                    Eliminar Físicamente
-                  </DangerButton>
-                )}
-              </div>
-            </div>
+      {/* Modal de gestión de eliminación - Mantine */}
+      <Modal
+        opened={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title={
+          <Group>
+            <AlertTriangle size={24} color="orange" />
+            <Text size="lg" fw={600}>Análisis de Eliminación de Producto</Text>
+          </Group>
+        }
+        size="xl"
+        centered
+      >
+        <Stack gap="md">
+          <div>
+            <Text fw={500}>
+              Producto: <Text span c="blue">{selectedProduct?.name}</Text>
+            </Text>
+            <Text size="sm" c="dimmed">
+              SKU: {selectedProduct?.sku || 'N/A'}
+            </Text>
           </div>
-        </div>,
-        document.body
-      )}
+
+          {deletionLoading ? (
+            <Center py="xl">
+              <Group>
+                <Loader size="md" />
+                <Text c="dimmed">Analizando dependencias...</Text>
+              </Group>
+            </Center>
+          ) : deletionAnalysis ? (
+            <Stack gap="md">
+              {/* Status Cards */}
+              <Grid>
+                <Grid.Col span={6}>
+                  <Paper
+                    p="sm"
+                    withBorder
+                    bg={deletionAnalysis.canDeactivate ? 'green.0' : 'red.0'}
+                  >
+                    <Text size="sm" fw={500}>Eliminación Lógica</Text>
+                    <Text
+                      size="xs"
+                      c={deletionAnalysis.canDeactivate ? 'green' : 'red'}
+                    >
+                      {deletionAnalysis.canDeactivate ? '✓ Disponible' : '✗ Bloqueada'}
+                    </Text>
+                  </Paper>
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Paper
+                    p="sm"
+                    withBorder
+                    bg={deletionAnalysis.canDelete ? 'green.0' : 'red.0'}
+                  >
+                    <Text size="sm" fw={500}>Eliminación Física</Text>
+                    <Text
+                      size="xs"
+                      c={deletionAnalysis.canDelete ? 'green' : 'red'}
+                    >
+                      {deletionAnalysis.canDelete ? '✓ Disponible' : '✗ Bloqueada'}
+                    </Text>
+                  </Paper>
+                </Grid.Col>
+              </Grid>
+
+              {/* Blockers */}
+              {deletionAnalysis.blockers && deletionAnalysis.blockers.length > 0 && (
+                <Alert icon={<AlertTriangle size={16} />} color="yellow">
+                  <Text size="sm" fw={500} mb="xs">
+                    ⚠️ Dependencias Encontradas:
+                  </Text>
+                  <List size="sm">
+                    {deletionAnalysis.blockers.map((blocker: string, index: number) => (
+                      <List.Item key={index}>{blocker}</List.Item>
+                    ))}
+                  </List>
+                </Alert>
+              )}
+
+              {/* Recommendation */}
+              <Alert icon={<Text>💡</Text>} color="blue">
+                <Text size="sm" fw={500} mb="xs">
+                  Recomendación:
+                </Text>
+                <Text size="sm">
+                  {deletionAnalysis.analysis?.recommendation ||
+                   (deletionAnalysis.canDelete
+                     ? 'Puede eliminarse físicamente sin afectar la integridad de datos.'
+                     : 'Use eliminación lógica (desactivar) para preservar el historial.')}
+                </Text>
+              </Alert>
+
+              {/* Industry Standard Note */}
+              <Paper bg="gray.0" p="sm" withBorder>
+                <Text size="xs" c="dimmed">
+                  <Text span fw={500}>Estándar Industrial:</Text> {deletionAnalysis.analysis?.industry_standard ||
+                  'SAP, Odoo y NetSuite recomiendan eliminación lógica para productos con historial.'}
+                </Text>
+              </Paper>
+            </Stack>
+          ) : null}
+
+          <Group justify="flex-end" mt="lg">
+            <Button
+              variant="light"
+              onClick={() => setIsDeleteModalOpen(false)}
+              disabled={deletionLoading}
+            >
+              Cancelar
+            </Button>
+            
+            {deletionAnalysis?.canDeactivate && (
+              <Button
+                color="yellow"
+                onClick={() => confirmDelete(false)}
+                disabled={deletionLoading}
+                loading={deletionLoading}
+                leftSection={<Trash2 size={16} />}
+              >
+                Desactivar (Recomendado)
+              </Button>
+            )}
+            
+            {deletionAnalysis?.canDelete && (
+              <Button
+                color="red"
+                onClick={() => confirmDelete(true)}
+                disabled={deletionLoading}
+                loading={deletionLoading}
+                leftSection={<Trash2 size={16} />}
+              >
+                Eliminar Físicamente
+              </Button>
+            )}
+          </Group>
+        </Stack>
+      </Modal>
     </div>
   )
 }

@@ -16,6 +16,7 @@ export class ProductRepository extends BaseRepository {
     page?: number;
     limit?: number;
     search?: string;
+    approvalStatus?: 'pending' | 'approved' | 'rejected';
   }): Promise<ServiceResponse<ProductRow[]>> {
     try {
       let query = this.supabase
@@ -29,6 +30,10 @@ export class ProductRepository extends BaseRepository {
 
       if (filters?.category) {
         query = query.eq('category', filters.category);
+      }
+
+      if (filters?.approvalStatus) {
+        query = query.eq('approval_status', filters.approvalStatus);
       }
 
       if (filters?.search) {

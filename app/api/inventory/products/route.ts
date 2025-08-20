@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const isActive = searchParams.get('isActive');
     const withoutMovements = searchParams.get('withoutMovements') === 'true';
+    const approvalStatus = searchParams.get('approvalStatus'); // pending, approved, rejected
     
     let products: any[] = [];
     let result;
@@ -72,7 +73,10 @@ export async function GET(request: NextRequest) {
       result = await ProductService.getProductsByCategory(category);
     } else {
       const activeOnly = isActive !== 'false';
-      result = await ProductService.getAllProducts({ activeOnly });
+      result = await ProductService.getAllProducts({
+        activeOnly,
+        approvalStatus: approvalStatus as 'pending' | 'approved' | 'rejected' | undefined
+      });
     }
 
     if (!result.success) {

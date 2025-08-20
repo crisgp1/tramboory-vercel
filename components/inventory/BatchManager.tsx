@@ -204,16 +204,19 @@ function BatchModal({ isOpen, onClose, batch, mode, onSuccess }: BatchModalProps
             <Grid.Col span={6}>
               <Select
                 label="Producto *"
-                placeholder="Selecciona un producto"
+                placeholder={products.length === 0 ? "Cargando productos..." : "Selecciona un producto"}
                 value={formData.productId || ''}
                 onChange={(value) => {
                   if (value) handleProductChange(value)
                 }}
-                disabled={isReadOnly}
-                data={products.map(product => ({
-                  value: product._id,
-                  label: `${product.name} (${product.sku})`
-                }))}
+                disabled={isReadOnly || products.length === 0}
+                data={products
+                  .filter(product => product._id && product.name && product.sku)
+                  .map(product => ({
+                    value: product._id,
+                    label: `${product.name} (${product.sku})`
+                  })) || []
+                }
               />
             </Grid.Col>
           </Grid>

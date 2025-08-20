@@ -15,6 +15,7 @@ export class ProductService {
     page?: number;
     limit?: number;
     search?: string;
+    approvalStatus?: 'pending' | 'approved' | 'rejected';
   }): Promise<ServiceResponse<ProductRow[]>> {
     return await ProductRepository.findAll(filters);
   }

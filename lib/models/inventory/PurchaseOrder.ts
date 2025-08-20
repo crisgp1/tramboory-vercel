@@ -212,7 +212,7 @@ const PurchaseOrderSchema = new Schema<IPurchaseOrder>({
 });
 
 // Indexes for performance - Interface Segregation Principle
-PurchaseOrderSchema.index({ purchaseOrderId: 1 });
+// Note: purchaseOrderId already has unique index from schema definition
 PurchaseOrderSchema.index({ supplierId: 1 });
 PurchaseOrderSchema.index({ status: 1 });
 PurchaseOrderSchema.index({ createdAt: -1 });

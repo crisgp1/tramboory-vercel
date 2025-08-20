@@ -36,7 +36,9 @@ import {
 } from "@tabler/icons-react"
 import { useRole } from "@/hooks/useRole"
 import { useInventoryStats } from "@/hooks/useInventoryStats"
+import { usePendingProducts } from "@/hooks/usePendingProducts"
 import ProductManager from "./products/ProductManager"
+import PendingProductsManager from "./products/PendingProductsManager"
 import StockManager from "./stock/StockManager"
 import SupplierManager from "./suppliers/SupplierManager"
 import InventoryReports from "./InventoryReports"
@@ -50,6 +52,7 @@ import StockTransferModal from "./transfers/StockTransferModal"
 export default function InventoryManager() {
   const { role, isAdmin, isGerente } = useRole()
   const { totalProducts, lowStockItems, totalValue, suppliersCount, loading: statsLoading } = useInventoryStats()
+  const { pendingCount, refresh: refreshPendingCount } = usePendingProducts()
   const [activeTab, setActiveTab] = useState("stock")
   const [loading, setLoading] = useState(false)
   
@@ -110,6 +113,13 @@ export default function InventoryManager() {
       component: <ProductManager />
     },
     {
+      id: "pending-products",
+      label: (isAdmin || isGerente) && pendingCount > 0 ? `Productos Pendientes (${pendingCount})` : "Productos Pendientes",
+      icon: IconAlertTriangle,
+      description: "Aprobación de productos de proveedores",
+      component: <PendingProductsManager onRefresh={refreshPendingCount} />
+    },
+    {
       id: "purchase-orders",
       label: "Órdenes de Compra",
       icon: IconFileText,
@@ -152,7 +162,8 @@ export default function InventoryManager() {
       case "suppliers":
       case "purchase-orders":
       case "reports":
-        // Solo admin y gerente pueden gestionar proveedores, órdenes y reportes
+      case "pending-products":
+        // Solo admin y gerente pueden gestionar proveedores, órdenes, reportes y aprobaciones
         return isAdmin || isGerente
       case "pricing":
         // Solo admin puede configurar precios

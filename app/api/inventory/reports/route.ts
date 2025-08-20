@@ -8,66 +8,176 @@ async function hasInventoryPermission(userId: string, action: string): Promise<b
   return true;
 }
 
-// Función para obtener productos más activos (placeholder implementation)
+// Función para obtener productos más activos
 async function getTopProducts(locationId?: string, limit: number = 5) {
   try {
-    // TODO: Implement with proper Supabase query for product movement analysis
-    // This is a placeholder that returns sample data structure
-    return [
-      {
-        productName: "Producto Ejemplo 1",
-        sku: "SKU001",
-        totalMovements: 50,
-        currentStock: 100,
-        value: 500
+    const { supabase } = await import('@/lib/supabase/client');
+    
+    // Obtener productos con movimientos de inventario
+    const { data: movements } = await supabase
+      .from('inventory_movements')
+      .select(`
+        product_id,
+        quantity,
+        products (
+          name,
+          sku
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(1000); // Obtener suficientes movimientos para análisis
+
+    if (!movements || movements.length === 0) {
+      return [];
+    }
+
+    // Agrupar movimientos por producto y calcular estadísticas
+    const productStats = new Map();
+    
+    for (const movement of movements) {
+      const productId = movement.product_id;
+      const product = (movement as any).products;
+      
+      if (!product) continue;
+      
+      if (!productStats.has(productId)) {
+        productStats.set(productId, {
+          productName: product.name,
+          sku: product.sku,
+          totalMovements: 0,
+          currentStock: 0,
+          value: 0
+        });
       }
-    ];
+      
+      const stats = productStats.get(productId);
+      stats.totalMovements += 1;
+    }
+
+    // Obtener información de inventario actual para estos productos
+    const productIds = Array.from(productStats.keys());
+    const { data: inventory } = await supabase
+      .from('inventory')
+      .select('product_id, total_available')
+      .in('product_id', productIds);
+
+    // Combinar datos de movimientos con inventario actual
+    if (inventory) {
+      for (const inv of inventory) {
+        const stats = productStats.get(inv.product_id);
+        if (stats) {
+          stats.currentStock = inv.total_available || 0;
+          stats.value = stats.currentStock * 10; // Estimación de valor
+        }
+      }
+    }
+
+    // Convertir a array y ordenar por número de movimientos
+    return Array.from(productStats.values())
+      .sort((a, b) => b.totalMovements - a.totalMovements)
+      .slice(0, limit);
+      
   } catch (error) {
     console.error('Error getting top products:', error);
     return [];
   }
 }
 
-// Función para obtener breakdown por categorías (placeholder implementation)
+// Función para obtener breakdown por categorías
 async function getCategoryBreakdown(locationId?: string) {
   try {
-    // TODO: Implement with proper Supabase query for category analysis
-    // This is a placeholder that returns sample data structure
-    return [
-      {
-        category: "Bebidas",
-        productCount: 25,
-        totalValue: 5000,
-        percentage: 40
-      },
-      {
-        category: "Alimentos",
-        productCount: 30,
-        totalValue: 3750,
-        percentage: 30
+    const { supabase } = await import('@/lib/supabase/client');
+    
+    // Obtener productos aprobados con inventario
+    const { data: inventory } = await supabase
+      .from('inventory')
+      .select(`
+        total_available,
+        products!inner (
+          category
+        )
+      `)
+      .gt('total_available', 0);
+
+    if (!inventory || inventory.length === 0) {
+      return [];
+    }
+
+    // Agrupar por categoría
+    const categoryStats = new Map();
+    let totalValue = 0;
+    
+    for (const item of inventory) {
+      const product = (item as any).products;
+      const category = product?.category || 'Sin Categoría';
+      const stock = item.total_available || 0;
+      const estimatedValue = stock * 10; // Estimación de valor por unidad
+      
+      totalValue += estimatedValue;
+      
+      if (!categoryStats.has(category)) {
+        categoryStats.set(category, {
+          category,
+          productCount: 0,
+          totalValue: 0,
+          percentage: 0
+        });
       }
-    ];
+      
+      const stats = categoryStats.get(category);
+      stats.productCount += 1;
+      stats.totalValue += estimatedValue;
+    }
+
+    // Calcular porcentajes y convertir a array
+    const result = Array.from(categoryStats.values()).map(stat => ({
+      ...stat,
+      percentage: totalValue > 0 ? Math.round((stat.totalValue / totalValue) * 100) : 0
+    }));
+
+    return result.sort((a, b) => b.totalValue - a.totalValue);
+      
   } catch (error) {
     console.error('Error getting category breakdown:', error);
     return [];
   }
 }
 
-// Función para obtener movimientos recientes (placeholder implementation)
+// Función para obtener movimientos recientes
 async function getRecentMovements(locationId?: string, limit: number = 10) {
   try {
-    // TODO: Implement with proper Supabase query for recent movements
-    // This is a placeholder that returns sample data structure
-    return [
-      {
-        date: new Date().toISOString(),
-        type: "IN",
-        productName: "Producto Ejemplo",
-        quantity: 10,
-        unit: "unidades",
-        value: 100
-      }
-    ];
+    const { supabase } = await import('@/lib/supabase/client');
+    
+    // Obtener movimientos recientes con información del producto
+    const { data: movements } = await supabase
+      .from('inventory_movements')
+      .select(`
+        created_at,
+        movement_type,
+        quantity,
+        unit,
+        products (
+          name,
+          sku,
+          base_unit
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (!movements || movements.length === 0) {
+      return [];
+    }
+
+    return movements.map((movement: any) => ({
+      date: movement.created_at,
+      type: movement.movement_type,
+      productName: movement.products?.name || 'Producto desconocido',
+      quantity: movement.quantity || 0,
+      unit: movement.products?.base_unit || movement.unit || 'unidades',
+      value: (movement.quantity || 0) * 10 // Estimación de valor
+    }));
+      
   } catch (error) {
     console.error('Error getting recent movements:', error);
     return [];

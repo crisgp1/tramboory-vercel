@@ -233,10 +233,9 @@ const SupplierSchema = new Schema<ISupplier>({
 });
 
 // Indexes for performance - Interface Segregation Principle
-SupplierSchema.index({ supplierId: 1 });
-SupplierSchema.index({ code: 1 });
+// Note: supplierId and code already have unique indexes from schema definition
+// Note: userId already has sparse index from schema definition
 SupplierSchema.index({ name: 1 });
-SupplierSchema.index({ userId: 1 }, { sparse: true });
 SupplierSchema.index({ isActive: 1 });
 SupplierSchema.index({ status: 1 });
 

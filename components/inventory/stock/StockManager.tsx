@@ -16,6 +16,17 @@ import {
   FileText,
   X
 } from 'lucide-react'
+import {
+  Modal,
+  Stack,
+  Group,
+  Text,
+  Button,
+  Paper,
+  Grid,
+  Badge,
+  Select
+} from "@mantine/core"
 import { useRole } from "@/hooks/useRole"
 import StockModal from "./StockModal"
 import InitiateMovementModal from "./InitiateMovementModal"
@@ -215,7 +226,38 @@ export default function StockManager() {
       label: "Estado",
       render: (value: any, item: StockItem) => {
         const stockStatus = getStockStatus(item)
-        return <StatusChip status={stockStatus.label} />
+        let badgeColor: string
+        let badgeVariant: "light" | "filled" = "light"
+        
+        switch (stockStatus.color) {
+          case 'success':
+            badgeColor = 'green'
+            break
+          case 'warning':
+            badgeColor = 'yellow'
+            break
+          case 'danger':
+            badgeColor = 'red'
+            break
+          default:
+            badgeColor = 'gray'
+        }
+        
+        return (
+          <Badge
+            color={badgeColor}
+            variant={badgeVariant}
+            size="sm"
+            style={{
+              whiteSpace: 'nowrap',
+              overflow: 'visible',
+              textOverflow: 'unset',
+              minWidth: 'fit-content'
+            }}
+          >
+            {stockStatus.label}
+          </Badge>
+        )
       }
     },
     {
@@ -314,8 +356,37 @@ export default function StockManager() {
       }
       case "status": {
         const stockStatus = getStockStatus(item)
+        let badgeColor: string
+        let badgeVariant: "light" | "filled" = "light"
+        
+        switch (stockStatus.color) {
+          case 'success':
+            badgeColor = 'green'
+            break
+          case 'warning':
+            badgeColor = 'yellow'
+            break
+          case 'danger':
+            badgeColor = 'red'
+            break
+          default:
+            badgeColor = 'gray'
+        }
+        
         return (
-          <StatusChip status={stockStatus.label} />
+          <Badge
+            color={badgeColor}
+            variant={badgeVariant}
+            size="sm"
+            style={{
+              whiteSpace: 'nowrap',
+              overflow: 'visible',
+              textOverflow: 'unset',
+              minWidth: 'fit-content'
+            }}
+          >
+            {stockStatus.label}
+          </Badge>
         )
       }
       case "lastMovement": {
@@ -362,14 +433,14 @@ export default function StockManager() {
             
             {productsWithoutInventory.length > 0 && (
               <div className="relative">
-                <SecondaryButton
+                <DangerButton
                   onClick={() => setIsProductsWithoutMovementsModalOpen(true)}
                   icon={Package}
                   size="md"
-                  className="bg-red-500 text-white hover:bg-red-600 animate-pulse"
+                  className="animate-pulse"
                 >
                   {productsWithoutInventory.length} Sin Movimientos
-                </SecondaryButton>
+                </DangerButton>
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
               </div>
             )}
@@ -391,32 +462,38 @@ export default function StockManager() {
       <div className="glass-card p-4">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">Ubicación:</span>
-            <select
+            <Text size="sm" fw={500}>Ubicación:</Text>
+            <Select
               value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              className="glass-input px-3 py-2 text-sm min-w-[120px]"
-            >
-              <option value="all">Todas</option>
-              <option value="almacen">Almacén</option>
-              <option value="cocina">Cocina</option>
-              <option value="salon">Salón</option>
-            </select>
+              onChange={(value) => setSelectedLocation(value || 'all')}
+              data={[
+                { value: 'all', label: 'Todas' },
+                { value: 'almacen', label: 'Almacén' },
+                { value: 'cocina', label: 'Cocina' },
+                { value: 'salon', label: 'Salón' }
+              ]}
+              size="sm"
+              style={{ minWidth: 120 }}
+              variant="filled"
+            />
           </div>
         
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">Categoría:</span>
-            <select
+            <Text size="sm" fw={500}>Categoría:</Text>
+            <Select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="glass-input px-3 py-2 text-sm min-w-[120px]"
-            >
-              <option value="all">Todas</option>
-              <option value="bebidas">Bebidas</option>
-              <option value="comida">Comida</option>
-              <option value="decoracion">Decoración</option>
-              <option value="mobiliario">Mobiliario</option>
-            </select>
+              onChange={(value) => setSelectedCategory(value || 'all')}
+              data={[
+                { value: 'all', label: 'Todas' },
+                { value: 'bebidas', label: 'Bebidas' },
+                { value: 'comida', label: 'Comida' },
+                { value: 'decoracion', label: 'Decoración' },
+                { value: 'mobiliario', label: 'Mobiliario' }
+              ]}
+              size="sm"
+              style={{ minWidth: 120 }}
+              variant="filled"
+            />
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
@@ -440,89 +517,64 @@ export default function StockManager() {
         onPageChange={setCurrentPage}
       />
 
-      {/* Modal de filtros */}
-      {isFiltersOpen && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm"
-          style={{
-            background: 'rgba(248, 250, 252, 0.85)',
-            backdropFilter: 'blur(3px)',
-            WebkitBackdropFilter: 'blur(3px)'
-          }}
-        >
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Settings className="w-4 h-4 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">Filtros de Inventario</h3>
-              </div>
-              <button
-                onClick={() => setIsFiltersOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ubicación
-                  </label>
-                  <select
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">Todas</option>
-                    <option value="almacen">Almacén</option>
-                    <option value="cocina">Cocina</option>
-                    <option value="salon">Salón</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Categoría
-                  </label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">Todas</option>
-                    <option value="bebidas">Bebidas</option>
-                    <option value="comida">Comida</option>
-                    <option value="decoracion">Decoración</option>
-                    <option value="mobiliario">Mobiliario</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
-              <SecondaryButton
-                onClick={() => setIsFiltersOpen(false)}
-              >
-                Cerrar
-              </SecondaryButton>
-              <PrimaryButton
-                onClick={() => setIsFiltersOpen(false)}
-                icon={CheckCircle}
-              >
-                Aplicar Filtros
-              </PrimaryButton>
-            </div>
+      {/* Modal de filtros - Mantine */}
+      <Modal
+        opened={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        title={
+          <Group>
+            <Settings size={20} color="blue" />
+            <Text size="lg" fw={600}>Filtros de Inventario</Text>
+          </Group>
+        }
+        size="sm"
+        centered
+      >
+        <Stack gap="md">
+          <div>
+            <Text size="sm" fw={500} mb="xs">Ubicación</Text>
+            <Select
+              value={selectedLocation}
+              onChange={(value) => setSelectedLocation(value || 'all')}
+              data={[
+                { value: 'all', label: 'Todas' },
+                { value: 'almacen', label: 'Almacén' },
+                { value: 'cocina', label: 'Cocina' },
+                { value: 'salon', label: 'Salón' }
+              ]}
+              placeholder="Seleccionar ubicación"
+            />
           </div>
-        </div>,
-        document.body
-      )}
+          
+          <div>
+            <Text size="sm" fw={500} mb="xs">Categoría</Text>
+            <Select
+              value={selectedCategory}
+              onChange={(value) => setSelectedCategory(value || 'all')}
+              data={[
+                { value: 'all', label: 'Todas' },
+                { value: 'bebidas', label: 'Bebidas' },
+                { value: 'comida', label: 'Comida' },
+                { value: 'decoracion', label: 'Decoración' },
+                { value: 'mobiliario', label: 'Mobiliario' }
+              ]}
+              placeholder="Seleccionar categoría"
+            />
+          </div>
+
+          <Group justify="flex-end" gap="sm" mt="lg">
+            <Button variant="light" onClick={() => setIsFiltersOpen(false)}>
+              Cerrar
+            </Button>
+            <Button
+              onClick={() => setIsFiltersOpen(false)}
+              leftSection={<CheckCircle size={16} />}
+            >
+              Aplicar Filtros
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {/* Modal de acciones de stock */}
       {selectedStock && (
@@ -534,158 +586,139 @@ export default function StockManager() {
         />
       )}
 
-      {/* Modal de detalles */}
-      {isDetailModalOpen && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm"
-          style={{
-            background: 'rgba(248, 250, 252, 0.85)',
-            backdropFilter: 'blur(3px)',
-            WebkitBackdropFilter: 'blur(3px)'
-          }}
-        >
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Eye className="w-4 h-4 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">Detalles de Inventario</h3>
-                  {selectedStock && selectedStock.product && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      {selectedStock.product.name} - {selectedStock.product.sku}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setIsDetailModalOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-200px)]">
-              {selectedStock && (
-                <div className="space-y-6">
-                  {/* Información del producto */}
-                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                      <Package className="w-4 h-4 text-gray-500" />
-                      Información del Producto
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">Producto</label>
-                        <p className="text-sm text-gray-900 mt-1">{selectedStock.product?.name || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">SKU</label>
-                        <p className="text-sm text-gray-900 font-mono mt-1">{selectedStock.product?.sku || 'N/A'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Información de stock */}
-                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-gray-500" />
-                      Niveles de Stock
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                        <p className="text-2xl font-bold text-green-600">
-                          {selectedStock.available_quantity || 0}
-                        </p>
-                        <p className="text-sm text-green-700">Disponible</p>
-                      </div>
-                      <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                        <p className="text-2xl font-bold text-yellow-600">
-                          {selectedStock.reserved_quantity || 0}
-                        </p>
-                        <p className="text-sm text-yellow-700">Reservado</p>
-                      </div>
-                      <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
-                        <p className="text-2xl font-bold text-red-600">
-                          {selectedStock.quarantine_quantity || 0}
-                        </p>
-                        <p className="text-sm text-red-700">Cuarentena</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Información adicional */}
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gray-500" />
-                      Ubicación
-                    </label>
-                    <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded border">
-                      {selectedStock.location_id || 'N/A'}
-                    </p>
-                  </div>
-
-                  {/* Lotes */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-500" />
-                      Lotes Disponibles ({selectedStock.batches?.length || 0})
-                    </h4>
-                    <div className="space-y-3">
-                      {selectedStock.batches?.map((batch, index) => (
-                        <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h5 className="font-medium text-gray-900">Lote: {batch.batch_id}</h5>
-                                <StatusChip status={batch.status === 'available' ? 'active' : 'pending'} />
-                              </div>
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <span className="text-gray-600">Cantidad:</span>
-                                  <span className="ml-2 font-medium">{batch.quantity} {batch.unit}</span>
-                                </div>
-                                <div>
-                                  <span className="text-gray-600">Costo:</span>
-                                  <span className="ml-2 font-medium">{formatCurrency(batch.cost_per_unit)}/{batch.unit}</span>
-                                </div>
-                                <div>
-                                  <span className="text-gray-600">Recibido:</span>
-                                  <span className="ml-2">{formatDate(batch.received_date)}</span>
-                                </div>
-                                {batch.expiry_date && (
-                                  <div>
-                                    <span className="text-gray-600">Vence:</span>
-                                    <span className="ml-2 text-orange-600">{formatDate(batch.expiry_date)}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+      {/* Modal de detalles - Mantine */}
+      <Modal
+        opened={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        title={
+          <Group>
+            <Eye size={20} color="green" />
+            <div>
+              <Text size="lg" fw={600}>Detalles de Inventario</Text>
+              {selectedStock && selectedStock.product && (
+                <Text size="sm" c="dimmed">
+                  {selectedStock.product.name} - {selectedStock.product.sku}
+                </Text>
               )}
             </div>
+          </Group>
+        }
+        size="xl"
+        centered
+      >
+        {selectedStock && (
+          <Stack gap="lg">
+            {/* Información del producto */}
+            <Paper p="md" bg="gray.0" withBorder>
+              <Group mb="sm">
+                <Package size={16} />
+                <Text size="sm" fw={500}>Información del Producto</Text>
+              </Group>
+              <Grid>
+                <Grid.Col span={6}>
+                  <Text size="xs" fw={500} c="dimmed">Producto</Text>
+                  <Text size="sm">{selectedStock.product?.name || 'N/A'}</Text>
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Text size="xs" fw={500} c="dimmed">SKU</Text>
+                  <Text size="sm" ff="monospace">{selectedStock.product?.sku || 'N/A'}</Text>
+                </Grid.Col>
+              </Grid>
+            </Paper>
 
-            {/* Footer */}
-            <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
-              <SecondaryButton
-                onClick={() => setIsDetailModalOpen(false)}
-              >
-                Cerrar
-              </SecondaryButton>
+            {/* Información de stock */}
+            <Paper p="md" bg="gray.0" withBorder>
+              <Group mb="sm">
+                <BarChart3 size={16} />
+                <Text size="sm" fw={500}>Niveles de Stock</Text>
+              </Group>
+              <Grid>
+                <Grid.Col span={4}>
+                  <Paper ta="center" p="sm" bg="green.0" withBorder style={{ borderColor: 'var(--mantine-color-green-3)' }}>
+                    <Text size="xl" fw={700} c="green.6">
+                      {selectedStock.available_quantity || 0}
+                    </Text>
+                    <Text size="xs" c="green.7">Disponible</Text>
+                  </Paper>
+                </Grid.Col>
+                <Grid.Col span={4}>
+                  <Paper ta="center" p="sm" bg="yellow.0" withBorder style={{ borderColor: 'var(--mantine-color-yellow-3)' }}>
+                    <Text size="xl" fw={700} c="yellow.6">
+                      {selectedStock.reserved_quantity || 0}
+                    </Text>
+                    <Text size="xs" c="yellow.7">Reservado</Text>
+                  </Paper>
+                </Grid.Col>
+                <Grid.Col span={4}>
+                  <Paper ta="center" p="sm" bg="red.0" withBorder style={{ borderColor: 'var(--mantine-color-red-3)' }}>
+                    <Text size="xl" fw={700} c="red.6">
+                      {selectedStock.quarantine_quantity || 0}
+                    </Text>
+                    <Text size="xs" c="red.7">Cuarentena</Text>
+                  </Paper>
+                </Grid.Col>
+              </Grid>
+            </Paper>
+
+            {/* Ubicación */}
+            <div>
+              <Group mb="xs">
+                <MapPin size={16} />
+                <Text size="sm" fw={500}>Ubicación</Text>
+              </Group>
+              <Paper p="sm" bg="gray.0" withBorder>
+                <Text size="sm">{selectedStock.location_id || 'N/A'}</Text>
+              </Paper>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+
+            {/* Lotes */}
+            <div>
+              <Group mb="sm">
+                <FileText size={16} />
+                <Text size="sm" fw={500}>Lotes Disponibles ({selectedStock.batches?.length || 0})</Text>
+              </Group>
+              <Stack gap="sm">
+                {selectedStock.batches?.map((batch, index) => (
+                  <Paper key={index} p="md" bg="gray.0" withBorder>
+                    <Group justify="space-between" mb="sm">
+                      <Text fw={500}>Lote: {batch.batch_id}</Text>
+                      <Badge color={batch.status === 'available' ? 'green' : 'yellow'} variant="light">
+                        {batch.status === 'available' ? 'Activo' : 'Pendiente'}
+                      </Badge>
+                    </Group>
+                    <Grid>
+                      <Grid.Col span={6}>
+                        <Text size="xs" c="dimmed">Cantidad:</Text>
+                        <Text size="sm" fw={500}>{batch.quantity} {batch.unit}</Text>
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <Text size="xs" c="dimmed">Costo:</Text>
+                        <Text size="sm" fw={500}>{formatCurrency(batch.cost_per_unit)}/{batch.unit}</Text>
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <Text size="xs" c="dimmed">Recibido:</Text>
+                        <Text size="sm">{formatDate(batch.received_date)}</Text>
+                      </Grid.Col>
+                      {batch.expiry_date && (
+                        <Grid.Col span={6}>
+                          <Text size="xs" c="dimmed">Vence:</Text>
+                          <Text size="sm" c="orange.6">{formatDate(batch.expiry_date)}</Text>
+                        </Grid.Col>
+                      )}
+                    </Grid>
+                  </Paper>
+                ))}
+              </Stack>
+            </div>
+
+            <Group justify="flex-end">
+              <Button variant="light" onClick={() => setIsDetailModalOpen(false)}>
+                Cerrar
+              </Button>
+            </Group>
+          </Stack>
+        )}
+      </Modal>
 
       {/* Modal para iniciar movimiento */}
       {selectedProductForInitiation && (
