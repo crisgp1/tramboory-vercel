@@ -101,9 +101,20 @@ export async function POST(request: NextRequest) {
     
     // Verificar si es día de descanso - use UTC to avoid timezone issues
     const eventDateObj = new Date(eventDate + (eventDate.includes('T') ? '' : 'T12:00:00.000Z'));
-    const dayOfWeek = eventDateObj.getUTCDay();
+    const jsDayOfWeek = eventDateObj.getUTCDay(); // JavaScript: 0=Sunday, 1=Monday, 2=Tuesday...
+    const dayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1; // Convert to Mexican: 0=Monday, 1=Tuesday, 6=Sunday
     const restDay = systemConfig.restDays?.find((rd: any) => rd.day === dayOfWeek);
     const isRestDay = !!restDay;
+    
+    console.log('🔍 RESERVATION DEBUG: Day conversion:', {
+      eventDate,
+      jsDayOfWeek,
+      dayOfWeek,
+      dayName: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dayOfWeek],
+      isRestDay,
+      restDay,
+      allRestDays: systemConfig.restDays
+    });
     
     // Verificar si el horario está dentro de un bloque válido
     let validBlock = systemConfig.timeBlocks?.find((block: any) => {
@@ -252,13 +263,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Calcular precio del paquete según el día
+    // Calcular precio del paquete según el día (Mexican convention: 0=Monday, 1=Tuesday, ..., 6=Sunday)
     let packagePrice;
-    if (dayOfWeek >= 1 && dayOfWeek <= 4) { // Lunes a Jueves
+    if (dayOfWeek >= 0 && dayOfWeek <= 3) { // Lunes a Jueves (0-3)
       packagePrice = packageConfig.pricing.weekday;
-    } else if (dayOfWeek === 5 || dayOfWeek === 6) { // Viernes y Sábado
+    } else if (dayOfWeek === 4 || dayOfWeek === 5) { // Viernes y Sábado (4-5)
       packagePrice = packageConfig.pricing.weekend;
-    } else { // Domingo (considerar como día festivo)
+    } else { // Domingo (6) - considerar como día festivo
       packagePrice = packageConfig.pricing.holiday;
     }
     
@@ -374,6 +385,17 @@ export async function POST(request: NextRequest) {
                     (parseFloat(extrasPrice.toString()) || 0) +
                     (parseFloat(themePrice.toString()) || 0);
     const total = subtotal + restDayFee;
+    
+    console.log('🔍 RESERVATION PRICING DEBUG:', {
+      packagePrice,
+      foodPrice,
+      extrasPrice,
+      themePrice,
+      isRestDay,
+      restDayFee,
+      subtotal,
+      total
+    });
     
     // Validar que los totales no sean NaN
     if (isNaN(subtotal) || isNaN(total)) {

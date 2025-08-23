@@ -24,7 +24,7 @@ import {
 } from '@tabler/icons-react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { es } from 'date-fns/locale';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 import "react-datepicker/dist/react-datepicker.css";
 import "./calendar-styles.css";
 
@@ -193,7 +193,7 @@ export default function NewReservationModal({
         // Let's check if we need to create a proper endpoint
         if (!data.success) {
           console.warn('PackageConfig endpoint not found, packages might need to be migrated');
-          toast.error('Error al cargar los paquetes - contacta al administrador');
+          notifications.show({ title: 'Error', message: 'Error al cargar los paquetes - contacta al administrador', color: 'red' });
           return;
         }
         
@@ -201,7 +201,7 @@ export default function NewReservationModal({
         setPackages(activePackages);
       } catch (error) {
         console.error('Error loading packages:', error);
-        toast.error('Error al cargar los paquetes');
+        notifications.show({ title: 'Error', message: 'Error al cargar los paquetes', color: 'red' });
       } finally {
         setLoadingPackages(false);
       }
@@ -233,7 +233,7 @@ export default function NewReservationModal({
         }
       } catch (error) {
         console.error('Error loading additional options:', error);
-        toast.error('Error al cargar las opciones adicionales');
+        notifications.show({ title: 'Error', message: 'Error al cargar las opciones adicionales', color: 'red' });
       } finally {
         setLoadingOptions(false);
       }
@@ -283,11 +283,12 @@ export default function NewReservationModal({
         
         // If it's a rest day that can't be released, show warning
         if (data.data.isRestDay && data.data.restDayInfo && !data.data.restDayInfo.canBeReleased) {
-          toast.error('Este día no está disponible para reservas');
+          notifications.show({ title: 'Error', message: 'Este día no está disponible para reservas', color: 'red' });
         } else if (data.data.isRestDay && data.data.restDayInfo) {
-          toast(`Día de descanso: se aplicará un cargo adicional de ${formatCurrency(data.data.restDayInfo.fee)}`, {
-            icon: '⚠️',
-            duration: 4000
+          notifications.show({ 
+            message: `Día de descanso: se aplicará un cargo adicional de ${formatCurrency(data.data.restDayInfo.fee)}`,
+            color: 'yellow',
+            icon: '⚠️'
           });
         }
       } else {
@@ -344,7 +345,7 @@ export default function NewReservationModal({
 
   const handleSubmit = async () => {
     if (!validateStep1() || !validateStep2() || !validateStep3() || !validateStep4()) {
-      toast.error('Por favor completa todos los campos requeridos');
+      notifications.show({ title: 'Error', message: 'Por favor completa todos los campos requeridos', color: 'red' });
       return;
     }
 
@@ -383,16 +384,16 @@ export default function NewReservationModal({
       const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success('¡Reserva creada exitosamente!');
+        notifications.show({ title: 'Success', message: '¡Reserva creada exitosamente!', color: 'green' });
         onSuccess();
         handleClose();
       } else {
         console.error('Error response:', data);
-        toast.error(data.error || data.message || 'Error al crear la reserva');
+        notifications.show({ title: 'Error', message: data.error || data.message || 'Error al crear la reserva', color: 'red' });
       }
     } catch (error) {
       console.error('Error creating reservation:', error);
-      toast.error('Error al crear la reserva');
+      notifications.show({ title: 'Error', message: 'Error al crear la reserva', color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -877,15 +878,15 @@ export default function NewReservationModal({
                 <Button
                   onClick={() => {
                     if (step === 1 && !validateStep1()) {
-                      toast.error('Completa todos los campos del cliente');
+                      notifications.show({ title: 'Error', message: 'Completa todos los campos del cliente', color: 'red' });
                       return;
                     }
                     if (step === 2 && !validateStep2()) {
-                      toast.error('Completa la información del festejado/a');
+                      notifications.show({ title: 'Error', message: 'Completa la información del festejado/a', color: 'red' });
                       return;
                     }
                     if (step === 3 && !validateStep3()) {
-                      toast.error('Completa los detalles del evento');
+                      notifications.show({ title: 'Error', message: 'Completa los detalles del evento', color: 'red' });
                       return;
                     }
                     setStep(step + 1);

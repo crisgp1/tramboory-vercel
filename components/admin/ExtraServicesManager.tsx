@@ -28,7 +28,7 @@ import {
   IconEye,
   IconCurrencyDollar
 } from '@tabler/icons-react';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 
 interface ExtraService {
   _id: string;
@@ -87,11 +87,11 @@ export default function ExtraServicesManager() {
       if (data.success) {
         setExtraServices(data.data);
       } else {
-        toast.error('Error al cargar los servicios extras');
+        notifications.show({ title: 'Error', message: 'Error al cargar los servicios extras', color: 'red' });
       }
     } catch (error) {
       console.error('Error fetching extra services:', error);
-      toast.error('Error al cargar los servicios extras');
+      notifications.show({ title: 'Error', message: 'Error al cargar los servicios extras', color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -127,7 +127,7 @@ export default function ExtraServicesManager() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim() || !formData.price || !formData.category) {
-      toast.error('Por favor completa todos los campos requeridos');
+      notifications.show({ title: 'Error', message: 'Por favor completa todos los campos requeridos', color: 'red' });
       return;
     }
 
@@ -159,16 +159,16 @@ export default function ExtraServicesManager() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success(editingService ? 'Servicio extra actualizado exitosamente' : 'Servicio extra creado exitosamente');
+        notifications.show({ title: 'Success', message: editingService ? 'Servicio extra actualizado exitosamente' : 'Servicio extra creado exitosamente', color: 'green' });
         fetchExtraServices();
         close();
         resetForm();
       } else {
-        toast.error(data.error || 'Error al guardar el servicio extra');
+        notifications.show({ title: 'Error', message: data.error || 'Error al guardar el servicio extra', color: 'red' });
       }
     } catch (error) {
       console.error('Error saving extra service:', error);
-      toast.error('Error al guardar el servicio extra');
+      notifications.show({ title: 'Error', message: 'Error al guardar el servicio extra', color: 'red' });
     } finally {
       setSubmitting(false);
     }
@@ -187,14 +187,14 @@ export default function ExtraServicesManager() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Servicio extra eliminado correctamente');
+        notifications.show({ title: 'Success', message: 'Servicio extra eliminado correctamente', color: 'green' });
         fetchExtraServices();
       } else {
-        toast.error('Error al eliminar el servicio extra');
+        notifications.show({ title: 'Error', message: 'Error al eliminar el servicio extra', color: 'red' });
       }
     } catch (error) {
       console.error('Error deleting extra service:', error);
-      toast.error('Error al eliminar el servicio extra');
+      notifications.show({ title: 'Error', message: 'Error al eliminar el servicio extra', color: 'red' });
     }
   };
 

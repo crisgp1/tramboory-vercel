@@ -5,10 +5,13 @@ export interface IFoodOption extends Document {
   description: string;
   basePrice: number;
   category: 'main' | 'appetizer' | 'dessert' | 'beverage';
-  extras: {
-    name: string;
-    price: number;
-    isRequired: boolean;
+  adultDishes: string[];
+  kidsDishes: string[];
+  upgrades: {
+    fromDish: string;
+    toDish: string;
+    additionalPrice: number;
+    category: 'adult' | 'kids';
   }[];
   isActive: boolean;
   createdAt: Date;
@@ -24,7 +27,7 @@ const FoodOptionSchema = new Schema<IFoodOption>({
   },
   description: {
     type: String,
-    required: [true, 'La descripción es requerida'],
+    required: false,
     trim: true,
     maxlength: [500, 'La descripción no puede exceder 500 caracteres']
   },
@@ -41,20 +44,37 @@ const FoodOptionSchema = new Schema<IFoodOption>({
       message: 'La categoría debe ser: main, appetizer, dessert o beverage'
     }
   },
-  extras: [{
-    name: {
+  adultDishes: [{
+    type: String,
+    trim: true
+  }],
+  kidsDishes: [{
+    type: String,
+    trim: true
+  }],
+  upgrades: [{
+    fromDish: {
       type: String,
-      required: [true, 'El nombre del extra es requerido'],
+      required: [true, 'El platillo base es requerido'],
       trim: true
     },
-    price: {
-      type: Number,
-      required: [true, 'El precio del extra es requerido'],
-      min: [0, 'El precio no puede ser negativo']
+    toDish: {
+      type: String,
+      required: [true, 'El platillo de upgrade es requerido'],
+      trim: true
     },
-    isRequired: {
-      type: Boolean,
-      default: false
+    additionalPrice: {
+      type: Number,
+      required: [true, 'El precio adicional es requerido'],
+      min: [0, 'El precio adicional no puede ser negativo']
+    },
+    category: {
+      type: String,
+      required: [true, 'La categoría es requerida'],
+      enum: {
+        values: ['adult', 'kids'],
+        message: 'La categoría debe ser: adult o kids'
+      }
     }
   }],
   isActive: {

@@ -29,11 +29,13 @@ import {
   IconCurrencyDollar,
   IconX
 } from '@tabler/icons-react';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 
-interface FoodExtra {
-  name: string;
-  price: number;
+interface FoodUpgrade {
+  fromDish: string;
+  toDish: string;
+  additionalPrice: number;
+  category: 'adult' | 'kids';
 }
 
 interface FoodOption {
@@ -42,7 +44,9 @@ interface FoodOption {
   basePrice: number;
   description?: string;
   category: 'main' | 'appetizer' | 'dessert' | 'beverage';
-  extras: FoodExtra[];
+  adultDishes: string[];
+  kidsDishes: string[];
+  upgrades: FoodUpgrade[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -53,7 +57,9 @@ interface FoodFormData {
   basePrice: string;
   description: string;
   category: 'main' | 'appetizer' | 'dessert' | 'beverage';
-  extras: FoodExtra[];
+  adultDishes: string[];
+  kidsDishes: string[];
+  upgrades: FoodUpgrade[];
   isActive: boolean;
 }
 
@@ -70,11 +76,20 @@ export default function FoodOptionsManager() {
     basePrice: '',
     description: '',
     category: 'main',
-    extras: [],
+    adultDishes: [],
+    kidsDishes: [],
+    upgrades: [],
     isActive: true
   });
 
-  const [newExtra, setNewExtra] = useState({ name: '', price: '' });
+  const [newUpgrade, setNewUpgrade] = useState({ 
+    fromDish: '', 
+    toDish: '', 
+    additionalPrice: '', 
+    category: 'adult' as 'adult' | 'kids'
+  });
+  const [newAdultDish, setNewAdultDish] = useState('');
+  const [newKidsDish, setNewKidsDish] = useState('');
 
   useEffect(() => {
     fetchFoodOptions();
@@ -84,16 +99,26 @@ export default function FoodOptionsManager() {
     try {
       setLoading(true);
       const response = await fetch('/api/admin/food-options');
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Fetch response error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText || 'Error en la respuesta del servidor'}`);
+      }
+      
       const data = await response.json();
       
       if (data.success) {
+        console.log('Food options loaded:', data.data);
         setFoodOptions(data.data);
       } else {
-        toast.error('Error al cargar las opciones de comida');
+        notifications.show({ title: 'Error', message: data.error || 'Error al cargar las opciones de comida', color: 'red' });
       }
     } catch (error) {
       console.error('Error fetching food options:', error);
-      toast.error('Error al cargar las opciones de comida');
+      notifications.show({ title: 'Error', message: `Error al cargar las opciones de comida: ${error instanceof Error ? error.message : 'Error desconocido'}`, color: 'red' });
+      // Set empty array to prevent UI issues
+      setFoodOptions([]);
     } finally {
       setLoading(false);
     }
@@ -105,60 +130,134 @@ export default function FoodOptionsManager() {
       basePrice: '',
       description: '',
       category: 'main',
-      extras: [],
+      adultDishes: [],
+      kidsDishes: [],
+      upgrades: [],
       isActive: true
     });
-    setNewExtra({ name: '', price: '' });
+    setNewUpgrade({ fromDish: '', toDish: '', additionalPrice: '', category: 'adult' });
+    setNewAdultDish('');
+    setNewKidsDish('');
     setEditingFood(null);
   };
 
   const handleCreate = () => {
+    console.log('handleCreate called');
     resetForm();
+    console.log('Opening modal for new food...');
     open();
   };
 
   const handleEdit = (food: FoodOption) => {
+    console.log('handleEdit called with:', food);
     setEditingFood(food);
     setFormData({
       name: food.name,
       basePrice: food.basePrice.toString(),
       description: food.description || '',
       category: food.category,
-      extras: [...food.extras],
+      adultDishes: [...(food.adultDishes || [])],
+      kidsDishes: [...(food.kidsDishes || [])],
+      upgrades: [...(food.upgrades || [])],
       isActive: food.isActive
     });
+    console.log('Opening modal...');
     open();
   };
 
-  const addExtra = () => {
-    if (!newExtra.name.trim() || !newExtra.price) {
-      toast.error('Completa el nombre y precio del extra');
+  const addUpgrade = () => {
+    if (!newUpgrade.fromDish.trim() || !newUpgrade.toDish.trim() || !newUpgrade.additionalPrice) {
+      notifications.show({ title: 'Error', message: 'Completa todos los campos del upgrade', color: 'red' });
       return;
     }
 
-    const extra: FoodExtra = {
-      name: newExtra.name.trim(),
-      price: parseFloat(newExtra.price)
+    // Check if the fromDish exists in the corresponding category dishes
+    const dishExists = newUpgrade.category === 'adult' 
+      ? formData.adultDishes.includes(newUpgrade.fromDish.trim())
+      : formData.kidsDishes.includes(newUpgrade.fromDish.trim());
+
+    if (!dishExists) {
+      notifications.show({ title: 'Error', message: `El platillo "${newUpgrade.fromDish}" no existe en los platillos de ${newUpgrade.category === 'adult' ? 'adultos' : 'niños'}`, color: 'red' });
+      return;
+    }
+
+    const upgrade: FoodUpgrade = {
+      fromDish: newUpgrade.fromDish.trim(),
+      toDish: newUpgrade.toDish.trim(),
+      additionalPrice: parseFloat(newUpgrade.additionalPrice),
+      category: newUpgrade.category
     };
 
     setFormData(prev => ({
       ...prev,
-      extras: [...prev.extras, extra]
+      upgrades: [...prev.upgrades, upgrade]
     }));
 
-    setNewExtra({ name: '', price: '' });
+    setNewUpgrade({ fromDish: '', toDish: '', additionalPrice: '', category: 'adult' });
   };
 
-  const removeExtra = (index: number) => {
+  const removeUpgrade = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      extras: prev.extras.filter((_, i) => i !== index)
+      upgrades: prev.upgrades.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addAdultDish = () => {
+    if (!newAdultDish.trim()) {
+      notifications.show({ title: 'Error', message: 'Ingresa el nombre del platillo para adultos', color: 'red' });
+      return;
+    }
+
+    if (formData.adultDishes.includes(newAdultDish.trim())) {
+      notifications.show({ title: 'Error', message: 'Este platillo ya existe', color: 'red' });
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      adultDishes: [...prev.adultDishes, newAdultDish.trim()]
+    }));
+
+    setNewAdultDish('');
+  };
+
+  const removeAdultDish = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      adultDishes: prev.adultDishes.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addKidsDish = () => {
+    if (!newKidsDish.trim()) {
+      notifications.show({ title: 'Error', message: 'Ingresa el nombre del platillo para niños', color: 'red' });
+      return;
+    }
+
+    if (formData.kidsDishes.includes(newKidsDish.trim())) {
+      notifications.show({ title: 'Error', message: 'Este platillo ya existe', color: 'red' });
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      kidsDishes: [...prev.kidsDishes, newKidsDish.trim()]
+    }));
+
+    setNewKidsDish('');
+  };
+
+  const removeKidsDish = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      kidsDishes: prev.kidsDishes.filter((_, i) => i !== index)
     }));
   };
 
   const handleSubmit = async () => {
     if (!formData.name.trim() || !formData.basePrice) {
-      toast.error('Por favor completa todos los campos requeridos');
+      notifications.show({ title: 'Error', message: 'Por favor completa todos los campos requeridos', color: 'red' });
       return;
     }
 
@@ -166,18 +265,20 @@ export default function FoodOptionsManager() {
     
     try {
       const foodData = {
+        ...(editingFood && { _id: editingFood._id }),
         name: formData.name.trim(),
         basePrice: parseFloat(formData.basePrice),
-        description: formData.description.trim(),
+        description: formData.description?.trim() || '',
         category: formData.category,
-        extras: formData.extras,
+        adultDishes: formData.adultDishes,
+        kidsDishes: formData.kidsDishes,
+        upgrades: formData.upgrades,
         isActive: formData.isActive
       };
 
-      const url = editingFood 
-        ? `/api/admin/food-options/${editingFood._id}`
-        : '/api/admin/food-options';
-      
+      console.log('Sending food data:', foodData);
+
+      const url = '/api/admin/food-options';
       const method = editingFood ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -188,19 +289,25 @@ export default function FoodOptionsManager() {
         body: JSON.stringify(foodData),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText || 'Error en la respuesta del servidor'}`);
+      }
+
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        toast.success(editingFood ? 'Opción de comida actualizada exitosamente' : 'Opción de comida creada exitosamente');
+      if (data.success) {
+        notifications.show({ title: 'Success', message: editingFood ? 'Opción de comida actualizada exitosamente' : 'Opción de comida creada exitosamente', color: 'green' });
         fetchFoodOptions();
         close();
         resetForm();
       } else {
-        toast.error(data.error || 'Error al guardar la opción de comida');
+        notifications.show({ title: 'Error', message: data.error || 'Error al guardar la opción de comida', color: 'red' });
       }
     } catch (error) {
       console.error('Error saving food option:', error);
-      toast.error('Error al guardar la opción de comida');
+      notifications.show({ title: 'Error', message: 'Error al guardar la opción de comida', color: 'red' });
     } finally {
       setSubmitting(false);
     }
@@ -212,21 +319,27 @@ export default function FoodOptionsManager() {
     }
 
     try {
-      const response = await fetch(`/api/admin/food-options/${id}`, {
+      const response = await fetch(`/api/admin/food-options?id=${id}`, {
         method: 'DELETE',
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Delete response error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText || 'Error en la respuesta del servidor'}`);
+      }
 
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Opción de comida eliminada correctamente');
+        notifications.show({ title: 'Success', message: 'Opción de comida eliminada correctamente', color: 'green' });
         fetchFoodOptions();
       } else {
-        toast.error('Error al eliminar la opción de comida');
+        notifications.show({ title: 'Error', message: data.error || 'Error al eliminar la opción de comida', color: 'red' });
       }
     } catch (error) {
       console.error('Error deleting food option:', error);
-      toast.error('Error al eliminar la opción de comida');
+      notifications.show({ title: 'Error', message: 'Error al eliminar la opción de comida', color: 'red' });
     }
   };
 
@@ -318,8 +431,16 @@ export default function FoodOptionsManager() {
         <Card withBorder p="md" style={{ backgroundColor: 'white' }}>
           <Group justify="space-between">
             <Stack gap={0}>
-              <Text size="sm" fw={500} c="dimmed">Total de Extras</Text>
-              <Text size="xl" fw={700} c="blue">{foodOptions.reduce((sum, f) => sum + f.extras.length, 0)}</Text>
+              <Text size="sm" fw={500} c="dimmed">Total de Upgrades</Text>
+              <Text size="xl" fw={700} c="blue">{(() => {
+                const total = foodOptions.reduce((sum, f) => {
+                  const upgradeCount = f.upgrades?.length || 0;
+                  console.log(`Food ${f.name}: ${upgradeCount} upgrades`, f.upgrades);
+                  return sum + upgradeCount;
+                }, 0);
+                console.log('Total upgrades:', total);
+                return total;
+              })()}</Text>
             </Stack>
             <div 
               style={{
@@ -352,7 +473,7 @@ export default function FoodOptionsManager() {
                 <Table.Tr>
                   <Table.Th>OPCIÓN</Table.Th>
                   <Table.Th visibleFrom="md">PRECIO BASE</Table.Th>
-                  <Table.Th visibleFrom="lg">EXTRAS</Table.Th>
+                  <Table.Th visibleFrom="lg">UPGRADES</Table.Th>
                   <Table.Th>ESTADO</Table.Th>
                   <Table.Th>ACCIONES</Table.Th>
                 </Table.Tr>
@@ -403,6 +524,19 @@ export default function FoodOptionsManager() {
                               {food.description}
                             </Text>
                           )}
+                          {/* Show dishes info */}
+                          <Group gap="xs" mt={2}>
+                            {(food.adultDishes?.length || 0) > 0 && (
+                              <Badge size="xs" color="blue" variant="dot">
+                                {food.adultDishes.length} adultos
+                              </Badge>
+                            )}
+                            {(food.kidsDishes?.length || 0) > 0 && (
+                              <Badge size="xs" color="green" variant="dot">
+                                {food.kidsDishes.length} niños
+                              </Badge>
+                            )}
+                          </Group>
                           <Group gap="xs" hiddenFrom="md" mt={2}>
                             <IconCurrencyDollar size={12} />
                             <Text size="xs" c="dimmed">{formatCurrency(food.basePrice)}</Text>
@@ -418,18 +552,18 @@ export default function FoodOptionsManager() {
                     </Table.Td>
                     <Table.Td visibleFrom="lg">
                       <Group gap="xs">
-                        {food.extras.slice(0, 2).map((extra, index) => (
-                          <Badge key={index} size="sm" variant="light" color="gray">
-                            {extra.name}
+                        {(food.upgrades || []).slice(0, 2).map((upgrade, index) => (
+                          <Badge key={index} size="sm" variant="light" color="purple">
+                            {upgrade?.fromDish} → {upgrade?.toDish}
                           </Badge>
                         ))}
-                        {food.extras.length > 2 && (
+                        {(food.upgrades?.length || 0) > 2 && (
                           <Badge size="sm" variant="light" color="gray">
-                            +{food.extras.length - 2} más
+                            +{(food.upgrades?.length || 0) - 2} más
                           </Badge>
                         )}
-                        {food.extras.length === 0 && (
-                          <Text size="sm" c="dimmed">Sin extras</Text>
+                        {(food.upgrades?.length || 0) === 0 && (
+                          <Text size="sm" c="dimmed">Sin upgrades</Text>
                         )}
                       </Group>
                     </Table.Td>
@@ -456,7 +590,11 @@ export default function FoodOptionsManager() {
                           variant="light"
                           size="sm"
                           color="gray"
-                          onClick={() => handleEdit(food)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('Edit clicked for:', food.name);
+                            handleEdit(food);
+                          }}
                         >
                           <IconPencil size={16} />
                         </ActionIcon>
@@ -482,7 +620,10 @@ export default function FoodOptionsManager() {
       {/* Create/Edit Modal */}
       <Modal
         opened={opened}
-        onClose={close}
+        onClose={() => {
+          console.log('Modal closing...');
+          close();
+        }}
         size="xl"
         title={editingFood ? 'Editar opción de comida' : 'Nueva opción de comida'}
         closeOnEscape={!submitting}
@@ -547,32 +688,28 @@ export default function FoodOptionsManager() {
             ]}
           />
 
+          {/* Adult Dishes Section */}
           <Stack gap="sm">
-            <Text size="sm" fw={500}>Extras disponibles</Text>
+            <Text size="sm" fw={500}>Platillos para Adultos</Text>
             
-            <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+            <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-blue-0)' }}>
               <Group align="flex-end">
                 <TextInput
-                  label="Nombre del extra"
-                  placeholder="Ej: Postre adicional, Bebida premium"
-                  value={newExtra.name}
-                  onChange={(e) => setNewExtra(prev => ({ ...prev, name: e.target.value }))}
+                  label="Nombre del platillo"
+                  placeholder="Ej: Pollo a la plancha, Pasta alfredo"
+                  value={newAdultDish}
+                  onChange={(e) => setNewAdultDish(e.target.value)}
                   size="sm"
                   style={{ flex: 1 }}
-                />
-                <TextInput
-                  label="Precio"
-                  placeholder="50"
-                  type="number"
-                  step="0.01"
-                  value={newExtra.price}
-                  onChange={(e) => setNewExtra(prev => ({ ...prev, price: e.target.value }))}
-                  leftSection={<IconCurrencyDollar size={16} />}
-                  size="sm"
-                  style={{ width: 120 }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addAdultDish();
+                    }
+                  }}
                 />
                 <Button
-                  onClick={addExtra}
+                  onClick={addAdultDish}
                   size="sm"
                   color="blue"
                 >
@@ -581,20 +718,163 @@ export default function FoodOptionsManager() {
               </Group>
             </Card>
 
-            {formData.extras.length > 0 && (
+            {formData.adultDishes.length > 0 && (
               <Stack gap="xs">
-                {formData.extras.map((extra, index) => (
+                {formData.adultDishes.map((dish, index) => (
+                  <Card key={index} withBorder p="sm">
+                    <Group justify="space-between">
+                      <Text size="sm" fw={500}>{dish}</Text>
+                      <ActionIcon
+                        variant="light"
+                        size="sm"
+                        color="red"
+                        onClick={() => removeAdultDish(index)}
+                      >
+                        <IconX size={16} />
+                      </ActionIcon>
+                    </Group>
+                  </Card>
+                ))}
+              </Stack>
+            )}
+          </Stack>
+
+          {/* Kids Dishes Section */}
+          <Stack gap="sm">
+            <Text size="sm" fw={500}>Platillos para Niños</Text>
+            
+            <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-green-0)' }}>
+              <Group align="flex-end">
+                <TextInput
+                  label="Nombre del platillo"
+                  placeholder="Ej: Nuggets con papas, Mini hamburguesa"
+                  value={newKidsDish}
+                  onChange={(e) => setNewKidsDish(e.target.value)}
+                  size="sm"
+                  style={{ flex: 1 }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addKidsDish();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={addKidsDish}
+                  size="sm"
+                  color="green"
+                >
+                  Agregar
+                </Button>
+              </Group>
+            </Card>
+
+            {formData.kidsDishes.length > 0 && (
+              <Stack gap="xs">
+                {formData.kidsDishes.map((dish, index) => (
+                  <Card key={index} withBorder p="sm">
+                    <Group justify="space-between">
+                      <Text size="sm" fw={500}>{dish}</Text>
+                      <ActionIcon
+                        variant="light"
+                        size="sm"
+                        color="red"
+                        onClick={() => removeKidsDish(index)}
+                      >
+                        <IconX size={16} />
+                      </ActionIcon>
+                    </Group>
+                  </Card>
+                ))}
+              </Stack>
+            )}
+          </Stack>
+
+          <Stack gap="sm">
+            <Text size="sm" fw={500}>Upgrades de Platillos</Text>
+            <Text size="xs" c="dimmed">
+              Permite a los clientes cambiar de un platillo básico a uno premium por un costo adicional
+            </Text>
+            
+            <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-purple-0)' }}>
+              <Stack gap="md">
+                <Group grow>
+                  <Select
+                    label="Categoría"
+                    placeholder="Selecciona categoría"
+                    value={newUpgrade.category}
+                    onChange={(value) => setNewUpgrade(prev => ({ ...prev, category: value as 'adult' | 'kids' }))}
+                    data={[
+                      { value: 'adult', label: 'Adultos' },
+                      { value: 'kids', label: 'Niños' }
+                    ]}
+                    size="sm"
+                  />
+                  <TextInput
+                    label="Precio adicional"
+                    placeholder="20"
+                    type="number"
+                    step="0.01"
+                    value={newUpgrade.additionalPrice}
+                    onChange={(e) => setNewUpgrade(prev => ({ ...prev, additionalPrice: e.target.value }))}
+                    leftSection={<IconCurrencyDollar size={16} />}
+                    size="sm"
+                  />
+                </Group>
+                
+                <Group align="flex-end">
+                  <Select
+                    label="Platillo básico (incluido)"
+                    placeholder="Selecciona el platillo base"
+                    value={newUpgrade.fromDish}
+                    onChange={(value) => setNewUpgrade(prev => ({ ...prev, fromDish: value || '' }))}
+                    data={newUpgrade.category === 'adult' 
+                      ? formData.adultDishes.map(dish => ({ value: dish, label: dish }))
+                      : formData.kidsDishes.map(dish => ({ value: dish, label: dish }))
+                    }
+                    size="sm"
+                    style={{ flex: 1 }}
+                    searchable
+                  />
+                  <Text size="sm" c="dimmed" style={{ padding: '0 10px' }}>→</Text>
+                  <TextInput
+                    label="Platillo premium (upgrade)"
+                    placeholder="Ej: Hamburguesa premium"
+                    value={newUpgrade.toDish}
+                    onChange={(e) => setNewUpgrade(prev => ({ ...prev, toDish: e.target.value }))}
+                    size="sm"
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    onClick={addUpgrade}
+                    size="sm"
+                    color="purple"
+                  >
+                    Agregar
+                  </Button>
+                </Group>
+              </Stack>
+            </Card>
+
+            {formData.upgrades.length > 0 && (
+              <Stack gap="xs">
+                {formData.upgrades.map((upgrade, index) => (
                   <Card key={index} withBorder p="sm">
                     <Group justify="space-between">
                       <Group gap="md">
-                        <Text size="sm" fw={500}>{extra.name}</Text>
-                        <Text size="xs" c="dimmed">{formatCurrency(extra.price)}</Text>
+                        <Badge size="sm" color={upgrade.category === 'adult' ? 'blue' : 'green'}>
+                          {upgrade.category === 'adult' ? 'Adultos' : 'Niños'}
+                        </Badge>
+                        <Text size="sm" fw={500}>
+                          {upgrade.fromDish} → {upgrade.toDish}
+                        </Text>
+                        <Text size="xs" c="dimmed">+{formatCurrency(upgrade.additionalPrice)}</Text>
                       </Group>
                       <ActionIcon
                         variant="light"
                         size="sm"
                         color="red"
-                        onClick={() => removeExtra(index)}
+                        onClick={() => removeUpgrade(index)}
                       >
                         <IconX size={16} />
                       </ActionIcon>

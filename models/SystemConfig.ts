@@ -1,12 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISystemConfig extends Document {
-  restDay: number;
-  restDayFee: number;
-  businessHours: {
-    start: string;
-    end: string;
-  };
   advanceBookingDays: number;
   maxConcurrentEvents: number;
   defaultEventDuration: number;
@@ -31,29 +25,6 @@ export interface ISystemConfig extends Document {
 }
 
 const SystemConfigSchema = new Schema<ISystemConfig>({
-  restDay: {
-    type: Number,
-    required: [true, 'El día de descanso es requerido'],
-    min: [0, 'El día debe estar entre 0 (domingo) y 6 (sábado)'],
-    max: [6, 'El día debe estar entre 0 (domingo) y 6 (sábado)']
-  },
-  restDayFee: {
-    type: Number,
-    required: [true, 'El cargo por día de descanso es requerido'],
-    min: [0, 'El cargo no puede ser negativo']
-  },
-  businessHours: {
-    start: {
-      type: String,
-      required: [true, 'La hora de inicio es requerida'],
-      match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato de hora inválido (HH:MM)']
-    },
-    end: {
-      type: String,
-      required: [true, 'La hora de cierre es requerida'],
-      match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Formato de hora inválido (HH:MM)']
-    }
-  },
   advanceBookingDays: {
     type: Number,
     required: [true, 'Los días de anticipación son requeridos'],
@@ -77,8 +48,8 @@ const SystemConfigSchema = new Schema<ISystemConfig>({
     },
     days: [{
       type: Number,
-      min: [0, 'El día debe estar entre 0 (domingo) y 6 (sábado)'],
-      max: [6, 'El día debe estar entre 0 (domingo) y 6 (sábado)']
+      min: [0, 'El día debe estar entre 0 (lunes) y 6 (domingo)'],
+      max: [6, 'El día debe estar entre 0 (lunes) y 6 (domingo)']
     }],
     startTime: {
       type: String,
@@ -110,8 +81,8 @@ const SystemConfigSchema = new Schema<ISystemConfig>({
     day: {
       type: Number,
       required: [true, 'El día es requerido'],
-      min: [0, 'El día debe estar entre 0 (domingo) y 6 (sábado)'],
-      max: [6, 'El día debe estar entre 0 (domingo) y 6 (sábado)']
+      min: [0, 'El día debe estar entre 0 (lunes) y 6 (domingo)'],
+      max: [6, 'El día debe estar entre 0 (lunes) y 6 (domingo)']
     },
     name: {
       type: String,

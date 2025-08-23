@@ -29,7 +29,7 @@ import {
   IconCurrencyDollar,
   IconRefresh
 } from '@tabler/icons-react';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 
 interface TimeBlock {
   name: string;
@@ -56,13 +56,13 @@ interface Props {
 }
 
 const daysOfWeek = [
-  { key: 0, label: 'Domingo', shortLabel: 'Dom' },
-  { key: 1, label: 'Lunes', shortLabel: 'Lun' },
-  { key: 2, label: 'Martes', shortLabel: 'Mar' },
-  { key: 3, label: 'Miércoles', shortLabel: 'Mié' },
-  { key: 4, label: 'Jueves', shortLabel: 'Jue' },
-  { key: 5, label: 'Viernes', shortLabel: 'Vie' },
-  { key: 6, label: 'Sábado', shortLabel: 'Sáb' }
+  { key: 0, label: 'Lunes', shortLabel: 'Lun' },
+  { key: 1, label: 'Martes', shortLabel: 'Mar' },
+  { key: 2, label: 'Miércoles', shortLabel: 'Mié' },
+  { key: 3, label: 'Jueves', shortLabel: 'Jue' },
+  { key: 4, label: 'Viernes', shortLabel: 'Vie' },
+  { key: 5, label: 'Sábado', shortLabel: 'Sáb' },
+  { key: 6, label: 'Domingo', shortLabel: 'Dom' }
 ];
 
 // Convert 24-hour time to 12-hour format with A.M./P.M.
@@ -132,7 +132,7 @@ export default function TimeBlocksManager({
   const [isCustomFarewell, setIsCustomFarewell] = useState(false);
   
   const [restDayForm, setRestDayForm] = useState<RestDay>({
-    day: 2,
+    day: 1,
     name: 'Martes',
     fee: 1500,
     canBeReleased: true
@@ -153,19 +153,19 @@ export default function TimeBlocksManager({
   const handleDeleteBlock = (index: number) => {
     const newBlocks = timeBlocks.filter((_, i) => i !== index);
     onUpdateTimeBlocks(newBlocks);
-    toast.success('Bloque de horario eliminado');
+    notifications.show({ title: 'Success', message: 'Bloque de horario eliminado', color: 'green' });
   };
 
   const handleSaveBlock = () => {
     if (!blockForm.name || blockForm.days.length === 0) {
-      toast.error('Por favor completa todos los campos requeridos');
+      notifications.show({ title: 'Error', message: 'Por favor completa todos los campos requeridos', color: 'red' });
       return;
     }
 
     // Validate the time block configuration
     const validation = validateTimeBlock(blockForm);
     if (!validation.valid) {
-      toast.error(validation.error || 'Error de validación');
+      notifications.show({ title: 'Error', message: validation.error || 'Error de validación', color: 'red' });
       return;
     }
 
@@ -173,10 +173,10 @@ export default function TimeBlocksManager({
     
     if (editingBlockIndex !== null) {
       newBlocks[editingBlockIndex] = blockForm;
-      toast.success('Bloque de horario actualizado');
+      notifications.show({ title: 'Success', message: 'Bloque de horario actualizado', color: 'green' });
     } else {
       newBlocks.push(blockForm);
-      toast.success('Bloque de horario creado');
+      notifications.show({ title: 'Success', message: 'Bloque de horario creado', color: 'green' });
     }
     
     onUpdateTimeBlocks(newBlocks);
@@ -194,7 +194,7 @@ export default function TimeBlocksManager({
   const handleDeleteRestDay = (index: number) => {
     const newDays = restDays.filter((_, i) => i !== index);
     onUpdateRestDays(newDays);
-    toast.success('Día de descanso eliminado');
+    notifications.show({ title: 'Success', message: 'Día de descanso eliminado', color: 'green' });
   };
 
   const handleSaveRestDay = () => {
@@ -205,13 +205,13 @@ export default function TimeBlocksManager({
     
     if (editingRestDayIndex !== null) {
       newDays[editingRestDayIndex] = restDayForm;
-      toast.success('Día de descanso actualizado');
+      notifications.show({ title: 'Success', message: 'Día de descanso actualizado', color: 'green' });
     } else if (existingIndex !== -1) {
-      toast.error('Este día ya está configurado como día de descanso');
+      notifications.show({ title: 'Error', message: 'Este día ya está configurado como día de descanso', color: 'red' });
       return;
     } else {
       newDays.push(restDayForm);
-      toast.success('Día de descanso agregado');
+      notifications.show({ title: 'Success', message: 'Día de descanso agregado', color: 'green' });
     }
     
     onUpdateRestDays(newDays);
@@ -243,7 +243,7 @@ export default function TimeBlocksManager({
 
   const resetRestDayForm = () => {
     setRestDayForm({
-      day: 2,
+      day: 1,
       name: 'Martes',
       fee: 1500,
       canBeReleased: true
@@ -356,18 +356,18 @@ export default function TimeBlocksManager({
         onUpdateTimeBlocks(configData.timeBlocks || []);
         onUpdateRestDays(configData.restDays || []);
         
-        toast.success('Configuración por defecto inicializada exitosamente');
+        notifications.show({ title: 'Success', message: 'Configuración por defecto inicializada exitosamente', color: 'green' });
         
         // Force a page reload to refresh the system config
         setTimeout(() => {
           window.location.reload();
         }, 1000);
       } else {
-        toast.error(data.error || 'Error al inicializar la configuración');
+        notifications.show({ title: 'Error', message: data.error || 'Error al inicializar la configuración', color: 'red' });
       }
     } catch (error) {
       console.error('Error initializing default config:', error);
-      toast.error('Error al inicializar la configuración');
+      notifications.show({ title: 'Error', message: 'Error al inicializar la configuración', color: 'red' });
     }
   };
 

@@ -29,7 +29,7 @@ import {
   IconCurrencyDollar,
   IconClock
 } from '@tabler/icons-react';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 
 interface Package {
   _id: string;
@@ -93,11 +93,11 @@ export default function PackageManager() {
       if (data.success) {
         setPackages(data.data);
       } else {
-        toast.error('Error al cargar los paquetes');
+        notifications.show({ title: 'Error', message: 'Error al cargar los paquetes', color: 'red' });
       }
     } catch (error) {
       console.error('Error fetching packages:', error);
-      toast.error('Error al cargar los paquetes');
+      notifications.show({ title: 'Error', message: 'Error al cargar los paquetes', color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -141,7 +141,7 @@ export default function PackageManager() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim() || !formData.weekday || !formData.weekend || !formData.holiday || !formData.duration || !formData.maxGuests) {
-      toast.error('Por favor completa todos los campos requeridos');
+      notifications.show({ title: 'Error', message: 'Por favor completa todos los campos requeridos', color: 'red' });
       return;
     }
 
@@ -176,16 +176,16 @@ export default function PackageManager() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success(editingPackage ? 'Paquete actualizado exitosamente' : 'Paquete creado exitosamente');
+        notifications.show({ title: 'Success', message: editingPackage ? 'Paquete actualizado exitosamente' : 'Paquete creado exitosamente', color: 'green' });
         fetchPackages();
         close();
         resetForm();
       } else {
-        toast.error(data.error || 'Error al guardar el paquete');
+        notifications.show({ title: 'Error', message: data.error || 'Error al guardar el paquete', color: 'red' });
       }
     } catch (error) {
       console.error('Error saving package:', error);
-      toast.error('Error al guardar el paquete');
+      notifications.show({ title: 'Error', message: 'Error al guardar el paquete', color: 'red' });
     } finally {
       setSubmitting(false);
     }
@@ -204,14 +204,14 @@ export default function PackageManager() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Paquete eliminado correctamente');
+        notifications.show({ title: 'Success', message: 'Paquete eliminado correctamente', color: 'green' });
         fetchPackages();
       } else {
-        toast.error('Error al eliminar el paquete');
+        notifications.show({ title: 'Error', message: 'Error al eliminar el paquete', color: 'red' });
       }
     } catch (error) {
       console.error('Error deleting package:', error);
-      toast.error('Error al eliminar el paquete');
+      notifications.show({ title: 'Error', message: 'Error al eliminar el paquete', color: 'red' });
     }
   };
 

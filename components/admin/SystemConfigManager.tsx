@@ -30,17 +30,11 @@ import {
   IconCheck,
   IconAlertTriangle
 } from '@tabler/icons-react';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 import TimeBlocksManager from './TimeBlocksManager';
 
 interface SystemConfig {
   _id?: string;
-  restDay: number;
-  restDayFee: number;
-  businessHours: {
-    start: string;
-    end: string;
-  };
   advanceBookingDays: number;
   maxConcurrentEvents: number;
   defaultEventDuration: number;
@@ -65,13 +59,13 @@ interface SystemConfig {
 }
 
 const daysOfWeek = [
-  { value: '0', label: 'Domingo' },
-  { value: '1', label: 'Lunes' },
-  { value: '2', label: 'Martes' },
-  { value: '3', label: 'Miércoles' },
-  { value: '4', label: 'Jueves' },
-  { value: '5', label: 'Viernes' },
-  { value: '6', label: 'Sábado' }
+  { value: '0', label: 'Lunes' },
+  { value: '1', label: 'Martes' },
+  { value: '2', label: 'Miércoles' },
+  { value: '3', label: 'Jueves' },
+  { value: '4', label: 'Viernes' },
+  { value: '5', label: 'Sábado' },
+  { value: '6', label: 'Domingo' }
 ];
 
 const timeSlots = Array.from({ length: 24 }, (_, i) => {
@@ -81,12 +75,6 @@ const timeSlots = Array.from({ length: 24 }, (_, i) => {
 
 export default function SystemConfigManager() {
   const [config, setConfig] = useState<SystemConfig>({
-    restDay: 1, // Lunes por defecto
-    restDayFee: 500,
-    businessHours: {
-      start: '09:00',
-      end: '18:00'
-    },
     advanceBookingDays: 7,
     maxConcurrentEvents: 3,
     defaultEventDuration: 4,
@@ -112,12 +100,6 @@ export default function SystemConfigManager() {
       if (data.success && data.data) {
         // Ensure all properties are properly structured with defaults
         const configData = {
-          restDay: data.data.restDay ?? 1,
-          restDayFee: data.data.restDayFee ?? 500,
-          businessHours: {
-            start: data.data.businessHours?.start || '09:00',
-            end: data.data.businessHours?.end || '18:00'
-          },
           advanceBookingDays: data.data.advanceBookingDays ?? 7,
           maxConcurrentEvents: data.data.maxConcurrentEvents ?? 3,
           defaultEventDuration: data.data.defaultEventDuration ?? 4,
@@ -133,12 +115,6 @@ export default function SystemConfigManager() {
         // Si no hay configuración, usar valores por defecto
         console.log('No system config found, using defaults');
         const defaultConfig = {
-          restDay: 1,
-          restDayFee: 500,
-          businessHours: {
-            start: '09:00',
-            end: '18:00'
-          },
           advanceBookingDays: 7,
           maxConcurrentEvents: 3,
           defaultEventDuration: 4,
@@ -150,7 +126,7 @@ export default function SystemConfigManager() {
       }
     } catch (error) {
       console.error('Error fetching system config:', error);
-      toast.error('Error al cargar la configuración del sistema');
+      notifications.show({ title: 'Error', message: 'Error al cargar la configuración del sistema', color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -179,6 +155,14 @@ export default function SystemConfigManager() {
   const handleSave = async () => {
     setSaving(true);
     
+    console.log('🔍 DEBUG: Saving system config:', {
+      configId: config._id,
+      method: config._id ? 'PUT' : 'POST',
+      restDays: config.restDays,
+      timeBlocks: config.timeBlocks,
+      fullConfig: config
+    });
+    
     try {
       const response = await fetch('/api/admin/system-config', {
         method: config._id ? 'PUT' : 'POST',
@@ -191,15 +175,15 @@ export default function SystemConfigManager() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success('Configuración guardada exitosamente');
+        notifications.show({ title: 'Success', message: 'Configuración guardada exitosamente', color: 'green' });
         setConfig(data.data);
         setHasChanges(false);
       } else {
-        toast.error(data.error || 'Error al guardar la configuración');
+        notifications.show({ title: 'Error', message: data.error || 'Error al guardar la configuración', color: 'red' });
       }
     } catch (error) {
       console.error('Error saving system config:', error);
-      toast.error('Error al guardar la configuración');
+      notifications.show({ title: 'Error', message: 'Error al guardar la configuración', color: 'red' });
     } finally {
       setSaving(false);
     }
@@ -261,59 +245,6 @@ export default function SystemConfigManager() {
         <Tabs.Panel value="general" pt="lg">
           <Grid>
             {/* Business Hours & Days */}
-            <Grid.Col span={{ base: 12, lg: 6 }}>
-              <Card withBorder>
-                <Card.Section p="md" withBorder>
-                  <Group gap="sm">
-                    <IconCalendar size={20} />
-                    <Title order={4}>Horarios y Días</Title>
-                  </Group>
-                </Card.Section>
-                <Card.Section p="md">
-                  <Stack gap="md">
-                    <Select
-                      label="Día de descanso"
-                      placeholder="Selecciona el día de descanso"
-                      value={(config.restDay || 1).toString()}
-                      onChange={(value) => handleConfigChange('restDay', parseInt(value || '1'))}
-                      data={daysOfWeek}
-                    />
-
-                    <NumberInput
-                      label="Cargo por día de descanso"
-                      description={`Cargo adicional: ${formatCurrency(config.restDayFee || 500)}`}
-                      value={config.restDayFee || 500}
-                      onChange={(value) => handleConfigChange('restDayFee', typeof value === 'number' ? value : 0)}
-                      min={0}
-                      step={0.01}
-                      leftSection={<IconCurrencyDollar size={16} />}
-                      placeholder="500.00"
-                    />
-
-                    <Grid>
-                      <Grid.Col span={6}>
-                        <Select
-                          label="Hora de inicio"
-                          placeholder="Selecciona hora de inicio"
-                          value={config.businessHours?.start || '09:00'}
-                          onChange={(value) => handleConfigChange('businessHours.start', value)}
-                          data={timeSlots}
-                        />
-                      </Grid.Col>
-                      <Grid.Col span={6}>
-                        <Select
-                          label="Hora de cierre"
-                          placeholder="Selecciona hora de cierre"
-                          value={config.businessHours?.end || '18:00'}
-                          onChange={(value) => handleConfigChange('businessHours.end', value)}
-                          data={timeSlots}
-                        />
-                      </Grid.Col>
-                    </Grid>
-                  </Stack>
-                </Card.Section>
-              </Card>
-            </Grid.Col>
 
             {/* Booking Settings */}
             <Grid.Col span={{ base: 12, lg: 6 }}>
@@ -421,26 +352,7 @@ export default function SystemConfigManager() {
         </Card.Section>
         <Card.Section p="md">
           <Grid>
-            <Grid.Col span={{ base: 6, md: 3 }}>
-              <Card withBorder ta="center" p="md">
-                <Text size="xl" fw={700} c="orange">
-                  {daysOfWeek.find(d => d.value === (config.restDay || 1).toString())?.label}
-                </Text>
-                <Text size="sm" c="dimmed">Día de descanso</Text>
-                <Text size="xs" c="dimmed">
-                  +{formatCurrency(config.restDayFee || 500)}
-                </Text>
-              </Card>
-            </Grid.Col>
 
-            <Grid.Col span={{ base: 6, md: 3 }}>
-              <Card withBorder ta="center" p="md">
-                <Text size="xl" fw={700} c="blue">
-                  {config.businessHours?.start || '09:00'} - {config.businessHours?.end || '18:00'}
-                </Text>
-                <Text size="sm" c="dimmed">Horario de atención</Text>
-              </Card>
-            </Grid.Col>
 
             <Grid.Col span={{ base: 6, md: 3 }}>
               <Card withBorder ta="center" p="md">

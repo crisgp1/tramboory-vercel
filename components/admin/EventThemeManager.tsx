@@ -37,7 +37,7 @@ import {
   IconUpload,
   IconPhoto
 } from '@tabler/icons-react';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 
 interface ThemePackage {
   name: string;
@@ -104,11 +104,11 @@ export default function EventThemeManager() {
       if (data.success) {
         setEventThemes(data.data);
       } else {
-        toast.error('Error al cargar los temas de evento');
+        notifications.show({ title: 'Error', message: 'Error al cargar los temas de evento', color: 'red' });
       }
     } catch (error) {
       console.error('Error fetching event themes:', error);
-      toast.error('Error al cargar los temas de evento');
+      notifications.show({ title: 'Error', message: 'Error al cargar los temas de evento', color: 'red' });
       // Datos de ejemplo mientras se implementa la API
       setEventThemes([]);
     } finally {
@@ -153,7 +153,7 @@ export default function EventThemeManager() {
 
   const addPackage = () => {
     if (!newPackage.name.trim() || !newPackage.pieces || !newPackage.price) {
-      toast.error('Completa todos los campos del paquete');
+      notifications.show({ title: 'Error', message: 'Completa todos los campos del paquete', color: 'red' });
       return;
     }
 
@@ -180,12 +180,12 @@ export default function EventThemeManager() {
 
   const addTheme = () => {
     if (!newTheme.trim()) {
-      toast.error('Ingresa el nombre del tema');
+      notifications.show({ title: 'Error', message: 'Ingresa el nombre del tema', color: 'red' });
       return;
     }
 
     if (formData.themes.includes(newTheme.trim())) {
-      toast.error('Este tema ya existe');
+      notifications.show({ title: 'Error', message: 'Este tema ya existe', color: 'red' });
       return;
     }
 
@@ -224,13 +224,13 @@ export default function EventThemeManager() {
       if (data.success) {
         setFormData(prev => ({ ...prev, imageUrl: data.url }));
         setPreviewUrl(data.url);
-        toast.success('Imagen subida exitosamente');
+        notifications.show({ title: 'Success', message: 'Imagen subida exitosamente', color: 'green' });
       } else {
-        toast.error('Error al subir la imagen');
+        notifications.show({ title: 'Error', message: 'Error al subir la imagen', color: 'red' });
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error('Error al subir la imagen');
+      notifications.show({ title: 'Error', message: 'Error al subir la imagen', color: 'red' });
     } finally {
       setUploading(false);
     }
@@ -244,7 +244,7 @@ export default function EventThemeManager() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim() || formData.packages.length === 0) {
-      toast.error('Por favor completa el nombre y agrega al menos un paquete');
+      notifications.show({ title: 'Error', message: 'Por favor completa el nombre y agrega al menos un paquete', color: 'red' });
       return;
     }
 
@@ -277,16 +277,16 @@ export default function EventThemeManager() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success(editingTheme ? 'Tema de evento actualizado exitosamente' : 'Tema de evento creado exitosamente');
+        notifications.show({ title: 'Success', message: editingTheme ? 'Tema de evento actualizado exitosamente' : 'Tema de evento creado exitosamente', color: 'green' });
         fetchEventThemes();
         close();
         resetForm();
       } else {
-        toast.error(data.error || 'Error al guardar el tema de evento');
+        notifications.show({ title: 'Error', message: data.error || 'Error al guardar el tema de evento', color: 'red' });
       }
     } catch (error) {
       console.error('Error saving event theme:', error);
-      toast.error('Error al guardar el tema de evento');
+      notifications.show({ title: 'Error', message: 'Error al guardar el tema de evento', color: 'red' });
     } finally {
       setSubmitting(false);
     }
@@ -305,14 +305,14 @@ export default function EventThemeManager() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Tema de evento eliminado correctamente');
+        notifications.show({ title: 'Success', message: 'Tema de evento eliminado correctamente', color: 'green' });
         fetchEventThemes();
       } else {
-        toast.error('Error al eliminar el tema de evento');
+        notifications.show({ title: 'Error', message: 'Error al eliminar el tema de evento', color: 'red' });
       }
     } catch (error) {
       console.error('Error deleting event theme:', error);
-      toast.error('Error al eliminar el tema de evento');
+      notifications.show({ title: 'Error', message: 'Error al eliminar el tema de evento', color: 'red' });
     }
   };
 
@@ -525,14 +525,14 @@ export default function EventThemeManager() {
                 label="Nombre del tema *"
                 placeholder="Ej: Princesas, Superhéroes"
                 value={formData.name}
-                onChange={(event) => setFormData(prev => ({ ...prev, name: event.currentTarget.value }))}
+                onChange={(event) => setFormData(prev => ({ ...prev, name: event.target.value }))}
               />
             </div>
             
             <div className="flex items-center gap-3 pt-6">
               <Switch
                 checked={formData.isActive}
-                onChange={(event) => setFormData(prev => ({ ...prev, isActive: event.currentTarget.checked }))}
+                onChange={(event) => setFormData(prev => ({ ...prev, isActive: event.target.checked }))}
               />
               <span className="text-sm text-gray-700">Tema activo</span>
             </div>
@@ -543,7 +543,7 @@ export default function EventThemeManager() {
               label="Descripción"
               placeholder="Describe el tema y lo que incluye..."
               value={formData.description}
-              onChange={(event) => setFormData(prev => ({ ...prev, description: event.currentTarget.value }))}
+              onChange={(event) => setFormData(prev => ({ ...prev, description: event.target.value }))}
               minRows={2}
             />
           </div>
@@ -593,7 +593,7 @@ export default function EventThemeManager() {
                           <TextInput
                             placeholder="Básico"
                             value={newPackage.name}
-                            onChange={(event) => setNewPackage(prev => ({ ...prev, name: event.currentTarget.value }))}
+                            onChange={(event) => setNewPackage(prev => ({ ...prev, name: event.target.value }))}
                             size="sm"
                           />
                         </div>
@@ -603,7 +603,7 @@ export default function EventThemeManager() {
                             placeholder="15"
                             type="number"
                             value={newPackage.pieces}
-                            onChange={(event) => setNewPackage(prev => ({ ...prev, pieces: event.currentTarget.value }))}
+                            onChange={(event) => setNewPackage(prev => ({ ...prev, pieces: event.target.value }))}
                             size="sm"
                           />
                         </div>
@@ -614,7 +614,7 @@ export default function EventThemeManager() {
                             type="number"
                             step="0.01"
                             value={newPackage.price}
-                            onChange={(event) => setNewPackage(prev => ({ ...prev, price: event.currentTarget.value }))}
+                            onChange={(event) => setNewPackage(prev => ({ ...prev, price: event.target.value }))}
                             size="sm"
                           />
                         </div>
@@ -662,7 +662,7 @@ export default function EventThemeManager() {
                           <TextInput
                             placeholder="Ej: Rosa, Azul, Dorado"
                             value={newTheme}
-                            onChange={(event) => setNewTheme(event.currentTarget.value)}
+                            onChange={(event) => setNewTheme(event.target.value)}
                             size="sm"
                           />
                         </div>

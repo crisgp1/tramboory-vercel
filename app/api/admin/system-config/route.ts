@@ -60,6 +60,14 @@ export async function PUT(request: NextRequest) {
     await dbConnect();
     const body = await request.json();
     
+    console.log('🔍 DEBUG: API received system config data:', {
+      restDays: body.restDays,
+      timeBlocks: body.timeBlocks,
+      hasRestDays: !!body.restDays && body.restDays.length > 0,
+      hasTimeBlocks: !!body.timeBlocks && body.timeBlocks.length > 0,
+      fullBody: body
+    });
+    
     // Buscar la configuración existente o crear una nueva
     let systemConfig = await SystemConfig.findOne({});
     
@@ -67,10 +75,20 @@ export async function PUT(request: NextRequest) {
       // Actualizar configuración existente
       Object.assign(systemConfig, body);
       await systemConfig.save();
+      console.log('🔍 DEBUG: Updated system config in DB:', {
+        id: systemConfig._id,
+        restDays: systemConfig.restDays,
+        timeBlocks: systemConfig.timeBlocks
+      });
     } else {
       // Crear nueva configuración si no existe
       systemConfig = new SystemConfig(body);
       await systemConfig.save();
+      console.log('🔍 DEBUG: Created new system config in DB:', {
+        id: systemConfig._id,
+        restDays: systemConfig.restDays,
+        timeBlocks: systemConfig.timeBlocks
+      });
     }
     
     return NextResponse.json({

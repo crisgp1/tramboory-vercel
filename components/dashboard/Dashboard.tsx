@@ -30,7 +30,8 @@ import {
   IconSettings,
   IconBox,
   IconBell,
-  IconUsers
+  IconUsers,
+  IconSparkles
 } from "@tabler/icons-react"
 import { useDisclosure } from "@mantine/hooks"
 import { notifications } from "@mantine/notifications"
@@ -41,6 +42,7 @@ import FinanceManager from "@/components/finances/FinanceManager"
 import InventoryManager from "@/components/inventory/InventoryManager"
 import UserManagement from "@/components/dashboard/sections/UserManagement"
 import AnalyticsManager from "@/components/analytics/AnalyticsManager"
+import CouponManager from "@/components/admin/CouponManager"
 import AdminQuickNav from "@/components/navigation/AdminQuickNav"
 
 type MenuItem = {
@@ -86,6 +88,12 @@ const menuItems: MenuItem[] = [
     label: "Usuarios", 
     icon: IconUsers,
     description: "Gestión de usuarios y roles"
+  },
+  { 
+    id: "cupones", 
+    label: "Cupones", 
+    icon: IconSparkles,
+    description: "Gestión de promociones y descuentos"
   }
 ]
 
@@ -113,6 +121,9 @@ export default function Dashboard() {
         return isAdmin || isGerente
       case "usuarios":
         // Solo admin y gerente pueden gestionar usuarios
+        return isAdmin || isGerente
+      case "cupones":
+        // Solo admin y gerente pueden gestionar cupones
         return isAdmin || isGerente
       case "reservas":
         // Todos los roles pueden ver reservas
@@ -177,6 +188,11 @@ export default function Dashboard() {
     // Si es la sección de usuarios, mostrar el componente específico
     if (activeMenuItem === 'usuarios') {
       return <UserManagement />
+    }
+
+    // Si es la sección de cupones, mostrar el componente específico
+    if (activeMenuItem === 'cupones') {
+      return <CouponManager />
     }
 
     // Default content - redirect to analytics since that's the main dashboard view

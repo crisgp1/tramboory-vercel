@@ -74,7 +74,6 @@ export async function GET(request: NextRequest) {
         date: dateParam,
         isRestDay,
         restDayFee: isRestDay ? systemConfig.restDayFee : 0,
-        businessHours: systemConfig.businessHours,
         defaultEventDuration: systemConfig.defaultEventDuration,
         slots: availableSlots
       }

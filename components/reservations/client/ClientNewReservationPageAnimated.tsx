@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,6 +29,8 @@ import {
   Center
 } from '@mantine/core';
 import { DatePicker } from '@mantine/dates';
+import { DatesProvider } from '@mantine/dates';
+import 'dayjs/locale/es-mx';
 import { useDisclosure } from '@mantine/hooks';
 import {
   CheckIcon,
@@ -53,21 +55,31 @@ import {
   StarIcon
 } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckIconSolid } from '@heroicons/react/24/solid';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 
 interface FormData {
   childName: string;
   childAge: string;
+  adultCount: string;
+  kidsCount: string;
   eventDate: Date | null;
   eventTime: string;
   packageId: string;
   foodOptionId: string;
-  selectedFoodExtras: string[];
+  selectedFoodUpgrades: {
+    fromDish: string;
+    toDish: string;
+    additionalPrice: number;
+    category: 'adult' | 'kids';
+    foodOptionId: string;
+  }[];
   eventThemeId: string;
   selectedThemePackage: string;
-  selectedExtraServices: string[];
+  selectedExtraServices: string;
   specialComments: string;
   paymentMethod: 'transfer' | 'cash' | 'card';
+  couponCode: string;
+  expandedOptions?: { [key: string]: boolean };
 }
 
 // localStorage utilities for form persistence
@@ -118,6 +130,35 @@ const clearFormDataFromStorage = () => {
   }
 };
 
+// Helper function to convert 24-hour format to 12-hour Spanish format
+const formatTo12Hour = (time24: string): string => {
+  const [hours, minutes] = time24.split(':').map(num => parseInt(num));
+  const period = hours >= 12 ? 'p.m.' : 'a.m.';
+  const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
+
+// Helper function to calculate end time based on start time and duration
+const calculateEndTime = (startTime: string, durationHours: number): string => {
+  const [hours, minutes] = startTime.split(':').map(Number);
+  const startTotalMinutes = hours * 60 + minutes;
+  const endTotalMinutes = startTotalMinutes + (durationHours * 60);
+  const endHours = Math.floor(endTotalMinutes / 60) % 24;
+  const endMinutes = endTotalMinutes % 60;
+  return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+};
+
+// Helper function to format time range with farewell clarification
+const formatTimeRange = (startTime: string, endTime: string): string => {
+  return `${formatTo12Hour(startTime)} a ${formatTo12Hour(endTime)}`;
+};
+
+// Helper function to format time range with farewell info
+const formatTimeRangeWithFarewell = (startTime: string, endTime: string, duration: number): string => {
+  const partyEndTime = calculateEndTime(startTime, duration);
+  return `${formatTo12Hour(startTime)} a ${formatTo12Hour(partyEndTime)} (hasta ${formatTo12Hour(endTime)} incluye despedida)`;
+};
+
 interface TimeSlot {
   time: string;
   endTime: string;
@@ -130,12 +171,16 @@ interface AvailableSlots {
   date: string;
   isRestDay: boolean;
   restDayFee: number;
-  businessHours: {
-    start: string;
-    end: string;
-  };
   defaultEventDuration: number;
-  slots: TimeSlot[];
+  blocks?: {
+    blockName: string;
+    startTime: string;
+    endTime: string;
+    duration: number;
+    halfHourBreak: boolean;
+    slots: TimeSlot[];
+  }[];
+  slots?: TimeSlot[];
 }
 
 interface PackageOption {
@@ -158,10 +203,13 @@ interface FoodOption {
   description: string;
   basePrice: number;
   category: 'main' | 'appetizer' | 'dessert' | 'beverage';
-  extras: {
-    name: string;
-    price: number;
-    isRequired: boolean;
+  adultDishes: string[];
+  kidsDishes: string[];
+  upgrades: {
+    fromDish: string;
+    toDish: string;
+    additionalPrice: number;
+    category: 'adult' | 'kids';
   }[];
   isActive: boolean;
 }
@@ -225,16 +273,19 @@ export default function ClientNewReservationPageAnimated() {
     return {
       childName: savedData?.childName || '',
       childAge: savedData?.childAge || '',
+      adultCount: savedData?.adultCount || '',
+      kidsCount: savedData?.kidsCount || '',
       eventDate: savedData?.eventDate || null,
       eventTime: savedData?.eventTime || '',
       packageId: savedData?.packageId || '',
       foodOptionId: savedData?.foodOptionId || '',
-      selectedFoodExtras: savedData?.selectedFoodExtras || [],
+      selectedFoodUpgrades: savedData?.selectedFoodUpgrades || [],
       eventThemeId: savedData?.eventThemeId || '',
       selectedThemePackage: savedData?.selectedThemePackage || '',
-      selectedExtraServices: savedData?.selectedExtraServices || [],
+      selectedExtraServices: savedData?.selectedExtraServices || '',
       specialComments: savedData?.specialComments || '',
-      paymentMethod: savedData?.paymentMethod || 'transfer'
+      paymentMethod: savedData?.paymentMethod || 'transfer',
+      couponCode: savedData?.couponCode || ''
     };
   });
   
@@ -251,6 +302,8 @@ export default function ClientNewReservationPageAnimated() {
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [celebrationAnimation, setCelebrationAnimation] = useState<any>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   const steps: { key: Step; title: string; description: string; icon: any }[] = [
     { key: 'basic', title: 'Detalles', description: 'Información básica', icon: CakeIcon },
@@ -301,11 +354,11 @@ export default function ClientNewReservationPageAnimated() {
         const activePackages = data.data.filter((pkg: PackageOption) => pkg.isActive);
         setPackages(activePackages);
       } else {
-        toast.error('Error al cargar los paquetes');
+        notifications.show({ title: 'Error', message: 'Error al cargar los paquetes', color: 'red' });
       }
     } catch (error) {
       console.error('Error loading packages:', error);
-      toast.error('Error al cargar los paquetes');
+      notifications.show({ title: 'Error', message: 'Error al cargar los paquetes', color: 'red' });
     } finally {
       setLoadingPackages(false);
     }
@@ -337,7 +390,7 @@ export default function ClientNewReservationPageAnimated() {
       }
     } catch (error) {
       console.error('Error loading additional options:', error);
-      toast.error('Error al cargar las opciones adicionales');
+      notifications.show({ title: 'Error', message: 'Error al cargar las opciones adicionales', color: 'red' });
     } finally {
       setLoadingOptions(false);
     }
@@ -359,11 +412,11 @@ export default function ClientNewReservationPageAnimated() {
       
       // If API fails, show error
       console.error('Failed to fetch availability data');
-      toast.error('Error al cargar disponibilidad');
+      notifications.show({ title: 'Error', message: 'Error al cargar disponibilidad', color: 'red' });
       setLoadingAvailability(false);
     } catch (error) {
       console.error('Error fetching availability:', error);
-      toast.error('Error al cargar disponibilidad');
+      notifications.show({ title: 'Error', message: 'Error al cargar disponibilidad', color: 'red' });
       setLoadingAvailability(false);
     }
   };
@@ -405,12 +458,17 @@ export default function ClientNewReservationPageAnimated() {
           date: data.data.date,
           isRestDay: data.data.isRestDay,
           restDayFee: data.data.restDayFee || 0,
-          businessHours: data.data.businessHours,
           defaultEventDuration: data.data.defaultEventDuration,
+          blocks: data.data.blocks || [],
           slots: data.data.blocks?.flatMap((block: any) => block.slots) || []
         };
         
-        console.log('Available slots debug:', {
+        console.log('🔍 AVAILABLE SLOTS DEBUG:', {
+          selectedDate: dateStr,
+          jsDay: dateObj.getDay(), // JavaScript day (0=Sunday, 1=Monday, 2=Tuesday)
+          mexicanDay: dateObj.getDay() === 0 ? 6 : dateObj.getDay() - 1, // Our Mexican system
+          isRestDay: data.data.isRestDay,
+          restDayFee: data.data.restDayFee,
           originalData: data.data,
           transformedData,
           blocksCount: data.data.blocks?.length || 0,
@@ -423,7 +481,7 @@ export default function ClientNewReservationPageAnimated() {
         const dateAvailability = availability[dateStr];
         if (dateAvailability === 'unavailable') {
           setFormData(prev => ({ ...prev, eventTime: '' }));
-          toast.error('Esta fecha ya tiene la capacidad máxima de eventos');
+          notifications.show({ title: 'Error', message: 'Esta fecha ya tiene la capacidad máxima de eventos', color: 'red' });
           return;
         }
         
@@ -432,14 +490,14 @@ export default function ClientNewReservationPageAnimated() {
           slot.time === formData.eventTime && slot.available
         )) {
           setFormData(prev => ({ ...prev, eventTime: '' }));
-          toast.error('El horario seleccionado ya no está disponible');
+          notifications.show({ title: 'Error', message: 'El horario seleccionado ya no está disponible', color: 'red' });
         }
       } else {
-        toast.error('Error al cargar horarios disponibles');
+        notifications.show({ title: 'Error', message: 'Error al cargar horarios disponibles', color: 'red' });
       }
     } catch (error) {
       console.error('Error fetching time slots:', error);
-      toast.error('Error al cargar horarios disponibles');
+      notifications.show({ title: 'Error', message: 'Error al cargar horarios disponibles', color: 'red' });
     } finally {
       setLoadingSlots(false);
     }
@@ -452,7 +510,7 @@ export default function ClientNewReservationPageAnimated() {
       case 'datetime':
         return !!(formData.eventDate && formData.eventTime);
       case 'package':
-        return !!formData.packageId;
+        return !!(formData.packageId && formData.adultCount && formData.kidsCount && parseInt(formData.adultCount) >= 0 && parseInt(formData.kidsCount) >= 0);
       case 'food':
         return true; // Optional step
       case 'extras':
@@ -466,7 +524,7 @@ export default function ClientNewReservationPageAnimated() {
 
   const handleNext = () => {
     if (!validateCurrentStep()) {
-      toast.error('Por favor completa todos los campos requeridos');
+      notifications.show({ title: 'Error', message: 'Por favor completa todos los campos requeridos', color: 'red' });
       return;
     }
 
@@ -487,17 +545,16 @@ export default function ClientNewReservationPageAnimated() {
 
   const handleSubmit = async () => {
     if (!user?.primaryEmailAddress?.emailAddress) {
-      toast.error('Error: No se pudo obtener tu email');
+      notifications.show({ title: 'Error', message: 'Error: No se pudo obtener tu email', color: 'red' });
       return;
     }
 
     setLoading(true);
     
     try {
-      const eventDate = getEventDate();
       const reservationData = {
         packageId: formData.packageId,
-        eventDate: eventDate ? eventDate.toISOString() : '',
+        eventDate: formData.eventDate ? formData.eventDate.toISOString() : '',
         eventTime: formData.eventTime,
         customer: {
           name: user.fullName || `${user.firstName} ${user.lastName}`.trim(),
@@ -508,13 +565,26 @@ export default function ClientNewReservationPageAnimated() {
           name: formData.childName.trim(),
           age: parseInt(formData.childAge)
         },
+        guestCount: {
+          adults: parseInt(formData.adultCount) || 0,
+          kids: parseInt(formData.kidsCount) || 0
+        },
         specialComments: formData.specialComments.trim() || undefined,
         foodOptionId: formData.foodOptionId || undefined,
-        foodExtras: formData.selectedFoodExtras,
-        extraServices: formData.selectedExtraServices,
+        foodUpgrades: formData.selectedFoodUpgrades,
+        extraServices: formData.selectedExtraServices ? [formData.selectedExtraServices] : [],
         eventThemeId: formData.eventThemeId || undefined,
         selectedThemePackage: formData.selectedThemePackage || undefined,
-        paymentMethod: formData.paymentMethod
+        paymentMethod: formData.paymentMethod,
+        couponCode: formData.couponCode || undefined,
+        appliedCoupon: appliedCoupon ? {
+          couponId: appliedCoupon._id,
+          code: appliedCoupon.code,
+          discountType: appliedCoupon.discountType,
+          discountValue: appliedCoupon.discountValue,
+          discountAmount: discountAmount,
+          appliedTo: appliedCoupon.applicableTo
+        } : undefined
       };
 
       const response = await fetch('/api/reservations', {
@@ -530,14 +600,14 @@ export default function ClientNewReservationPageAnimated() {
       if (response.ok && data.success) {
         setReservationId(data.data._id);
         setCurrentStep('confirmation');
-        toast.success('¡Reservación creada exitosamente!');
+        notifications.show({ title: 'Success', message: '¡Reservación creada exitosamente!', color: 'green' });
       } else {
         console.error('Error response:', data);
-        toast.error(data.error || data.message || 'Error al crear la reservación');
+        notifications.show({ title: 'Error', message: data.error || data.message || 'Error al crear la reservación', color: 'red' });
       }
     } catch (error) {
       console.error('Error creating reservation:', error);
-      toast.error('Error al crear la reservación');
+      notifications.show({ title: 'Error', message: 'Error al crear la reservación', color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -565,39 +635,83 @@ export default function ClientNewReservationPageAnimated() {
   const selectedPackage = (packages || []).find(pkg => pkg._id === formData.packageId);
   const selectedFood = foodOptions.find(food => food._id === formData.foodOptionId);
   const selectedTheme = eventThemes.find(theme => theme._id === formData.eventThemeId);
-  const selectedExtras = (extraServices || []).filter(service => (formData.selectedExtraServices || []).includes(service._id));
+  const selectedExtras = (extraServices || []).filter(service => service._id === formData.selectedExtraServices);
 
-  // Calculate total price
-  const calculateTotal = () => {
-    let total = 0;
+  // Memoized pricing calculation that updates when availableSlots changes
+  const pricing = useMemo(() => {
+    let packagePrice = 0;
+    let foodPrice = 0;
+    let extrasPrice = 0;
+    let themePrice = 0;
+    let restDayFee = 0;
     
-    const eventDate = getEventDate();
-    if (selectedPackage && eventDate) {
-      const isWeekend = eventDate.getDay() === 0 || eventDate.getDay() === 6;
-      total += isWeekend ? selectedPackage.pricing?.weekend || 0 : selectedPackage.pricing?.weekday || 0;
+    // Package price
+    if (selectedPackage && formData.eventDate) {
+      const isWeekend = formData.eventDate.getDay() === 0 || formData.eventDate.getDay() === 6;
+      packagePrice = isWeekend ? selectedPackage.pricing?.weekend || 0 : selectedPackage.pricing?.weekday || 0;
     }
     
+    // Food price
     if (selectedFood) {
-      total += selectedFood.basePrice;
+      foodPrice = selectedFood.basePrice;
     }
     
+    // Theme price
     if (selectedTheme && formData.selectedThemePackage) {
       const themePackage = (selectedTheme?.packages || []).find(pkg => pkg.name === formData.selectedThemePackage);
       if (themePackage) {
-        total += themePackage.price;
+        themePrice = themePackage.price;
       }
     }
     
+    // Extra services price
     selectedExtras.forEach(extra => {
-      total += extra.price;
+      extrasPrice += extra.price;
+    });
+    
+    // Add food upgrades (multiplied by adult count)
+    const adultCount = parseInt(formData.adultCount) || 0;
+    formData.selectedFoodUpgrades.forEach(upgrade => {
+      foodPrice += upgrade.additionalPrice * adultCount;
     });
     
     // Add rest day fee if applicable
     if (availableSlots?.isRestDay) {
-      total += availableSlots.restDayFee;
+      restDayFee = availableSlots.restDayFee || 0;
+      console.log('✅ REST DAY FEE APPLIED:', {
+        isRestDay: availableSlots.isRestDay,
+        restDayFee: availableSlots.restDayFee,
+        eventDate: formData.eventDate?.toLocaleDateString(),
+        dayOfWeek: formData.eventDate?.getDay(),
+        availableSlots: availableSlots
+      });
+    } else {
+      console.log('❌ NO REST DAY FEE:', {
+        isRestDay: availableSlots?.isRestDay,
+        restDayFee: availableSlots?.restDayFee,
+        eventDate: formData.eventDate?.toLocaleDateString(),
+        dayOfWeek: formData.eventDate?.getDay(),
+        hasAvailableSlots: !!availableSlots
+      });
     }
     
-    return total;
+    const subtotal = packagePrice + foodPrice + extrasPrice + themePrice + restDayFee;
+    const total = subtotal - discountAmount;
+    
+    return {
+      packagePrice,
+      foodPrice,
+      extrasPrice,
+      themePrice,
+      restDayFee,
+      subtotal,
+      discountAmount,
+      total: Math.max(0, total)
+    };
+  }, [selectedPackage, formData, selectedFood, selectedTheme, selectedExtras, availableSlots, discountAmount]);
+
+  const calculateTotal = () => {
+    return pricing.total;
   };
 
   const formatPrice = (price: number) => {
@@ -605,6 +719,79 @@ export default function ClientNewReservationPageAnimated() {
       style: 'currency',
       currency: 'MXN'
     }).format(price);
+  };
+
+  const validateAndApplyCoupon = async (couponCode: string) => {
+    if (!couponCode.trim()) {
+      notifications.show({
+        title: 'Error',
+        message: 'Ingresa un código de cupón',
+        color: 'red'
+      });
+      return;
+    }
+
+    try {
+      const reservationData = {
+        eventDate: formData.eventDate,
+        eventTime: formData.eventTime,
+        adultCount: parseInt(formData.adultCount) || 0,
+        kidsCount: parseInt(formData.kidsCount) || 0,
+        packageId: formData.packageId,
+        pricing: {
+          subtotal: pricing.subtotal
+        }
+      };
+
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          couponCode: couponCode.trim().toUpperCase(),
+          customerEmail: user?.emailAddresses?.[0]?.emailAddress,
+          reservation: reservationData
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.coupon) {
+        setAppliedCoupon(data.coupon);
+        setDiscountAmount(data.discountAmount);
+        
+        notifications.show({
+          title: '¡Cupón aplicado!',
+          message: `Descuento de ${formatPrice(data.discountAmount)} aplicado correctamente`,
+          color: 'green'
+        });
+      } else {
+        notifications.show({
+          title: 'Cupón no válido',
+          message: data.error || 'El código de cupón no es válido',
+          color: 'red'
+        });
+      }
+    } catch (error) {
+      console.error('Error validating coupon:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Error al validar el cupón. Intenta de nuevo.',
+        color: 'red'
+      });
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setFormData(prev => ({ ...prev, couponCode: '' }));
+    notifications.show({
+      title: 'Cupón removido',
+      message: 'El descuento ha sido removido',
+      color: 'blue'
+    });
   };
 
   const downloadInvoice = async () => {
@@ -631,10 +818,10 @@ export default function ClientNewReservationPageAnimated() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      toast.success('Factura descargada exitosamente');
+      notifications.show({ title: 'Success', message: 'Factura descargada exitosamente', color: 'green' });
     } catch (error) {
       console.error('Error downloading invoice:', error);
-      toast.error('Error al descargar la factura');
+      notifications.show({ title: 'Error', message: 'Error al descargar la factura', color: 'red' });
     }
   };
 
@@ -656,12 +843,13 @@ export default function ClientNewReservationPageAnimated() {
 
 Reservación ID: ${reservationId || 'PENDIENTE'}
 Referencia: ${referenceNumber}
-Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}
+Fecha de emisión: ${new Date().toLocaleDateString('es-MX')}
 
 DATOS DEL EVENTO:
 - Festejado/a: ${formData.childName}
 - Edad: ${formData.childAge} años
-- Fecha: ${getEventDate()?.toLocaleDateString('es-ES') || 'N/A'}
+- Invitados: ${formData.adultCount} adultos, ${formData.kidsCount} niños
+- Fecha: ${formData.eventDate?.toLocaleDateString('es-MX') || 'N/A'}
 - Hora: ${formData.eventTime}
 
 PAQUETE SELECCIONADO:
@@ -737,7 +925,7 @@ Para cualquier duda, contacta:
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    toast.success('Ficha de pago descargada exitosamente');
+    notifications.show({ title: 'Success', message: 'Ficha de pago descargada exitosamente', color: 'green' });
   };
 
   const renderStepContent = () => {
@@ -903,48 +1091,7 @@ Para cualquier duda, contacta:
                 </div>
               </motion.div>
 
-              {/* Comments Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 1.875 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="space-y-2"
-              >
-                <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
-                  <DocumentTextIcon className="w-3 h-3 sm:w-4 sm:h-4 text-rose-500" />
-                  Algo especial que debamos saber?
-                  <span className="text-xs font-normal text-gray-500">(opcional)</span>
-                </label>
-                <Textarea
-                  placeholder="Alergias, solicitudes especiales, decoración preferida, cumpleaños temático..."
-                  value={formData.specialComments}
-                  onChange={(event) => {
-                    const value = event.currentTarget.value;
-                    setFormData(prev => ({ ...prev, specialComments: value }));
-                  }}
-                  minRows={3}
-                  variant="default"
-                  radius="lg"
-                  className="text-gray-900"
-                  styles={{
-                    input: {
-                      border: '1.5px solid rgb(229 231 235 / 0.7)',
-                      backgroundColor: 'rgb(255 255 255 / 0.5)',
-                      backdropFilter: 'blur(16px)',
-                      borderRadius: '12px',
-                      boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
-                      transition: 'all 300ms',
-                      '&:hover': {
-                        borderColor: 'rgb(251 113 133 / 0.5)',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                      },
-                      '&:focus': {
-                        borderColor: 'rgb(244 63 94)',
-                      }
-                    }
-                  }}
-                />
-              </motion.div>
+
             </div>
           </motion.div>
         );
@@ -998,16 +1145,33 @@ Para cualquier duda, contacta:
                     </div>
                   ) : (
                     <div className="w-full">
-                      <DatePicker
-                        value={formData.eventDate}
-                        onChange={(dateString: string | null) => {
-                          const date = dateString ? new Date(dateString) : null;
-                          setFormData(prev => ({ ...prev, eventDate: date }));
-                        }}
-                        minDate={new Date()}
-                        size="lg"
+                      <DatesProvider settings={{ locale: 'es-mx', firstDayOfWeek: 1 }}>
+                        <DatePicker
+                          value={formData.eventDate}
+                          onChange={(dateString: string | null) => {
+                            if (dateString) {
+                              // Create date in local timezone to avoid timezone shift
+                              const [year, month, day] = dateString.split('-').map(Number);
+                              const date = new Date(year, month - 1, day);
+                              setFormData(prev => ({ ...prev, eventDate: date }));
+                            } else {
+                              setFormData(prev => ({ ...prev, eventDate: null }));
+                            }
+                          }}
+                          minDate={new Date()}
+                          size="lg"
                         getDayProps={(date: any) => {
-                          const dateString = date?.toISOString ? date.toISOString().split('T')[0] : String(date);
+                          // Ensure we have a valid Date object
+                          const dateObj = date instanceof Date ? date : new Date(date);
+                          if (isNaN(dateObj.getTime())) {
+                            return {};
+                          }
+                          
+                          // Format date in local timezone to match availability data
+                          const year = dateObj.getFullYear();
+                          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                          const day = String(dateObj.getDate()).padStart(2, '0');
+                          const dateString = `${year}-${month}-${day}`;
                           const status = availability[dateString];
                           
                           if (status === 'unavailable') {
@@ -1050,6 +1214,7 @@ Para cualquier duda, contacta:
                           width: '100%'
                         }}
                       />
+                      </DatesProvider>
                       
                       {/* Enhanced Responsive Availability Legend */}
                       <Box mt="sm" p="md" className="bg-gradient-to-r from-white/80 to-gray-50/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-sm">
@@ -1101,7 +1266,7 @@ Para cualquier duda, contacta:
             >
               <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
                 <ClockIcon className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                Hora del evento
+                Horario del evento
                 <span className="text-blue-500">*</span>
               </label>
               
@@ -1145,7 +1310,7 @@ Para cualquier duda, contacta:
                               ? 'text-gray-900'
                               : 'text-gray-400'
                         }`}>
-                          {slot.time}
+                          {formatTo12Hour(slot.time)} - {formatTo12Hour(slot.endTime)}
                         </p>
                         {slot.available ? (
                           <span className="text-xs text-emerald-600 font-medium mt-0.5 block">
@@ -1256,6 +1421,230 @@ Para cualquier duda, contacta:
                 </div>
               )}
             </motion.div>
+
+            {/* Guest Count Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="space-y-4"
+            >
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <UserGroupIcon className="w-4 h-4 text-purple-500" />
+                ¿Cuántos invitados esperás?
+                <span className="text-purple-500">*</span>
+              </h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                    <UserGroupIcon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
+                    Número de adultos
+                    <span className="text-purple-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <TextInput
+                      type="number"
+                      placeholder="Ej: 7"
+                      value={formData.adultCount}
+                      onChange={(event) => {
+                        const value = event.currentTarget.value;
+                        const numValue = parseInt(value);
+                        const totalGuests = numValue + (parseInt(formData.kidsCount) || 0);
+                        const maxGuests = selectedPackage?.maxGuests || 50;
+                        
+                        if (value === '' || (numValue >= 0 && totalGuests <= maxGuests)) {
+                          setFormData(prev => ({ ...prev, adultCount: value }));
+                        } else if (totalGuests > maxGuests) {
+                          notifications.show({ title: 'Error', message: `El paquete seleccionado permite máximo ${maxGuests} invitados`, color: 'red' });
+                        }
+                      }}
+                      min={0}
+                      max={selectedPackage?.maxGuests || 50}
+                      variant="default"
+                      size="lg"
+                      radius="lg"
+                      className="text-gray-900"
+                      styles={{
+                        input: {
+                          border: '1.5px solid rgb(229 231 235 / 0.7)',
+                          backgroundColor: 'rgb(255 255 255 / 0.5)',
+                          backdropFilter: 'blur(16px)',
+                          borderRadius: '12px',
+                          height: '48px',
+                          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+                          transition: 'all 300ms',
+                          '&:hover': {
+                            borderColor: 'rgb(147 51 234 / 0.5)',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                          },
+                          '&:focus': {
+                            borderColor: 'rgb(147 51 234)',
+                          }
+                        }
+                      }}
+                      rightSection={
+                        <div className="flex flex-col">
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-purple-500 transition-colors p-0.5"
+                            onClick={() => {
+                              const currentCount = parseInt(formData.adultCount) || 0;
+                              const totalGuests = (currentCount + 1) + (parseInt(formData.kidsCount) || 0);
+                              const maxGuests = selectedPackage?.maxGuests || 50;
+                              
+                              if (totalGuests <= maxGuests) {
+                                setFormData(prev => ({ ...prev, adultCount: (currentCount + 1).toString() }));
+                              } else {
+                                notifications.show({ title: 'Error', message: `El paquete seleccionado permite máximo ${maxGuests} invitados`, color: 'red' });
+                              }
+                            }}
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-purple-500 transition-colors p-0.5"
+                            onClick={() => {
+                              const currentCount = parseInt(formData.adultCount) || 0;
+                              if (currentCount > 0) {
+                                setFormData(prev => ({ ...prev, adultCount: (currentCount - 1).toString() }));
+                              }
+                            }}
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        </div>
+                      }
+                    />
+                    {formData.adultCount && (
+                      <div className="absolute right-12 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 pointer-events-none">
+                        adultos
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                    <UserGroupIcon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
+                    Número de niños
+                    <span className="text-purple-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <TextInput
+                      type="number"
+                      placeholder="Ej: 3"
+                      value={formData.kidsCount}
+                      onChange={(event) => {
+                        const value = event.currentTarget.value;
+                        const numValue = parseInt(value);
+                        const totalGuests = numValue + (parseInt(formData.adultCount) || 0);
+                        const maxGuests = selectedPackage?.maxGuests || 30;
+                        
+                        if (value === '' || (numValue >= 0 && totalGuests <= maxGuests)) {
+                          setFormData(prev => ({ ...prev, kidsCount: value }));
+                        } else if (totalGuests > maxGuests) {
+                          notifications.show({ title: 'Error', message: `El paquete seleccionado permite máximo ${maxGuests} invitados`, color: 'red' });
+                        }
+                      }}
+                      min={0}
+                      max={selectedPackage?.maxGuests || 30}
+                      variant="default"
+                      size="lg"
+                      radius="lg"
+                      className="text-gray-900"
+                      styles={{
+                        input: {
+                          border: '1.5px solid rgb(229 231 235 / 0.7)',
+                          backgroundColor: 'rgb(255 255 255 / 0.5)',
+                          backdropFilter: 'blur(16px)',
+                          borderRadius: '12px',
+                          height: '48px',
+                          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+                          transition: 'all 300ms',
+                          '&:hover': {
+                            borderColor: 'rgb(147 51 234 / 0.5)',
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                          },
+                          '&:focus': {
+                            borderColor: 'rgb(147 51 234)',
+                          }
+                        }
+                      }}
+                      rightSection={
+                        <div className="flex flex-col">
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-purple-500 transition-colors p-0.5"
+                            onClick={() => {
+                              const currentCount = parseInt(formData.kidsCount) || 0;
+                              const totalGuests = (currentCount + 1) + (parseInt(formData.adultCount) || 0);
+                              const maxGuests = selectedPackage?.maxGuests || 30;
+                              
+                              if (totalGuests <= maxGuests) {
+                                setFormData(prev => ({ ...prev, kidsCount: (currentCount + 1).toString() }));
+                              } else {
+                                notifications.show({ title: 'Error', message: `El paquete seleccionado permite máximo ${maxGuests} invitados`, color: 'red' });
+                              }
+                            }}
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-purple-500 transition-colors p-0.5"
+                            onClick={() => {
+                              const currentCount = parseInt(formData.kidsCount) || 0;
+                              if (currentCount > 0) {
+                                setFormData(prev => ({ ...prev, kidsCount: (currentCount - 1).toString() }));
+                              }
+                            }}
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        </div>
+                      }
+                    />
+                    {formData.kidsCount && (
+                      <div className="absolute right-12 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 pointer-events-none">
+                        niños
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Package Capacity Warning */}
+              {selectedPackage && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-3 bg-gradient-to-r from-purple-50/90 to-indigo-50/90 backdrop-blur-sm rounded-xl border border-purple-200/70"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <InformationCircleIcon className="w-4 h-4 text-purple-500" />
+                    <p className="text-xs font-semibold text-purple-700">Capacidad del paquete</p>
+                  </div>
+                  <p className="text-xs text-purple-600">
+                    <span className="font-semibold">{selectedPackage.name}</span> permite hasta <span className="font-bold">{selectedPackage.maxGuests} invitados</span>
+                  </p>
+                  <div className="mt-1">
+                    <p className="text-xs text-gray-600">
+                      Total actual: <span className="font-semibold">{(parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0)} invitados</span>
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
           </motion.div>
         );
 
@@ -1316,14 +1705,124 @@ Para cualquier duda, contacta:
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h3 className="font-bold text-sm text-gray-900 mb-1">{food.name}</h3>
-                          <p className="text-xs text-gray-600 mb-2">{food.description}</p>
-                          <div className="flex items-center justify-between">
-                            <Badge size="sm" variant="light" className="bg-emerald-100 text-emerald-700 text-xs">
-                              {food.category}
-                            </Badge>
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-bold text-sm text-gray-900">{food.name}</h3>
                             <span className="text-sm font-bold text-gray-900">{formatPrice(food.basePrice)}</span>
                           </div>
+                          <p className="text-xs text-gray-600 mb-3">{food.description}</p>
+                          
+                          {/* Adult Dishes */}
+                          {food.adultDishes && food.adultDishes.length > 0 && (
+                            <div className="mb-2">
+                              <p className="text-xs font-semibold text-gray-700 mb-1">Platillos para adultos:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {food.adultDishes.map((dish, index) => {
+                                  const selectedUpgrade = formData.selectedFoodUpgrades.find(selected => 
+                                    selected.fromDish === dish && 
+                                    selected.category === 'adult' &&
+                                    selected.foodOptionId === food._id
+                                  );
+                                  const displayDish = selectedUpgrade ? selectedUpgrade.toDish : dish;
+                                  
+                                  return (
+                                    <Badge 
+                                      key={index}
+                                      size="xs" 
+                                      variant="light" 
+                                      className={`text-xs ${
+                                        selectedUpgrade 
+                                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                          : 'bg-blue-50 text-blue-700'
+                                      }`}
+                                    >
+                                      {displayDish}
+                                      {selectedUpgrade && (
+                                        <span className="ml-1 text-emerald-600 font-semibold">
+                                          (+{formatPrice(selectedUpgrade.additionalPrice * (parseInt(formData.adultCount) || 0))})
+                                        </span>
+                                      )}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Kids Dishes */}
+                          {food.kidsDishes && food.kidsDishes.length > 0 && (
+                            <div className="mb-2">
+                              <p className="text-xs font-semibold text-gray-700 mb-1">Platillos para niños:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {food.kidsDishes.map((dish, index) => {
+                                  const selectedUpgrade = formData.selectedFoodUpgrades.find(selected => 
+                                    selected.fromDish === dish && 
+                                    selected.category === 'kids' &&
+                                    selected.foodOptionId === food._id
+                                  );
+                                  const displayDish = selectedUpgrade ? selectedUpgrade.toDish : dish;
+                                  
+                                  return (
+                                    <Badge 
+                                      key={index}
+                                      size="xs" 
+                                      variant="light" 
+                                      className={`text-xs ${
+                                        selectedUpgrade 
+                                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                          : 'bg-pink-50 text-pink-700'
+                                      }`}
+                                    >
+                                      {displayDish}
+                                      {selectedUpgrade && (
+                                        <span className="ml-1 text-emerald-600 font-semibold">
+                                          (+{formatPrice(selectedUpgrade.additionalPrice * (parseInt(formData.adultCount) || 0))})
+                                        </span>
+                                      )}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Options Button - Only show if there are upgrades available */}
+                          {food.upgrades && food.upgrades.length > 0 && (
+                            <div className="mt-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Toggle options panel for this food item
+                                  const optionsKey = `food-options-${food._id}`;
+                                  const currentExpanded = formData.expandedOptions || {};
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    expandedOptions: {
+                                      ...currentExpanded,
+                                      [optionsKey]: !currentExpanded[optionsKey]
+                                    }
+                                  }));
+                                }}
+                                className="text-xs text-gray-500 hover:text-emerald-600 transition-colors flex items-center gap-1"
+                              >
+                                <span>Personalizar opciones</span>
+                                <svg 
+                                  className={`w-3 h-3 transition-transform ${
+                                    formData.expandedOptions?.[`food-options-${food._id}`] ? 'rotate-180' : ''
+                                  }`} 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                          
+                          <Badge size="sm" variant="light" className="bg-emerald-100 text-emerald-700 text-xs">
+                            {food.category}
+                          </Badge>
                         </div>
                         {formData.foodOptionId === food._id && (
                           <CheckIconSolid className="w-4 h-4 text-emerald-500 flex-shrink-0 ml-2" />
@@ -1338,6 +1837,189 @@ Para cualquier duda, contacta:
                 </div>
               )}
             </motion.div>
+
+            {/* Food Options Panel - Appears below cards when expanded */}
+            {formData.expandedOptions && Object.keys(formData.expandedOptions).some(key => formData.expandedOptions![key]) && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white border border-gray-200 rounded-xl shadow-lg p-4 space-y-4"
+              >
+                {Object.entries(formData.expandedOptions).map(([optionsKey, isExpanded]) => {
+                  if (!isExpanded) return null;
+                  
+                  const foodId = optionsKey.replace('food-options-', '');
+                  const food = foodOptions.find(f => f._id === foodId);
+                  if (!food || !food.upgrades || food.upgrades.length === 0) return null;
+                  
+                  return (
+                    <div key={optionsKey} className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                          <span>{food.name}</span>
+                          <Badge size="xs" variant="light" className="bg-emerald-100 text-emerald-700">
+                            Personalizar
+                          </Badge>
+                        </h4>
+                        <button
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              expandedOptions: {
+                                ...prev.expandedOptions,
+                                [optionsKey]: false
+                              }
+                            }));
+                          }}
+                          className="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {food.upgrades.map((upgrade, index) => {
+                          const upgradeKey = `${foodId}-${index}`;
+                          const isSelected = formData.selectedFoodUpgrades.some(selected => 
+                            selected.fromDish === upgrade.fromDish && 
+                            selected.toDish === upgrade.toDish && 
+                            selected.foodOptionId === foodId
+                          );
+                          
+                          return (
+                            <motion.div
+                              key={upgradeKey}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              onClick={() => {
+                                const upgradeWithId = {
+                                  ...upgrade,
+                                  foodOptionId: foodId
+                                };
+                                
+                                setFormData(prev => ({
+                                  ...prev,
+                                  selectedFoodUpgrades: isSelected
+                                    ? prev.selectedFoodUpgrades.filter(selected =>
+                                        !(selected.fromDish === upgrade.fromDish &&
+                                          selected.toDish === upgrade.toDish &&
+                                          selected.foodOptionId === foodId)
+                                      )
+                                    : [...prev.selectedFoodUpgrades, upgradeWithId]
+                                }));
+                              }}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                                isSelected
+                                  ? 'border-emerald-300 bg-emerald-50'
+                                  : 'border-gray-200 hover:border-emerald-200 hover:bg-emerald-50/30'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="mb-1">
+                                    <span className="text-sm font-medium text-emerald-700">{upgrade.toDish}</span>
+                                    <p className="text-xs text-gray-500 mt-0.5">en lugar de {upgrade.fromDish}</p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Badge size="xs" variant="light" className="bg-gray-100 text-gray-600">
+                                      {upgrade.category === 'adult' ? 'Adultos' : 'Niños'}
+                                    </Badge>
+                                    <span className="text-xs text-emerald-600 font-semibold">
+                                      +{formatPrice(upgrade.additionalPrice * (parseInt(formData.adultCount) || 0))}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      ({formatPrice(upgrade.additionalPrice)}/persona)
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center">
+                                  {isSelected && (
+                                    <CheckIconSolid className="w-5 h-5 text-emerald-500" />
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            )}
+
+            {/* Selected Food Options */}
+            {formData.selectedFoodUpgrades.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 1.875 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="p-4 bg-gradient-to-r from-emerald-50/90 to-teal-50/90 backdrop-blur-lg rounded-xl border border-emerald-200/70"
+              >
+                <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <CheckIconSolid className="w-4 h-4 text-emerald-500" />
+                  Opciones personalizadas
+                </h3>
+                <div className="space-y-2">
+                  {formData.selectedFoodUpgrades.map((upgrade, index) => {
+                    const foodOption = foodOptions.find(f => f._id === upgrade.foodOptionId);
+                    return (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -1.25 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 1.25 }}
+                        className="flex items-center justify-between p-2 bg-white/80 rounded-lg border border-emerald-100"
+                      >
+                        <div className="flex-1">
+                          <p className="text-xs font-medium text-gray-900">
+                            <span className="text-emerald-600">{foodOption?.name}:</span> Cambiaste de {upgrade.fromDish} a {upgrade.toDish}
+                          </p>
+                          <Badge size="xs" variant="light" className="bg-emerald-100 text-emerald-700 mt-1">
+                            {upgrade.category === 'adult' ? 'Adultos' : 'Niños'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <span className="text-xs font-bold text-emerald-600">
+                              +{formatPrice(upgrade.additionalPrice * (parseInt(formData.adultCount) || 0))}
+                            </span>
+                            <p className="text-xs text-gray-500">
+                              {formatPrice(upgrade.additionalPrice)} × {formData.adultCount} adultos
+                            </p>
+                          </div>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                selectedFoodUpgrades: prev.selectedFoodUpgrades.filter((_, i) => i !== index)
+                              }));
+                            }}
+                            className="text-red-500 hover:text-red-700 transition-colors p-1 rounded-full hover:bg-red-50"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                  <div className="pt-2 border-t border-emerald-200/70 mt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-gray-700">Total personalización:</span>
+                      <span className="text-sm font-bold text-emerald-600">
+                        +{formatPrice(formData.selectedFoodUpgrades.reduce((total, upgrade) => total + (upgrade.additionalPrice * (parseInt(formData.adultCount) || 0)), 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* Theme Selection */}
             <motion.div
@@ -1449,6 +2131,9 @@ Para cualquier duda, contacta:
               <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto leading-relaxed px-3">
                 Agrega servicios extra para hacer tu celebración inolvidable
               </p>
+              <p className="text-xs text-amber-600 font-semibold">
+                Selecciona el servicio que más te guste
+              </p>
             </motion.div>
 
             {/* Extra Services */}
@@ -1472,34 +2157,41 @@ Para cualquier duda, contacta:
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => {
-                        const isSelected = formData.selectedExtraServices.includes(service._id);
+                        const isSelected = formData.selectedExtraServices === service._id;
                         setFormData(prev => ({
                           ...prev,
-                          selectedExtraServices: isSelected
-                            ? prev.selectedExtraServices.filter(id => id !== service._id)
-                            : [...prev.selectedExtraServices, service._id]
+                          selectedExtraServices: isSelected ? '' : service._id
                         }));
                       }}
                       className={`p-4 rounded-xl border-1.5 cursor-pointer transition-all duration-300 ${
-                        formData.selectedExtraServices.includes(service._id)
+                        formData.selectedExtraServices === service._id
                           ? 'border-amber-500 bg-gradient-to-br from-amber-50/90 to-orange-50/90 backdrop-blur-lg shadow-lg'
                           : 'border-gray-200/70 hover:border-amber-300 bg-white/50 backdrop-blur-lg hover:bg-amber-50/30'
                       }`}
                     >
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-sm text-gray-900 mb-1">{service.name}</h3>
-                          <p className="text-xs text-gray-600 mb-2">{service.description}</p>
-                          <div className="flex items-center justify-between">
-                            <Badge size="sm" variant="light" className="bg-amber-100 text-amber-700 text-xs">
-                              {service.category}
-                            </Badge>
-                            <span className="text-sm font-bold text-gray-900">{formatPrice(service.price)}</span>
+                        {/* Radio Button */}
+                        <div className="flex items-start gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 flex-shrink-0 transition-all duration-200 ${
+                            formData.selectedExtraServices === service._id
+                              ? 'bg-amber-500 border-amber-500'
+                              : 'border-gray-300 hover:border-amber-400'
+                          }`}>
+                            {formData.selectedExtraServices === service._id && (
+                              <div className="w-2 h-2 bg-white rounded-full" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-sm text-gray-900 mb-1">{service.name}</h3>
+                            <p className="text-xs text-gray-600 mb-2">{service.description}</p>
+                            <div className="flex items-center justify-between">
+                              <Badge size="sm" variant="light" className="bg-amber-100 text-amber-700 text-xs">
+                                {service.category}
+                              </Badge>
+                              <span className="text-sm font-bold text-gray-900">{formatPrice(service.price)}</span>
+                            </div>
                           </div>
                         </div>
-                        {formData.selectedExtraServices.includes(service._id) && (
-                          <CheckIconSolid className="w-4 h-4 text-amber-500 flex-shrink-0 ml-2" />
-                        )}
                       </div>
                     </motion.div>
                   ))}
@@ -1619,6 +2311,140 @@ Para cualquier duda, contacta:
               </RadioGroup>
             </motion.div>
 
+            {/* Coupon Code Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="space-y-2"
+            >
+              <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                <SparklesIcon className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500" />
+                ¿Tienes un cupón de descuento?
+                <span className="text-xs font-normal text-gray-500">(opcional)</span>
+              </label>
+              <div className="relative">
+                {appliedCoupon ? (
+                  <div className="p-3 rounded-xl border-1.5 border-green-500 bg-gradient-to-br from-green-50/90 to-emerald-50/90 backdrop-blur-lg shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <SparklesIcon className="w-4 h-4 text-green-500" />
+                        <div>
+                          <Text size="sm" fw={600} c="green.7">
+                            Cupón "{appliedCoupon.code}" aplicado
+                          </Text>
+                          <Text size="xs" c="green.6">
+                            Descuento de {formatPrice(discountAmount)}
+                          </Text>
+                        </div>
+                      </div>
+                      <Button
+                        size="xs"
+                        variant="light"
+                        color="red"
+                        radius="md"
+                        onClick={removeCoupon}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <TextInput
+                    placeholder="Ingresa tu código de cupón"
+                    value={formData.couponCode}
+                    onChange={(event) => {
+                      const value = event.currentTarget.value.toUpperCase();
+                      setFormData(prev => ({ ...prev, couponCode: value }));
+                    }}
+                    variant="default"
+                    radius="lg"
+                    className="text-gray-900"
+                    leftSection={<SparklesIcon className="w-4 h-4 text-yellow-500" />}
+                    rightSection={
+                      formData.couponCode.length > 0 ? (
+                        <Button
+                          size="xs"
+                          variant="light"
+                          color="green"
+                          radius="md"
+                          onClick={() => validateAndApplyCoupon(formData.couponCode)}
+                        >
+                          Aplicar
+                        </Button>
+                      ) : null
+                    }
+                    styles={{
+                      input: {
+                        border: '1.5px solid rgb(229 231 235 / 0.7)',
+                        backgroundColor: 'rgb(255 255 255 / 0.5)',
+                        backdropFilter: 'blur(16px)',
+                        borderRadius: '12px',
+                        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+                        transition: 'all 300ms',
+                        paddingRight: formData.couponCode.length > 0 ? '80px' : '40px',
+                        '&:hover': {
+                          borderColor: 'rgb(245 158 11 / 0.5)',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        },
+                        '&:focus': {
+                          borderColor: 'rgb(245 158 11)',
+                          boxShadow: '0 0 0 3px rgb(245 158 11 / 0.1), 0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        }
+                      }
+                    }}
+                  />
+                )}
+              </div>
+              <Text size="xs" c="dimmed" className="flex items-center gap-1">
+                <InformationCircleIcon className="w-3 h-3" />
+                Los cupones se validarán antes de confirmar tu reservación
+              </Text>
+            </motion.div>
+
+            {/* Special Comments Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 1.875 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="space-y-2"
+            >
+              <label className="text-xs sm:text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                <DocumentTextIcon className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+                Algo especial que debamos saber?
+                <span className="text-xs font-normal text-gray-500">(opcional)</span>
+              </label>
+              <Textarea
+                placeholder="Alergias, solicitudes especiales, decoración preferida, cumpleaños temático..."
+                value={formData.specialComments}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setFormData(prev => ({ ...prev, specialComments: value }));
+                }}
+                minRows={3}
+                variant="default"
+                radius="lg"
+                className="text-gray-900"
+                styles={{
+                  input: {
+                    border: '1.5px solid rgb(229 231 235 / 0.7)',
+                    backgroundColor: 'rgb(255 255 255 / 0.5)',
+                    backdropFilter: 'blur(16px)',
+                    borderRadius: '12px',
+                    boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+                    transition: 'all 300ms',
+                    '&:hover': {
+                      borderColor: 'rgb(34 197 94 / 0.5)',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    },
+                    '&:focus': {
+                      borderColor: 'rgb(34 197 94)',
+                    }
+                  }
+                }}
+              />
+            </motion.div>
+
             {/* Summary */}
             <motion.div
               initial={{ opacity: 0, y: 1.875 }}
@@ -1633,9 +2459,37 @@ Para cualquier duda, contacta:
                   <span className="font-semibold text-gray-900">{formData.childName} ({formData.childAge} años)</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-gray-600">Invitados:</span>
+                  <span className="font-semibold text-gray-900">
+                    {formData.adultCount} adultos, {formData.kidsCount} niños
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-gray-600">Fecha:</span>
                   <span className="font-semibold text-gray-900">
-                    {getEventDate()?.toLocaleDateString('es-ES') || 'Fecha no seleccionada'} a las {formData.eventTime}
+                    {formData.eventDate?.toLocaleDateString('es-MX', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    }) || 'Fecha no seleccionada'} {formData.eventTime ? (() => {
+                      // Find the actual slot from the blocks data to get the correct end time
+                      const allSlots = availableSlots?.blocks?.flatMap(block => block.slots) || [];
+                      const selectedSlot = allSlots.find(slot => slot.time === formData.eventTime);
+                      if (selectedSlot && selectedSlot.endTime) {
+                        // Get the block to find the actual party duration
+                        const selectedBlock = availableSlots?.blocks?.find(block => 
+                          block.slots.some(slot => slot.time === formData.eventTime)
+                        );
+                        const partyDuration = selectedBlock?.duration || availableSlots?.defaultEventDuration || 2;
+                        return `de ${formatTimeRangeWithFarewell(formData.eventTime, selectedSlot.endTime, partyDuration)}`;
+                      } else {
+                        // Fallback to default calculation
+                        const duration = availableSlots?.defaultEventDuration || 2;
+                        const endTime = calculateEndTime(formData.eventTime, duration);
+                        return `de ${formatTimeRange(formData.eventTime, endTime)}`;
+                      }
+                    })() : ''}
                   </span>
                 </div>
                 {selectedPackage && (
@@ -1644,6 +2498,79 @@ Para cualquier duda, contacta:
                     <span className="font-semibold text-gray-900">{selectedPackage.name}</span>
                   </div>
                 )}
+                <Divider className="my-2" />
+                {/* Pricing Breakdown */}
+                {(() => {
+                  return (
+                    <div className="space-y-1">
+                      {pricing.packagePrice > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Paquete:</span>
+                          <span className="text-gray-900">{formatPrice(pricing.packagePrice)}</span>
+                        </div>
+                      )}
+                      {pricing.foodPrice > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Comida:</span>
+                          <span className="text-gray-900">{formatPrice(pricing.foodPrice)}</span>
+                        </div>
+                      )}
+                      {pricing.themePrice > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Tema:</span>
+                          <span className="text-gray-900">{formatPrice(pricing.themePrice)}</span>
+                        </div>
+                      )}
+                      {pricing.extrasPrice > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Servicios extras:</span>
+                          <span className="text-gray-900">{formatPrice(pricing.extrasPrice)}</span>
+                        </div>
+                      )}
+                      {pricing.restDayFee > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Día de descanso:</span>
+                          <span className="text-gray-900">{formatPrice(pricing.restDayFee)}</span>
+                        </div>
+                      )}
+                      {/* Debug rest day info */}
+                      {console.log('Pricing breakdown debug:', {
+                        isRestDay: availableSlots?.isRestDay,
+                        restDayFee: availableSlots?.restDayFee,
+                        pricingRestDayFee: pricing.restDayFee,
+                        pricing: pricing,
+                        availableSlots: availableSlots
+                      })}
+                      {/* Show rest day debug info for troubleshooting */}
+                      {availableSlots?.isRestDay && (
+                        <div className="flex justify-between text-xs text-orange-600 bg-orange-50 p-1 rounded">
+                          <span>DEBUG - Rest Day Detected:</span>
+                          <span>{formatPrice(availableSlots.restDayFee || 0)}</span>
+                        </div>
+                      )}
+                      {/* Additional debug for pricing object */}
+                      <div className="flex justify-between text-xs text-blue-600 bg-blue-50 p-1 rounded">
+                        <span>DEBUG - Pricing RestDay Fee:</span>
+                        <span>{formatPrice(pricing.restDayFee || 0)} (condition: {pricing.restDayFee > 0 ? 'TRUE' : 'FALSE'})</span>
+                      </div>
+                      {pricing.subtotal > 0 && (
+                        <div className="flex justify-between text-sm border-t pt-1">
+                          <span className="text-gray-700 font-medium">Subtotal:</span>
+                          <span className="text-gray-900 font-medium">{formatPrice(pricing.subtotal)}</span>
+                        </div>
+                      )}
+                      {pricing.discountAmount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-green-600 font-medium flex items-center gap-1">
+                            <SparklesIcon className="w-3 h-3" />
+                            Descuento:
+                          </span>
+                          <span className="text-green-600 font-medium">-{formatPrice(pricing.discountAmount)}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 <Divider className="my-2" />
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-bold text-gray-900">Total:</span>
@@ -1708,14 +2635,35 @@ Para cualquier duda, contacta:
                   <span className="text-sm font-semibold text-gray-900">{formData.childName}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Invitados:</span>
+                  <span className="text-sm font-semibold text-gray-900">{formData.adultCount} adultos, {formData.kidsCount} niños</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Fecha:</span>
                   <span className="text-sm font-semibold text-gray-900">
-                    {getEventDate()?.toLocaleDateString('es-ES') || 'Fecha no seleccionada'}
+                    {formData.eventDate?.toLocaleDateString('es-MX', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    }) || 'Fecha no seleccionada'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Hora:</span>
-                  <span className="text-sm font-semibold text-gray-900">{formData.eventTime}</span>
+                  <span className="text-sm font-semibold text-gray-900">{formData.eventTime ? (() => {
+                    // Find the actual slot from the blocks data to get the correct end time
+                    const allSlots = availableSlots?.blocks?.flatMap(block => block.slots) || [];
+                    const selectedSlot = allSlots.find(slot => slot.time === formData.eventTime);
+                    if (selectedSlot && selectedSlot.endTime) {
+                      return formatTimeRange(formData.eventTime, selectedSlot.endTime);
+                    } else {
+                      // Fallback to default calculation
+                      const duration = availableSlots?.defaultEventDuration || 2;
+                      const endTime = calculateEndTime(formData.eventTime, duration);
+                      return formatTimeRange(formData.eventTime, endTime);
+                    }
+                  })() : ''}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Total:</span>
@@ -2023,6 +2971,24 @@ Para cualquier duda, contacta:
                       </motion.div>
                     )}
                     
+                    {(formData.adultCount || formData.kidsCount) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="p-3 bg-gradient-to-r from-purple-50/90 to-indigo-50/90 backdrop-blur-sm rounded-xl border border-purple-100/70"
+                      >
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <UserGroupIcon className="w-3 h-3 text-purple-500" />
+                          <p className="text-xs font-semibold text-purple-700">Invitados</p>
+                        </div>
+                        <p className="font-bold text-gray-900 text-sm">
+                          {formData.adultCount && `${formData.adultCount} adultos`}
+                          {formData.adultCount && formData.kidsCount && ', '}
+                          {formData.kidsCount && `${formData.kidsCount} niños`}
+                        </p>
+                      </motion.div>
+                    )}
+                    
                     {formData.eventDate && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -2034,15 +3000,62 @@ Para cualquier duda, contacta:
                           <p className="text-xs font-semibold text-blue-700">Fecha y hora</p>
                         </div>
                         <p className="font-bold text-gray-900 text-sm">
-                          {getEventDate()?.toLocaleDateString('es-ES', {
+                          {formData.eventDate?.toLocaleDateString('es-MX', {
                             weekday: 'long',
                             day: 'numeric',
                             month: 'long'
                           }) || 'Fecha no seleccionada'}
-                          {formData.eventTime && (
-                            <span className="text-blue-600"> a las {formData.eventTime}</span>
-                          )}
+                          {formData.eventTime && (() => {
+                            // Find the actual slot from the blocks data to get the correct end time
+                            const allSlots = availableSlots?.blocks?.flatMap(block => block.slots) || [];
+                            const selectedSlot = allSlots.find(slot => slot.time === formData.eventTime);
+                            if (selectedSlot && selectedSlot.endTime) {
+                              // Get the block to find the actual party duration
+                              const selectedBlock = availableSlots?.blocks?.find(block => 
+                                block.slots.some(slot => slot.time === formData.eventTime)
+                              );
+                              const partyDuration = selectedBlock?.duration || availableSlots?.defaultEventDuration || 2;
+                              return (
+                                <span className="text-blue-600"> de {formatTimeRangeWithFarewell(formData.eventTime, selectedSlot.endTime, partyDuration)}</span>
+                              );
+                            } else {
+                              // Fallback to default calculation
+                              const duration = availableSlots?.defaultEventDuration || 2;
+                              const endTime = calculateEndTime(formData.eventTime, duration);
+                              return (
+                                <span className="text-blue-600"> de {formatTimeRange(formData.eventTime, endTime)}</span>
+                              );
+                            }
+                          })()}
                         </p>
+                      </motion.div>
+                    )}
+                    
+                    {/* Food Customizations */}
+                    {formData.selectedFoodUpgrades.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="p-3 bg-gradient-to-r from-emerald-50/90 to-green-50/90 backdrop-blur-sm rounded-xl border border-emerald-100/70"
+                      >
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                          </svg>
+                          <p className="text-xs font-semibold text-emerald-700">Personalizaciones</p>
+                        </div>
+                        <div className="space-y-1.5">
+                          {formData.selectedFoodUpgrades.map((upgrade, index) => {
+                            const foodOption = foodOptions.find(f => f._id === upgrade.foodOptionId);
+                            return (
+                              <div key={index} className="text-xs">
+                                <p className="font-medium text-gray-900">
+                                  <span className="text-emerald-600">{foodOption?.name}:</span> Cambiaste de {upgrade.fromDish} a {upgrade.toDish}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </motion.div>
                     )}
                   </div>

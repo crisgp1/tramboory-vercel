@@ -19,7 +19,8 @@ import {
   CubeIcon,
   DocumentTextIcon,
   BanknotesIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { useRole } from '@/hooks/useRole';
 import { useUser } from '@clerk/nextjs';
@@ -94,6 +95,15 @@ export default function AdminQuickNav({ variant = 'header', className = '' }: Ad
       href: '/dashboard/finanzas',
       roles: ['admin', 'gerente'],
       color: 'secondary' as const
+    },
+    {
+      key: 'coupons',
+      label: 'Cupones',
+      description: 'Gestionar promociones',
+      icon: SparklesIcon,
+      href: '/dashboard/cupones',
+      roles: ['admin', 'gerente'],
+      color: 'warning' as const
     },
     {
       key: 'reports',

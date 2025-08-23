@@ -65,6 +65,22 @@ export interface IReservation extends Document {
     age: number;
   };
   
+  // Conteo de invitados
+  guestCount: {
+    adults: number;
+    kids: number;
+  };
+  
+  // Información del cupón aplicado
+  appliedCoupon?: {
+    couponId: mongoose.Types.ObjectId;
+    code: string;
+    discountType: 'percentage' | 'fixed_amount' | 'free_service';
+    discountValue: number;
+    discountAmount: number; // Amount actually discounted
+    appliedTo: string; // What the discount was applied to
+  };
+  
   // Comentarios especiales
   specialComments?: string;
   
@@ -76,6 +92,7 @@ export interface IReservation extends Document {
     themePrice: number;
     restDayFee: number;
     subtotal: number;
+    discountAmount: number;
     total: number;
   };
   
@@ -223,6 +240,48 @@ const ReservationSchema = new Schema<IReservation>({
     }
   },
   
+  guestCount: {
+    adults: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    },
+    kids: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    }
+  },
+  
+  appliedCoupon: {
+    couponId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Coupon'
+    },
+    code: {
+      type: String,
+      uppercase: true,
+      trim: true
+    },
+    discountType: {
+      type: String,
+      enum: ['percentage', 'fixed_amount', 'free_service']
+    },
+    discountValue: {
+      type: Number,
+      min: 0
+    },
+    discountAmount: {
+      type: Number,
+      min: 0
+    },
+    appliedTo: {
+      type: String
+    }
+  },
+  
   specialComments: {
     type: String,
     trim: true
@@ -254,6 +313,11 @@ const ReservationSchema = new Schema<IReservation>({
       type: Number,
       required: true,
       default: 0
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0
     },
     total: {
       type: Number,

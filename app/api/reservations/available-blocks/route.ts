@@ -35,13 +35,21 @@ export async function GET(request: NextRequest) {
     }
     
     const date = new Date(dateParam + 'T12:00:00.000Z'); // Parse as UTC noon to avoid timezone issues
-    const dayOfWeek = date.getUTCDay();
+    const jsDayOfWeek = date.getUTCDay(); // JavaScript: 0=Sunday, 1=Monday, 2=Tuesday...
+    const dayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1; // Convert to Mexican: 0=Monday, 1=Tuesday, 6=Sunday
+    
+    console.log('🔍 DEBUG: Day conversion:', {
+      dateParam,
+      jsDayOfWeek,
+      dayOfWeek,
+      dayName: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dayOfWeek]
+    });
     
     console.log('Date calculation debug:', {
       inputDate: dateParam,
       dateObject: date.toISOString(),
       dayOfWeek,
-      dayName: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][dayOfWeek]
+      dayName: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dayOfWeek]
     });
     const systemConfig = await SystemConfig.findOne({ isActive: true });
     
@@ -62,9 +70,15 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Check if it's a rest day
-    const restDay = systemConfig.restDays?.find((rd: RestDay) => rd.day === dayOfWeek);
-    const isRestDay = !!restDay;
+    // Check if it's a rest day from restDays configuration (legacy support)
+    let restDay = systemConfig.restDays?.find((rd: RestDay) => rd.day === dayOfWeek);
+    let isRestDay = !!restDay;
+    let restDayFee = 0;
+    
+    // If found in restDays, use that fee
+    if (restDay) {
+      restDayFee = restDay.fee;
+    }
     
     // Get time blocks for this day
     const dayBlocks = systemConfig.timeBlocks?.filter((block: TimeBlock) => 
@@ -74,7 +88,7 @@ export async function GET(request: NextRequest) {
     console.log('Available blocks debug:', {
       date: dateParam,
       dayOfWeek,
-      dayName: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][dayOfWeek],
+      dayName: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dayOfWeek],
       isRestDay,
       restDay,
       totalTimeBlocks: systemConfig.timeBlocks?.length || 0,
@@ -82,7 +96,7 @@ export async function GET(request: NextRequest) {
       dayBlocksDetails: dayBlocks.map((b: TimeBlock) => ({
         name: b.name,
         days: b.days,
-        daysNames: b.days.map(d => ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][d]),
+        daysNames: b.days.map(d => ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][d]),
         startTime: b.startTime,
         endTime: b.endTime,
         duration: b.duration,
@@ -214,8 +228,7 @@ export async function GET(request: NextRequest) {
       };
     });
     
-    // Add rest day fee if applicable
-    const restDayFee = isRestDay && restDay ? restDay.fee : 0;
+    // Rest day fee already calculated above
     
     return NextResponse.json({
       success: true,
@@ -226,7 +239,6 @@ export async function GET(request: NextRequest) {
         restDayInfo: restDay || null,
         restDayFee,
         blocks: availableBlocks,
-        businessHours: systemConfig.businessHours,
         defaultEventDuration: systemConfig.defaultEventDuration
       }
     });

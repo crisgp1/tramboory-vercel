@@ -27,7 +27,7 @@ import {
   ListBulletIcon,
   AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 import { useReservationStore } from '@/stores/reservationStore';
 import ClientReservationCardClean from './ClientReservationCardClean';
 import ClientReservationModal from './ClientReservationModal';
@@ -77,11 +77,11 @@ export default function ClientReservationManagerClean() {
       if (data.success) {
         setReservations(data.data);
       } else {
-        toast.error('Error al cargar tus reservas');
+        notifications.show({ title: 'Error', message: 'Error al cargar tus reservas', color: 'red' });
       }
     } catch (error) {
       console.error('Error fetching user reservations:', error);
-      toast.error('Error al cargar tus reservas');
+      notifications.show({ title: 'Error', message: 'Error al cargar tus reservas', color: 'red' });
     } finally {
       setLoading(false);
     }

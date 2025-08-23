@@ -30,7 +30,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { Reservation } from '@/types/reservation';
 import { exportToCalendar } from '@/lib/calendar-export';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 
 interface ClientReservationCardCleanProps {
   reservation: Reservation;
@@ -130,11 +130,11 @@ export default function ClientReservationCardClean({
   const handleCalendarExport = (provider: 'google' | 'outlook' | 'yahoo' | 'ical') => {
     try {
       exportToCalendar(reservation, provider);
-      toast.success(`Evento exportado a ${provider === 'ical' ? 'calendario' : provider}`);
+      notifications.show({ title: 'Success', message: `Evento exportado a ${provider === 'ical' ? 'calendario' : provider}`, color: 'green' });
       setCalendarDropdownOpen(false);
     } catch (error) {
       console.error('Error exporting to calendar:', error);
-      toast.error('Error al exportar el evento');
+      notifications.show({ title: 'Error', message: 'Error al exportar el evento', color: 'red' });
     }
   };
 
