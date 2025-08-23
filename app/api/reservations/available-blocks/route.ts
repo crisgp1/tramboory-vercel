@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const date = createUTCDate(dateParam); // Use consistent UTC date creation
-    const dayOfWeek = getMexicanDayOfWeek(date, true); // Use consistent day conversion
-    const dayName = getMexicanDayName(date, true);
+    const date = createUTCDate(dateParam); // Use consistent date creation
+    const dayOfWeek = getMexicanDayOfWeek(date); // Use local day conversion
+    const dayName = getMexicanDayName(date);
     
     console.log('🔍 DEBUG: Day conversion:', {
       dateParam,

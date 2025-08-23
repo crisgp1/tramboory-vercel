@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
       endDate.setDate(endDate.getDate() + 90);
     }
     
-    // Set times to cover full days - use UTC to match stored dates
-    startDate.setUTCHours(0, 0, 0, 0);
-    endDate.setUTCHours(23, 59, 59, 999);
+    // Set times to cover full days in local timezone (Mexico City)
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
     
     // Get system configuration
     const systemConfig = await SystemConfig.findOne({ isActive: true });
@@ -72,14 +72,14 @@ export async function GET(request: NextRequest) {
       const dateKey = `${year}-${month}-${day}`;
       reservationCounts[dateKey] = (reservationCounts[dateKey] || 0) + 1;
       
-      // Debug logging for August dates
+      // Debug logging for date processing
       if (dateKey.includes('2025-08-2')) {
         console.log('📅 Processing reservation:', {
           stored: reservation.eventDate.toISOString(),
           localDate: date.toString(),
           dateKey,
-          dayOfWeek: getMexicanDayOfWeek(date, false),
-          dayName: getMexicanDayName(date, false)
+          dayOfWeek: getMexicanDayOfWeek(date),
+          dayName: getMexicanDayName(date)
         });
       }
     });
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       const day = String(currentDate.getDate()).padStart(2, '0');
       const dateKey = `${year}-${month}-${day}`;
       const count = reservationCounts[dateKey] || 0;
-      const dayOfWeek = getMexicanDayOfWeek(currentDate, false); // Use local for consistency
+      const dayOfWeek = getMexicanDayOfWeek(currentDate); // Use local for consistency
       
       // Check if it's a rest day that cannot be released
       const restDay = systemConfig.restDays?.find((rd: RestDay) => rd.day === dayOfWeek);
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
       if (dateKey === '2025-07-22' || dateKey === '2025-07-23' || dateKey === '2025-07-24') {
         console.log(`Availability debug for ${dateKey}:`, {
           dayOfWeek,
-          dayName: getMexicanDayName(currentDate, true),
+          dayName: getMexicanDayName(currentDate),
           isRestDay,
           isBlockedRestDay,
           dayTimeBlocks: dayTimeBlocks.length,

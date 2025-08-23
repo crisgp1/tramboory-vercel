@@ -100,10 +100,10 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar si es día de descanso - use consistent UTC date handling
+    // Verificar si es día de descanso - use consistent local date handling
     const eventDateObj = eventDate.includes('T') ? new Date(eventDate) : createUTCDate(eventDate);
-    const dayOfWeek = getMexicanDayOfWeek(eventDateObj, true);
-    const dayName = getMexicanDayName(eventDateObj, true);
+    const dayOfWeek = getMexicanDayOfWeek(eventDateObj);
+    const dayName = getMexicanDayName(eventDateObj);
     const restDay = systemConfig.restDays?.find((rd: any) => rd.day === dayOfWeek);
     const isRestDay = !!restDay;
     
@@ -172,11 +172,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Verificar disponibilidad del slot de tiempo
-    // Obtener todas las reservas existentes para esa fecha - use UTC to match stored dates
-    const startOfDay = new Date(eventDate);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const endOfDay = new Date(eventDate);
-    endOfDay.setUTCHours(23, 59, 59, 999);
+    // Obtener todas las reservas existentes para esa fecha - use local time
+    const startOfDay = new Date(eventDateObj);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(eventDateObj);
+    endOfDay.setHours(23, 59, 59, 999);
     
     const existingReservations = await Reservation.find({
       eventDate: {

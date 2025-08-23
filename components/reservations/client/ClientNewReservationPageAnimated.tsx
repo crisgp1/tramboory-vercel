@@ -583,7 +583,13 @@ export default function ClientNewReservationPageAnimated() {
     try {
       const reservationData = {
         packageId: formData.packageId,
-        eventDate: formData.eventDate ? formData.eventDate.toISOString() : '',
+        eventDate: formData.eventDate ? (() => {
+          // Format date as YYYY-MM-DD in local timezone (Mexico City)
+          const year = formData.eventDate.getFullYear();
+          const month = String(formData.eventDate.getMonth() + 1).padStart(2, '0');
+          const day = String(formData.eventDate.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        })() : '',
         eventTime: formData.eventTime,
         customer: {
           name: user.fullName || `${user.firstName} ${user.lastName}`.trim(),
