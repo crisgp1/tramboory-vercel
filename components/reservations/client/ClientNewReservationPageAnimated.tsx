@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import AdminQuickNav from '@/components/navigation/AdminQuickNav';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { calendarDateToUTC, toUTCDateString, getMexicanDayOfWeek } from '@/lib/utils/dateUtils';
 import {
   Button,
   TextInput,
@@ -399,11 +400,17 @@ export default function ClientNewReservationPageAnimated() {
   const fetchAvailability = async () => {
     setLoadingAvailability(true);
     try {
-      const response = await fetch('/api/reservations/availability');
+      // Add timestamp to prevent caching
+      const response = await fetch(`/api/reservations/availability?_t=${Date.now()}`);
       
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
+          console.log('📅 Availability loaded:', {
+            totalDates: Object.keys(data.data).length,
+            augustDates: Object.keys(data.data).filter(d => d.includes('2025-08-2')),
+            unavailableDates: Object.entries(data.data).filter(([_, status]) => status === 'unavailable')
+          });
           setAvailability(data.data);
           setLoadingAvailability(false);
           return;
@@ -510,7 +517,11 @@ export default function ClientNewReservationPageAnimated() {
       case 'datetime':
         return !!(formData.eventDate && formData.eventTime);
       case 'package':
-        return !!(formData.packageId && formData.adultCount && formData.kidsCount && parseInt(formData.adultCount) >= 0 && parseInt(formData.kidsCount) >= 0);
+        // Allow proceeding if package is selected and guest counts are valid (even if not at full capacity)
+        const totalGuests = (parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0);
+        const hasValidCounts = formData.adultCount !== '' && formData.kidsCount !== '' && 
+                               parseInt(formData.adultCount) >= 0 && parseInt(formData.kidsCount) >= 0;
+        return !!(formData.packageId && hasValidCounts && totalGuests > 0);
       case 'food':
         return true; // Optional step
       case 'extras':
@@ -526,6 +537,24 @@ export default function ClientNewReservationPageAnimated() {
     if (!validateCurrentStep()) {
       notifications.show({ title: 'Error', message: 'Por favor completa todos los campos requeridos', color: 'red' });
       return;
+    }
+
+    // Check for incomplete guest count when leaving package step
+    if (currentStep === 'package') {
+      const selectedPackage = packages.find(p => p._id === formData.packageId);
+      if (selectedPackage) {
+        const totalGuests = (parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0);
+        if (totalGuests < selectedPackage.maxGuests) {
+          const missingGuests = selectedPackage.maxGuests - totalGuests;
+          const confirmMessage = `Has seleccionado ${totalGuests} invitados de ${selectedPackage.maxGuests} disponibles en el paquete.\n\n` +
+                                `Faltan ${missingGuests} invitados para completar la capacidad.\n\n` +
+                                `¿Deseas continuar con ${totalGuests} invitados?`;
+          
+          if (!window.confirm(confirmMessage)) {
+            return; // User chose not to continue
+          }
+        }
+      }
     }
 
     const nextStepIndex = currentStepIndex + 1;
@@ -678,19 +707,27 @@ export default function ClientNewReservationPageAnimated() {
     // Add rest day fee if applicable
     if (availableSlots?.isRestDay) {
       restDayFee = availableSlots.restDayFee || 0;
+      const jsDayOfWeek = formData.eventDate?.getDay();
+      const dayOfWeek = jsDayOfWeek === 0 ? 6 : (jsDayOfWeek ? jsDayOfWeek - 1 : 0);
       console.log('✅ REST DAY FEE APPLIED:', {
         isRestDay: availableSlots.isRestDay,
         restDayFee: availableSlots.restDayFee,
         eventDate: formData.eventDate?.toLocaleDateString(),
-        dayOfWeek: formData.eventDate?.getDay(),
+        jsDayOfWeek,
+        dayOfWeek,
+        dayName: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dayOfWeek],
         availableSlots: availableSlots
       });
     } else {
+      const jsDayOfWeek = formData.eventDate?.getDay();
+      const dayOfWeek = jsDayOfWeek === 0 ? 6 : (jsDayOfWeek ? jsDayOfWeek - 1 : 0);
       console.log('❌ NO REST DAY FEE:', {
         isRestDay: availableSlots?.isRestDay,
         restDayFee: availableSlots?.restDayFee,
         eventDate: formData.eventDate?.toLocaleDateString(),
-        dayOfWeek: formData.eventDate?.getDay(),
+        jsDayOfWeek,
+        dayOfWeek,
+        dayName: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dayOfWeek],
         hasAvailableSlots: !!availableSlots
       });
     }
@@ -1167,12 +1204,26 @@ Para cualquier duda, contacta:
                             return {};
                           }
                           
-                          // Format date in local timezone to match availability data
+                          // Direct local date formatting to avoid timezone conversion issues
+                          // The calendar shows local dates, so we format them directly
                           const year = dateObj.getFullYear();
                           const month = String(dateObj.getMonth() + 1).padStart(2, '0');
                           const day = String(dateObj.getDate()).padStart(2, '0');
                           const dateString = `${year}-${month}-${day}`;
                           const status = availability[dateString];
+                          
+                          // Debug logging - log ALL August dates to see the pattern
+                          if (dateString.includes('2025-08-2') && dateString >= '2025-08-20' && dateString <= '2025-08-31') {
+                            console.log(`🗓️ Calendar processing ${dateString}:`, {
+                              receivedDate: dateObj.toString(),
+                              localDateString: dateObj.toDateString(),
+                              calculatedString: dateString,
+                              status: status || 'no status',
+                              dayOfWeek: dateObj.getDay(),
+                              dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dateObj.getDay()],
+                              willShowAs: status === 'unavailable' ? 'RED/DISABLED' : status === 'available' ? 'GREEN' : 'DEFAULT'
+                            });
+                          }
                           
                           if (status === 'unavailable') {
                             return {
@@ -1628,19 +1679,50 @@ Para cualquier duda, contacta:
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="p-3 bg-gradient-to-r from-purple-50/90 to-indigo-50/90 backdrop-blur-sm rounded-xl border border-purple-200/70"
+                  className={`p-3 rounded-xl border ${
+                    (parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0) === selectedPackage.maxGuests
+                      ? 'bg-gradient-to-r from-green-50/90 to-emerald-50/90 border-green-200/70'
+                      : (parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0) < selectedPackage.maxGuests
+                      ? 'bg-gradient-to-r from-yellow-50/90 to-orange-50/90 border-yellow-200/70'
+                      : 'bg-gradient-to-r from-purple-50/90 to-indigo-50/90 border-purple-200/70'
+                  }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <InformationCircleIcon className="w-4 h-4 text-purple-500" />
-                    <p className="text-xs font-semibold text-purple-700">Capacidad del paquete</p>
+                    {(parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0) === selectedPackage.maxGuests ? (
+                      <>
+                        <CheckIcon className="w-4 h-4 text-green-500" />
+                        <p className="text-xs font-semibold text-green-700">Capacidad completa</p>
+                      </>
+                    ) : (parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0) < selectedPackage.maxGuests ? (
+                      <>
+                        <ExclamationTriangleIcon className="w-4 h-4 text-yellow-500" />
+                        <p className="text-xs font-semibold text-yellow-700">Capacidad incompleta</p>
+                      </>
+                    ) : (
+                      <>
+                        <InformationCircleIcon className="w-4 h-4 text-purple-500" />
+                        <p className="text-xs font-semibold text-purple-700">Capacidad del paquete</p>
+                      </>
+                    )}
                   </div>
-                  <p className="text-xs text-purple-600">
+                  <p className="text-xs text-gray-600">
                     <span className="font-semibold">{selectedPackage.name}</span> permite hasta <span className="font-bold">{selectedPackage.maxGuests} invitados</span>
                   </p>
                   <div className="mt-1">
-                    <p className="text-xs text-gray-600">
-                      Total actual: <span className="font-semibold">{(parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0)} invitados</span>
+                    <p className={`text-xs font-semibold ${
+                      (parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0) === selectedPackage.maxGuests
+                        ? 'text-green-600'
+                        : (parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0) < selectedPackage.maxGuests
+                        ? 'text-yellow-600'
+                        : 'text-gray-600'
+                    }`}>
+                      Total actual: {(parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0)} de {selectedPackage.maxGuests} invitados
                     </p>
+                    {(parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0) < selectedPackage.maxGuests && (
+                      <p className="text-xs text-yellow-600 mt-1">
+                        ⚠️ Faltan {selectedPackage.maxGuests - ((parseInt(formData.adultCount) || 0) + (parseInt(formData.kidsCount) || 0))} invitados para completar el paquete
+                      </p>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -2534,13 +2616,16 @@ Para cualquier duda, contacta:
                         </div>
                       )}
                       {/* Debug rest day info */}
-                      {console.log('Pricing breakdown debug:', {
-                        isRestDay: availableSlots?.isRestDay,
-                        restDayFee: availableSlots?.restDayFee,
-                        pricingRestDayFee: pricing.restDayFee,
-                        pricing: pricing,
-                        availableSlots: availableSlots
-                      })}
+                      {(() => {
+                        console.log('Pricing breakdown debug:', {
+                          isRestDay: availableSlots?.isRestDay,
+                          restDayFee: availableSlots?.restDayFee,
+                          pricingRestDayFee: pricing.restDayFee,
+                          pricing: pricing,
+                          availableSlots: availableSlots
+                        });
+                        return null;
+                      })()}
                       {/* Show rest day debug info for troubleshooting */}
                       {availableSlots?.isRestDay && (
                         <div className="flex justify-between text-xs text-orange-600 bg-orange-50 p-1 rounded">

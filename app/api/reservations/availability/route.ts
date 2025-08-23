@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Reservation from '@/models/Reservation';
 import SystemConfig from '@/models/SystemConfig';
+import { toUTCDateString, getMexicanDayOfWeek, getMexicanDayName } from '@/lib/utils/dateUtils';
 
 interface TimeBlock {
   name: string;
@@ -63,8 +64,24 @@ export async function GET(request: NextRequest) {
     const reservationCounts: { [key: string]: number } = {};
     
     reservations.forEach(reservation => {
-      const dateKey = reservation.eventDate.toISOString().split('T')[0];
+      // Use local date formatting to match frontend calendar
+      const date = new Date(reservation.eventDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
       reservationCounts[dateKey] = (reservationCounts[dateKey] || 0) + 1;
+      
+      // Debug logging for August dates
+      if (dateKey.includes('2025-08-2')) {
+        console.log('📅 Processing reservation:', {
+          stored: reservation.eventDate.toISOString(),
+          localDate: date.toString(),
+          dateKey,
+          dayOfWeek: getMexicanDayOfWeek(date, false),
+          dayName: getMexicanDayName(date, false)
+        });
+      }
     });
     
     // Generate availability data for each day
@@ -72,9 +89,13 @@ export async function GET(request: NextRequest) {
     const currentDate = new Date(startDate);
     
     while (currentDate <= endDate) {
-      const dateKey = currentDate.toISOString().split('T')[0];
+      // Use local date formatting to match frontend calendar
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
       const count = reservationCounts[dateKey] || 0;
-      const dayOfWeek = currentDate.getDay();
+      const dayOfWeek = getMexicanDayOfWeek(currentDate, false); // Use local for consistency
       
       // Check if it's a rest day that cannot be released
       const restDay = systemConfig.restDays?.find((rd: RestDay) => rd.day === dayOfWeek);
@@ -98,7 +119,9 @@ export async function GET(request: NextRequest) {
       
       // Debug logging for availability calculation
       if (dateKey === '2025-07-22' || dateKey === '2025-07-23' || dateKey === '2025-07-24') {
-        console.log(`Availability debug for ${dateKey} (day ${dayOfWeek}):`, {
+        console.log(`Availability debug for ${dateKey}:`, {
+          dayOfWeek,
+          dayName: getMexicanDayName(currentDate, true),
           isRestDay,
           isBlockedRestDay,
           dayTimeBlocks: dayTimeBlocks.length,

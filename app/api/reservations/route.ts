@@ -6,6 +6,7 @@ import SystemConfig from '@/models/SystemConfig';
 import FoodOption from '@/models/FoodOption';
 import ExtraService from '@/models/ExtraService';
 import EventTheme from '@/models/EventTheme';
+import { getMexicanDayOfWeek, getMexicanDayName, createUTCDate } from '@/lib/utils/dateUtils';
 
 // GET - Obtener todas las reservas
 export async function GET(request: NextRequest) {
@@ -99,18 +100,17 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar si es día de descanso - use UTC to avoid timezone issues
-    const eventDateObj = new Date(eventDate + (eventDate.includes('T') ? '' : 'T12:00:00.000Z'));
-    const jsDayOfWeek = eventDateObj.getUTCDay(); // JavaScript: 0=Sunday, 1=Monday, 2=Tuesday...
-    const dayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1; // Convert to Mexican: 0=Monday, 1=Tuesday, 6=Sunday
+    // Verificar si es día de descanso - use consistent UTC date handling
+    const eventDateObj = eventDate.includes('T') ? new Date(eventDate) : createUTCDate(eventDate);
+    const dayOfWeek = getMexicanDayOfWeek(eventDateObj, true);
+    const dayName = getMexicanDayName(eventDateObj, true);
     const restDay = systemConfig.restDays?.find((rd: any) => rd.day === dayOfWeek);
     const isRestDay = !!restDay;
     
     console.log('🔍 RESERVATION DEBUG: Day conversion:', {
       eventDate,
-      jsDayOfWeek,
       dayOfWeek,
-      dayName: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dayOfWeek],
+      dayName,
       isRestDay,
       restDay,
       allRestDays: systemConfig.restDays

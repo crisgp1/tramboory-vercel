@@ -664,7 +664,7 @@ export default function CouponManager() {
                     value={formData.validFrom}
                     onChange={(value) => setFormData(prev => ({ 
                       ...prev, 
-                      validFrom: value
+                      validFrom: value ? new Date(value) : null
                     }))}
                     required
                   />
@@ -673,7 +673,7 @@ export default function CouponManager() {
                     value={formData.validUntil}
                     onChange={(value) => setFormData(prev => ({ 
                       ...prev, 
-                      validUntil: value
+                      validUntil: value ? new Date(value) : null
                     }))}
                     required
                   />

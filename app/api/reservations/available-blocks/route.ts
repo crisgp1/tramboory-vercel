@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import SystemConfig from '@/models/SystemConfig';
 import Reservation from '@/models/Reservation';
+import { getMexicanDayOfWeek, getMexicanDayName, createUTCDate } from '@/lib/utils/dateUtils';
 
 interface TimeBlock {
   name: string;
@@ -34,22 +35,21 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const date = new Date(dateParam + 'T12:00:00.000Z'); // Parse as UTC noon to avoid timezone issues
-    const jsDayOfWeek = date.getUTCDay(); // JavaScript: 0=Sunday, 1=Monday, 2=Tuesday...
-    const dayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1; // Convert to Mexican: 0=Monday, 1=Tuesday, 6=Sunday
+    const date = createUTCDate(dateParam); // Use consistent UTC date creation
+    const dayOfWeek = getMexicanDayOfWeek(date, true); // Use consistent day conversion
+    const dayName = getMexicanDayName(date, true);
     
     console.log('🔍 DEBUG: Day conversion:', {
       dateParam,
-      jsDayOfWeek,
       dayOfWeek,
-      dayName: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dayOfWeek]
+      dayName
     });
     
     console.log('Date calculation debug:', {
       inputDate: dateParam,
       dateObject: date.toISOString(),
       dayOfWeek,
-      dayName: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dayOfWeek]
+      dayName
     });
     const systemConfig = await SystemConfig.findOne({ isActive: true });
     
