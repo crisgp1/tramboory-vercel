@@ -18,7 +18,10 @@ import {
   Title,
   ActionIcon,
   ScrollArea,
-  Menu
+  Menu,
+  FileButton,
+  Image,
+  CloseButton
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -30,7 +33,9 @@ import {
   IconDots,
   IconCurrencyDollar,
   IconX,
-  IconSparkles
+  IconSparkles,
+  IconUpload,
+  IconPhoto
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 
@@ -44,6 +49,7 @@ interface EventTheme {
   _id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   packages: ThemePackage[];
   themes: string[];
   isActive: boolean;
@@ -54,6 +60,7 @@ interface EventTheme {
 interface EventThemeFormData {
   name: string;
   description: string;
+  imageUrl: string;
   packages: ThemePackage[];
   themes: string[];
   isActive: boolean;
@@ -70,10 +77,15 @@ export default function EventThemeManager() {
   const [formData, setFormData] = useState<EventThemeFormData>({
     name: '',
     description: '',
+    imageUrl: '',
     packages: [],
     themes: [],
     isActive: true
   });
+  
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
 
   const [newPackage, setNewPackage] = useState({ name: '', pieces: '', price: '' });
   const [newTheme, setNewTheme] = useState('');
@@ -108,6 +120,7 @@ export default function EventThemeManager() {
     setFormData({
       name: '',
       description: '',
+      imageUrl: '',
       packages: [],
       themes: [],
       isActive: true
@@ -115,6 +128,8 @@ export default function EventThemeManager() {
     setNewPackage({ name: '', pieces: '', price: '' });
     setNewTheme('');
     setEditingTheme(null);
+    setImageFile(null);
+    setPreviewUrl('');
   };
 
   const handleCreate = () => {
@@ -127,10 +142,12 @@ export default function EventThemeManager() {
     setFormData({
       name: theme.name,
       description: theme.description || '',
+      imageUrl: theme.imageUrl || '',
       packages: [...(theme.packages || [])],
       themes: [...(theme.themes || [])],
       isActive: theme.isActive
     });
+    setPreviewUrl(theme.imageUrl || '');
     open();
   };
 
@@ -187,6 +204,44 @@ export default function EventThemeManager() {
     }));
   };
 
+  const handleImageUpload = async (file: File | null) => {
+    if (!file) return;
+    
+    setImageFile(file);
+    setUploading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/admin/media/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setFormData(prev => ({ ...prev, imageUrl: data.url }));
+        setPreviewUrl(data.url);
+        toast.success('Imagen subida exitosamente');
+      } else {
+        toast.error('Error al subir la imagen');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Error al subir la imagen');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, imageUrl: '' }));
+    setPreviewUrl('');
+    setImageFile(null);
+  };
+
   const handleSubmit = async () => {
     if (!formData.name.trim() || formData.packages.length === 0) {
       toast.error('Por favor completa el nombre y agrega al menos un paquete');
@@ -199,6 +254,7 @@ export default function EventThemeManager() {
       const themeData = {
         name: formData.name.trim(),
         description: formData.description.trim(),
+        imageUrl: formData.imageUrl,
         packages: formData.packages,
         themes: formData.themes,
         isActive: formData.isActive
@@ -358,8 +414,16 @@ export default function EventThemeManager() {
                     <Table.Tr key={theme._id}>
                       <Table.Td>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <BuildingStorefrontIcon className="w-5 h-5 text-gray-600" />
+                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                            {theme.imageUrl ? (
+                              <Image
+                                src={theme.imageUrl}
+                                alt={theme.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <BuildingStorefrontIcon className="w-5 h-5 text-gray-600" />
+                            )}
                           </div>
                           <div>
                             <div className="font-semibold text-gray-900">{theme.name}</div>
@@ -482,6 +546,41 @@ export default function EventThemeManager() {
               onChange={(event) => setFormData(prev => ({ ...prev, description: event.currentTarget.value }))}
               minRows={2}
             />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-900">Imagen del tema</label>
+            {previewUrl ? (
+              <div className="relative inline-block">
+                <Image
+                  src={previewUrl}
+                  alt="Preview"
+                  className="w-32 h-32 object-cover rounded-lg"
+                />
+                <CloseButton
+                  onClick={removeImage}
+                  className="absolute -top-2 -right-2 bg-white shadow-md rounded-full"
+                  size="sm"
+                />
+              </div>
+            ) : (
+              <FileButton
+                onChange={handleImageUpload}
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                disabled={uploading}
+              >
+                {(props) => (
+                  <Button
+                    {...props}
+                    leftSection={uploading ? <Loader size="xs" /> : <IconUpload className="w-4 h-4" />}
+                    variant="light"
+                    disabled={uploading}
+                  >
+                    {uploading ? 'Subiendo...' : 'Subir imagen'}
+                  </Button>
+                )}
+              </FileButton>
+            )}
           </div>
 
           <div className="space-y-4">

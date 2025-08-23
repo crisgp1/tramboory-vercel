@@ -26,7 +26,8 @@ import {
   IconTrash,
   IconPencil,
   IconCalendar,
-  IconCurrencyDollar
+  IconCurrencyDollar,
+  IconRefresh
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 
@@ -64,11 +65,28 @@ const daysOfWeek = [
   { key: 6, label: 'Sábado', shortLabel: 'Sáb' }
 ];
 
+// Convert 24-hour time to 12-hour format with A.M./P.M.
+const to12HourFormat = (time24: string): string => {
+  const [hourStr, minute] = time24.split(':');
+  const hour = parseInt(hourStr);
+  
+  if (hour === 0) {
+    return `12:${minute} A.M.`;
+  } else if (hour < 12) {
+    return `${hour}:${minute} A.M.`;
+  } else if (hour === 12) {
+    return `12:${minute} P.M.`;
+  } else {
+    return `${hour - 12}:${minute} P.M.`;
+  }
+};
+
 const timeOptions = Array.from({ length: 48 }, (_, i) => {
   const hour = Math.floor(i / 2);
   const minute = i % 2 === 0 ? '00' : '30';
-  const time = `${hour.toString().padStart(2, '0')}:${minute}`;
-  return { key: time, label: time };
+  const time24 = `${hour.toString().padStart(2, '0')}:${minute}`;
+  const time12 = to12HourFormat(time24);
+  return { key: time24, label: time12 };
 });
 
 const durationOptions = [
@@ -108,7 +126,10 @@ export default function TimeBlocksManager({
     maxEventsPerBlock: 1
   });
   
-  const [timeCalculationMode, setTimeCalculationMode] = useState<'start' | 'end'>('start'); // Calculate end time from start time
+  // Auto-calculate end time when start time or duration changes
+  const [isEndTimeManual, setIsEndTimeManual] = useState(false);
+  const [customFarewellMinutes, setCustomFarewellMinutes] = useState(30);
+  const [isCustomFarewell, setIsCustomFarewell] = useState(false);
   
   const [restDayForm, setRestDayForm] = useState<RestDay>({
     day: 2,
@@ -121,6 +142,11 @@ export default function TimeBlocksManager({
     setEditingBlock(block);
     setEditingBlockIndex(index);
     setBlockForm(block);
+    // Check if the end time matches the calculated value
+    const calculatedEnd = calculateEndTime(block.startTime, block.duration, block.halfHourBreak, 30);
+    setIsEndTimeManual(block.endTime !== calculatedEnd);
+    setIsCustomFarewell(false);
+    setCustomFarewellMinutes(30);
     openBlock();
   };
 
@@ -194,17 +220,25 @@ export default function TimeBlocksManager({
   };
 
   const resetBlockForm = () => {
+    const defaultStartTime = '14:00';
+    const defaultDuration = 3.5;
+    const defaultHalfHourBreak = true;
+    const calculatedEndTime = calculateEndTime(defaultStartTime, defaultDuration, defaultHalfHourBreak, 30);
+    
     setBlockForm({
       name: '',
       days: [],
-      startTime: '14:00',
-      endTime: '19:00',
-      duration: 3.5,
-      halfHourBreak: true,
+      startTime: defaultStartTime,
+      endTime: calculatedEndTime,
+      duration: defaultDuration,
+      halfHourBreak: defaultHalfHourBreak,
       maxEventsPerBlock: 1
     });
     setEditingBlock(null);
     setEditingBlockIndex(null);
+    setIsEndTimeManual(false);
+    setIsCustomFarewell(false);
+    setCustomFarewellMinutes(30);
   };
 
   const resetRestDayForm = () => {
@@ -237,10 +271,10 @@ export default function TimeBlocksManager({
     return `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
   };
 
-  const calculateEndTime = (startTime: string, durationHours: number, halfHourBreak: boolean): string => {
+  const calculateEndTime = (startTime: string, durationHours: number, halfHourBreak: boolean, customMinutes?: number): string => {
     const startMinutes = timeToMinutes(startTime);
     const durationMinutes = durationHours * 60;
-    const breakMinutes = halfHourBreak ? 30 : 0;
+    const breakMinutes = halfHourBreak ? (customMinutes || 30) : 0;
     const endMinutes = startMinutes + durationMinutes + breakMinutes;
     
     // Don't allow time to exceed 24:00 (1440 minutes)
@@ -382,7 +416,7 @@ export default function TimeBlocksManager({
                       <Title order={5}>{block.name}</Title>
                       <Stack gap={2}>
                         <Text size="sm" c="dimmed">
-                          Horario: {block.startTime} - {block.endTime}
+                          Horario: {to12HourFormat(block.startTime)} - {to12HourFormat(block.endTime)}
                         </Text>
                         <Text size="sm" c="dimmed">
                           Duración: {block.duration} horas {block.halfHourBreak ? '+ 30 min descanso' : ''}
@@ -557,23 +591,108 @@ export default function TimeBlocksManager({
           </Stack>
           
           <Stack gap="sm">
-            <Text size="sm" fw={500}>Configuración de Horario</Text>
-            <Group grow>
-              <Select
-                label="Hora de inicio"
-                placeholder="Selecciona hora de inicio"
-                value={blockForm.startTime}
-                onChange={(value) => setBlockForm({ ...blockForm, startTime: value || '14:00' })}
-                data={timeOptions.map(t => ({ value: t.key, label: t.label }))}
-              />
-              <Select
-                label="Hora de fin"
-                placeholder="Selecciona hora de fin"
-                value={blockForm.endTime}
-                onChange={(value) => setBlockForm({ ...blockForm, endTime: value || '19:00' })}
-                data={timeOptions.map(t => ({ value: t.key, label: t.label }))}
-              />
-            </Group>
+            <Text size="sm" fw={500}>Configuración de Horario (Formato 12 horas)</Text>
+            <Card withBorder p="md">
+              <Stack gap="md">
+                <Text size="xs" c="dimmed">
+                  💡 La hora de fin se calcula automáticamente basándose en la duración del evento
+                </Text>
+                <Group grow>
+                  <Select
+                    label="Hora de inicio"
+                    placeholder="Selecciona hora de inicio"
+                    value={blockForm.startTime}
+                    onChange={(value) => {
+                      if (value) {
+                        const newEndTime = calculateEndTime(
+                          value, 
+                          blockForm.duration, 
+                          blockForm.halfHourBreak,
+                          isCustomFarewell ? customFarewellMinutes : 30
+                        );
+                        setBlockForm({ 
+                          ...blockForm, 
+                          startTime: value,
+                          endTime: newEndTime
+                        });
+                        setIsEndTimeManual(false);
+                      }
+                    }}
+                    data={timeOptions.map(t => ({ value: t.key, label: t.label }))}
+                    withAsterisk
+                  />
+                  <Stack gap="xs">
+                    <Select
+                      label="Hora de fin (calculada automáticamente)"
+                      placeholder="Se calcula automáticamente"
+                      value={blockForm.endTime}
+                      onChange={(value) => {
+                        if (value) {
+                          setBlockForm({ ...blockForm, endTime: value });
+                          setIsEndTimeManual(true);
+                        }
+                      }}
+                      data={timeOptions.map(t => ({ value: t.key, label: t.label }))}
+                      disabled={!isEndTimeManual}
+                      rightSection={
+                        isEndTimeManual ? (
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            onClick={() => {
+                              const newEndTime = calculateEndTime(
+                                blockForm.startTime, 
+                                blockForm.duration, 
+                                blockForm.halfHourBreak,
+                                isCustomFarewell ? customFarewellMinutes : 30
+                              );
+                              setBlockForm({ ...blockForm, endTime: newEndTime });
+                              setIsEndTimeManual(false);
+                            }}
+                            title="Restaurar cálculo automático"
+                          >
+                            <IconRefresh size={14} />
+                          </ActionIcon>
+                        ) : null
+                      }
+                    />
+                    {isEndTimeManual && (
+                      <Text size="xs" c="orange">
+                        ⚠️ Hora de fin modificada manualmente
+                      </Text>
+                    )}
+                  </Stack>
+                </Group>
+                
+                {/* Time Summary Display */}
+                <Card withBorder p="sm" bg="blue.0">
+                  <Group gap="xs" align="center">
+                    <IconClock size={16} className="text-blue-600" />
+                    <Text size="sm" fw={500} c="blue.7">
+                      Resumen del horario:
+                    </Text>
+                    <Text size="sm" c="blue.6">
+                      {to12HourFormat(blockForm.startTime)} - {to12HourFormat(blockForm.endTime)}
+                    </Text>
+                    <Badge size="sm" color="blue" variant="light">
+                      {(() => {
+                        const startMinutes = timeToMinutes(blockForm.startTime);
+                        const endMinutes = timeToMinutes(blockForm.endTime);
+                        const totalMinutes = endMinutes - startMinutes;
+                        const hours = Math.floor(totalMinutes / 60);
+                        const minutes = totalMinutes % 60;
+                        return `${hours}h ${minutes > 0 ? `${minutes}min` : ''} total`;
+                      })()}
+                    </Badge>
+                    {blockForm.halfHourBreak && (
+                      <Badge size="sm" color="orange" variant="light">
+                        Incluye {isCustomFarewell ? customFarewellMinutes : 30}min de despedida
+                      </Badge>
+                    )}
+                  </Group>
+                </Card>
+              </Stack>
+            </Card>
           </Stack>
           
           <Group grow>
@@ -581,8 +700,26 @@ export default function TimeBlocksManager({
               label="Duración del evento"
               placeholder="Selecciona duración"
               value={blockForm.duration.toString()}
-              onChange={(value) => setBlockForm({ ...blockForm, duration: parseFloat(value || '3.5') })}
+              onChange={(value) => {
+                const duration = parseFloat(value || '3.5');
+                if (!isEndTimeManual) {
+                  const newEndTime = calculateEndTime(
+                    blockForm.startTime, 
+                    duration, 
+                    blockForm.halfHourBreak,
+                    isCustomFarewell ? customFarewellMinutes : 30
+                  );
+                  setBlockForm({ 
+                    ...blockForm, 
+                    duration,
+                    endTime: newEndTime
+                  });
+                } else {
+                  setBlockForm({ ...blockForm, duration });
+                }
+              }}
               data={durationOptions.map(d => ({ value: d.key, label: d.label }))}
+              withAsterisk
             />
             <NumberInput
               label="Máximo de eventos por bloque"
@@ -593,14 +730,111 @@ export default function TimeBlocksManager({
             />
           </Group>
           
-          <Group>
-            <Switch
-              label="Media hora de despedida"
-              description="Tiempo extra para que los niños se despidan"
-              checked={blockForm.halfHourBreak}
-              onChange={(e) => setBlockForm({ ...blockForm, halfHourBreak: e.currentTarget.checked })}
-            />
-          </Group>
+          <Card withBorder p="md">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <div>
+                  <Text size="sm" fw={500}>Tiempo de despedida</Text>
+                  <Text size="xs" c="dimmed">Tiempo extra para que los niños se despidan</Text>
+                </div>
+                <Switch
+                  checked={blockForm.halfHourBreak}
+                  onChange={(e) => {
+                    const halfHourBreak = e.currentTarget.checked;
+                    if (!isEndTimeManual) {
+                      const newEndTime = calculateEndTime(
+                        blockForm.startTime, 
+                        blockForm.duration, 
+                        halfHourBreak,
+                        isCustomFarewell ? customFarewellMinutes : 30
+                      );
+                      setBlockForm({ 
+                        ...blockForm, 
+                        halfHourBreak,
+                        endTime: newEndTime
+                      });
+                    } else {
+                      setBlockForm({ ...blockForm, halfHourBreak });
+                    }
+                    if (!halfHourBreak) {
+                      setIsCustomFarewell(false);
+                      setCustomFarewellMinutes(30);
+                    }
+                  }}
+                />
+              </Group>
+              
+              {blockForm.halfHourBreak && (
+                <Stack gap="sm">
+                  <Group gap="xs">
+                    <Checkbox
+                      label="Personalizar tiempo de despedida"
+                      checked={isCustomFarewell}
+                      onChange={(e) => {
+                        setIsCustomFarewell(e.currentTarget.checked);
+                        if (!e.currentTarget.checked) {
+                          setCustomFarewellMinutes(30);
+                          if (!isEndTimeManual) {
+                            const newEndTime = calculateEndTime(
+                              blockForm.startTime,
+                              blockForm.duration,
+                              blockForm.halfHourBreak,
+                              30
+                            );
+                            setBlockForm({ ...blockForm, endTime: newEndTime });
+                          }
+                        }
+                      }}
+                    />
+                  </Group>
+                  
+                  {isCustomFarewell && (
+                    <Group grow align="flex-end">
+                      <NumberInput
+                        label="Minutos de despedida"
+                        placeholder="30"
+                        value={customFarewellMinutes}
+                        onChange={(value) => {
+                          const minutes = typeof value === 'number' ? value : 30;
+                          setCustomFarewellMinutes(minutes);
+                          if (!isEndTimeManual) {
+                            const newEndTime = calculateEndTime(
+                              blockForm.startTime,
+                              blockForm.duration,
+                              blockForm.halfHourBreak,
+                              minutes
+                            );
+                            setBlockForm({ ...blockForm, endTime: newEndTime });
+                          }
+                        }}
+                        min={5}
+                        max={60}
+                        step={5}
+                        rightSection={<Text size="xs" c="dimmed">min</Text>}
+                      />
+                      <Button
+                        variant="light"
+                        size="sm"
+                        leftSection={<IconRefresh size={14} />}
+                        onClick={() => {
+                          const newEndTime = calculateEndTime(
+                            blockForm.startTime,
+                            blockForm.duration,
+                            blockForm.halfHourBreak,
+                            customFarewellMinutes
+                          );
+                          setBlockForm({ ...blockForm, endTime: newEndTime });
+                          setIsEndTimeManual(false);
+                        }}
+                      >
+                        Recalcular hora fin
+                      </Button>
+                    </Group>
+                  )}
+                </Stack>
+              )}
+            </Stack>
+          </Card>
           
           <Group justify="flex-end" mt="lg">
             <Button variant="light" onClick={closeBlock}>

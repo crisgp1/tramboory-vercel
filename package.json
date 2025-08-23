@@ -34,6 +34,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/chart.js": "^2.9.41",
     "@vercel/analytics": "^1.5.0",
+    "@vercel/blob": "^1.1.1",
     "@vercel/speed-insights": "^1.2.0",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.5.0",

@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IEventTheme extends Document {
   name: string;
   description?: string;
+  imageUrl?: string;
   packages: {
     name: string;
     pieces: number;
@@ -25,6 +26,10 @@ const EventThemeSchema = new Schema<IEventTheme>({
     type: String,
     trim: true,
     maxlength: [500, 'La descripción no puede exceder 500 caracteres']
+  },
+  imageUrl: {
+    type: String,
+    trim: true
   },
   packages: [{
     name: {
