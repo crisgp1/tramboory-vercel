@@ -12,6 +12,7 @@ interface TimeBlock {
   duration: number;
   halfHourBreak: boolean;
   maxEventsPerBlock: number;
+  oneReservationPerDay?: boolean;
 }
 
 interface RestDay {
@@ -185,29 +186,48 @@ export async function GET(request: NextRequest) {
       
       // Check availability for each slot in the block
       const slotsWithAvailability = slots.map(slot => {
-        const reservationsAtTime = existingReservations.filter(res => {
-          const resTime = res.eventTime;
-          const resEndTime = calculateEndTime(resTime, res.eventDuration || systemConfig.defaultEventDuration);
-          const slotEndTime = calculateEndTime(slot.time, block.duration);
+        let isAvailable = true;
+        let remainingCapacity = block.maxEventsPerBlock;
+        
+        if ((block as any).oneReservationPerDay) {
+          // For one-reservation-per-day blocks, check if there's ANY reservation on this day
+          const hasAnyReservationToday = existingReservations.length > 0;
+          isAvailable = !hasAnyReservationToday;
+          remainingCapacity = hasAnyReservationToday ? 0 : 1;
           
-          // Check if there's time overlap
-          return isTimeOverlap(
-            { start: resTime, end: resEndTime },
-            { start: slot.time, end: slotEndTime }
-          );
-        });
-        
-        const isAvailable = reservationsAtTime.length < block.maxEventsPerBlock;
-        const remainingCapacity = block.maxEventsPerBlock - reservationsAtTime.length;
-        
-        console.log(`Slot ${slot.time} capacity check:`, {
-          slotTime: slot.time,
-          maxEventsPerBlock: block.maxEventsPerBlock,
-          reservationsAtTime: reservationsAtTime.length,
-          reservationTimes: reservationsAtTime.map(r => r.eventTime),
-          isAvailable,
-          remainingCapacity
-        });
+          console.log(`One reservation per day slot ${slot.time}:`, {
+            slotTime: slot.time,
+            hasAnyReservationToday,
+            totalReservationsToday: existingReservations.length,
+            isAvailable,
+            remainingCapacity
+          });
+        } else {
+          // Normal slot-based availability
+          const reservationsAtTime = existingReservations.filter(res => {
+            const resTime = res.eventTime;
+            const resEndTime = calculateEndTime(resTime, res.eventDuration || systemConfig.defaultEventDuration);
+            const slotEndTime = calculateEndTime(slot.time, block.duration);
+            
+            // Check if there's time overlap
+            return isTimeOverlap(
+              { start: resTime, end: resEndTime },
+              { start: slot.time, end: slotEndTime }
+            );
+          });
+          
+          isAvailable = reservationsAtTime.length < block.maxEventsPerBlock;
+          remainingCapacity = block.maxEventsPerBlock - reservationsAtTime.length;
+          
+          console.log(`Slot ${slot.time} capacity check:`, {
+            slotTime: slot.time,
+            maxEventsPerBlock: block.maxEventsPerBlock,
+            reservationsAtTime: reservationsAtTime.length,
+            reservationTimes: reservationsAtTime.map(r => r.eventTime),
+            isAvailable,
+            remainingCapacity
+          });
+        }
         
         return {
           time: slot.time,

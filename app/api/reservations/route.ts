@@ -231,19 +231,37 @@ export async function POST(request: NextRequest) {
     
     // Verificar capacidad del bloque de tiempo
     if (validBlock) {
-      const maxEventsInBlock = validBlock.maxEventsPerBlock || 1;
-      if (conflictingReservations.length >= maxEventsInBlock) {
-        console.error('Block capacity exceeded:', {
-          blockName: validBlock.name,
-          maxEventsInBlock,
-          conflictingReservations: conflictingReservations.length,
-          eventTime,
-          existingTimes: conflictingReservations.map(r => r.eventTime)
-        });
-        return NextResponse.json(
-          { success: false, error: 'Este horario ya está completo. Por favor selecciona otro horario disponible.' },
-          { status: 400 }
-        );
+      // Special handling for oneReservationPerDay blocks
+      if (validBlock.oneReservationPerDay) {
+        // Check if there's ANY reservation on this day (regardless of time)
+        if (existingReservations.length > 0) {
+          console.error('One reservation per day block - day already has reservation:', {
+            blockName: validBlock.name,
+            eventDate,
+            existingReservationsCount: existingReservations.length,
+            existingTimes: existingReservations.map(r => r.eventTime)
+          });
+          return NextResponse.json(
+            { success: false, error: 'Ya existe una reserva para este día. Este bloque de horario solo permite una reserva por día.' },
+            { status: 400 }
+          );
+        }
+      } else {
+        // Normal capacity check for regular blocks
+        const maxEventsInBlock = validBlock.maxEventsPerBlock || 1;
+        if (conflictingReservations.length >= maxEventsInBlock) {
+          console.error('Block capacity exceeded:', {
+            blockName: validBlock.name,
+            maxEventsInBlock,
+            conflictingReservations: conflictingReservations.length,
+            eventTime,
+            existingTimes: conflictingReservations.map(r => r.eventTime)
+          });
+          return NextResponse.json(
+            { success: false, error: 'Este horario ya está completo. Por favor selecciona otro horario disponible.' },
+            { status: 400 }
+          );
+        }
       }
     }
     

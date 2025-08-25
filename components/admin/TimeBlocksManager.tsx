@@ -27,9 +27,17 @@ import {
   IconPencil,
   IconCalendar,
   IconCurrencyDollar,
-  IconRefresh
+  IconRefresh,
+  IconCheck,
+  IconX,
+  IconInfoCircle
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+
+interface TimeSlot {
+  startTime: string;
+  endTime: string;
+}
 
 interface TimeBlock {
   name: string;
@@ -39,6 +47,9 @@ interface TimeBlock {
   duration: number;
   halfHourBreak: boolean;
   maxEventsPerBlock: number;
+  multipleTimeSlots?: boolean;
+  timeSlots?: TimeSlot[];
+  oneReservationPerDay?: boolean;
 }
 
 interface RestDay {
@@ -123,7 +134,10 @@ export default function TimeBlocksManager({
     endTime: '19:00',
     duration: 3.5,
     halfHourBreak: true,
-    maxEventsPerBlock: 1
+    maxEventsPerBlock: 1,
+    multipleTimeSlots: false,
+    timeSlots: [],
+    oneReservationPerDay: false
   });
   
   // Auto-calculate end time when start time or duration changes
@@ -232,7 +246,10 @@ export default function TimeBlocksManager({
       endTime: calculatedEndTime,
       duration: defaultDuration,
       halfHourBreak: defaultHalfHourBreak,
-      maxEventsPerBlock: 1
+      maxEventsPerBlock: 1,
+      multipleTimeSlots: false,
+      timeSlots: [],
+      oneReservationPerDay: false
     });
     setEditingBlock(null);
     setEditingBlockIndex(null);
@@ -319,6 +336,10 @@ export default function TimeBlocksManager({
     }
 
     // Check for overlaps with other blocks
+    // Special rules for oneReservationPerDay blocks:
+    // - Blocks with oneReservationPerDay=true CAN overlap with each other
+    // - Normal blocks CANNOT overlap with any other normal blocks
+    // - Normal blocks CAN overlap with oneReservationPerDay blocks
     for (let i = 0; i < timeBlocks.length; i++) {
       if (editingBlockIndex !== null && i === editingBlockIndex) continue;
       
@@ -326,6 +347,12 @@ export default function TimeBlocksManager({
       const hasCommonDay = block.days.some(day => otherBlock.days.includes(day));
       
       if (hasCommonDay) {
+        // Skip overlap check if both blocks have oneReservationPerDay enabled
+        // or if one has it enabled (they can coexist)
+        if (block.oneReservationPerDay || otherBlock.oneReservationPerDay) {
+          continue;
+        }
+        
         const otherStartMinutes = timeToMinutes(otherBlock.startTime);
         const otherEndMinutes = timeToMinutes(otherBlock.endTime);
         
@@ -333,7 +360,7 @@ export default function TimeBlocksManager({
         if ((startMinutes < otherEndMinutes && endMinutes > otherStartMinutes)) {
           return {
             valid: false,
-            error: `Este horario se superpone con el bloque "${otherBlock.name}" en días compartidos`
+            error: `Este horario se superpone con el bloque "${otherBlock.name}" en días compartidos. Para permitir horarios superpuestos, activa "Una reserva por día" en uno de los bloques.`
           };
         }
       }
@@ -371,16 +398,73 @@ export default function TimeBlocksManager({
     }
   };
 
+  // Calculate summary stats
+  const totalCapacity = timeBlocks.reduce((total, block) => {
+    const daysCount = block.days.length;
+    if (block.oneReservationPerDay) {
+      return total + daysCount; // One per day
+    }
+    return total + (block.maxEventsPerBlock * daysCount);
+  }, 0);
+
+  const activeDays = new Set(timeBlocks.flatMap(block => block.days));
+  const hasOverlappingBlocks = timeBlocks.some(block => block.oneReservationPerDay);
+
   return (
-    <Stack gap="lg">
+    <>
+      <Stack gap="lg">
+      {/* Configuration Summary */}
+      {(timeBlocks.length > 0 || restDays.length > 0) && (
+        <Card 
+          withBorder 
+          p="md" 
+          style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+          }}>
+          <Group justify="space-between" align="center">
+            <Stack gap={4}>
+              <Text size="lg" fw={600} c="white">Estado de Configuración</Text>
+              <Group gap="xl">
+                <Stack gap={2}>
+                  <Text size="xs" c="white" opacity={0.8}>BLOQUES ACTIVOS</Text>
+                  <Text size="xl" fw={700} c="white">{timeBlocks.length}</Text>
+                </Stack>
+                <Stack gap={2}>
+                  <Text size="xs" c="white" opacity={0.8}>CAPACIDAD SEMANAL</Text>
+                  <Text size="xl" fw={700} c="white">{totalCapacity} eventos</Text>
+                </Stack>
+                <Stack gap={2}>
+                  <Text size="xs" c="white" opacity={0.8}>DÍAS ACTIVOS</Text>
+                  <Text size="xl" fw={700} c="white">{activeDays.size}/7</Text>
+                </Stack>
+                <Stack gap={2}>
+                  <Text size="xs" c="white" opacity={0.8}>DÍAS DE DESCANSO</Text>
+                  <Text size="xl" fw={700} c="white">{restDays.length}</Text>
+                </Stack>
+              </Group>
+            </Stack>
+            {hasOverlappingBlocks && (
+              <Badge size="lg" color="yellow" variant="filled">
+                Horarios Flexibles Activos
+              </Badge>
+            )}
+          </Group>
+        </Card>
+      )}
+
       {/* Time Blocks Section */}
       <Card withBorder>
-        <Card.Section p="md" withBorder>
+        <Card.Section p="md" withBorder bg="blue.0">
           <Group justify="space-between">
-            <Group gap="sm">
-              <IconClock size={20} />
-              <Title order={4}>Bloques de Horarios</Title>
-            </Group>
+            <Stack gap={4}>
+              <Group gap="sm">
+                <IconClock size={20} color="#1971c2" />
+                <Title order={4}>Bloques de Horarios</Title>
+              </Group>
+              <Text size="sm" c="dimmed">
+                Define los horarios disponibles para reservaciones
+              </Text>
+            </Stack>
             <Button
               onClick={() => {
                 resetBlockForm();
@@ -388,6 +472,8 @@ export default function TimeBlocksManager({
               }}
               size="sm"
               leftSection={<IconPlus size={16} />}
+              variant="gradient"
+              gradient={{ from: 'blue', to: 'cyan', deg: 90 }}
             >
               Agregar Bloque
             </Button>
@@ -395,65 +481,127 @@ export default function TimeBlocksManager({
         </Card.Section>
         <Card.Section p="md">
           {timeBlocks.length === 0 ? (
-            <Stack align="center" gap="sm" py="xl">
-              <IconClock size={48} color="gray" />
-              <Text c="dimmed">No hay bloques de horarios configurados</Text>
-              <Text size="sm" c="dimmed">Agrega bloques para definir horarios de reserva</Text>
-              <Button
-                onClick={handleInitializeDefaultConfig}
-                leftSection={<IconPlus size={16} />}
-                mt="md"
-              >
-                Inicializar Configuración Por Defecto
-              </Button>
+            <Stack align="center" gap="md" py="xl">
+              <div style={{ 
+                width: 80, 
+                height: 80, 
+                borderRadius: '50%', 
+                backgroundColor: '#e7f5ff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <IconClock size={40} color="#1971c2" />
+              </div>
+              <Stack gap="xs" align="center">
+                <Text size="lg" fw={500}>Comienza a configurar tus horarios</Text>
+                <Text size="sm" c="dimmed" ta="center" maw={400}>
+                  Los bloques de horarios definen cuándo pueden reservar tus clientes.
+                  Puedes crear múltiples bloques con diferentes configuraciones.
+                </Text>
+              </Stack>
+              <Group gap="sm" mt="md">
+                <Button
+                  onClick={handleInitializeDefaultConfig}
+                  leftSection={<IconRefresh size={16} />}
+                  size="md"
+                  variant="light"
+                >
+                  Usar Configuración Recomendada
+                </Button>
+                <Button
+                  onClick={() => {
+                    resetBlockForm();
+                    openBlock();
+                  }}
+                  leftSection={<IconPlus size={16} />}
+                  size="md"
+                  variant="gradient"
+                  gradient={{ from: 'blue', to: 'cyan', deg: 90 }}
+                >
+                  Crear Mi Primer Bloque
+                </Button>
+              </Group>
             </Stack>
           ) : (
             <Stack gap="md">
               {timeBlocks.map((block, index) => (
-                <Card key={index} withBorder p="md">
+                <Card key={index} withBorder p="md" shadow="sm" radius="md">
                   <Group justify="space-between" align="flex-start">
                     <Stack gap="sm" style={{ flex: 1 }}>
-                      <Title order={5}>{block.name}</Title>
-                      <Stack gap={2}>
-                        <Text size="sm" c="dimmed">
-                          Horario: {to12HourFormat(block.startTime)} - {to12HourFormat(block.endTime)}
-                        </Text>
-                        <Text size="sm" c="dimmed">
-                          Duración: {block.duration} horas {block.halfHourBreak ? '+ 30 min descanso' : ''}
-                        </Text>
-                        <Text size="sm" c="dimmed">
-                          Capacidad: {block.maxEventsPerBlock} {block.maxEventsPerBlock === 1 ? 'evento' : 'eventos'} por bloque
-                        </Text>
-                        <Group gap="xs" mt="xs">
-                          {block.days.map(day => (
-                            <Badge
-                              key={day}
-                              size="sm"
-                              variant="light"
-                              color="gray"
-                            >
-                              {daysOfWeek.find(d => d.key === day)?.shortLabel}
-                            </Badge>
-                          ))}
+                      <Group gap="xs">
+                        <IconClock size={18} color="#1971c2" />
+                        <Title order={5}>{block.name}</Title>
+                        {block.oneReservationPerDay && (
+                          <Badge size="sm" color="orange" variant="light">
+                            1 por día
+                          </Badge>
+                        )}
+                      </Group>
+                      <Stack gap={6}>
+                        <Group gap="xl">
+                          <Stack gap={2}>
+                            <Text size="xs" c="dimmed" fw={500}>HORARIO</Text>
+                            <Text size="sm">
+                              {to12HourFormat(block.startTime)} - {to12HourFormat(block.endTime)}
+                            </Text>
+                          </Stack>
+                          <Stack gap={2}>
+                            <Text size="xs" c="dimmed" fw={500}>DURACIÓN</Text>
+                            <Text size="sm">
+                              {block.duration} {block.duration === 1 ? 'hora' : 'horas'}
+                              {block.halfHourBreak && (
+                                <Badge size="xs" color="green" variant="light" ml="xs">
+                                  +30min despedida
+                                </Badge>
+                              )}
+                            </Text>
+                          </Stack>
+                          <Stack gap={2}>
+                            <Text size="xs" c="dimmed" fw={500}>CAPACIDAD</Text>
+                            <Text size="sm">
+                              {block.oneReservationPerDay 
+                                ? 'Una reserva total' 
+                                : `${block.maxEventsPerBlock} ${block.maxEventsPerBlock === 1 ? 'evento' : 'eventos'}`}
+                            </Text>
+                          </Stack>
                         </Group>
+                        <Stack gap={2}>
+                          <Text size="xs" c="dimmed" fw={500}>DÍAS ACTIVOS</Text>
+                          <Group gap="xs">
+                            {daysOfWeek.map(day => (
+                              <Badge
+                                key={day.key}
+                                size="md"
+                                variant={block.days.includes(day.key) ? "filled" : "light"}
+                                color={block.days.includes(day.key) ? "blue" : "gray"}
+                                style={{ minWidth: 36 }}
+                              >
+                                {day.shortLabel}
+                              </Badge>
+                            ))}
+                          </Group>
+                        </Stack>
                       </Stack>
                     </Stack>
                     <Group gap="xs">
                       <ActionIcon
                         variant="light"
-                        size="sm"
+                        size="md"
                         color="blue"
                         onClick={() => handleEditBlock(block, index)}
+                        title="Editar bloque"
                       >
-                        <IconPencil size={16} />
+                        <IconPencil size={18} />
                       </ActionIcon>
                       <ActionIcon
                         variant="light"
-                        size="sm"
+                        size="md"
                         color="red"
                         onClick={() => handleDeleteBlock(index)}
+                        title="Eliminar bloque"
                       >
-                        <IconTrash size={16} />
+                        <IconTrash size={18} />
                       </ActionIcon>
                     </Group>
                   </Group>
@@ -466,12 +614,17 @@ export default function TimeBlocksManager({
 
       {/* Rest Days Section */}
       <Card withBorder>
-        <Card.Section p="md" withBorder>
+        <Card.Section p="md" withBorder bg="orange.0">
           <Group justify="space-between">
-            <Group gap="sm">
-              <IconCalendar size={20} />
-              <Title order={4}>Días de Descanso</Title>
-            </Group>
+            <Stack gap={4}>
+              <Group gap="sm">
+                <IconCalendar size={20} color="#fd7e14" />
+                <Title order={4}>Días de Descanso</Title>
+              </Group>
+              <Text size="sm" c="dimmed">
+                Días que normalmente no trabajas pero pueden liberarse con cargo extra
+              </Text>
+            </Stack>
             <Button
               onClick={() => {
                 resetRestDayForm();
@@ -479,6 +632,8 @@ export default function TimeBlocksManager({
               }}
               size="sm"
               leftSection={<IconPlus size={16} />}
+              variant="gradient"
+              gradient={{ from: 'orange', to: 'yellow', deg: 90 }}
             >
               Agregar Día
             </Button>
@@ -486,53 +641,107 @@ export default function TimeBlocksManager({
         </Card.Section>
         <Card.Section p="md">
           {restDays.length === 0 ? (
-            <Stack align="center" gap="sm" py="xl">
-              <IconCalendar size={48} color="gray" />
-              <Text c="dimmed">No hay días de descanso configurados</Text>
-              <Text size="sm" c="dimmed">Agrega días donde normalmente no trabajas</Text>
-              <Button
-                onClick={handleInitializeDefaultConfig}
-                leftSection={<IconPlus size={16} />}
-                mt="md"
-              >
-                Inicializar Configuración Por Defecto
-              </Button>
+            <Stack align="center" gap="md" py="xl">
+              <div style={{ 
+                width: 80, 
+                height: 80, 
+                borderRadius: '50%', 
+                backgroundColor: '#fff4e6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <IconCalendar size={40} color="#fd7e14" />
+              </div>
+              <Stack gap="xs" align="center">
+                <Text size="lg" fw={500}>Configura tus días de descanso</Text>
+                <Text size="sm" c="dimmed" ta="center" maw={400}>
+                  Los días de descanso pueden tener un cargo adicional o bloquearse completamente.
+                  Ideal para días que normalmente no trabajas.
+                </Text>
+              </Stack>
+              <Group gap="sm" mt="md">
+                <Button
+                  onClick={handleInitializeDefaultConfig}
+                  leftSection={<IconRefresh size={16} />}
+                  size="md"
+                  variant="light"
+                  color="orange"
+                >
+                  Usar Configuración Recomendada
+                </Button>
+                <Button
+                  onClick={() => {
+                    resetRestDayForm();
+                    openRestDay();
+                  }}
+                  leftSection={<IconPlus size={16} />}
+                  size="md"
+                  variant="gradient"
+                  gradient={{ from: 'orange', to: 'yellow', deg: 90 }}
+                >
+                  Configurar Día de Descanso
+                </Button>
+              </Group>
             </Stack>
           ) : (
             <ScrollArea>
               <Stack gap="md">
                 {restDays.map((day, index) => (
-                  <Card key={index} withBorder p="md">
+                  <Card key={index} withBorder p="md" shadow="sm" radius="md">
                     <Group justify="space-between" align="flex-start">
                       <Stack gap="sm" style={{ flex: 1 }}>
-                        <Title order={5}>{day.name}</Title>
-                        <Text size="sm" c="dimmed">
-                          Cargo adicional: {formatCurrency(day.fee)}
-                        </Text>
-                        <Badge
-                          size="sm"
-                          color={day.canBeReleased ? 'green' : 'red'}
-                          variant="light"
-                        >
-                          {day.canBeReleased ? 'Se puede liberar' : 'No se puede liberar'}
-                        </Badge>
+                        <Group gap="xs">
+                          <IconCalendar size={18} color="#fd7e14" />
+                          <Title order={5}>{day.name}</Title>
+                        </Group>
+                        <Group gap="xl">
+                          <Stack gap={2}>
+                            <Text size="xs" c="dimmed" fw={500}>CARGO EXTRA</Text>
+                            <Text size="lg" fw={600} c="orange.7">
+                              {formatCurrency(day.fee)}
+                            </Text>
+                          </Stack>
+                          <Stack gap={2}>
+                            <Text size="xs" c="dimmed" fw={500}>DISPONIBILIDAD</Text>
+                            <Badge
+                              size="lg"
+                              color={day.canBeReleased ? 'green' : 'red'}
+                              variant="filled"
+                              leftSection={
+                                day.canBeReleased ? 
+                                <IconCheck size={14} /> : 
+                                <IconX size={14} />
+                              }
+                            >
+                              {day.canBeReleased ? 'Liberable' : 'Bloqueado'}
+                            </Badge>
+                          </Stack>
+                        </Group>
+                        {day.canBeReleased && (
+                          <Text size="xs" c="dimmed">
+                            Los clientes pueden reservar pagando {formatCurrency(day.fee)} adicionales
+                          </Text>
+                        )}
                       </Stack>
                       <Group gap="xs">
                         <ActionIcon
                           variant="light"
-                          size="sm"
+                          size="md"
                           color="blue"
                           onClick={() => handleEditRestDay(day, index)}
+                          title="Editar día"
                         >
-                          <IconPencil size={16} />
+                          <IconPencil size={18} />
                         </ActionIcon>
                         <ActionIcon
                           variant="light"
-                          size="sm"
+                          size="md"
                           color="red"
                           onClick={() => handleDeleteRestDay(index)}
+                          title="Eliminar día"
                         >
-                          <IconTrash size={16} />
+                          <IconTrash size={18} />
                         </ActionIcon>
                       </Group>
                     </Group>
@@ -548,55 +757,109 @@ export default function TimeBlocksManager({
       <Modal
         opened={blockOpened}
         onClose={closeBlock}
-        title={editingBlock ? 'Editar Bloque de Horario' : 'Nuevo Bloque de Horario'}
+        title={
+          <Group gap="sm">
+            <IconClock size={24} color="#1971c2" />
+            <Title order={3}>{editingBlock ? 'Editar Bloque de Horario' : 'Nuevo Bloque de Horario'}</Title>
+          </Group>
+        }
         size="xl"
         scrollAreaComponent={ScrollArea.Autosize}
+        radius="md"
       >
         <Stack gap="lg">
-          <TextInput
-            label="Nombre del bloque"
-            placeholder="Ej: Miércoles a Lunes - Tarde"
-            value={blockForm.name}
-            onChange={(e) => setBlockForm({ ...blockForm, name: e.target.value })}
-            withAsterisk
-          />
+          <Card withBorder p="md" bg="blue.0">
+            <Stack gap="sm">
+              <Group gap="xs">
+                <IconPencil size={16} color="#1971c2" />
+                <Text size="sm" fw={500}>Nombre del Bloque</Text>
+              </Group>
+              <TextInput
+                placeholder="Ej: Horario de Tarde, Fin de Semana, etc."
+                value={blockForm.name}
+                onChange={(e) => setBlockForm({ ...blockForm, name: e.target.value })}
+                size="md"
+                styles={{
+                  input: { backgroundColor: 'white' }
+                }}
+              />
+              <Text size="xs" c="dimmed">
+                Dale un nombre descriptivo para identificar fácilmente este bloque
+              </Text>
+            </Stack>
+          </Card>
           
-          <Stack gap="sm">
-            <Group gap="sm">
-              <IconCalendar size={16} />
-              <Text size="sm" fw={500}>Días de la semana</Text>
-            </Group>
-            <Card withBorder p="md">
-              <Stack gap="sm">
-                <Group>
-                  {daysOfWeek.map((day) => (
-                    <Checkbox
-                      key={day.key}
-                      label={day.shortLabel}
-                      checked={blockForm.days.includes(day.key)}
-                      onChange={(e) => {
-                        const newDays = e.currentTarget.checked
-                          ? [...blockForm.days, day.key]
-                          : blockForm.days.filter(d => d !== day.key);
-                        setBlockForm({ ...blockForm, days: newDays });
-                      }}
-                    />
-                  ))}
+          <Card withBorder p="md">
+            <Stack gap="md">
+              <Group gap="xs">
+                <IconCalendar size={16} color="#1971c2" />
+                <Text size="sm" fw={500}>Días Activos</Text>
+              </Group>
+              <Group gap="xs">
+                {daysOfWeek.map((day) => (
+                  <Button
+                    key={day.key}
+                    variant={blockForm.days.includes(day.key) ? "filled" : "light"}
+                    color={blockForm.days.includes(day.key) ? "blue" : "gray"}
+                    size="md"
+                    radius="xl"
+                    onClick={() => {
+                      const newDays = blockForm.days.includes(day.key)
+                        ? blockForm.days.filter(d => d !== day.key)
+                        : [...blockForm.days, day.key];
+                      setBlockForm({ ...blockForm, days: newDays });
+                    }}
+                    styles={{
+                      root: { minWidth: 50 }
+                    }}
+                  >
+                    {day.shortLabel}
+                  </Button>
+                ))}
+              </Group>
+              <Group gap="xs">
+                <Button
+                  size="xs"
+                  variant="subtle"
+                  onClick={() => setBlockForm({ ...blockForm, days: [0,1,2,3,4] })}
+                >
+                  Lun-Vie
+                </Button>
+                <Button
+                  size="xs"
+                  variant="subtle"
+                  onClick={() => setBlockForm({ ...blockForm, days: [5,6] })}
+                >
+                  Fin de semana
+                </Button>
+                <Button
+                  size="xs"
+                  variant="subtle"
+                  onClick={() => setBlockForm({ ...blockForm, days: [0,1,2,3,4,5,6] })}
+                >
+                  Todos
+                </Button>
+              </Group>
+              <Text size="xs" c="dimmed">
+                Selecciona en qué días estará disponible este horario
+              </Text>
+            </Stack>
+          </Card>
+          
+          <Card withBorder p="md">
+            <Stack gap="md">
+              <Group gap="xs">
+                <IconClock size={16} color="#1971c2" />
+                <Text size="sm" fw={500}>Configuración de Horario</Text>
+              </Group>
+              <Card withBorder p="sm" bg="blue.0">
+                <Group gap="xs">
+                  <IconInfoCircle size={16} color="#1971c2" />
+                  <Text size="xs" c="blue.7">
+                    La hora de fin se calcula automáticamente según la duración del evento
+                  </Text>
                 </Group>
-                <Text size="xs" c="dimmed">
-                  💡 Selecciona los días en los que este bloque de horario estará activo
-                </Text>
-              </Stack>
-            </Card>
-          </Stack>
-          
-          <Stack gap="sm">
-            <Text size="sm" fw={500}>Configuración de Horario (Formato 12 horas)</Text>
-            <Card withBorder p="md">
-              <Stack gap="md">
-                <Text size="xs" c="dimmed">
-                  💡 La hora de fin se calcula automáticamente basándose en la duración del evento
-                </Text>
+              </Card>
                 <Group grow>
                   <Select
                     label="Hora de inicio"
@@ -693,7 +956,6 @@ export default function TimeBlocksManager({
                 </Card>
               </Stack>
             </Card>
-          </Stack>
           
           <Group grow>
             <Select
@@ -835,6 +1097,68 @@ export default function TimeBlocksManager({
               )}
             </Stack>
           </Card>
+
+          <Card 
+            withBorder 
+            p="md" 
+            style={{ 
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+            }}>
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Stack gap={4}>
+                  <Group gap="xs">
+                    <IconCalendar size={18} color="white" />
+                    <Text size="sm" fw={600} c="white">Modo Especial: Una Reserva por Día</Text>
+                  </Group>
+                  <Text size="xs" c="white" opacity={0.9}>
+                    Permite mostrar múltiples horarios pero solo aceptar una reserva
+                  </Text>
+                </Stack>
+                <Switch
+                  size="lg"
+                  checked={blockForm.oneReservationPerDay}
+                  onChange={(e) => {
+                    const onePerDay = e.currentTarget.checked;
+                    setBlockForm({ 
+                      ...blockForm, 
+                      oneReservationPerDay: onePerDay,
+                      maxEventsPerBlock: onePerDay ? 1 : blockForm.maxEventsPerBlock
+                    });
+                  }}
+                  styles={{
+                    track: {
+                      backgroundColor: blockForm.oneReservationPerDay ? '#40c057' : 'rgba(255,255,255,0.3)'
+                    }
+                  }}
+                />
+              </Group>
+              
+              {blockForm.oneReservationPerDay && (
+                <Card p="sm" style={{ backgroundColor: 'rgba(255,255,255,0.95)' }}>
+                  <Stack gap="xs">
+                    <Group gap="xs">
+                      <div style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: '#40c057'
+                      }} />
+                      <Text size="sm" fw={500}>Funcionalidad Activada</Text>
+                    </Group>
+                    <Text size="xs" c="dimmed">
+                      Perfecto para cuando quieres ofrecer flexibilidad de horarios pero solo 
+                      puedes atender un evento por día. Los clientes verán todos los horarios 
+                      disponibles, pero al reservar uno, el día completo se bloquea.
+                    </Text>
+                    <Text size="xs" c="blue" fw={500}>
+                      ✓ Permite horarios superpuestos con otros bloques
+                    </Text>
+                  </Stack>
+                </Card>
+              )}
+            </Stack>
+          </Card>
           
           <Group justify="flex-end" mt="lg">
             <Button variant="light" onClick={closeBlock}>
@@ -851,25 +1175,42 @@ export default function TimeBlocksManager({
       <Modal
         opened={restDayOpened}
         onClose={closeRestDay}
-        title={editingRestDay ? 'Editar Día de Descanso' : 'Nuevo Día de Descanso'}
+        title={
+          <Group gap="sm">
+            <IconCalendar size={24} color="#fd7e14" />
+            <Title order={3}>{editingRestDay ? 'Editar Día de Descanso' : 'Nuevo Día de Descanso'}</Title>
+          </Group>
+        }
         size="lg"
+        radius="md"
       >
         <Stack gap="lg">
-          <Select
-            label="Día de la semana"
-            placeholder="Selecciona día"
-            value={restDayForm.day.toString()}
-            onChange={(value) => {
-              const dayNum = parseInt(value || '0');
-              const dayName = daysOfWeek.find(d => d.key === dayNum)?.label || '';
-              setRestDayForm({ 
-                ...restDayForm, 
-                day: dayNum,
-                name: dayName
-              });
-            }}
-            data={daysOfWeek.map(day => ({ value: day.key.toString(), label: day.label }))}
-          />
+          <Card withBorder p="md" bg="orange.0">
+            <Stack gap="sm">
+              <Group gap="xs">
+                <IconCalendar size={16} color="#fd7e14" />
+                <Text size="sm" fw={500}>Selecciona el Día</Text>
+              </Group>
+              <Select
+                placeholder="Elige un día de la semana"
+                value={restDayForm.day.toString()}
+                onChange={(value) => {
+                  const dayNum = parseInt(value || '0');
+                  const dayName = daysOfWeek.find(d => d.key === dayNum)?.label || '';
+                  setRestDayForm({ 
+                    ...restDayForm, 
+                    day: dayNum,
+                    name: dayName
+                  });
+                }}
+                data={daysOfWeek.map(day => ({ value: day.key.toString(), label: day.label }))}
+                size="md"
+                styles={{
+                  input: { backgroundColor: 'white' }
+                }}
+              />
+            </Stack>
+          </Card>
           
           <NumberInput
             label="Cargo adicional"
@@ -914,5 +1255,6 @@ export default function TimeBlocksManager({
         </Stack>
       </Modal>
     </Stack>
+    </>
   );
 }
