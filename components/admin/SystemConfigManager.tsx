@@ -102,6 +102,7 @@ export default function SystemConfigManager() {
         // Ensure all properties are properly structured with defaults
         const configData = {
           advanceBookingDays: data.data.advanceBookingDays ?? 7,
+          minAdvanceBookingDays: data.data.minAdvanceBookingDays ?? 7,
           maxConcurrentEvents: data.data.maxConcurrentEvents ?? 3,
           defaultEventDuration: data.data.defaultEventDuration ?? 4,
           timeBlocks: data.data.timeBlocks || [],
@@ -117,6 +118,7 @@ export default function SystemConfigManager() {
         console.log('No system config found, using defaults');
         const defaultConfig = {
           advanceBookingDays: 7,
+          minAdvanceBookingDays: 7,
           maxConcurrentEvents: 3,
           defaultEventDuration: 4,
           timeBlocks: [],
