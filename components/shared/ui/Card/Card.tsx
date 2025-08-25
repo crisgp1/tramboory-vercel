@@ -20,7 +20,7 @@ export function Card({
   
   const variantClasses = {
     default: 'bg-white border border-gray-200 shadow-sm',
-    glass: 'glass-card',
+    glass: 'surface-card',
     bordered: 'bg-white border-2 border-gray-200',
     flat: 'bg-gray-50'
   }
@@ -70,7 +70,7 @@ export function StatsCard({
   className = ''
 }: StatsCardProps) {
   return (
-    <Card variant="glass" className={className}>
+    <Card variant="default" className={className}>
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-600">{title}</p>
@@ -117,7 +117,7 @@ export function InfoCard({
   actions
 }: InfoCardProps) {
   return (
-    <Card variant="glass" className={className}>
+    <Card variant="default" className={className}>
       {(title || subtitle || Icon || actions) && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">

@@ -32,17 +32,17 @@ import { Reservation } from '@/types/reservation';
 import { exportToCalendar } from '@/lib/calendar-export';
 import { notifications } from '@mantine/notifications';
 
-interface ClientReservationCardCleanProps {
+interface ReservationCardProps {
   reservation: Reservation;
   onView: (reservation: Reservation) => void;
   viewMode?: 'grid' | 'list';
 }
 
-export default function ClientReservationCardClean({ 
+export default function ReservationCard({ 
   reservation, 
   onView, 
   viewMode = 'grid' 
-}: ClientReservationCardCleanProps) {
+}: ReservationCardProps) {
   
   const getStatusConfig = (status: string) => {
     switch (status) {

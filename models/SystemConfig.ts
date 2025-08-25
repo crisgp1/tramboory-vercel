@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISystemConfig extends Document {
   advanceBookingDays: number;
+  minAdvanceBookingDays: number;
   maxConcurrentEvents: number;
   defaultEventDuration: number;
   timeBlocks: {
@@ -29,6 +30,12 @@ const SystemConfigSchema = new Schema<ISystemConfig>({
     type: Number,
     required: [true, 'Los días de anticipación son requeridos'],
     min: [1, 'Debe requerir al menos 1 día de anticipación']
+  },
+  minAdvanceBookingDays: {
+    type: Number,
+    required: [true, 'Los días mínimos de anticipación son requeridos'],
+    min: [0, 'No puede ser negativo'],
+    default: 7
   },
   maxConcurrentEvents: {
     type: Number,

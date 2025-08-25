@@ -36,6 +36,7 @@ import TimeBlocksManager from './TimeBlocksManager';
 interface SystemConfig {
   _id?: string;
   advanceBookingDays: number;
+  minAdvanceBookingDays: number;
   maxConcurrentEvents: number;
   defaultEventDuration: number;
   timeBlocks?: {
@@ -76,6 +77,7 @@ const timeSlots = Array.from({ length: 24 }, (_, i) => {
 export default function SystemConfigManager() {
   const [config, setConfig] = useState<SystemConfig>({
     advanceBookingDays: 7,
+    minAdvanceBookingDays: 7,
     maxConcurrentEvents: 3,
     defaultEventDuration: 4,
     timeBlocks: [],
@@ -85,7 +87,6 @@ export default function SystemConfigManager() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     fetchSystemConfig();
@@ -132,62 +133,66 @@ export default function SystemConfigManager() {
     }
   };
 
-  const handleConfigChange = (field: string, value: any) => {
-    setConfig(prev => {
+  const handleConfigChange = async (field: string, value: any) => {
+    const newConfig = (() => {
       if (field.includes('.')) {
         const [parent, child] = field.split('.');
         return {
-          ...prev,
+          ...config,
           [parent]: {
-            ...(prev as any)[parent] || {},
+            ...(config as any)[parent] || {},
             [child]: value
           }
         };
       }
       return {
-        ...prev,
+        ...config,
         [field]: value
       };
-    });
-    setHasChanges(true);
-  };
-
-  const handleSave = async () => {
+    })();
+    
+    setConfig(newConfig);
     setSaving(true);
     
-    console.log('🔍 DEBUG: Saving system config:', {
-      configId: config._id,
-      method: config._id ? 'PUT' : 'POST',
-      restDays: config.restDays,
-      timeBlocks: config.timeBlocks,
-      fullConfig: config
-    });
-    
+    // Auto-save configuration
     try {
       const response = await fetch('/api/admin/system-config', {
         method: config._id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(config),
+        body: JSON.stringify(newConfig),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        notifications.show({ title: 'Success', message: 'Configuración guardada exitosamente', color: 'green' });
         setConfig(data.data);
-        setHasChanges(false);
+        notifications.show({ 
+          title: 'Guardado', 
+          message: 'Cambios guardados automáticamente', 
+          color: 'green',
+          autoClose: 2000 
+        });
       } else {
-        notifications.show({ title: 'Error', message: data.error || 'Error al guardar la configuración', color: 'red' });
+        notifications.show({ 
+          title: 'Error', 
+          message: data.error || 'Error al guardar la configuración', 
+          color: 'red' 
+        });
       }
     } catch (error) {
       console.error('Error saving system config:', error);
-      notifications.show({ title: 'Error', message: 'Error al guardar la configuración', color: 'red' });
+      notifications.show({ 
+        title: 'Error', 
+        message: 'Error al guardar la configuración', 
+        color: 'red' 
+      });
     } finally {
       setSaving(false);
     }
   };
+
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -223,15 +228,12 @@ export default function SystemConfigManager() {
               </Text>
             </Stack>
           </Group>
-          <Button
-            onClick={handleSave}
-            loading={saving}
-            disabled={!hasChanges}
-            leftSection={<IconCheck size={16} />}
-            size="md"
-          >
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </Button>
+          {saving && (
+            <Group gap="xs">
+              <Loader size="sm" />
+              <Text size="sm" c="dimmed">Guardando cambios...</Text>
+            </Group>
+          )}
         </Group>
       </Paper>
 
@@ -258,12 +260,21 @@ export default function SystemConfigManager() {
                 <Card.Section p="md">
                   <Stack gap="md">
                     <NumberInput
-                      label="Días de anticipación mínima"
-                      description={`Mínimo ${config.advanceBookingDays || 7} días de anticipación`}
-                      value={config.advanceBookingDays || 7}
+                      label="Días mínimos de anticipación para reservar"
+                      description={`Los clientes deben reservar con al menos ${config.minAdvanceBookingDays || 7} días de anticipación`}
+                      value={config.minAdvanceBookingDays || 7}
+                      onChange={(value) => handleConfigChange('minAdvanceBookingDays', typeof value === 'number' ? value : 0)}
+                      min={0}
+                      placeholder="7"
+                    />
+
+                    <NumberInput
+                      label="Días máximos de anticipación"
+                      description={`Los clientes pueden reservar hasta ${config.advanceBookingDays || 30} días en el futuro`}
+                      value={config.advanceBookingDays || 30}
                       onChange={(value) => handleConfigChange('advanceBookingDays', typeof value === 'number' ? value : 1)}
                       min={1}
-                      placeholder="7"
+                      placeholder="30"
                     />
 
                     <NumberInput
@@ -291,11 +302,9 @@ export default function SystemConfigManager() {
                         withBorder
                         p="md" 
                         style={{ 
-                          cursor: 'pointer',
                           backgroundColor: config.isActive ? 'var(--mantine-color-green-0)' : 'var(--mantine-color-gray-0)',
                           borderColor: config.isActive ? 'var(--mantine-color-green-3)' : 'var(--mantine-color-gray-3)'
                         }}
-                        onClick={() => handleConfigChange('isActive', !config.isActive)}
                       >
                         <Group justify="space-between">
                           <Group gap="sm">
@@ -376,26 +385,6 @@ export default function SystemConfigManager() {
       </Card>
 
       {/* Changes Indicator */}
-      {hasChanges && (
-        <Alert 
-          icon={<IconAlertTriangle size={16} />}
-          title="Cambios sin guardar"
-          color="orange"
-        >
-          <div className="flex items-center justify-between">
-            <span>Tienes cambios sin guardar en la configuración del sistema.</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSave}
-              loading={saving}
-              className="ml-4"
-            >
-              Guardar ahora
-            </Button>
-          </div>
-        </Alert>
-      )}
     </Stack>
   );
 }

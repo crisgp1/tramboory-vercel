@@ -1,151 +1,162 @@
-/* Design Tokens - Glass Morphism System */
+/* Professional Design System - Surface Components */
 
 :root {
-  /* Glass Morphism Colors */
-  --glass-bg-primary: rgba(255, 255, 255, 0.85);
-  --glass-bg-secondary: rgba(255, 255, 255, 0.75);
-  --glass-bg-overlay: rgba(248, 250, 252, 0.85);
+  /* Surface Background Colors */
+  --surface-bg-primary: rgba(255, 255, 255, 0.85);
+  --surface-bg-secondary: rgba(255, 255, 255, 0.75);
+  --surface-bg-overlay: rgba(248, 250, 252, 0.85);
   
-  /* Glass Borders */
-  --glass-border-primary: rgba(255, 255, 255, 0.3);
-  --glass-border-secondary: rgba(255, 255, 255, 0.2);
-  --glass-border-focus: rgba(59, 130, 246, 0.3);
+  /* Surface Borders */
+  --surface-border-primary: rgba(255, 255, 255, 0.3);
+  --surface-border-secondary: rgba(255, 255, 255, 0.2);
+  --surface-border-focus: rgba(59, 130, 246, 0.3);
   
-  /* Glass Shadows */
-  --glass-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --glass-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --glass-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  /* Surface Shadows */
+  --surface-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --surface-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --surface-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   
-  /* Glass Blur */
-  --glass-blur-sm: blur(8px);
-  --glass-blur-md: blur(12px);
-  --glass-blur-lg: blur(16px);
+  /* Surface Backdrop Filters */
+  --surface-blur-sm: blur(8px);
+  --surface-blur-md: blur(12px);
+  --surface-blur-lg: blur(16px);
   
   /* Transitions */
-  --glass-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --glass-transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --surface-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --surface-transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Glass Components */
+/* Professional Surface Components */
 
-.glass-card {
-  background: var(--glass-bg-primary);
-  backdrop-filter: var(--glass-blur-md);
-  -webkit-backdrop-filter: var(--glass-blur-md);
-  border: 1px solid var(--glass-border-primary);
+.surface-card {
+  background: var(--surface-bg-primary);
+  backdrop-filter: var(--surface-blur-md);
+  -webkit-backdrop-filter: var(--surface-blur-md);
+  border: 1px solid var(--surface-border-primary);
   border-radius: 0.75rem;
-  box-shadow: var(--glass-shadow-md);
-  transition: var(--glass-transition);
+  box-shadow: var(--surface-shadow-md);
+  transition: var(--surface-transition);
 }
 
-.glass-card:hover {
+.surface-card:hover {
   background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--glass-shadow-lg);
+  box-shadow: var(--surface-shadow-lg);
   transform: translateY(-1px);
 }
 
-.glass-modal {
-  background: var(--glass-bg-primary);
-  backdrop-filter: var(--glass-blur-lg);
-  -webkit-backdrop-filter: var(--glass-blur-lg);
-  border: 1px solid var(--glass-border-primary);
+.modal-content {
+  background: var(--surface-bg-primary);
+  backdrop-filter: var(--surface-blur-lg);
+  -webkit-backdrop-filter: var(--surface-blur-lg);
+  border: 1px solid var(--surface-border-primary);
   border-radius: 1rem;
-  box-shadow: var(--glass-shadow-lg);
+  box-shadow: var(--surface-shadow-lg);
 }
 
-.glass-input {
-  background: var(--glass-bg-secondary);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid var(--glass-border-secondary);
+.input-field {
+  background: var(--surface-bg-secondary);
+  backdrop-filter: var(--surface-blur-sm);
+  -webkit-backdrop-filter: var(--surface-blur-sm);
+  border: 1px solid var(--surface-border-secondary);
   border-radius: 0.5rem;
-  transition: var(--glass-transition);
+  transition: var(--surface-transition);
 }
 
-.glass-input:focus {
+.input-field:focus {
   background: rgba(255, 255, 255, 0.95);
-  border-color: var(--glass-border-focus);
+  border-color: var(--surface-border-focus);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   outline: none;
 }
 
-.glass-button {
-  background: var(--glass-bg-secondary);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid var(--glass-border-secondary);
+.button-primary {
+  background: var(--surface-bg-secondary);
+  backdrop-filter: var(--surface-blur-sm);
+  -webkit-backdrop-filter: var(--surface-blur-sm);
+  border: 1px solid var(--surface-border-secondary);
   border-radius: 0.5rem;
-  transition: var(--glass-transition);
+  transition: var(--surface-transition);
   color: rgb(51, 65, 85);
   font-weight: 500;
 }
 
-.glass-button:hover {
+.button-primary:hover {
   background: rgba(255, 255, 255, 0.9);
-  border-color: var(--glass-border-primary);
-  box-shadow: var(--glass-shadow-sm);
+  border-color: var(--surface-border-primary);
+  box-shadow: var(--surface-shadow-sm);
   transform: translateY(-1px);
 }
 
-.glass-button:active {
+.button-primary:active {
   transform: translateY(0);
 }
 
-.glass-button-secondary {
+.button-secondary {
   background: rgba(248, 250, 252, 0.7);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--surface-blur-sm);
+  -webkit-backdrop-filter: var(--surface-blur-sm);
   border: 1px solid rgba(226, 232, 240, 0.5);
   border-radius: 0.5rem;
-  transition: var(--glass-transition);
+  transition: var(--surface-transition);
   color: rgb(71, 85, 105);
   font-weight: 500;
 }
 
-.glass-button-secondary:hover {
+.button-secondary:hover {
   background: rgba(248, 250, 252, 0.9);
   border-color: rgba(226, 232, 240, 0.8);
-  box-shadow: var(--glass-shadow-sm);
+  box-shadow: var(--surface-shadow-sm);
 }
 
 /* Utility Classes */
 
-.glass-overlay {
-  background: var(--glass-bg-overlay);
-  backdrop-filter: var(--glass-blur-md);
-  -webkit-backdrop-filter: var(--glass-blur-md);
+.surface-overlay {
+  background: var(--surface-bg-overlay);
+  backdrop-filter: var(--surface-blur-md);
+  -webkit-backdrop-filter: var(--surface-blur-md);
 }
 
-.glass-surface {
-  background: var(--glass-bg-primary);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid var(--glass-border-primary);
+.surface-base {
+  background: var(--surface-bg-primary);
+  backdrop-filter: var(--surface-blur-sm);
+  -webkit-backdrop-filter: var(--surface-blur-sm);
+  border: 1px solid var(--surface-border-primary);
 }
 
-.glass-border {
-  border: 1px solid var(--glass-border-primary);
+.surface-border {
+  border: 1px solid var(--surface-border-primary);
 }
 
-.glass-border-secondary {
-  border: 1px solid var(--glass-border-secondary);
+.surface-border-secondary {
+  border: 1px solid var(--surface-border-secondary);
 }
+
+/* Legacy Support - Deprecated, use professional names above */
+.glass-card { @apply surface-card; }
+.glass-modal { @apply modal-content; }
+.glass-input { @apply input-field; }
+.glass-button { @apply button-primary; }
+.glass-button-secondary { @apply button-secondary; }
+.glass-overlay { @apply surface-overlay; }
+.glass-surface { @apply surface-base; }
+.glass-border { @apply surface-border; }
+.glass-border-secondary { @apply surface-border-secondary; }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   :root {
-    --glass-bg-primary: rgba(17, 24, 39, 0.85);
-    --glass-bg-secondary: rgba(17, 24, 39, 0.75);
-    --glass-bg-overlay: rgba(17, 24, 39, 0.85);
-    --glass-border-primary: rgba(75, 85, 99, 0.3);
-    --glass-border-secondary: rgba(75, 85, 99, 0.2);
+    --surface-bg-primary: rgba(17, 24, 39, 0.85);
+    --surface-bg-secondary: rgba(17, 24, 39, 0.75);
+    --surface-bg-overlay: rgba(17, 24, 39, 0.85);
+    --surface-border-primary: rgba(75, 85, 99, 0.3);
+    --surface-border-secondary: rgba(75, 85, 99, 0.2);
   }
   
-  .glass-button {
+  .button-primary {
     color: rgb(229, 231, 235);
   }
   
-  .glass-button-secondary {
+  .button-secondary {
     color: rgb(209, 213, 219);
   }
 }

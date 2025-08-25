@@ -214,8 +214,8 @@ body > div[data-slot="backdrop"] {
   -webkit-text-fill-color: transparent;
 }
 
-/* Legacy Class Name Support - For Gradual Migration */
-.glass-card {
+/* Professional Component Classes */
+.surface-card {
   background: var(--surface-base);
   border: 0.0625rem solid var(--border-default);
   border-radius: var(--radius-lg);
@@ -225,7 +225,7 @@ body > div[data-slot="backdrop"] {
   overflow: hidden;
 }
 
-.glass-button {
+.button-primary {
   background: var(--primary);
   border: 0.0625rem solid var(--primary);
   border-radius: var(--radius-base);
@@ -243,7 +243,7 @@ body > div[data-slot="backdrop"] {
   min-height: 2.75rem;
 }
 
-.glass-button-secondary {
+.button-secondary {
   background: var(--surface-elevated);
   border: 0.0625rem solid var(--border-default);
   border-radius: var(--radius-base);
@@ -261,7 +261,7 @@ body > div[data-slot="backdrop"] {
   min-height: 2.75rem;
 }
 
-.glass-input {
+.input-field {
   background: var(--surface-base);
   border: 0.0625rem solid var(--border-default);
   border-radius: var(--radius-base);
@@ -271,7 +271,7 @@ body > div[data-slot="backdrop"] {
   font-size: var(--text-base);
 }
 
-.glass-modal {
+.modal-content {
   background: var(--surface-overlay);
   border: 0.0625rem solid var(--border-default);
   border-radius: var(--radius-xl);
@@ -282,7 +282,7 @@ body > div[data-slot="backdrop"] {
   max-width: 32rem;
 }
 
-.glass-tab {
+.tab-button {
   background: transparent;
   border: 0.0625rem solid transparent;
   border-radius: var(--radius-base);
@@ -293,14 +293,14 @@ body > div[data-slot="backdrop"] {
   color: var(--neutral-600);
 }
 
-.glass-tab.active {
+.tab-button.active {
   background: var(--surface-elevated);
   border-color: var(--border-default);
   box-shadow: var(--elevation-low);
   color: var(--foreground);
 }
 
-.glass-stat {
+.stat-card {
   background: var(--surface-base);
   border: 0.0625rem solid var(--border-default);
   border-radius: var(--radius-lg);
@@ -309,7 +309,18 @@ body > div[data-slot="backdrop"] {
   padding: var(--space-6);
 }
 
-.glass-table {
+/* Legacy Support - Deprecated, use professional names above */
+.glass-card { @apply surface-card; }
+.glass-button { @apply button-primary; }
+.glass-button-secondary { @apply button-secondary; }
+.glass-input { @apply input-field; }
+.glass-modal { @apply modal-content; }
+.glass-tab { @apply tab-button; }
+.glass-tab.active { @apply tab-button active; }
+.glass-stat { @apply stat-card; }
+.glass-table { @apply data-table; }
+
+.data-table {
   background: var(--surface-base);
   border: 0.0625rem solid var(--border-default);
   border-radius: var(--radius-lg);

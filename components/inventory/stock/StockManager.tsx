@@ -411,7 +411,7 @@ export default function StockManager() {
   return (
     <div className="w-full space-y-6">
       {/* Header y controles */}
-      <div className="glass-card p-6">
+      <div className="surface-card p-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <div className="flex-1">
             <SearchInput
@@ -459,7 +459,7 @@ export default function StockManager() {
       </div>
 
       {/* Filtros rápidos */}
-      <div className="glass-card p-4">
+      <div className="surface-card p-4">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2">
             <Text size="sm" fw={500}>Ubicación:</Text>

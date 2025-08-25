@@ -42,7 +42,9 @@ export async function GET() {
         restDayFee: systemConfig.restDayFee,
         workingHours: systemConfig.workingHours,
         eventDuration: systemConfig.eventDuration,
-        farewellTime: systemConfig.farewellTime
+        farewellTime: systemConfig.farewellTime,
+        minAdvanceBookingDays: systemConfig.minAdvanceBookingDays || 7,
+        advanceBookingDays: systemConfig.advanceBookingDays || 30
       } : null,
       
       foodOptions: foodOptions.map(food => ({

@@ -548,14 +548,16 @@ export default function TimeBlocksManager({
                           </Stack>
                           <Stack gap={2}>
                             <Text size="xs" c="dimmed" fw={500}>DURACIÓN</Text>
-                            <Text size="sm">
-                              {block.duration} {block.duration === 1 ? 'hora' : 'horas'}
+                            <Group gap="xs">
+                              <Text size="sm">
+                                {block.duration} {block.duration === 1 ? 'hora' : 'horas'}
+                              </Text>
                               {block.halfHourBreak && (
-                                <Badge size="xs" color="green" variant="light" ml="xs">
+                                <Badge size="xs" color="green" variant="light">
                                   +30min despedida
                                 </Badge>
                               )}
-                            </Text>
+                            </Group>
                           </Stack>
                           <Stack gap={2}>
                             <Text size="xs" c="dimmed" fw={500}>CAPACIDAD</Text>

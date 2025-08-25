@@ -2,38 +2,38 @@
 
 import React from 'react'
 import { Card, CardProps } from '@mantine/core'
-import { nordicTokens } from './tokens'
+import { designTokens } from './tokens'
 
-interface NordicCardProps extends Omit<CardProps, 'shadow'> {
+interface DesignSystemCardProps extends Omit<CardProps, 'shadow'> {
   variant?: 'default' | 'bordered' | 'flat'
   padding?: 'none' | 'sm' | 'md' | 'lg'
   children: React.ReactNode
 }
 
-export default function NordicCard({ 
+export default function DesignSystemCard({ 
   variant = 'default',
   padding = 'md',
   className = '',
   children,
   ...props 
-}: NordicCardProps) {
+}: DesignSystemCardProps) {
   const getVariantStyles = () => {
     switch (variant) {
       case 'default':
         return `
-          bg-[${nordicTokens.colors.background.primary}]
-          shadow-[${nordicTokens.shadow.sm}]
-          border border-[${nordicTokens.colors.border.secondary}]
+          bg-[${designTokens.colors.background.primary}]
+          shadow-[${designTokens.shadow.sm}]
+          border border-[${designTokens.colors.border.secondary}]
         `
       case 'bordered':
         return `
-          bg-[${nordicTokens.colors.background.primary}]
-          border border-[${nordicTokens.colors.border.primary}]
+          bg-[${designTokens.colors.background.primary}]
+          border border-[${designTokens.colors.border.primary}]
           shadow-none
         `
       case 'flat':
         return `
-          bg-[${nordicTokens.colors.background.secondary}]
+          bg-[${designTokens.colors.background.secondary}]
           border-none
           shadow-none
         `
@@ -47,13 +47,13 @@ export default function NordicCard({
       case 'none':
         return 'p-0'
       case 'sm':
-        return `p-[${nordicTokens.spacing.lg}]`
+        return `p-[${designTokens.spacing.lg}]`
       case 'md':
-        return `p-[${nordicTokens.spacing['2xl']}]`
+        return `p-[${designTokens.spacing['2xl']}]`
       case 'lg':
-        return `p-[${nordicTokens.spacing['3xl']}]`
+        return `p-[${designTokens.spacing['3xl']}]`
       default:
-        return `p-[${nordicTokens.spacing['2xl']}]`
+        return `p-[${designTokens.spacing['2xl']}]`
     }
   }
 
@@ -62,8 +62,8 @@ export default function NordicCard({
       {...props}
       className={`
         ${getVariantStyles()}
-        rounded-[${nordicTokens.radius.lg}]
-        transition-all duration-[${nordicTokens.transition.normal}]
+        rounded-[${designTokens.radius.lg}]
+        transition-all duration-[${designTokens.transition.normal}]
         ${className}
       `}
     >
@@ -75,7 +75,7 @@ export default function NordicCard({
 }
 
 // Specialized card components
-export function NordicStatsCard({ 
+export function StatsCard({ 
   title, 
   value, 
   change, 
@@ -93,39 +93,39 @@ export function NordicStatsCard({
   const getTrendColor = () => {
     switch (trend) {
       case 'up':
-        return nordicTokens.colors.status.active
+        return designTokens.colors.status.active
       case 'down':
-        return nordicTokens.colors.action.danger
+        return designTokens.colors.action.danger
       default:
-        return nordicTokens.colors.text.tertiary
+        return designTokens.colors.text.tertiary
     }
   }
 
   return (
-    <NordicCard variant="default" padding="md" className={className}>
+    <DesignSystemCard variant="default" padding="md" className={className}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className={`
-            text-[${nordicTokens.typography.fontSize.sm}]
-            font-[${nordicTokens.typography.fontWeight.medium}]
-            text-[${nordicTokens.colors.text.secondary}]
-            mb-[${nordicTokens.spacing.xs}]
+            text-[${designTokens.typography.fontSize.sm}]
+            font-[${designTokens.typography.fontWeight.medium}]
+            text-[${designTokens.colors.text.secondary}]
+            mb-[${designTokens.spacing.xs}]
           `}>
             {title}
           </p>
           <p className={`
-            text-[${nordicTokens.typography.fontSize['3xl']}]
-            font-[${nordicTokens.typography.fontWeight.bold}]
-            text-[${nordicTokens.colors.text.primary}]
-            leading-[${nordicTokens.typography.lineHeight.tight}]
-            mb-[${nordicTokens.spacing.xs}]
+            text-[${designTokens.typography.fontSize['3xl']}]
+            font-[${designTokens.typography.fontWeight.bold}]
+            text-[${designTokens.colors.text.primary}]
+            leading-[${designTokens.typography.lineHeight.tight}]
+            mb-[${designTokens.spacing.xs}]
           `}>
             {value}
           </p>
           {change && (
             <p className={`
-              text-[${nordicTokens.typography.fontSize.xs}]
-              font-[${nordicTokens.typography.fontWeight.medium}]
+              text-[${designTokens.typography.fontSize.xs}]
+              font-[${designTokens.typography.fontWeight.medium}]
             `}
             style={{ color: getTrendColor() }}
             >
@@ -136,15 +136,16 @@ export function NordicStatsCard({
         {icon && (
           <div className={`
             w-12 h-12 
-            bg-[${nordicTokens.colors.background.tertiary}]
-            rounded-[${nordicTokens.radius.lg}]
+            bg-[${designTokens.colors.background.tertiary}]
+            rounded-[${designTokens.radius.lg}]
             flex items-center justify-center
-            text-[${nordicTokens.colors.text.secondary}]
+            text-[${designTokens.colors.text.secondary}]
           `}>
             {icon}
           </div>
         )}
       </div>
-    </NordicCard>
+    </DesignSystemCard>
   )
 }
+

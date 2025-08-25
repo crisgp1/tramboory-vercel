@@ -2,53 +2,53 @@
 
 import React from 'react'
 import { Button, ButtonProps } from '@mantine/core'
-import { nordicTokens } from './tokens'
+import { designTokens } from './tokens'
 
-interface NordicButtonProps extends Omit<ButtonProps, 'variant' | 'color'> {
+interface DesignSystemButtonProps extends Omit<ButtonProps, 'variant' | 'color'> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
 }
 
-export default function NordicButton({ 
+export default function DesignSystemButton({ 
   variant = 'secondary', 
   size = 'md',
   className = '',
   children,
   ...props 
-}: NordicButtonProps) {
+}: DesignSystemButtonProps) {
   const getVariantStyles = () => {
     switch (variant) {
       case 'primary':
         return `
-          bg-[${nordicTokens.colors.text.primary}] 
+          bg-[${designTokens.colors.text.primary}] 
           text-white 
-          border-[${nordicTokens.colors.text.primary}]
-          hover:bg-[${nordicTokens.colors.text.secondary}]
-          active:bg-[${nordicTokens.colors.text.primary}]
+          border-[${designTokens.colors.text.primary}]
+          hover:bg-[${designTokens.colors.text.secondary}]
+          active:bg-[${designTokens.colors.text.primary}]
           shadow-sm
         `
       case 'secondary': 
         return `
-          bg-[${nordicTokens.colors.background.primary}] 
-          text-[${nordicTokens.colors.text.primary}] 
-          border-[${nordicTokens.colors.border.primary}]
-          hover:bg-[${nordicTokens.colors.background.secondary}]
-          active:bg-[${nordicTokens.colors.background.tertiary}]
+          bg-[${designTokens.colors.background.primary}] 
+          text-[${designTokens.colors.text.primary}] 
+          border-[${designTokens.colors.border.primary}]
+          hover:bg-[${designTokens.colors.background.secondary}]
+          active:bg-[${designTokens.colors.background.tertiary}]
           shadow-sm
         `
       case 'ghost':
         return `
           bg-transparent 
-          text-[${nordicTokens.colors.text.secondary}] 
+          text-[${designTokens.colors.text.secondary}] 
           border-transparent
-          hover:bg-[${nordicTokens.colors.background.secondary}]
-          active:bg-[${nordicTokens.colors.background.tertiary}]
+          hover:bg-[${designTokens.colors.background.secondary}]
+          active:bg-[${designTokens.colors.background.tertiary}]
         `
       case 'danger':
         return `
-          bg-[${nordicTokens.colors.action.danger}] 
+          bg-[${designTokens.colors.action.danger}] 
           text-white 
-          border-[${nordicTokens.colors.action.danger}]
+          border-[${designTokens.colors.action.danger}]
           hover:opacity-90
           active:opacity-100
           shadow-sm
@@ -92,13 +92,13 @@ export default function NordicButton({
       className={`
         ${getVariantStyles()}
         ${getSizeStyles()}
-        font-[${nordicTokens.typography.fontFamily.primary}]
-        rounded-[${nordicTokens.radius.md}]
+        font-[${designTokens.typography.fontFamily.primary}]
+        rounded-[${designTokens.radius.md}]
         border border-solid
-        transition-all duration-[${nordicTokens.transition.fast}]
+        transition-all duration-[${designTokens.transition.fast}]
         focus-visible:outline-none 
         focus-visible:ring-2 
-        focus-visible:ring-[${nordicTokens.colors.border.focus}] 
+        focus-visible:ring-[${designTokens.colors.border.focus}] 
         focus-visible:ring-offset-2
         disabled:opacity-50 
         disabled:cursor-not-allowed
@@ -109,3 +109,4 @@ export default function NordicButton({
     </Button>
   )
 }
+

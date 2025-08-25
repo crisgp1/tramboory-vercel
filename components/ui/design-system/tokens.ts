@@ -1,8 +1,8 @@
-// Uber Nordic Design Tokens
-// Based on Uber's design principles with Nordic minimalism
+// Professional Design System Tokens
+// Enterprise-grade design system based on established patterns
 
-export const nordicTokens = {
-  // Colors - Muted Nordic palette
+export const designTokens = {
+  // Colors - Professional palette
   colors: {
     // Background colors
     background: {
@@ -37,9 +37,9 @@ export const nordicTokens = {
       danger: '#DC2626',      // Red
     },
     
-    // Status colors (muted)
+    // Status colors
     status: {
-      active: '#10B981',      // Soft green
+      active: '#10B981',      // Green
       inactive: '#9CA3AF',    // Gray
       warning: '#F59E0B',     // Amber
       error: '#EF4444',       // Red
@@ -99,7 +99,7 @@ export const nordicTokens = {
     full: '9999px',
   },
   
-  // Shadows - Subtle Nordic style
+  // Shadows - Professional elevation
   shadow: {
     sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
     md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
@@ -127,14 +127,15 @@ export const generateCSSVariables = () => {
       if (typeof value === 'object' && value !== null) {
         flatten(value, newKey);
       } else {
-        variables[`--nordic-${newKey}`] = value;
+        variables[`--ds-${newKey}`] = value;
       }
     });
   };
   
-  flatten(nordicTokens);
+  flatten(designTokens);
   return variables;
 };
 
 // Type-safe token access
-export type NordicTokens = typeof nordicTokens;
+export type DesignTokens = typeof designTokens;
+

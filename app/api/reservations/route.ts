@@ -100,8 +100,27 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar si es día de descanso - use consistent local date handling
+    // Validar días mínimos de anticipación y verificar si es día de descanso
     const eventDateObj = eventDate.includes('T') ? new Date(eventDate) : createUTCDate(eventDate);
+    const now = new Date();
+    const minAdvanceDays = systemConfig.minAdvanceBookingDays || 7;
+    const minBookingDate = new Date();
+    minBookingDate.setDate(minBookingDate.getDate() + minAdvanceDays);
+    
+    if (eventDateObj < minBookingDate) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Debes reservar con al menos ${minAdvanceDays} días de anticipación. La fecha más cercana disponible es ${minBookingDate.toLocaleDateString('es-MX', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}.` 
+        },
+        { status: 400 }
+      );
+    }
     const dayOfWeek = getMexicanDayOfWeek(eventDateObj);
     const dayName = getMexicanDayName(eventDateObj);
     const restDay = systemConfig.restDays?.find((rd: any) => rd.day === dayOfWeek);

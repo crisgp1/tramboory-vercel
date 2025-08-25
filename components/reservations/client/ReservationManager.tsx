@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignOutButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -29,7 +29,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { notifications } from '@mantine/notifications';
 import { useReservationStore } from '@/stores/reservationStore';
-import ClientReservationCardClean from './ClientReservationCardClean';
+import ReservationCard from './ReservationCard';
 import ClientReservationModal from './ClientReservationModal';
 import { Reservation } from '@/types/reservation';
 import AdminQuickNav from '@/components/navigation/AdminQuickNav';
@@ -50,7 +50,7 @@ const sortOptions = [
   { key: 'created-asc', label: 'Más antiguas' }
 ];
 
-export default function ClientReservationManagerClean() {
+export default function ReservationManager() {
   const { user } = useUser();
   const router = useRouter();
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -234,6 +234,11 @@ export default function ClientReservationManagerClean() {
 
             <div className="flex items-center gap-2 sm:gap-3">
               <AdminQuickNav variant="header" />
+              <SignOutButton redirectUrl="/">
+                <button className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">
+                  Cerrar sesión
+                </button>
+              </SignOutButton>
               <Button
                 leftSection={<PlusIcon className="w-4 h-4 animate-sparkle" />}
                 onClick={() => router.push('/reservaciones/nueva')}
@@ -426,7 +431,7 @@ export default function ClientReservationManagerClean() {
                   transition={{ delay: index * 0.05 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                 >
-                  <ClientReservationCardClean
+                  <ReservationCard
                     reservation={reservation}
                     onView={handleViewReservation}
                     viewMode={viewMode}
