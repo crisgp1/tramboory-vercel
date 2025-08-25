@@ -38,7 +38,7 @@ export function FormInput({
         <input
           {...inputProps}
           className={`
-            glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500
+            form-input w-full px-4 py-3 text-slate-800 placeholder-slate-500
             ${Icon ? 'pl-12' : ''}
             ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : ''}
           `}
@@ -89,7 +89,7 @@ export function FormSelect({
         <select
           {...selectProps}
           className={`
-            glass-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer
+            form-input w-full px-4 py-3 text-slate-800 appearance-none cursor-pointer
             ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : ''}
           `}
         >
@@ -147,7 +147,7 @@ export function FormTextarea({
         <textarea
           {...textareaProps}
           className={`
-            glass-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none
+            form-input w-full px-4 py-3 text-slate-800 placeholder-slate-500 resize-none
             ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : ''}
           `}
         />
@@ -206,7 +206,7 @@ export function SearchInput({
         type="text"
         placeholder={placeholder}
         onChange={handleChange}
-        className="glass-input w-full pl-10 pr-4 py-3 text-slate-800 placeholder-slate-500"
+        className="form-input w-full pl-10 pr-4 py-3 text-slate-800 placeholder-slate-500"
       />
     </div>
   )

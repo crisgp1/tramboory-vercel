@@ -369,7 +369,7 @@ export default function PurchaseOrderManager() {
   return (
     <div className="w-full space-y-6">
       {/* Header y controles */}
-      <div className="glass-card p-6">
+      <div className="surface-card p-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <div className="flex-1">
             <SearchInput
@@ -385,7 +385,7 @@ export default function PurchaseOrderManager() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="glass-input min-w-[120px] px-4 py-3 pr-8 text-sm appearance-none cursor-pointer"
+                className="form-input min-w-[120px] px-4 py-3 pr-8 text-sm appearance-none cursor-pointer"
               >
                 <option value="all">Todos los estados</option>
                 <option value="DRAFT">Borrador</option>

@@ -78,7 +78,7 @@ export default function DataTable<T extends Record<string, any>>({
   }
 
   return (
-    <div className={`glass-card ${className}`}>
+    <div className={`surface-card ${className}`}>
       {/* Search Bar */}
       {onSearchChange && (
         <div className="p-6 border-b border-slate-200/50">
@@ -89,7 +89,7 @@ export default function DataTable<T extends Record<string, any>>({
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="glass-input w-full pl-10 pr-4 py-2"
+              className="form-input w-full pl-10 pr-4 py-2"
             />
           </div>
         </div>

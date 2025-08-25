@@ -309,16 +309,109 @@ body > div[data-slot="backdrop"] {
   padding: var(--space-6);
 }
 
-/* Legacy Support - Deprecated, use professional names above */
-.glass-card { @apply surface-card; }
-.glass-button { @apply button-primary; }
-.glass-button-secondary { @apply button-secondary; }
-.glass-input { @apply input-field; }
-.glass-modal { @apply modal-content; }
-.glass-tab { @apply tab-button; }
-.glass-tab.active { @apply tab-button active; }
-.glass-stat { @apply stat-card; }
-.glass-table { @apply data-table; }
+/* Legacy Support - Map to professional classes */
+.glass-card {
+  background: var(--surface-base);
+  border: 0.0625rem solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-low);
+  transition: var(--motion-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-button {
+  background: var(--primary);
+  border: 0.0625rem solid var(--primary);
+  border-radius: var(--radius-base);
+  color: white;
+  font-weight: 500;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  padding: var(--space-3) var(--space-6);
+  transition: var(--motion-fast);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+}
+
+.glass-button-secondary {
+  background: var(--surface-elevated);
+  border: 0.0625rem solid var(--border-default);
+  border-radius: var(--radius-base);
+  color: var(--foreground);
+  font-weight: 500;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  padding: var(--space-3) var(--space-6);
+  transition: var(--motion-fast);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+}
+
+.glass-input {
+  background: var(--surface-base);
+  border: 0.0625rem solid var(--border-default);
+  border-radius: var(--radius-base);
+  transition: var(--motion-fast);
+  color: var(--foreground);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+}
+
+.glass-modal {
+  background: var(--surface-overlay);
+  border: 0.0625rem solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elevation-highest);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 32rem;
+}
+
+.glass-tab {
+  background: transparent;
+  border: 0.0625rem solid transparent;
+  border-radius: var(--radius-base);
+  transition: var(--motion-fast);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--neutral-600);
+}
+
+.glass-tab.active {
+  background: var(--surface-elevated);
+  border-color: var(--border-default);
+  box-shadow: var(--elevation-low);
+  color: var(--foreground);
+}
+
+.glass-stat {
+  background: var(--surface-base);
+  border: 0.0625rem solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-low);
+  transition: var(--motion-base);
+  padding: var(--space-6);
+}
+
+.glass-table {
+  background: var(--surface-base);
+  border: 0.0625rem solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--elevation-low);
+}
 
 .data-table {
   background: var(--surface-base);

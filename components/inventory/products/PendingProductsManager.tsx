@@ -248,7 +248,7 @@ export default function PendingProductsManager({ onRefresh }: PendingProductsMan
   return (
     <div className="w-full space-y-6">
       {/* Header */}
-      <div className="glass-card p-6">
+      <div className="surface-card p-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-slate-900 mb-2">
