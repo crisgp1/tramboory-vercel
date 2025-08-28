@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import SystemConfig from '@/models/SystemConfig';
+import SystemConfig, { ISystemConfig } from '@/models/SystemConfig';
 import Reservation from '@/models/Reservation';
 
 export async function GET(request: NextRequest) {
@@ -27,12 +27,37 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Generate time slots based on business hours
-    const timeSlots = generateTimeSlots(
-      systemConfig.businessHours.start,
-      systemConfig.businessHours.end,
-      systemConfig.defaultEventDuration
+    // Generate time slots based on time blocks
+    const dayOfWeek = (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0 format
+    
+    // Find time blocks for the day
+    const dayTimeBlocks = systemConfig.timeBlocks.filter((block: any) => 
+      block.days.includes(dayOfWeek)
     );
+    
+    console.log('🗓️ Day of week:', dayOfWeek);
+    console.log('📋 All time blocks:', systemConfig.timeBlocks);
+    console.log('✅ Matching blocks for day:', dayTimeBlocks);
+    
+    if (dayTimeBlocks.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          date: dateParam,
+          isRestDay: false,
+          restDayFee: 0,
+          defaultEventDuration: systemConfig.defaultEventDuration,
+          slots: []
+        }
+      });
+    }
+    
+    // Use exact time slots from blocks (no generation needed)
+    const timeSlots: string[] = [];
+    dayTimeBlocks.forEach((block: any) => {
+      // Each block represents one exact time slot
+      timeSlots.push(block.startTime);
+    });
     
     // Get existing reservations for the date - use UTC to match stored dates
     const startOfDay = new Date(date);
@@ -49,31 +74,33 @@ export async function GET(request: NextRequest) {
     });
     
     // Check availability for each time slot
-    const availableSlots = timeSlots.map(slot => {
+    const availableSlots = dayTimeBlocks.map((block: any) => {
       const reservationsAtTime = existingReservations.filter(res => 
-        res.eventTime === slot
+        res.eventTime === block.startTime
       );
       
-      const isAvailable = reservationsAtTime.length < systemConfig.maxConcurrentEvents;
-      const remainingCapacity = systemConfig.maxConcurrentEvents - reservationsAtTime.length;
+      const maxCapacity = block.maxEventsPerBlock || 1;
+      const isAvailable = reservationsAtTime.length < maxCapacity;
+      const remainingCapacity = maxCapacity - reservationsAtTime.length;
       
       return {
-        time: slot,
+        time: block.startTime,
         available: isAvailable,
         remainingCapacity,
-        totalCapacity: systemConfig.maxConcurrentEvents
+        totalCapacity: maxCapacity
       };
     });
     
     // Check if date is rest day
-    const isRestDay = date.getDay() === systemConfig.restDay;
+    const restDay = systemConfig.restDays.find((rd: any) => rd.day === dayOfWeek);
+    const isRestDay = !!restDay;
     
     return NextResponse.json({
       success: true,
       data: {
         date: dateParam,
         isRestDay,
-        restDayFee: isRestDay ? systemConfig.restDayFee : 0,
+        restDayFee: restDay?.fee || 0,
         defaultEventDuration: systemConfig.defaultEventDuration,
         slots: availableSlots
       }
@@ -87,32 +114,4 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function generateTimeSlots(startTime: string, endTime: string, duration: number): string[] {
-  const slots: string[] = [];
-  const [startHour, startMin] = startTime.split(':').map(Number);
-  const [endHour, endMin] = endTime.split(':').map(Number);
-  
-  let currentHour = startHour;
-  let currentMin = startMin;
-  
-  while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-    const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
-    slots.push(timeString);
-    
-    // Add duration hours
-    currentHour += duration;
-    
-    // Handle minute overflow
-    if (currentMin >= 60) {
-      currentHour += Math.floor(currentMin / 60);
-      currentMin = currentMin % 60;
-    }
-    
-    // Break if we've exceeded end time
-    if (currentHour > endHour || (currentHour === endHour && currentMin > endMin)) {
-      break;
-    }
-  }
-  
-  return slots;
-}
+// No longer needed - we use exact block times

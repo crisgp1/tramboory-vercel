@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       selectedTheme,
       customer,
       child,
+      guestCount,
       specialComments
     } = body;
     
@@ -484,6 +485,7 @@ export async function POST(request: NextRequest) {
       eventTheme: eventThemeData,
       customer,
       child,
+      guestCount: guestCount || { adults: 0, kids: 0 },
       specialComments,
       pricing: {
         packagePrice: parseFloat(packagePrice.toString()) || 0,

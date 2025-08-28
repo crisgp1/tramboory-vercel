@@ -38,6 +38,12 @@ export default clerkMiddleware(async (auth, req) => {
     return
   }
   
+  // Skip middleware for static files (js, css, images, source maps, etc.)
+  const pathname = req.nextUrl.pathname
+  if (pathname.match(/\.(js|css|map|png|jpg|jpeg|gif|svg|ico|webp|woff2?|ttf|eot)$/i)) {
+    return
+  }
+  
   if (isProtectedRoute(req)) {
     try {
       const { userId, sessionClaims } = await auth.protect()

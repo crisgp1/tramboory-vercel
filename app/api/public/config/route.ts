@@ -52,7 +52,10 @@ export async function GET() {
         name: food.name,
         description: food.description,
         basePrice: food.basePrice,
-        extras: food.extras.filter((extra: any) => extra.isActive)
+        category: food.category,
+        adultDishes: food.adultDishes || [],
+        kidsDishes: food.kidsDishes || [],
+        upgrades: food.upgrades || []
       })),
       
       extraServices: extraServices.map(service => ({
