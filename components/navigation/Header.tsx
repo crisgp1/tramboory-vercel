@@ -6,18 +6,18 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { FiMenu, FiX } from 'react-icons/fi'
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs'
-import { Button } from '@mantine/core'
+import { usePathname } from 'next/navigation'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const { isSignedIn } = useUser()
+  const pathname = usePathname()
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
 
   const navItems = [
     { href: '#content', label: 'Servicios' },
-    { href: '/nosotros', label: 'Nosotros' },
     { href: '/galeria', label: 'Galería' },
     { href: '/contacto', label: 'Contacto' },
   ]
@@ -31,10 +31,17 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Determinar si estamos en el home
+  const isHomePage = pathname === '/'
+  
+  // Si no estamos en home, siempre mostrar fondo
+  // Si estamos en home, mostrar fondo solo al scrollear
+  const shouldShowBackground = !isHomePage || isScrolled
+
   return (
     <motion.header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
+        shouldShowBackground
           ? 'bg-purple-900/80 backdrop-blur-md border-b border-purple-500/30'
           : 'bg-transparent'
       }`}
@@ -47,13 +54,13 @@ export function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <div className="relative h-10 w-40">
-              {/* Solo logo - visible al hacer scroll */}
+              {/* Solo logo - visible al hacer scroll o en páginas que no son home */}
               <motion.div
                 className="absolute top-0 left-0 flex items-center"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{
-                  opacity: isScrolled ? 1 : 0,
-                  x: isScrolled ? 0 : -20
+                  opacity: shouldShowBackground ? 1 : 0,
+                  x: shouldShowBackground ? 0 : -20
                 }}
                 transition={{ duration: 0.3 }}
               >
@@ -68,13 +75,13 @@ export function Header() {
                 </div>
               </motion.div>
 
-              {/* Logo texto solo - visible por defecto */}
+              {/* Logo texto solo - visible solo en home antes de scrollear */}
               <motion.div
                 className="absolute top-0 left-0 flex items-center"
                 initial={{ opacity: 1, x: 0 }}
                 animate={{
-                  opacity: isScrolled ? 0 : 1,
-                  x: isScrolled ? 20 : 0
+                  opacity: shouldShowBackground ? 0 : 1,
+                  x: shouldShowBackground ? 20 : 0
                 }}
                 transition={{ duration: 0.3 }}
               >
@@ -129,19 +136,18 @@ export function Header() {
             ) : (
               <>
                 <SignInButton mode="modal">
-                  <Button
-                    variant="ghost"
-                    className="text-white border-white/30 hover:bg-white/10"
+                  <button
+                    className="px-4 py-2 text-white border border-white/30 rounded-lg hover:bg-white/10 transition-colors"
                   >
                     Iniciar Sesión
-                  </Button>
+                  </button>
                 </SignInButton>
                 <SignUpButton mode="modal">
-                  <Button
-                    className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-purple-900 font-semibold hover:from-yellow-500 hover:to-yellow-600"
+                  <button
+                    className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-purple-900 font-semibold rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition-all"
                   >
                     Registrarse
-                  </Button>
+                  </button>
                 </SignUpButton>
               </>
             )}
@@ -201,21 +207,20 @@ export function Header() {
                 ) : (
                   <>
                     <SignInButton mode="modal">
-                      <Button
-                        variant="ghost"
-                        className="w-full text-white border-white/30 hover:bg-white/10"
+                      <button
+                        className="w-full px-4 py-2 text-white border border-white/30 rounded-lg hover:bg-white/10 transition-colors"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         Iniciar Sesión
-                      </Button>
+                      </button>
                     </SignInButton>
                     <SignUpButton mode="modal">
-                      <Button
-                        className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-purple-900 font-semibold hover:from-yellow-500 hover:to-yellow-600"
+                      <button
+                        className="w-full px-4 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-purple-900 font-semibold rounded-lg hover:from-yellow-500 hover:to-yellow-600 transition-all"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         Registrarse
-                      </Button>
+                      </button>
                     </SignUpButton>
                   </>
                 )}

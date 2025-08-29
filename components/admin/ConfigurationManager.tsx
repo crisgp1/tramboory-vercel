@@ -18,13 +18,15 @@ import {
   IconCake,
   IconSettings,
   IconBuildingStore,
-  IconAlertTriangle
+  IconAlertTriangle,
+  IconPhone
 } from '@tabler/icons-react';
 import PackageManager from './PackageManager';
 import FoodOptionsManager from './FoodOptionsManager';
 import ExtraServicesManager from './ExtraServicesManager';
 import EventThemeManager from './EventThemeManager';
 import SystemConfigManager from './SystemConfigManager';
+import { ContactSettingsManager } from './ContactSettingsManager';
 
 const configTabs = [
   {
@@ -50,6 +52,12 @@ const configTabs = [
     label: 'Temas de Evento',
     icon: IconBuildingStore,
     description: 'Gestiona temas y decoraciones'
+  },
+  {
+    id: 'contact',
+    label: 'Datos de Contacto',
+    icon: IconPhone,
+    description: 'Información de contacto y WhatsApp'
   },
   {
     id: 'system',
@@ -103,6 +111,8 @@ export default function ConfigurationManager() {
         return <ExtraServicesManager />;
       case 'themes':
         return <EventThemeManager />;
+      case 'contact':
+        return <ContactSettingsManager />;
       case 'system':
         return <SystemConfigManager />;
       default:

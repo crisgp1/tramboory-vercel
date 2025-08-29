@@ -1,19 +1,14 @@
 'use client'
 
-import { Header } from '@/components/navigation/Header'
+import { PublicLayout } from '@/components/layouts/PublicLayout'
 import { HeroSection } from '@/components/hero/HeroSection'
 import { ContentSection } from '@/components/home/ContentSection'
-import { Footer } from '@/components/navigation/Footer'
 
 export function HomePage() {
   return (
-    <>
-      <Header />
-      <main className="min-h-screen">
-        <HeroSection />
-        <ContentSection />
-      </main>
-      <Footer />
-    </>
+    <PublicLayout>
+      <HeroSection />
+      <ContentSection />
+    </PublicLayout>
   )
 }

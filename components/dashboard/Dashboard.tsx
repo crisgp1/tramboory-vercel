@@ -31,7 +31,10 @@ import {
   IconBox,
   IconBell,
   IconUsers,
-  IconSparkles
+  IconSparkles,
+  IconPhoto,
+  IconCarouselVertical,
+  IconPhotoHeart
 } from "@tabler/icons-react"
 import { useDisclosure } from "@mantine/hooks"
 import { notifications } from "@mantine/notifications"
@@ -43,6 +46,9 @@ import InventoryManager from "@/components/inventory/InventoryManager"
 import UserManagement from "@/components/dashboard/sections/UserManagement"
 import AnalyticsManager from "@/components/analytics/AnalyticsManager"
 import CouponManager from "@/components/admin/CouponManager"
+import HeroManager from "@/components/admin/HeroManager"
+import CarouselManager from "@/components/admin/CarouselManager"
+import { GalleryManager } from "@/components/admin/GalleryManager"
 import AdminQuickNav from "@/components/navigation/AdminQuickNav"
 
 type MenuItem = {
@@ -94,6 +100,24 @@ const menuItems: MenuItem[] = [
     label: "Cupones", 
     icon: IconSparkles,
     description: "Gestión de promociones y descuentos"
+  },
+  { 
+    id: "hero", 
+    label: "Hero Landing", 
+    icon: IconPhoto,
+    description: "Gestión del contenido principal del sitio web"
+  },
+  { 
+    id: "carousel", 
+    label: "Carousel", 
+    icon: IconCarouselVertical,
+    description: "Gestión del carousel con videos y fotos"
+  },
+  { 
+    id: "galeria", 
+    label: "Galería", 
+    icon: IconPhotoHeart,
+    description: "Gestión de la galería de fotos y videos"
   }
 ]
 
@@ -125,6 +149,12 @@ export default function Dashboard() {
       case "cupones":
         // Solo admin y gerente pueden gestionar cupones
         return isAdmin || isGerente
+      case "hero":
+        // Solo admin puede gestionar el hero del landing
+        return isAdmin
+      case "carousel":
+        // Solo admin puede gestionar el carousel
+        return isAdmin
       case "reservas":
         // Todos los roles pueden ver reservas
         return true
@@ -193,6 +223,19 @@ export default function Dashboard() {
     // Si es la sección de cupones, mostrar el componente específico
     if (activeMenuItem === 'cupones') {
       return <CouponManager />
+    }
+
+    // Si es la sección de hero, mostrar el componente específico
+    if (activeMenuItem === 'hero') {
+      return <HeroManager />
+    }
+    // Si es la sección de carousel, mostrar el componente específico
+    if (activeMenuItem === 'carousel') {
+      return <CarouselManager />
+    }
+    // Si es la sección de galería, mostrar el componente específico
+    if (activeMenuItem === 'galeria') {
+      return <GalleryManager />
     }
 
     // Default content - redirect to analytics since that's the main dashboard view
