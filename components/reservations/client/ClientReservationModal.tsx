@@ -6,14 +6,20 @@ import {
   Button,
   Card,
   Badge,
+  Text,
+  Stack,
+  Group,
+  ThemeIcon,
   Divider,
+  FileInput,
   TextInput,
   Textarea,
-  Input,
   Menu,
-  MenuTarget,
-  MenuDropdown,
-  MenuItem
+  Title,
+  Grid,
+  Box,
+  Paper,
+  Alert
 } from '@mantine/core';
 import {
   CalendarDaysIcon,
@@ -23,18 +29,17 @@ import {
   ChatBubbleLeftRightIcon,
   CurrencyDollarIcon,
   SparklesIcon,
-  HeartIcon,
-  PlusIcon,
   CreditCardIcon,
   PhotoIcon,
-  DocumentArrowUpIcon,
   CheckCircleIcon,
   CalendarIcon,
-  DocumentTextIcon
+  InformationCircleIcon,
+  PhoneIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
 import { Reservation } from '@/types/reservation';
 import { exportToCalendar } from '@/lib/calendar-export';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications';
 
 interface ClientReservationModalProps {
   opened: boolean;
@@ -55,44 +60,73 @@ export default function ClientReservationModal({
 
   if (!reservation) return null;
 
-  // Generate unique payment reference
-  const generatePaymentReference = () => {
-    const date = new Date(reservation.eventDate);
-    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    const childInitials = reservation.child.name.split(' ').map(n => n[0]).join('').toUpperCase();
-    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `TRM${dateStr}${childInitials}${randomNum}`;
-  };
+  const getStatusConfig = (status: string, paymentStatus?: string) => {
+    // If reservation is pending but has payment verification status, show that instead
+    if (status === 'pending' && paymentStatus) {
+      switch (paymentStatus) {
+        case 'verifying':
+          return { color: 'blue', label: 'Verificando pago' };
+        case 'verified':
+          return { color: 'green', label: 'Pago verificado' };
+        case 'rejected':
+          return { color: 'orange', label: 'Pago rechazado' };
+        case 'uploaded':
+          return { color: 'blue', label: 'Verificando pago' };
+        case 'partial':
+          return { color: 'orange', label: 'Anticipo Recibido' };
+        case 'paid':
+          return { color: 'green', label: 'Confirmada' };
+      }
+    }
 
-  const uniqueReference = generatePaymentReference();
-
-  const getStatusColor = (status: string) => {
+    // Default status handling
     switch (status) {
       case 'confirmed':
-        return 'green';
+        return { color: 'green', label: 'Confirmada' };
       case 'pending':
-        return 'yellow';
+        return { color: 'yellow', label: 'Pendiente' };
       case 'cancelled':
-        return 'red';
+        return { color: 'red', label: 'Cancelada' };
       case 'completed':
-        return 'blue';
+        return { color: 'blue', label: 'Completada' };
       default:
-        return 'gray';
+        return { color: 'gray', label: status };
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'Confirmada';
-      case 'pending':
-        return 'Pendiente';
-      case 'cancelled':
-        return 'Cancelada';
-      case 'completed':
-        return 'Completada';
+  const getPaymentStatusConfig = (paymentStatus?: string) => {
+    switch (paymentStatus) {
+      case 'uploaded':
+      case 'verifying':
+        return { 
+          color: 'blue', 
+          label: 'Verificando pago', 
+          icon: '⏳',
+          description: 'Tu comprobante está siendo revisado por nuestro equipo.'
+        };
+      case 'verified':
+        return { 
+          color: 'green', 
+          label: 'Pago verificado', 
+          icon: '✅',
+          description: 'El pago ha sido confirmado exitosamente.'
+        };
+      case 'rejected':
+        return { 
+          color: 'red', 
+          label: 'Pago rechazado', 
+          icon: '❌',
+          description: 'El comprobante no pudo ser verificado. Contacta soporte.'
+        };
+      case 'partial':
+        return { 
+          color: 'orange', 
+          label: 'Anticipo recibido', 
+          icon: '💰',
+          description: 'Se ha recibido el anticipo. Sube el comprobante del pago restante para completar la reservación.'
+        };
       default:
-        return status;
+        return null;
     }
   };
 
@@ -108,682 +142,616 @@ export default function ClientReservationModal({
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
-      currency: 'MXN'
+      currency: 'MXN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(price);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Por favor selecciona una imagen válida');
-        return;
-      }
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen debe ser menor a 5MB');
-        return;
-      }
-      setPaymentScreenshot(file);
+  const handleCalendarExport = (provider: 'google' | 'outlook' | 'yahoo' | 'ical') => {
+    try {
+      exportToCalendar(reservation, provider);
+      notifications.show({ 
+        title: 'Éxito', 
+        message: `Evento exportado a ${provider === 'ical' ? 'calendario' : provider}`, 
+        color: 'green' 
+      });
+    } catch (error) {
+      console.error('Error exporting to calendar:', error);
+      notifications.show({ 
+        title: 'Error', 
+        message: 'Error al exportar el evento', 
+        color: 'red' 
+      });
     }
   };
 
   const handlePaymentSubmit = async () => {
     if (!paymentScreenshot) {
-      alert('Por favor selecciona una captura de pantalla del pago');
+      notifications.show({
+        title: 'Error',
+        message: 'Por favor selecciona una captura de pantalla del pago',
+        color: 'red'
+      });
       return;
     }
 
     setIsUploading(true);
     try {
-      // Here you would implement the actual upload logic
-      // For now, we'll simulate the upload
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const formData = new FormData();
+      formData.append('paymentProof', paymentScreenshot);
+      formData.append('reference', paymentReference || '');
+      formData.append('notes', paymentNotes || '');
+      formData.append('reservationId', reservation._id);
+
+      console.log('Uploading payment proof for reservation:', reservation._id);
+
+      const response = await fetch('/api/reservations/payment-proof', {
+        method: 'POST',
+        body: formData,
+      });
+
+      console.log('Response status:', response.status);
       
-      // Reset form
-      setPaymentScreenshot(null);
-      setPaymentReference('');
-      setPaymentNotes('');
-      setShowPaymentSection(false);
+      let result;
+      try {
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        throw new Error('Respuesta del servidor inválida');
+      }
       
-      alert('¡Comprobante de pago enviado exitosamente!');
+      console.log('Response data:', result);
+
+      if (response.ok && result.success) {
+        notifications.show({
+          title: 'Éxito',
+          message: 'Comprobante enviado. Procesando verificación...',
+          color: 'green'
+        });
+        
+        // Update reservation status locally to show verifying state
+        if (reservation) {
+          reservation.paymentStatus = 'verifying';
+          reservation.paymentProof = {
+            filename: paymentScreenshot.name,
+            uploadedAt: new Date().toISOString(),
+            reference: paymentReference,
+            notes: paymentNotes
+          };
+        }
+        
+        // Reset form
+        setPaymentScreenshot(null);
+        setPaymentReference('');
+        setPaymentNotes('');
+        setShowPaymentSection(false);
+      } else {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
     } catch (error) {
-      alert('Error al enviar el comprobante. Inténtalo de nuevo.');
+      console.error('Payment upload error:', error);
+      notifications.show({
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Error al enviar el comprobante de pago',
+        color: 'red'
+      });
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleDownloadInvoice = async () => {
-    try {
-      const response = await fetch('/api/reservations/invoice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reservationId: reservation._id }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error generating invoice');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `factura-reserva-${reservation._id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('Factura descargada exitosamente');
-    } catch (error) {
-      console.error('Error downloading invoice:', error);
-      toast.error('Error al descargar la factura');
-    }
-  };
+  const calendarOptions = [
+    { key: 'google', label: 'Google Calendar', icon: '📅' },
+    { key: 'outlook', label: 'Outlook', icon: '📧' },
+    { key: 'yahoo', label: 'Yahoo Calendar', icon: '🟣' },
+    { key: 'ical', label: 'Descargar iCal', icon: '📋' }
+  ];
 
   return (
-    <Modal
-      opened={opened}
+    <Modal 
+      opened={opened} 
       onClose={onClose}
-      size="xl"
+      title="Detalles de la Reservación"
+      size="lg"
       centered
-      overlayProps={{
-        opacity: 0.55,
-        blur: 3,
-      }}
-      styles={{
-        content: { maxWidth: '64rem' },
-        body: { padding: 0 }
-      }}
     >
-      <div>
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-pink-50 to-purple-50">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-lg sm:text-2xl">🎂</span>
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent truncate">
-                  Fiesta de {reservation.child.name}
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  Una celebración mágica e inolvidable ✨
-                </p>
-              </div>
-            </div>
-            <Badge
-              color={getStatusColor(reservation.status)}
-              variant="light"
-              size="md"
-              className="font-semibold flex-shrink-0 text-xs sm:text-sm"
-            >
-              {getStatusText(reservation.status)}
-            </Badge>
+      <Stack gap="md">
+        {/* Header with status */}
+        <Group justify="space-between" align="flex-start">
+          <div>
+            <Title order={3} mb="xs">Reservación #{reservation._id.slice(-6).toUpperCase()}</Title>
+            <Text size="sm" c="dimmed">
+              Creada el {new Date(reservation.createdAt).toLocaleDateString('es-ES')}
+            </Text>
           </div>
+          <Badge color={getStatusConfig(reservation.status, reservation.paymentStatus).color} size="lg">
+            {getStatusConfig(reservation.status, reservation.paymentStatus).label}
+          </Badge>
+        </Group>
+
+        <Divider />
+
+        {/* Event Details */}
+        <Paper p="md" radius="md" withBorder>
+          <Title order={4} mb="md">
+            <Group gap="xs">
+              <ThemeIcon size="sm" variant="light" color="blue">
+                <SparklesIcon style={{ width: '70%', height: '70%' }} />
+              </ThemeIcon>
+              Fiesta de {reservation.child.name}
+            </Group>
+          </Title>
+
+          <Grid>
+            <Grid.Col span={6}>
+              <Group gap="xs" mb="sm">
+                <ThemeIcon size="xs" variant="light" color="pink">
+                  <CakeIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                <div>
+                  <Text size="sm" fw={500}>Cumpleañero</Text>
+                  <Text size="sm" c="dimmed">
+                    {reservation.child.name} ({reservation.child.age} {reservation.child.age === 1 ? 'año' : 'años'})
+                  </Text>
+                </div>
+              </Group>
+            </Grid.Col>
+
+            <Grid.Col span={6}>
+              <Group gap="xs" mb="sm">
+                <ThemeIcon size="xs" variant="light" color="blue">
+                  <CalendarDaysIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                <div>
+                  <Text size="sm" fw={500}>Fecha</Text>
+                  <Text size="sm" c="dimmed">{formatDate(reservation.eventDate)}</Text>
+                </div>
+              </Group>
+            </Grid.Col>
+
+            <Grid.Col span={6}>
+              <Group gap="xs" mb="sm">
+                <ThemeIcon size="xs" variant="light" color="blue">
+                  <ClockIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                <div>
+                  <Text size="sm" fw={500}>Hora</Text>
+                  <Text size="sm" c="dimmed">{reservation.eventTime}</Text>
+                </div>
+              </Group>
+            </Grid.Col>
+
+            <Grid.Col span={6}>
+              <Group gap="xs" mb="sm">
+                <ThemeIcon size="xs" variant="light" color="purple">
+                  <UserIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                <div>
+                  <Text size="sm" fw={500}>Invitados</Text>
+                  <Text size="sm" c="dimmed">
+                    {reservation.guestCount?.adults || 0} adultos, {reservation.guestCount?.kids || 0} niños
+                  </Text>
+                </div>
+              </Group>
+            </Grid.Col>
+          </Grid>
+        </Paper>
+
+        {/* Package Details */}
+        {reservation.package && (
+          <Paper p="md" radius="md" withBorder>
+            <Title order={4} mb="sm">
+              <Group gap="xs">
+                <ThemeIcon size="sm" variant="light" color="purple">
+                  <SparklesIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                Paquete Seleccionado
+              </Group>
+            </Title>
+            <Text fw={500}>{reservation.package.name}</Text>
+            <Text size="sm" c="dimmed">Hasta {reservation.package.maxGuests} invitados</Text>
+          </Paper>
+        )}
+
+        {/* Food Options */}
+        {reservation.foodOption && (
+          <Paper p="md" radius="md" withBorder>
+            <Title order={4} mb="sm">
+              <Group gap="xs">
+                <ThemeIcon size="sm" variant="light" color="orange">
+                  <CakeIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                Opciones de Alimentos
+              </Group>
+            </Title>
+            <Text fw={500} mb="xs">{reservation.foodOption.name}</Text>
+            
+            {/* Food Upgrades */}
+            {reservation.foodOption.selectedExtras && reservation.foodOption.selectedExtras.length > 0 && (
+              <div>
+                <Text size="sm" fw={500} mb="xs">Extras seleccionados:</Text>
+                <Stack gap="xs">
+                  {reservation.foodOption.selectedExtras.map((extra, index) => (
+                    <Group key={index} justify="space-between">
+                      <Text size="sm">• {extra.name}</Text>
+                      <Text size="sm" c="dimmed">+{formatPrice(extra.price)}</Text>
+                    </Group>
+                  ))}
+                </Stack>
               </div>
+            )}
+
+            {/* Beverage Selection */}
+            {reservation.selectedDrink && (
+              <div style={{ marginTop: '12px' }}>
+                <Text size="sm" fw={500} mb="xs">Bebida seleccionada:</Text>
+                <Text size="sm" c="dimmed">
+                  {reservation.selectedDrink === 'agua-fresca' ? 'Agua Fresca (Horchata)' : 
+                   reservation.selectedDrink === 'refresco-refill' ? 'Refresco Refill (Coca-Cola, Sprite, Fanta)' : 
+                   reservation.selectedDrink}
+                </Text>
+              </div>
+            )}
+          </Paper>
+        )}
+
+        {/* Guest Count Details */}
+        {reservation.guestCount && (
+          <Paper p="md" radius="md" withBorder>
+            <Title order={4} mb="sm">
+              <Group gap="xs">
+                <ThemeIcon size="sm" variant="light" color="blue">
+                  <UserIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                Detalles de Invitados
+              </Group>
+            </Title>
+            
+            <Grid>
+              <Grid.Col span={6}>
+                <Group gap="xs">
+                  <ThemeIcon size="xs" variant="light" color="blue">
+                    <UserIcon style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                  <div>
+                    <Text size="sm" fw={500}>Adultos</Text>
+                    <Text size="sm" c="dimmed">{reservation.guestCount.adults}</Text>
+                  </div>
+                </Group>
+              </Grid.Col>
+
+              <Grid.Col span={6}>
+                <Group gap="xs">
+                  <ThemeIcon size="xs" variant="light" color="pink">
+                    <UserIcon style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                  <div>
+                    <Text size="sm" fw={500}>Niños</Text>
+                    <Text size="sm" c="dimmed">{reservation.guestCount.kids}</Text>
+                  </div>
+                </Group>
+              </Grid.Col>
+            </Grid>
+            
+            <Text size="xs" c="dimmed" mt="sm">
+              Total: {(reservation.guestCount.adults + reservation.guestCount.kids)} invitados
+            </Text>
+          </Paper>
+        )}
+
+        {/* Theme Selection */}
+        {reservation.eventTheme && (
+          <Paper p="md" radius="md" withBorder>
+            <Title order={4} mb="sm">
+              <Group gap="xs">
+                <ThemeIcon size="sm" variant="light" color="pink">
+                  <SparklesIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                Temática del Evento
+              </Group>
+            </Title>
+            <Text fw={500} mb="xs">{reservation.eventTheme.name}</Text>
+            <Text size="sm" c="dimmed" mb="sm">Tema: {reservation.eventTheme.selectedTheme}</Text>
+            
+            {reservation.eventTheme.selectedPackage && (
+              <div>
+                <Text size="sm" fw={500} mb="xs">Paquete temático:</Text>
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">{reservation.eventTheme.selectedPackage.name}</Text>
+                  <Text size="sm" c="dimmed">{formatPrice(reservation.eventTheme.selectedPackage.price)}</Text>
+                </Group>
+                <Text size="xs" c="dimmed">{reservation.eventTheme.selectedPackage.pieces} piezas</Text>
+              </div>
+            )}
+          </Paper>
+        )}
+
+        {/* Extra Services */}
+        {reservation.extraServices && reservation.extraServices.length > 0 && (
+          <Paper p="md" radius="md" withBorder>
+            <Title order={4} mb="sm">
+              <Group gap="xs">
+                <ThemeIcon size="sm" variant="light" color="green">
+                  <SparklesIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                Servicios Extras
+              </Group>
+            </Title>
+            <Stack gap="xs">
+              {reservation.extraServices.map((service, index) => (
+                <Group key={index} justify="space-between">
+                  <div>
+                    <Text size="sm">{service.name}</Text>
+                    {service.quantity > 1 && (
+                      <Text size="xs" c="dimmed">Cantidad: {service.quantity}</Text>
+                    )}
+                  </div>
+                  <Text size="sm" fw={500}>{formatPrice(service.price * service.quantity)}</Text>
+                </Group>
+              ))}
+            </Stack>
+          </Paper>
+        )}
+
+        {/* Customer Info */}
+        <Paper p="md" radius="md" withBorder>
+          <Title order={4} mb="sm">
+            <Group gap="xs">
+              <ThemeIcon size="sm" variant="light" color="blue">
+                <UserIcon style={{ width: '70%', height: '70%' }} />
+              </ThemeIcon>
+              Información de Contacto
+            </Group>
+          </Title>
           
-              <div className="p-0 overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="p-4 sm:p-6">
-            {/* Grid principal con información organizada */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 mb-6">
+          <Grid>
+            <Grid.Col span={6}>
+              <Group gap="xs">
+                <ThemeIcon size="xs" variant="light" color="blue">
+                  <UserIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                <div>
+                  <Text size="sm" fw={500}>Nombre</Text>
+                  <Text size="sm" c="dimmed">{reservation.customer.name}</Text>
+                </div>
+              </Group>
+            </Grid.Col>
+
+            <Grid.Col span={6}>
+              <Group gap="xs">
+                <ThemeIcon size="xs" variant="light" color="blue">
+                  <EnvelopeIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                <div>
+                  <Text size="sm" fw={500}>Email</Text>
+                  <Text size="sm" c="dimmed">{reservation.customer.email}</Text>
+                </div>
+              </Group>
+            </Grid.Col>
+
+            {reservation.customer.phone && (
+              <Grid.Col span={6}>
+                <Group gap="xs">
+                  <ThemeIcon size="xs" variant="light" color="blue">
+                    <PhoneIcon style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                  <div>
+                    <Text size="sm" fw={500}>Teléfono</Text>
+                    <Text size="sm" c="dimmed">{reservation.customer.phone}</Text>
+                  </div>
+                </Group>
+              </Grid.Col>
+            )}
+          </Grid>
+        </Paper>
+
+        {/* Pricing */}
+        <Paper p="md" radius="md" withBorder>
+          <Title order={4} mb="sm">
+            <Group gap="xs">
+              <ThemeIcon size="sm" variant="light" color="green">
+                <CurrencyDollarIcon style={{ width: '70%', height: '70%' }} />
+              </ThemeIcon>
+              Resumen de Precios
+            </Group>
+          </Title>
+          
+          <Stack gap="xs">
+            <Group justify="space-between">
+              <Text size="sm">Paquete base:</Text>
+              <Text size="sm" fw={500}>{formatPrice(reservation.pricing?.packagePrice || 0)}</Text>
+            </Group>
+            
+            {(reservation.pricing?.foodPrice || 0) > 0 && (
+              <Group justify="space-between">
+                <Text size="sm">Alimentos:</Text>
+                <Text size="sm" fw={500}>{formatPrice(reservation.pricing.foodPrice)}</Text>
+              </Group>
+            )}
+            
+            {(reservation.pricing?.themePrice || 0) > 0 && (
+              <Group justify="space-between">
+                <Text size="sm">Temática:</Text>
+                <Text size="sm" fw={500}>{formatPrice(reservation.pricing.themePrice)}</Text>
+              </Group>
+            )}
+            
+            {(reservation.pricing?.extrasPrice || 0) > 0 && (
+              <Group justify="space-between">
+                <Text size="sm">Extras:</Text>
+                <Text size="sm" fw={500}>{formatPrice(reservation.pricing.extrasPrice)}</Text>
+              </Group>
+            )}
+
+            <Divider />
+            
+            <Group justify="space-between">
+              <Text fw={700}>Total:</Text>
+              <Text size="lg" fw={700} c="green">
+                {formatPrice(reservation.pricing?.total || 0)}
+              </Text>
+            </Group>
+          </Stack>
+        </Paper>
+
+        {/* Special Comments */}
+        {reservation.specialComments && (
+          <Paper p="md" radius="md" withBorder>
+            <Title order={4} mb="sm">
+              <Group gap="xs">
+                <ThemeIcon size="sm" variant="light" color="orange">
+                  <ChatBubbleLeftRightIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                Comentarios Especiales
+              </Group>
+            </Title>
+            <Text size="sm">{reservation.specialComments}</Text>
+          </Paper>
+        )}
+
+        {/* Payment Section */}
+        {reservation.status === 'pending' && (
+          <Paper p="md" radius="md" withBorder>
+            <Title order={4} mb="sm">
+              <Group gap="xs">
+                <ThemeIcon size="sm" variant="light" color="blue">
+                  <CreditCardIcon style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+                Información de Pago
+              </Group>
+            </Title>
+
+            {/* Payment Status Display */}
+            {(() => {
+              const paymentStatusConfig = getPaymentStatusConfig(reservation.paymentStatus);
               
-              {/* Columna 1: Información del festejado y evento */}
-              <div className="xl:col-span-2 space-y-4">
-                
-                {/* Festejado - Card compacta */}
-                <Card className="border border-pink-200 bg-gradient-to-r from-pink-50 to-rose-50 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="p-3 sm:p-4">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-lg">
-                          {reservation.child.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <CakeIcon className="w-4 h-4 text-pink-600" />
-                          <span className="text-xs font-medium text-pink-600 uppercase tracking-wide">Festejado/a</span>
-                        </div>
-                        <h4 className="font-bold text-gray-900 text-lg">{reservation.child.name}</h4>
-                        <p className="text-sm text-gray-600">
-                          {reservation.child.age} {reservation.child.age === 1 ? 'año' : 'años'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Información del evento - Grid interno */}
-                <Card className="border border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <CalendarDaysIcon className="w-4 h-4 text-purple-600" />
-                      <span className="text-xs font-medium text-purple-600 uppercase tracking-wide">Cuándo será</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-purple-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <CalendarDaysIcon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-700" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs text-gray-500 font-medium">Fecha</p>
-                          <p className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{formatDate(reservation.eventDate)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-indigo-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <ClockIcon className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-700" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs text-gray-500 font-medium">Hora</p>
-                          <p className="font-semibold text-gray-900 text-xs sm:text-sm">{reservation.eventTime}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Comentarios especiales si existen */}
-                {reservation.specialComments && (
-                  <Card className="border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <ChatBubbleLeftRightIcon className="w-4 h-4 text-blue-600" />
-                        <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Detalles especiales</span>
-                      </div>
-                      <p className="text-gray-700 text-sm leading-relaxed">{reservation.specialComments}</p>
-                    </div>
-                  </Card>
-                )}
-              </div>
-
-              {/* Columna 2: Resumen de precios */}
-              <div className="space-y-4">
-                <Card className="border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <CurrencyDollarIcon className="w-4 h-4 text-emerald-600" />
-                      <span className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Resumen</span>
-                    </div>
+              if (paymentStatusConfig) {
+                return (
+                  <Alert 
+                    icon={<span style={{ fontSize: '16px' }}>{paymentStatusConfig.icon}</span>} 
+                    color={paymentStatusConfig.color} 
+                    mb="md"
+                    title={paymentStatusConfig.label}
+                  >
+                    {paymentStatusConfig.description}
                     
-                    <div className="space-y-3">
-                      {/* Paquete */}
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900 text-sm">
-                            {reservation.package?.name || 'Paquete'}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Hasta {reservation.package?.maxGuests || 'N/A'} invitados
-                          </p>
-                        </div>
-                        <p className="font-bold text-emerald-600 text-sm">
-                          {formatPrice(reservation.pricing?.packagePrice || 0)}
-                        </p>
+                    {reservation.paymentProof && (
+                      <div style={{ marginTop: '8px' }}>
+                        <Text size="xs" c="dimmed">
+                          Subido: {new Date(reservation.paymentProof.uploadedAt).toLocaleString('es-ES')}
+                        </Text>
+                        {reservation.paymentProof.reference && (
+                          <Text size="xs" c="dimmed">
+                            Referencia: {reservation.paymentProof.reference}
+                          </Text>
+                        )}
                       </div>
+                    )}
+                  </Alert>
+                );
+              }
+              
+              return (
+                <Alert icon={<InformationCircleIcon style={{ width: 16, height: 16 }} />} color="blue" mb="md">
+                  Para confirmar tu reservación, realiza el pago y sube el comprobante.
+                </Alert>
+              );
+            })()}
 
-                      {/* Comida */}
-                      {reservation.foodOption && (
-                        <>
-                          <Divider className="my-2" />
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2 flex-1">
-                              <HeartIcon className="w-3 h-3 text-red-500 flex-shrink-0" />
-                              <div>
-                                <p className="font-medium text-gray-900 text-sm">{reservation.foodOption.name}</p>
-                                <p className="text-xs text-gray-500">Comida</p>
-                              </div>
-                            </div>
-                            <p className="font-bold text-emerald-600 text-sm">
-                              {formatPrice(reservation.pricing?.foodPrice || 0)}
-                            </p>
-                          </div>
-                        </>
-                      )}
-
-                      {/* Tema */}
-                      {reservation.eventTheme && (
-                        <>
-                          <Divider className="my-2" />
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2 flex-1">
-                              <SparklesIcon className="w-3 h-3 text-purple-500 flex-shrink-0" />
-                              <div>
-                                <p className="font-medium text-gray-900 text-sm">{reservation.eventTheme.name}</p>
-                                <p className="text-xs text-gray-500">
-                                  {reservation.eventTheme.selectedPackage?.name || 'Tema'}
-                                </p>
-                              </div>
-                            </div>
-                            <p className="font-bold text-emerald-600 text-sm">
-                              {formatPrice(reservation.pricing?.themePrice || 0)}
-                            </p>
-                          </div>
-                        </>
-                      )}
-
-                      {/* Servicios extra */}
-                      {reservation.extraServices && reservation.extraServices.length > 0 && (
-                        <>
-                          <Divider className="my-2" />
-                          {reservation.extraServices.map((service, index) => (
-                            <div key={index} className="flex justify-between items-center">
-                              <div className="flex items-center gap-2 flex-1">
-                                <PlusIcon className="w-3 h-3 text-emerald-500 flex-shrink-0" />
-                                <p className="text-sm text-gray-700">{service.name}</p>
-                              </div>
-                              <p className="font-medium text-emerald-600 text-sm">
-                                {service.quantity > 1 && `${service.quantity}x `}
-                                {formatPrice(service.price)}
-                              </p>
-                            </div>
-                          ))}
-                        </>
-                      )}
-
-                      {/* Total */}
-                      <Divider className="my-3" />
-                      <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg p-3 border border-yellow-200">
-                        <div className="text-center">
-                          <p className="text-xs font-medium text-gray-600 mb-1">Total</p>
-                          <p className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
-                            {formatPrice(reservation.pricing?.total || 0)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </div>
-
-            {/* Sección de servicios detallados - Grid expandido */}
-            <Card className="border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <SparklesIcon className="w-4 h-4 text-gray-600" />
-                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Tu paquete incluye</span>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {/* Paquete principal */}
-                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-4 border border-emerald-200">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-emerald-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <SparklesIcon className="w-4 h-4 text-emerald-700" />
-                      </div>
-                      <div className="flex-1">
-                        <h5 className="font-semibold text-gray-900 text-sm mb-1">
-                          {reservation.package?.name || 'Paquete personalizado'}
-                        </h5>
-                        <p className="text-xs text-gray-600 mb-2">
-                          Perfecto para hasta {reservation.package?.maxGuests || 'N/A'} invitados
-                        </p>
-                        <p className="text-sm font-bold text-emerald-600">
-                          {formatPrice(reservation.pricing?.packagePrice || 0)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Comida */}
-                  {reservation.foodOption && (
-                    <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-lg p-4 border border-red-200">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-red-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <HeartIcon className="w-4 h-4 text-red-700" />
-                        </div>
-                        <div className="flex-1">
-                          <h5 className="font-semibold text-gray-900 text-sm mb-1">{reservation.foodOption.name}</h5>
-                          <p className="text-xs text-gray-600 mb-2">Deliciosa comida para todos</p>
-                          <p className="text-sm font-bold text-red-600">
-                            {formatPrice(reservation.pricing?.foodPrice || 0)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Tema */}
-                  {reservation.eventTheme && (
-                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-4 border border-purple-200">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-purple-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <SparklesIcon className="w-4 h-4 text-purple-700" />
-                        </div>
-                        <div className="flex-1">
-                          <h5 className="font-semibold text-gray-900 text-sm mb-1">{reservation.eventTheme.name}</h5>
-                          {reservation.eventTheme.selectedPackage && (
-                            <p className="text-xs text-gray-600 mb-2">
-                              {reservation.eventTheme.selectedPackage.name} - {reservation.eventTheme.selectedPackage.pieces} piezas
-                            </p>
-                          )}
-                          <p className="text-sm font-bold text-purple-600">
-                            {formatPrice(reservation.pricing?.themePrice || 0)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-
-            {/* Sección de información de pago */}
-            <Card className="border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm hover:shadow-md transition-shadow mt-6">
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <CreditCardIcon className="w-4 h-4 text-blue-600" />
-                    <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Información de pago</span>
-                  </div>
-                  {!showPaymentSection && reservation.status === 'pending' && (
-                    <Button
-                      size="sm"
-                      color="blue"
-                      variant="light"
-                      onClick={() => setShowPaymentSection(true)}
-                      leftSection={<DocumentArrowUpIcon className="w-4 h-4" />}
-                    >
-                      Enviar comprobante
-                    </Button>
-                  )}
-                </div>
-
-                {/* Información bancaria */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <h5 className="font-semibold text-gray-900 text-sm mb-3">Datos para transferencia</h5>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Banco:</span>
-                        <span className="font-medium text-gray-900">BBVA</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Cuenta:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900">1234567890</span>
-                          <button
-                            onClick={() => navigator.clipboard.writeText('1234567890')}
-                            className="text-blue-600 hover:text-blue-800 text-xs"
-                            title="Copiar"
-                          >
-                            📋
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">CLABE:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900">012345678901234567</span>
-                          <button
-                            onClick={() => navigator.clipboard.writeText('012345678901234567')}
-                            className="text-blue-600 hover:text-blue-800 text-xs"
-                            title="Copiar"
-                          >
-                            📋
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Titular:</span>
-                        <span className="font-medium text-gray-900">Tramboory Eventos</span>
-                      </div>
-                      <div className="border-t pt-2 mt-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Referencia:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs">
-                              {uniqueReference}
-                            </span>
-                            <button
-                              onClick={() => navigator.clipboard.writeText(uniqueReference)}
-                              className="text-blue-600 hover:text-blue-800 text-xs"
-                              title="Copiar referencia"
-                            >
-                              📋
-                            </button>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          ⚠️ Incluye esta referencia en tu transferencia
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <h5 className="font-semibold text-gray-900 text-sm mb-3">Monto a pagar</h5>
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-blue-600 mb-2">
-                        {formatPrice(reservation.pricing?.total || 0)}
-                      </p>
-                      <p className="text-xs text-gray-500 mb-3">Total de tu reservación</p>
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="font-medium text-gray-900 text-sm">
-                          {formatPrice(reservation.pricing?.total || 0)}
-                        </span>
-                        <button
-                          onClick={() => navigator.clipboard.writeText((reservation.pricing?.total || 0).toString())}
-                          className="text-blue-600 hover:text-blue-800 text-xs"
-                          title="Copiar monto"
-                        >
-                          📋
-                        </button>
-                      </div>
-                    </div>
-                    <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
-                      <p className="text-xs text-yellow-700 text-center font-medium">
-                        💡 Concepto sugerido:
-                      </p>
-                      <div className="flex items-center justify-center gap-2 mt-1">
-                        <span className="text-xs text-yellow-800 font-medium">
-                          &quot;Fiesta {reservation.child.name} - {uniqueReference}&quot;
-                        </span>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(`Fiesta ${reservation.child.name} - ${uniqueReference}`)}
-                          className="text-yellow-600 hover:text-yellow-800 text-xs"
-                          title="Copiar concepto"
-                        >
-                          📋
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Formulario de envío de comprobante */}
-                {showPaymentSection && (
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <h5 className="font-semibold text-gray-900 text-sm mb-4 flex items-center gap-2">
-                      <PhotoIcon className="w-4 h-4 text-blue-600" />
-                      Enviar comprobante de pago
-                    </h5>
-                    
-                    <div className="space-y-4">
-                      {/* Upload de imagen */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Captura de pantalla del pago *
-                        </label>
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                            id="payment-screenshot"
-                          />
-                          <label
-                            htmlFor="payment-screenshot"
-                            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                          >
-                            <PhotoIcon className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm text-gray-700">
-                              {paymentScreenshot ? paymentScreenshot.name : 'Seleccionar imagen'}
-                            </span>
-                          </label>
-                          {paymentScreenshot && (
-                            <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Formatos: JPG, PNG, GIF. Máximo 5MB
-                        </p>
-                      </div>
-
-                      {/* Referencia de pago */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Referencia de pago (opcional)
-                        </label>
-                        <Input
-                          placeholder="Ej: 123456789"
-                          value={paymentReference}
-                          onChange={(e) => setPaymentReference(e.target.value)}
-                          size="sm"
-                          className="text-sm border-gray-300"
-                        />
-                      </div>
-
-                      {/* Notas adicionales */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Notas adicionales (opcional)
-                        </label>
-                        <Textarea
-                          placeholder="Cualquier información adicional sobre el pago..."
-                          value={paymentNotes}
-                          onChange={(e) => setPaymentNotes(e.target.value)}
-                          size="sm"
-                          minRows={2}
-                          maxRows={4}
-                          className="text-sm border-gray-300"
-                        />
-                      </div>
-
-                      {/* Botones de acción */}
-                      <div className="flex gap-3 pt-2">
-                        <Button
-                          color="blue"
-                          onClick={handlePaymentSubmit}
-                          loading={isUploading}
-                          disabled={!paymentScreenshot}
-                          leftSection={!isUploading && <DocumentArrowUpIcon className="w-4 h-4" />}
-                          size="sm"
-                        >
-                          {isUploading ? 'Enviando...' : 'Enviar comprobante'}
-                        </Button>
-                        <Button
-                          variant="light"
-                          onClick={() => {
-                            setShowPaymentSection(false);
-                            setPaymentScreenshot(null);
-                            setPaymentReference('');
-                            setPaymentNotes('');
-                          }}
-                          size="sm"
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Estado del pago */}
-                {reservation.status === 'confirmed' && (
-                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                    <div className="flex items-center gap-2">
-                      <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                      <span className="text-sm font-medium text-green-800">
-                        ¡Pago confirmado! Tu reservación está asegurada.
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-            </div>
-        
-            <div className="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
-            <Button
-              variant="light"
-              color="green"
-              leftSection={<DocumentTextIcon className="w-4 h-4" />}
-              onClick={handleDownloadInvoice}
-            >
-              Descargar factura
-            </Button>
-            
-            <Menu>
-              <MenuTarget>
-                <Button
-                  variant="default"
-                  leftSection={<CalendarIcon className="w-4 h-4" />}
-                  className="border-gray-300 hover:border-gray-400"
+            {/* Upload Form - Show for payments that can be uploaded */}
+            {(reservation.paymentStatus !== 'verifying' && reservation.paymentStatus !== 'verified' && reservation.paymentStatus !== 'paid') && (
+              !showPaymentSection ? (
+                <Button 
+                  fullWidth 
+                  onClick={() => setShowPaymentSection(true)}
+                  leftSection={<CreditCardIcon style={{ width: 16, height: 16 }} />}
+                  disabled={isUploading}
                 >
-                  Agregar al calendario
+                  {reservation.paymentStatus === 'rejected' 
+                    ? 'Subir nuevo comprobante' 
+                    : reservation.paymentStatus === 'partial'
+                      ? 'Subir comprobante del pago restante'
+                      : 'Subir comprobante de pago'}
                 </Button>
-              </MenuTarget>
-              <MenuDropdown>
-                <MenuItem
-                  leftSection={<span className="text-sm">📅</span>}
-                  onClick={() => {
-                    exportToCalendar(reservation!, 'google');
-                    toast.success('Evento exportado a Google Calendar');
-                  }}
+              ) : (
+                <Stack gap="md">
+                  <TextInput
+                    label="Referencia de pago (opcional)"
+                    placeholder="Número de referencia o transacción"
+                    value={paymentReference}
+                    onChange={(e) => setPaymentReference(e.target.value)}
+                  />
+                  
+                  <FileInput
+                    label={reservation.paymentStatus === 'partial' ? 'Comprobante del pago restante' : 'Comprobante de pago'}
+                    placeholder="Seleccionar imagen"
+                    value={paymentScreenshot}
+                    onChange={setPaymentScreenshot}
+                    accept="image/*"
+                    leftSection={<PhotoIcon style={{ width: 16, height: 16 }} />}
+                    required
+                    description={reservation.paymentStatus === 'partial' ? 'Sube el comprobante del monto restante para completar tu reservación' : undefined}
+                  />
+                  
+                  <Textarea
+                    label="Notas adicionales (opcional)"
+                    placeholder="Información adicional sobre el pago"
+                    value={paymentNotes}
+                    onChange={(e) => setPaymentNotes(e.target.value)}
+                    minRows={3}
+                  />
+                  
+                  <Group>
+                    <Button 
+                      onClick={handlePaymentSubmit}
+                      loading={isUploading}
+                      leftSection={<CheckCircleIcon style={{ width: 16, height: 16 }} />}
+                    >
+                      {reservation.paymentStatus === 'partial' ? 'Completar pago' : 'Enviar comprobante'}
+                    </Button>
+                    <Button 
+                      variant="subtle" 
+                      onClick={() => setShowPaymentSection(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </Group>
+                </Stack>
+              )
+            )}
+          </Paper>
+        )}
+
+        {/* Actions */}
+        <Group justify="center">
+          <Menu shadow="md" width={200}>
+            <Menu.Target>
+              <Button 
+                variant="light"
+                leftSection={<CalendarIcon style={{ width: 16, height: 16 }} />}
+              >
+                Exportar a calendario
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {calendarOptions.map((option) => (
+                <Menu.Item
+                  key={option.key}
+                  leftSection={option.icon}
+                  onClick={() => handleCalendarExport(option.key as any)}
                 >
-                  Google Calendar
-                </MenuItem>
-                <MenuItem
-                  leftSection={<span className="text-sm">📧</span>}
-                  onClick={() => {
-                    exportToCalendar(reservation!, 'outlook');
-                    toast.success('Evento exportado a Outlook');
-                  }}
-                >
-                  Outlook
-                </MenuItem>
-                <MenuItem
-                  leftSection={<span className="text-sm">🟣</span>}
-                  onClick={() => {
-                    exportToCalendar(reservation!, 'yahoo');
-                    toast.success('Evento exportado a Yahoo Calendar');
-                  }}
-                >
-                  Yahoo Calendar
-                </MenuItem>
-                <MenuItem
-                  leftSection={<span className="text-sm">📋</span>}
-                  onClick={() => {
-                    exportToCalendar(reservation!, 'ical');
-                    toast.success('Archivo iCal descargado');
-                  }}
-                >
-                  Descargar iCal
-                </MenuItem>
-              </MenuDropdown>
-            </Menu>
-            
-            <Button
-              onClick={onClose}
-              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 flex-1"
-              size="lg"
-            >
-              ¡Perfecto! 🎉
-            </Button>
-              </div>
-              </div>
-            </div>
-          </Modal>
+                  {option.label}
+                </Menu.Item>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
+          
+          <Button onClick={onClose}>Cerrar</Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }

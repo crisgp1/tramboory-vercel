@@ -7,9 +7,42 @@ export async function GET() {
     await dbConnect();
     const foodOptions = await FoodOption.find({}).sort({ createdAt: -1 });
     
+    // Transform data to match frontend expectations
+    const transformedFoodOptions = foodOptions.map(food => ({
+      _id: food._id,
+      name: food.name,
+      description: food.description,
+      basePrice: food.basePrice,
+      category: food.category,
+      mainImage: food.mainImage,
+      dishes: {
+        adult: food.adultDishes || [],
+        kids: food.kidsDishes || []
+      },
+      adultDishImages: food.adultDishImages || [],
+      kidsDishImages: food.kidsDishImages || [],
+      upgrades: {
+        adult: (food.upgrades || []).filter(u => u.category === 'adult').map(u => ({
+          fromDish: u.fromDish,
+          toDish: u.toDish,
+          additionalPrice: u.additionalPrice,
+          image: u.image
+        })),
+        kids: (food.upgrades || []).filter(u => u.category === 'kids').map(u => ({
+          fromDish: u.fromDish,
+          toDish: u.toDish,
+          additionalPrice: u.additionalPrice,
+          image: u.image
+        }))
+      },
+      isActive: food.isActive,
+      createdAt: food.createdAt,
+      updatedAt: food.updatedAt
+    }));
+    
     return NextResponse.json({
       success: true,
-      data: foodOptions
+      data: transformedFoodOptions
     });
   } catch (error) {
     console.error('Error fetching food options:', error);

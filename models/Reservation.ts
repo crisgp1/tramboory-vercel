@@ -100,11 +100,19 @@ export interface IReservation extends Document {
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   
   // Estado del pago
-  paymentStatus: 'pending' | 'paid' | 'partial' | 'overdue';
+  paymentStatus: 'pending' | 'paid' | 'partial' | 'overdue' | 'verifying' | 'verified' | 'rejected';
   paymentMethod?: 'cash' | 'card' | 'transfer' | 'other';
   paymentDate?: Date;
   paymentNotes?: string;
   amountPaid?: number;
+  
+  // Comprobante de pago (completamente opcional)
+  paymentProof?: {
+    filename?: string;
+    uploadedAt?: Date;
+    reference?: string;
+    notes?: string;
+  };
   
   // Metadatos
   createdAt: Date;
@@ -334,7 +342,7 @@ const ReservationSchema = new Schema<IReservation>({
   
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid', 'partial', 'overdue'],
+    enum: ['pending', 'paid', 'partial', 'overdue', 'verifying', 'verified', 'rejected'],
     default: 'pending'
   },
   paymentMethod: {
@@ -346,6 +354,11 @@ const ReservationSchema = new Schema<IReservation>({
   amountPaid: {
     type: Number,
     default: 0
+  },
+  
+  paymentProof: {
+    type: Schema.Types.Mixed,
+    default: undefined
   }
 }, {
   timestamps: true

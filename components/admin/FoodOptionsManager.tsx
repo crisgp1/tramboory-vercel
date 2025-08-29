@@ -17,7 +17,8 @@ import {
   Text,
   Title,
   ActionIcon,
-  ScrollArea
+  ScrollArea,
+  FileInput
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -27,7 +28,8 @@ import {
   IconTrash,
   IconEye,
   IconCurrencyDollar,
-  IconX
+  IconX,
+  IconPhoto
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 
@@ -36,6 +38,7 @@ interface FoodUpgrade {
   toDish: string;
   additionalPrice: number;
   category: 'adult' | 'kids';
+  image?: string;
 }
 
 interface FoodOption {
@@ -59,6 +62,8 @@ interface FoodFormData {
   category: 'main' | 'appetizer' | 'dessert' | 'beverage';
   adultDishes: string[];
   kidsDishes: string[];
+  adultDishImages?: { dish: string; image?: string | null }[];
+  kidsDishImages?: { dish: string; image?: string | null }[];
   upgrades: FoodUpgrade[];
   isActive: boolean;
 }
@@ -86,10 +91,14 @@ export default function FoodOptionsManager() {
     fromDish: '', 
     toDish: '', 
     additionalPrice: '', 
-    category: 'adult' as 'adult' | 'kids'
+    category: 'adult' as 'adult' | 'kids',
+    image: null as File | null
   });
   const [newAdultDish, setNewAdultDish] = useState('');
+  const [newAdultDishImage, setNewAdultDishImage] = useState<File | null>(null);
   const [newKidsDish, setNewKidsDish] = useState('');
+  const [newKidsDishImage, setNewKidsDishImage] = useState<File | null>(null);
+  const [mainImage, setMainImage] = useState<File | null>(null);
 
   useEffect(() => {
     fetchFoodOptions();
@@ -135,9 +144,12 @@ export default function FoodOptionsManager() {
       upgrades: [],
       isActive: true
     });
-    setNewUpgrade({ fromDish: '', toDish: '', additionalPrice: '', category: 'adult' });
+    setNewUpgrade({ fromDish: '', toDish: '', additionalPrice: '', category: 'adult', image: null });
     setNewAdultDish('');
+    setNewAdultDishImage(null);
     setNewKidsDish('');
+    setNewKidsDishImage(null);
+    setMainImage(null);
     setEditingFood(null);
   };
 
@@ -165,7 +177,7 @@ export default function FoodOptionsManager() {
     open();
   };
 
-  const addUpgrade = () => {
+  const addUpgrade = async () => {
     if (!newUpgrade.fromDish.trim() || !newUpgrade.toDish.trim() || !newUpgrade.additionalPrice) {
       notifications.show({ title: 'Error', message: 'Completa todos los campos del upgrade', color: 'red' });
       return;
@@ -181,11 +193,18 @@ export default function FoodOptionsManager() {
       return;
     }
 
+    // Subir imagen del upgrade si existe
+    let imageUrl = null;
+    if (newUpgrade.image) {
+      imageUrl = await uploadImage(newUpgrade.image);
+    }
+
     const upgrade: FoodUpgrade = {
       fromDish: newUpgrade.fromDish.trim(),
       toDish: newUpgrade.toDish.trim(),
       additionalPrice: parseFloat(newUpgrade.additionalPrice),
-      category: newUpgrade.category
+      category: newUpgrade.category,
+      image: imageUrl || undefined
     };
 
     setFormData(prev => ({
@@ -193,7 +212,7 @@ export default function FoodOptionsManager() {
       upgrades: [...prev.upgrades, upgrade]
     }));
 
-    setNewUpgrade({ fromDish: '', toDish: '', additionalPrice: '', category: 'adult' });
+    setNewUpgrade({ fromDish: '', toDish: '', additionalPrice: '', category: 'adult', image: null });
   };
 
   const removeUpgrade = (index: number) => {
@@ -203,7 +222,7 @@ export default function FoodOptionsManager() {
     }));
   };
 
-  const addAdultDish = () => {
+  const addAdultDish = async () => {
     if (!newAdultDish.trim()) {
       notifications.show({ title: 'Error', message: 'Ingresa el nombre del platillo para adultos', color: 'red' });
       return;
@@ -214,12 +233,20 @@ export default function FoodOptionsManager() {
       return;
     }
 
+    // Subir imagen si existe
+    let imageUrl = null;
+    if (newAdultDishImage) {
+      imageUrl = await uploadImage(newAdultDishImage);
+    }
+
     setFormData(prev => ({
       ...prev,
-      adultDishes: [...prev.adultDishes, newAdultDish.trim()]
+      adultDishes: [...prev.adultDishes, newAdultDish.trim()],
+      adultDishImages: [...(prev.adultDishImages || []), { dish: newAdultDish.trim(), image: imageUrl }]
     }));
 
     setNewAdultDish('');
+    setNewAdultDishImage(null);
   };
 
   const removeAdultDish = (index: number) => {
@@ -229,7 +256,7 @@ export default function FoodOptionsManager() {
     }));
   };
 
-  const addKidsDish = () => {
+  const addKidsDish = async () => {
     if (!newKidsDish.trim()) {
       notifications.show({ title: 'Error', message: 'Ingresa el nombre del platillo para niños', color: 'red' });
       return;
@@ -240,12 +267,20 @@ export default function FoodOptionsManager() {
       return;
     }
 
+    // Subir imagen si existe
+    let imageUrl = null;
+    if (newKidsDishImage) {
+      imageUrl = await uploadImage(newKidsDishImage);
+    }
+
     setFormData(prev => ({
       ...prev,
-      kidsDishes: [...prev.kidsDishes, newKidsDish.trim()]
+      kidsDishes: [...prev.kidsDishes, newKidsDish.trim()],
+      kidsDishImages: [...(prev.kidsDishImages || []), { dish: newKidsDish.trim(), image: imageUrl }]
     }));
 
     setNewKidsDish('');
+    setNewKidsDishImage(null);
   };
 
   const removeKidsDish = (index: number) => {
@@ -253,6 +288,28 @@ export default function FoodOptionsManager() {
       ...prev,
       kidsDishes: prev.kidsDishes.filter((_, i) => i !== index)
     }));
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch('/api/admin/food-options/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al subir imagen');
+      }
+      
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
   };
 
   const handleSubmit = async () => {
@@ -264,6 +321,12 @@ export default function FoodOptionsManager() {
     setSubmitting(true);
     
     try {
+      // Subir imagen principal si existe
+      let mainImageUrl = null;
+      if (mainImage) {
+        mainImageUrl = await uploadImage(mainImage);
+      }
+
       const foodData = {
         ...(editingFood && { _id: editingFood._id }),
         name: formData.name.trim(),
@@ -272,8 +335,11 @@ export default function FoodOptionsManager() {
         category: formData.category,
         adultDishes: formData.adultDishes,
         kidsDishes: formData.kidsDishes,
+        adultDishImages: formData.adultDishImages || [],
+        kidsDishImages: formData.kidsDishImages || [],
         upgrades: formData.upgrades,
-        isActive: formData.isActive
+        isActive: formData.isActive,
+        mainImage: mainImageUrl || undefined
       };
 
       console.log('Sending food data:', foodData);
@@ -688,34 +754,56 @@ export default function FoodOptionsManager() {
             ]}
           />
 
+          <FileInput
+            label="Imagen principal de la opción (opcional)"
+            description="Esta imagen aparecerá como la imagen principal de la opción de comida"
+            placeholder="Seleccionar imagen"
+            value={mainImage}
+            onChange={setMainImage}
+            accept="image/*"
+            leftSection={<IconPhoto size={16} />}
+            clearable
+          />
+
           {/* Adult Dishes Section */}
           <Stack gap="sm">
             <Text size="sm" fw={500}>Platillos para Adultos</Text>
             
             <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-blue-0)' }}>
-              <Group align="flex-end">
-                <TextInput
-                  label="Nombre del platillo"
-                  placeholder="Ej: Pollo a la plancha, Pasta alfredo"
-                  value={newAdultDish}
-                  onChange={(e) => setNewAdultDish(e.target.value)}
+              <Stack gap="md">
+                <Group align="flex-end">
+                  <TextInput
+                    label="Nombre del platillo"
+                    placeholder="Ej: Pollo a la plancha, Pasta alfredo"
+                    value={newAdultDish}
+                    onChange={(e) => setNewAdultDish(e.target.value)}
+                    size="sm"
+                    style={{ flex: 1 }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addAdultDish();
+                      }
+                    }}
+                  />
+                  <Button
+                    onClick={addAdultDish}
+                    size="sm"
+                    color="blue"
+                  >
+                    Agregar
+                  </Button>
+                </Group>
+                <FileInput
+                  label="Imagen del platillo (opcional)"
+                  placeholder="Seleccionar imagen"
+                  value={newAdultDishImage}
+                  onChange={setNewAdultDishImage}
+                  accept="image/*"
+                  leftSection={<IconPhoto size={16} />}
                   size="sm"
-                  style={{ flex: 1 }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addAdultDish();
-                    }
-                  }}
                 />
-                <Button
-                  onClick={addAdultDish}
-                  size="sm"
-                  color="blue"
-                >
-                  Agregar
-                </Button>
-              </Group>
+              </Stack>
             </Card>
 
             {formData.adultDishes.length > 0 && (
@@ -744,29 +832,40 @@ export default function FoodOptionsManager() {
             <Text size="sm" fw={500}>Platillos para Niños</Text>
             
             <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-green-0)' }}>
-              <Group align="flex-end">
-                <TextInput
-                  label="Nombre del platillo"
-                  placeholder="Ej: Nuggets con papas, Mini hamburguesa"
-                  value={newKidsDish}
-                  onChange={(e) => setNewKidsDish(e.target.value)}
+              <Stack gap="md">
+                <Group align="flex-end">
+                  <TextInput
+                    label="Nombre del platillo"
+                    placeholder="Ej: Nuggets con papas, Mini hamburguesa"
+                    value={newKidsDish}
+                    onChange={(e) => setNewKidsDish(e.target.value)}
+                    size="sm"
+                    style={{ flex: 1 }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addKidsDish();
+                      }
+                    }}
+                  />
+                  <Button
+                    onClick={addKidsDish}
+                    size="sm"
+                    color="green"
+                  >
+                    Agregar
+                  </Button>
+                </Group>
+                <FileInput
+                  label="Imagen del platillo (opcional)"
+                  placeholder="Seleccionar imagen"
+                  value={newKidsDishImage}
+                  onChange={setNewKidsDishImage}
+                  accept="image/*"
+                  leftSection={<IconPhoto size={16} />}
                   size="sm"
-                  style={{ flex: 1 }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addKidsDish();
-                    }
-                  }}
                 />
-                <Button
-                  onClick={addKidsDish}
-                  size="sm"
-                  color="green"
-                >
-                  Agregar
-                </Button>
-              </Group>
+              </Stack>
             </Card>
 
             {formData.kidsDishes.length > 0 && (
@@ -853,6 +952,15 @@ export default function FoodOptionsManager() {
                     Agregar
                   </Button>
                 </Group>
+                <FileInput
+                  label="Imagen del upgrade (opcional)"
+                  placeholder="Seleccionar imagen del platillo premium"
+                  value={newUpgrade.image}
+                  onChange={(file) => setNewUpgrade(prev => ({ ...prev, image: file }))}
+                  accept="image/*"
+                  leftSection={<IconPhoto size={16} />}
+                  size="sm"
+                />
               </Stack>
             </Card>
 

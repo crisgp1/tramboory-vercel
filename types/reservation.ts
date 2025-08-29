@@ -8,6 +8,12 @@ export interface Reservation {
   };
   eventDate: string;
   eventTime: string;
+  eventDuration?: number;
+  eventBlock?: {
+    name: string;
+    startTime: string;
+    endTime: string;
+  };
   isRestDay: boolean;
   restDayFee: number;
   customer: {
@@ -19,6 +25,11 @@ export interface Reservation {
     name: string;
     age: number;
   };
+  guestCount: {
+    adults: number;
+    kids: number;
+  };
+  selectedDrink?: string;
   foodOption?: {
     configId: string;
     name: string;
@@ -52,8 +63,29 @@ export interface Reservation {
     extrasPrice: number;
     themePrice: number;
     restDayFee: number;
+    discountAmount: number;
+  };
+  appliedCoupon?: {
+    couponId: string;
+    code: string;
+    discountType: 'percentage' | 'fixed_amount' | 'free_service';
+    discountValue: number;
+    discountAmount: number;
+    appliedTo: string;
   };
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  paymentStatus?: 'pending' | 'paid' | 'partial' | 'overdue' | 'verifying' | 'verified' | 'rejected';
+  paymentMethod?: 'cash' | 'card' | 'transfer' | 'other';
+  paymentDate?: string;
+  paymentNotes?: string;
+  amountPaid?: number;
+  paymentProof?: {
+    filename: string;
+    uploadedAt: string;
+    reference?: string;
+    notes?: string;
+    url?: string;
+  };
   specialComments?: string;
   createdAt: string;
   updatedAt: string;

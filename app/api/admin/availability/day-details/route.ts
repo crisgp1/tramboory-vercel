@@ -108,6 +108,7 @@ export async function GET(request: NextRequest) {
       totalAmount: reservation.pricing?.total || 0,
       packageName: reservation.package?.name || 'Paquete no disponible',
       paymentStatus: reservation.paymentStatus || 'pending',
+      paymentProof: reservation.paymentProof || undefined,
       specialComments: reservation.specialComments || '',
       createdAt: reservation.createdAt
     }));

@@ -14,7 +14,7 @@ import PriceSummary from './components/PriceSummary';
 import BasicInfoStep from './steps/BasicInfoStep';
 import DateTimeStep from './steps/DateTimeStep';
 import PackageStep from './steps/PackageStep';
-import FoodOptionsStep from './steps/FoodOptionsStep';
+import FoodOptionsStepV2 from './steps/FoodOptionsStepV2';
 import ExtrasStep from './steps/ExtrasStep';
 import PaymentStep from './steps/PaymentStep';
 import ConfirmationStep from './steps/ConfirmationStep';
@@ -121,7 +121,7 @@ export default function ReservationBookingForm() {
         );
       case 'food':
         return (
-          <FoodOptionsStep 
+          <FoodOptionsStepV2 
             {...commonProps}
             foodOptions={foodOptions}
             packages={packages}

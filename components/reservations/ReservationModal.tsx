@@ -28,7 +28,12 @@ import {
   IconStar,
   IconSparkles,
   IconPlus,
-  IconGift
+  IconGift,
+  IconCreditCard,
+  IconFileText,
+  IconCheck,
+  IconX,
+  IconInfoCircle
 } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -62,6 +67,26 @@ const statusIcons = {
   completed: IconStar
 };
 
+const paymentStatusColorMap = {
+  pending: 'yellow',
+  paid: 'green',
+  partial: 'orange',
+  verifying: 'blue',
+  verified: 'green',
+  rejected: 'red',
+  overdue: 'red'
+} as const;
+
+const paymentStatusLabels = {
+  pending: 'Pendiente',
+  paid: 'Pagado Completo',
+  partial: 'Anticipo',
+  verifying: 'Verificando',
+  verified: 'Verificado',
+  rejected: 'Rechazado',
+  overdue: 'Vencido'
+};
+
 export default function ReservationModal({
   opened,
   onClose,
@@ -92,6 +117,115 @@ export default function ReservationModal({
     if (onStatusChange) {
       setIsLoading(true);
       await onStatusChange(reservation._id, newStatus);
+      setIsLoading(false);
+    }
+  };
+
+  const handlePaymentVerification = async (action: 'verify' | 'reject') => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/reservations/${reservation._id}/payment-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Refresh the page or update the reservation data
+        window.location.reload();
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      alert(`Error al ${action === 'verify' ? 'verificar' : 'rechazar'} el pago`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewPaymentProof = async () => {
+    try {
+      // Try to open in new tab first - if the endpoint redirects to blob URL, this will work
+      const url = `/api/admin/reservations/${reservation._id}/payment-proof`;
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error viewing payment proof:', error);
+      alert('Error al intentar ver el comprobante de pago');
+    }
+  };
+
+  const handlePaymentStatusChange = async (status: 'paid' | 'partial') => {
+    const currentPaid = reservation.amountPaid || 0;
+    const remaining = reservation.pricing.total - currentPaid;
+    const isAdditionalPayment = reservation.paymentStatus === 'partial';
+    
+    const amountPrompt = status === 'paid' ? 
+      `Confirmar pago completo de ${formatCurrency(reservation.pricing.total)}?` :
+      isAdditionalPayment ? 
+        `Ingrese el monto del pago adicional (pendiente: ${formatCurrency(remaining)}):` :
+        'Ingrese el monto del anticipo:';
+    
+    let amount = reservation.pricing.total;
+    
+    if (status === 'partial') {
+      const inputAmount = prompt(amountPrompt);
+      if (!inputAmount) return;
+      
+      const inputValue = parseFloat(inputAmount.replace(/[^0-9.]/g, ''));
+      if (isNaN(inputValue) || inputValue <= 0) {
+        alert('Monto inválido');
+        return;
+      }
+      
+      // For additional payments, add to existing amount
+      amount = isAdditionalPayment ? currentPaid + inputValue : inputValue;
+      
+      // Check if the total payment exceeds the total price
+      if (amount > reservation.pricing.total) {
+        alert(`El monto total (${formatCurrency(amount)}) no puede ser mayor al precio total (${formatCurrency(reservation.pricing.total)})`);
+        return;
+      }
+      
+      // If the new amount equals the total, mark as paid instead of partial
+      if (amount >= reservation.pricing.total) {
+        amount = reservation.pricing.total;
+        status = 'paid';
+      }
+    } else {
+      if (!confirm(amountPrompt)) return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/reservations/${reservation._id}/payment-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          paymentStatus: status,
+          amountPaid: amount,
+          paymentDate: new Date().toISOString(),
+          paymentMethod: 'other' // Default, can be enhanced later
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        window.location.reload();
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      alert(`Error al marcar el pago como ${status === 'paid' ? 'completo' : 'anticipo'}`);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -202,6 +336,21 @@ export default function ReservationModal({
                     </Stack>
                   </Group>
                 </div>
+                
+                <div style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: 'var(--mantine-radius-sm)', padding: 'var(--mantine-spacing-md)' }}>
+                  <Group gap="md">
+                    <IconUser size={20} color="var(--mantine-color-gray-4)" />
+                    <Stack gap={0}>
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={500}>Invitados</Text>
+                      <Text fw={500}>
+                        {reservation.guestCount.adults + reservation.guestCount.kids} total
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {reservation.guestCount.adults} adultos, {reservation.guestCount.kids} niños
+                      </Text>
+                    </Stack>
+                  </Group>
+                </div>
               </div>
 
               {/* Customer & Child Info */}
@@ -275,6 +424,9 @@ export default function ReservationModal({
                     <Stack gap={0}>
                       <Text size="xs" c="dimmed">Hora</Text>
                       <Text size="sm">{reservation.eventTime}</Text>
+                      {reservation.eventDuration && (
+                        <Text size="xs" c="dimmed">Duración: {reservation.eventDuration} horas</Text>
+                      )}
                     </Stack>
                   </Group>
                   <Group gap="md" align="flex-start">
@@ -451,6 +603,46 @@ export default function ReservationModal({
                 </Card>
               )}
 
+              {/* Applied Coupon */}
+              {reservation.appliedCoupon && (
+                <Card withBorder shadow="none">
+                  <Group gap="md" mb="md">
+                    <div 
+                      style={{
+                        width: 32,
+                        height: 32,
+                        backgroundColor: 'var(--mantine-color-green-1)',
+                        borderRadius: 'var(--mantine-radius-sm)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <IconGift size={16} color="var(--mantine-color-green-6)" />
+                    </div>
+                    <Text size="sm" fw={600}>Cupón Aplicado</Text>
+                  </Group>
+                  <div style={{ backgroundColor: 'var(--mantine-color-green-0)', borderRadius: 'var(--mantine-radius-sm)', padding: 'var(--mantine-spacing-md)' }}>
+                    <Group justify="space-between" mb="sm">
+                      <Stack gap={0}>
+                        <Text fw={500}>{reservation.appliedCoupon.code}</Text>
+                        <Text size="xs" c="dimmed">
+                          {reservation.appliedCoupon.discountType === 'percentage' ? `${reservation.appliedCoupon.discountValue}% de descuento` :
+                           reservation.appliedCoupon.discountType === 'fixed_amount' ? `Descuento fijo` :
+                           'Servicio gratuito'}
+                        </Text>
+                      </Stack>
+                      <Text size="sm" fw={600} c="green">
+                        -{formatCurrency(reservation.appliedCoupon.discountAmount)}
+                      </Text>
+                    </Group>
+                    <Text size="xs" c="dimmed">
+                      Aplicado a: {reservation.appliedCoupon.appliedTo}
+                    </Text>
+                  </div>
+                </Card>
+              )}
+
               {/* Special Comments */}
               {reservation.specialComments && (
                 <Card withBorder shadow="none">
@@ -520,10 +712,214 @@ export default function ReservationModal({
                     <Text size="sm" c="dimmed" fw={500}>Subtotal:</Text>
                     <Text size="sm" fw={600}>{formatCurrency(reservation.pricing.subtotal)}</Text>
                   </Group>
+                  {reservation.pricing.discountAmount > 0 && (
+                    <Group justify="space-between" py="xs" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+                      <Text size="sm" c="green" fw={500}>Descuento aplicado:</Text>
+                      <Text size="sm" c="green" fw={600}>-{formatCurrency(reservation.pricing.discountAmount)}</Text>
+                    </Group>
+                  )}
                   <Group justify="space-between" py="md" px="md" style={{ backgroundColor: 'var(--mantine-color-dark-8)', borderRadius: 'var(--mantine-radius-sm)', color: 'white' }}>
                     <Text size="lg" fw={700} c="white">Total:</Text>
                     <Text size="lg" fw={700} c="white">{formatCurrency(reservation.pricing.total)}</Text>
                   </Group>
+                </Stack>
+              </Card>
+
+              {/* Payment Verification Section */}
+              <Card withBorder shadow="none">
+                <Group gap="md" mb="md">
+                  <div 
+                    style={{
+                      width: 32,
+                      height: 32,
+                      backgroundColor: 'var(--mantine-color-blue-1)',
+                      borderRadius: 'var(--mantine-radius-sm)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <IconCreditCard size={16} color="var(--mantine-color-blue-6)" />
+                  </div>
+                  <Text size="sm" fw={600}>Estado del Pago</Text>
+                </Group>
+                
+                <Stack gap="md">
+                  {/* Payment Status Badge */}
+                  <Group gap="md">
+                    <Badge
+                      color={paymentStatusColorMap[reservation.paymentStatus]}
+                      variant="light"
+                      size="lg"
+                      leftSection={
+                        reservation.paymentStatus === 'verified' ? <IconCheck size={14} /> :
+                        reservation.paymentStatus === 'rejected' ? <IconX size={14} /> :
+                        reservation.paymentStatus === 'verifying' ? <IconInfoCircle size={14} /> :
+                        <IconCreditCard size={14} />
+                      }
+                    >
+                      {paymentStatusLabels[reservation.paymentStatus]}
+                    </Badge>
+                    {reservation.amountPaid && (
+                      <Stack gap={4}>
+                        <Text size="sm" c="dimmed">
+                          <strong>Pagado:</strong> {formatCurrency(reservation.amountPaid)}
+                        </Text>
+                        {reservation.paymentStatus === 'partial' && (
+                          <Text size="sm" c="orange">
+                            <strong>Pendiente:</strong> {formatCurrency(reservation.pricing.total - reservation.amountPaid)}
+                          </Text>
+                        )}
+                      </Stack>
+                    )}
+                  </Group>
+
+                  {/* Payment Method and Date */}
+                  {(reservation.paymentMethod || reservation.paymentDate) && (
+                    <Group gap="md">
+                      {reservation.paymentMethod && (
+                        <Text size="sm" c="dimmed">
+                          <strong>Método:</strong> {
+                            reservation.paymentMethod === 'cash' ? 'Efectivo' :
+                            reservation.paymentMethod === 'card' ? 'Tarjeta' :
+                            reservation.paymentMethod === 'transfer' ? 'Transferencia' :
+                            reservation.paymentMethod === 'other' ? 'Otro' :
+                            reservation.paymentMethod
+                          }
+                        </Text>
+                      )}
+                      {reservation.paymentDate && (
+                        <Text size="sm" c="dimmed">
+                          <strong>Fecha:</strong> {formatDate(reservation.paymentDate)}
+                        </Text>
+                      )}
+                    </Group>
+                  )}
+
+                  {/* Payment Notes */}
+                  {reservation.paymentNotes && (
+                    <div style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: 'var(--mantine-radius-sm)', padding: 'var(--mantine-spacing-sm)' }}>
+                      <Text size="xs" c="dimmed" mb={4}>Notas del pago:</Text>
+                      <Text size="sm">{reservation.paymentNotes}</Text>
+                    </div>
+                  )}
+
+                  {/* Payment Proof Section */}
+                  {reservation.paymentProof && (
+                    <div style={{ backgroundColor: 'var(--mantine-color-blue-0)', border: '1px solid var(--mantine-color-blue-3)', borderRadius: 'var(--mantine-radius-sm)', padding: 'var(--mantine-spacing-md)' }}>
+                      <Group gap="md" mb="md">
+                        <IconFileText size={20} color="var(--mantine-color-blue-6)" />
+                        <Text size="sm" fw={600} c="blue">Comprobante de Pago</Text>
+                      </Group>
+                      
+                      <Stack gap="sm">
+                        <Group justify="space-between" align="center">
+                          <Text size="sm" c="dimmed">Archivo:</Text>
+                          <Group gap="xs">
+                            <Text size="sm" fw={500}>{reservation.paymentProof.filename}</Text>
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="blue"
+                              leftSection={<IconFileText size={14} />}
+                              onClick={handleViewPaymentProof}
+                            >
+                              Ver
+                            </Button>
+                          </Group>
+                        </Group>
+                        
+                        {reservation.paymentProof.reference && (
+                          <Group justify="space-between">
+                            <Text size="sm" c="dimmed">Referencia:</Text>
+                            <Text size="sm" fw={500}>{reservation.paymentProof.reference}</Text>
+                          </Group>
+                        )}
+                        
+                        <Group justify="space-between">
+                          <Text size="sm" c="dimmed">Subido el:</Text>
+                          <Text size="sm" fw={500}>{formatDate(reservation.paymentProof.uploadedAt)}</Text>
+                        </Group>
+                        
+                        {reservation.paymentProof.notes && (
+                          <div style={{ marginTop: 'var(--mantine-spacing-xs)', paddingTop: 'var(--mantine-spacing-xs)', borderTop: '1px solid var(--mantine-color-blue-3)' }}>
+                            <Text size="xs" c="dimmed" mb={4}>Notas adicionales:</Text>
+                            <Text size="sm">{reservation.paymentProof.notes}</Text>
+                          </div>
+                        )}
+
+                        {/* Admin Verification Actions */}
+                        {reservation.paymentStatus === 'verifying' && (
+                          <div style={{ marginTop: 'var(--mantine-spacing-md)', paddingTop: 'var(--mantine-spacing-md)', borderTop: '1px solid var(--mantine-color-blue-3)' }}>
+                            <Text size="sm" fw={600} mb="md" c="blue">Acciones de Verificación</Text>
+                            <Group gap="sm">
+                              <Button
+                                color="green"
+                                variant="light"
+                                leftSection={<IconCheck size={16} />}
+                                onClick={() => handlePaymentVerification('verify')}
+                                loading={isLoading}
+                                size="sm"
+                              >
+                                Verificar Pago
+                              </Button>
+                              <Button
+                                color="red"
+                                variant="light"
+                                leftSection={<IconX size={16} />}
+                                onClick={() => handlePaymentVerification('reject')}
+                                loading={isLoading}
+                                size="sm"
+                              >
+                                Rechazar Pago
+                              </Button>
+                            </Group>
+                          </div>
+                        )}
+
+                        {/* Payment Status Actions - Always available for pending payments */}
+                        {['pending', 'verifying', 'verified'].includes(reservation.paymentStatus) && reservation.paymentStatus !== 'paid' && (
+                          <div style={{ marginTop: 'var(--mantine-spacing-md)', paddingTop: 'var(--mantine-spacing-md)', borderTop: '1px solid var(--mantine-color-blue-3)' }}>
+                            <Text size="sm" fw={600} mb="md" c="blue">Marcar Estado del Pago</Text>
+                            <Group gap="sm">
+                              <Button
+                                color="green"
+                                variant="filled"
+                                leftSection={<IconCurrencyDollar size={16} />}
+                                onClick={() => handlePaymentStatusChange('paid')}
+                                loading={isLoading}
+                                size="sm"
+                              >
+                                Pago Completo
+                              </Button>
+                              <Button
+                                color="orange"
+                                variant="filled"
+                                leftSection={<IconCurrencyDollar size={16} />}
+                                onClick={() => handlePaymentStatusChange('partial')}
+                                loading={isLoading}
+                                size="sm"
+                              >
+                                {reservation.paymentStatus === 'partial' ? 'Pago Adicional' : 'Anticipo'}
+                              </Button>
+                            </Group>
+                          </div>
+                        )}
+                      </Stack>
+                    </div>
+                  )}
+
+                  {/* No Payment Proof Message */}
+                  {!reservation.paymentProof && reservation.paymentStatus === 'pending' && (
+                    <div style={{ backgroundColor: 'var(--mantine-color-yellow-0)', border: '1px solid var(--mantine-color-yellow-3)', borderRadius: 'var(--mantine-radius-sm)', padding: 'var(--mantine-spacing-md)' }}>
+                      <Group gap="md">
+                        <IconInfoCircle size={20} color="var(--mantine-color-yellow-6)" />
+                        <Text size="sm" c="yellow.7">
+                          El cliente aún no ha subido el comprobante de pago.
+                        </Text>
+                      </Group>
+                    </div>
+                  )}
                 </Stack>
               </Card>
 

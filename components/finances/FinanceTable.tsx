@@ -24,7 +24,8 @@ import {
   IconTable,
   IconTag,
   IconUsers,
-  IconSettings
+  IconSettings,
+  IconLock
 } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -227,28 +228,31 @@ export default function FinanceTable({
                       <IconEye size={16} />
                     </ActionIcon>
                   </Tooltip>
-                  <Tooltip label="Editar">
-                    <ActionIcon
-                      variant="light"
-                      size="sm"
-                      color="gray"
-                      onClick={() => onEdit(finance)}
-                      style={{ flex: 1 }}
-                    >
-                      <IconEdit size={16} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <Tooltip label="Eliminar">
-                    <ActionIcon
-                      variant="light"
-                      size="sm"
-                      color="red"
-                      onClick={() => onDelete(finance._id)}
-                      style={{ flex: 1 }}
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  </Tooltip>
+                  {finance.isSystemGenerated ? (
+                    <Tooltip label="Generado por sistema - No editable">
+                      <ActionIcon
+                        variant="light"
+                        size="sm"
+                        color="gray"
+                        disabled
+                        style={{ flex: 1 }}
+                      >
+                        <IconLock size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip label="Editar">
+                      <ActionIcon
+                        variant="light"
+                        size="sm"
+                        color="gray"
+                        onClick={() => onEdit(finance)}
+                        style={{ flex: 1 }}
+                      >
+                        <IconEdit size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
                 </Group>
             </Card>
           ))}
@@ -347,26 +351,29 @@ export default function FinanceTable({
                         <IconEye size={16} />
                       </ActionIcon>
                     </Tooltip>
-                    <Tooltip label="Editar">
-                      <ActionIcon
-                        variant="light"
-                        size="sm"
-                        color="gray"
-                        onClick={() => onEdit(finance)}
-                      >
-                        <IconEdit size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Eliminar">
-                      <ActionIcon
-                        variant="light"
-                        size="sm"
-                        color="red"
-                        onClick={() => onDelete(finance._id)}
-                      >
-                        <IconTrash size={16} />
-                      </ActionIcon>
-                    </Tooltip>
+                    {finance.isSystemGenerated ? (
+                      <Tooltip label="Generado por sistema - No editable">
+                        <ActionIcon
+                          variant="light"
+                          size="sm"
+                          color="gray"
+                          disabled
+                        >
+                          <IconLock size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip label="Editar">
+                        <ActionIcon
+                          variant="light"
+                          size="sm"
+                          color="gray"
+                          onClick={() => onEdit(finance)}
+                        >
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
                   </Group>
                 </Table.Td>
               </Table.Tr>

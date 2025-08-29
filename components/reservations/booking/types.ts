@@ -72,20 +72,26 @@ export interface FoodOption {
   basePrice: number;
   adultPrice?: number;
   kidsPrice?: number;
+  mainImage?: string;
+  image?: string;
   dishes?: {
     adult: string[];
     kids: string[];
   };
+  adultDishImages?: { dish: string; image?: string }[];
+  kidsDishImages?: { dish: string; image?: string }[];
   upgrades?: {
     adult: Array<{
       fromDish: string;
       toDish: string;
       additionalPrice: number;
+      image?: string;
     }>;
     kids: Array<{
       fromDish: string;
       toDish: string;
       additionalPrice: number;
+      image?: string;
     }>;
   };
 }

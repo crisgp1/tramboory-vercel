@@ -7,12 +7,16 @@ export interface IFoodOption extends Document {
   category: 'main' | 'appetizer' | 'dessert' | 'beverage';
   adultDishes: string[];
   kidsDishes: string[];
+  adultDishImages?: { dish: string; image?: string }[];
+  kidsDishImages?: { dish: string; image?: string }[];
   upgrades: {
     fromDish: string;
     toDish: string;
     additionalPrice: number;
     category: 'adult' | 'kids';
+    image?: string;
   }[];
+  mainImage?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -52,6 +56,26 @@ const FoodOptionSchema = new Schema<IFoodOption>({
     type: String,
     trim: true
   }],
+  adultDishImages: [{
+    dish: {
+      type: String,
+      required: true
+    },
+    image: {
+      type: String,
+      required: false
+    }
+  }],
+  kidsDishImages: [{
+    dish: {
+      type: String,
+      required: true
+    },
+    image: {
+      type: String,
+      required: false
+    }
+  }],
   upgrades: [{
     fromDish: {
       type: String,
@@ -75,8 +99,16 @@ const FoodOptionSchema = new Schema<IFoodOption>({
         values: ['adult', 'kids'],
         message: 'La categoría debe ser: adult o kids'
       }
+    },
+    image: {
+      type: String,
+      required: false
     }
   }],
+  mainImage: {
+    type: String,
+    required: false
+  },
   isActive: {
     type: Boolean,
     default: true

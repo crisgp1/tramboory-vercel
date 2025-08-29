@@ -44,7 +44,13 @@ interface ReservationDetail {
   status: 'pending' | 'confirmed' | 'cancelled';
   totalAmount: number;
   packageName: string;
-  paymentStatus: 'paid' | 'pending' | 'overdue';
+  paymentStatus: 'paid' | 'pending' | 'overdue' | 'verifying' | 'verified' | 'rejected';
+  paymentProof?: {
+    filename: string;
+    uploadedAt: string;
+    reference?: string;
+    notes?: string;
+  };
   specialComments?: string;
   createdAt: string;
 }
@@ -161,13 +167,36 @@ export default function DayDetailsModal({ opened, onClose, date, availability }:
   const getPaymentColor = (paymentStatus: string) => {
     switch (paymentStatus) {
       case 'paid':
+      case 'verified':
         return 'green';
       case 'pending':
         return 'yellow';
+      case 'verifying':
+        return 'blue';
       case 'overdue':
+      case 'rejected':
         return 'red';
       default:
         return 'gray';
+    }
+  };
+
+  const getPaymentStatusText = (paymentStatus: string) => {
+    switch (paymentStatus) {
+      case 'paid':
+        return 'Pagado';
+      case 'pending':
+        return 'Pendiente';
+      case 'overdue':
+        return 'Vencido';
+      case 'verifying':
+        return 'Verificando';
+      case 'verified':
+        return 'Verificado';
+      case 'rejected':
+        return 'Rechazado';
+      default:
+        return paymentStatus;
     }
   };
 
@@ -176,6 +205,33 @@ export default function DayDetailsModal({ opened, onClose, date, availability }:
       style: 'currency',
       currency: 'MXN'
     }).format(amount);
+  };
+
+  const handlePaymentVerification = async (reservationId: string, action: 'verify' | 'reject') => {
+    try {
+      const response = await fetch(`/api/admin/reservations/${reservationId}/payment-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Refresh the day details to show updated payment status
+        await fetchDayDetails();
+        
+        // Show success notification (you might want to add a notification system)
+        console.log(`Payment ${action === 'verify' ? 'verified' : 'rejected'} successfully`);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      // Show error notification
+    }
   };
 
   const formatDate = (date: Date) => {
@@ -367,7 +423,7 @@ export default function DayDetailsModal({ opened, onClose, date, availability }:
                                   color={getPaymentColor(reservation.paymentStatus)}
                                   variant="light"
                                 >
-                                  {reservation.paymentStatus}
+                                  {getPaymentStatusText(reservation.paymentStatus)}
                                 </Badge>
                               </div>
                               
@@ -389,6 +445,63 @@ export default function DayDetailsModal({ opened, onClose, date, availability }:
                                   <p className="text-sm text-gray-700">
                                     <strong>Comentarios:</strong> {reservation.specialComments}
                                   </p>
+                                </div>
+                              )}
+
+                              {/* Payment Verification Section */}
+                              {reservation.paymentProof && (
+                                <div className="mt-3 p-3 border border-blue-200 rounded-lg bg-blue-50">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h6 className="font-medium text-blue-900">Comprobante de Pago</h6>
+                                    <Badge
+                                      size="xs"
+                                      color={getPaymentColor(reservation.paymentStatus)}
+                                      variant="filled"
+                                    >
+                                      {getPaymentStatusText(reservation.paymentStatus)}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="space-y-2 text-sm text-blue-800">
+                                    <p><strong>Archivo:</strong> {reservation.paymentProof.filename}</p>
+                                    <p><strong>Subido:</strong> {new Date(reservation.paymentProof.uploadedAt).toLocaleDateString('es-ES', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}</p>
+                                    {reservation.paymentProof.reference && (
+                                      <p><strong>Referencia:</strong> {reservation.paymentProof.reference}</p>
+                                    )}
+                                    {reservation.paymentProof.notes && (
+                                      <p><strong>Notas:</strong> {reservation.paymentProof.notes}</p>
+                                    )}
+                                  </div>
+
+                                  {/* Verification Buttons */}
+                                  {reservation.paymentStatus === 'verifying' && (
+                                    <div className="flex gap-2 mt-3">
+                                      <Button
+                                        size="xs"
+                                        color="green"
+                                        variant="filled"
+                                        onClick={() => handlePaymentVerification(reservation._id, 'verify')}
+                                        leftSection={<CheckCircleIcon className="w-4 h-4" />}
+                                      >
+                                        Verificar Pago
+                                      </Button>
+                                      <Button
+                                        size="xs"
+                                        color="red"
+                                        variant="outline"
+                                        onClick={() => handlePaymentVerification(reservation._id, 'reject')}
+                                        leftSection={<XCircleIcon className="w-4 h-4" />}
+                                      >
+                                        Rechazar
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>

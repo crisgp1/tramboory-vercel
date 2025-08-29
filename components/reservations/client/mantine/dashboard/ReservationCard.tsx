@@ -35,7 +35,24 @@ interface ReservationCardProps {
 export default function ReservationCard({ reservation, onView }: ReservationCardProps) {
   const theme = useMantineTheme();
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, paymentStatus?: string) => {
+    // If reservation is pending but has payment verification status, show that instead
+    if (status === 'pending' && paymentStatus) {
+      switch (paymentStatus) {
+        case 'verifying':
+          return 'blue';
+        case 'verified':
+        case 'partial':
+        case 'paid':
+          return 'green';
+        case 'rejected':
+          return 'orange';
+        case 'uploaded':
+          return 'blue';
+      }
+    }
+
+    // Default status handling
     switch (status) {
       case 'confirmed':
         return 'green';
@@ -50,7 +67,26 @@ export default function ReservationCard({ reservation, onView }: ReservationCard
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string, paymentStatus?: string) => {
+    // If reservation is pending but has payment verification status, show that instead
+    if (status === 'pending' && paymentStatus) {
+      switch (paymentStatus) {
+        case 'verifying':
+          return 'Verificando pago';
+        case 'verified':
+          return 'Pago verificado';
+        case 'partial':
+          return 'Confirmada';
+        case 'paid':
+          return 'Confirmada';
+        case 'rejected':
+          return 'Pago rechazado';
+        case 'uploaded':
+          return 'Verificando pago';
+      }
+    }
+
+    // Default status handling
     switch (status) {
       case 'confirmed':
         return 'Confirmada';
@@ -150,16 +186,16 @@ export default function ReservationCard({ reservation, onView }: ReservationCard
           </Group>
           
           <Badge
-            color={getStatusColor(reservation.status)}
+            color={getStatusColor(reservation.status, reservation.paymentStatus)}
             variant="white"
             size="sm"
             radius="md"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              color: theme.colors[getStatusColor(reservation.status)][6]
+              color: theme.colors[getStatusColor(reservation.status, reservation.paymentStatus)][6]
             }}
           >
-            {getStatusText(reservation.status)}
+            {getStatusText(reservation.status, reservation.paymentStatus)}
           </Badge>
         </Group>
 
