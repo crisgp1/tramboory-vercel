@@ -4,10 +4,10 @@ import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const reservationId = params.id;
+    const { id: reservationId } = await params;
 
     if (!reservationId) {
       return NextResponse.json(
@@ -20,6 +20,16 @@ export async function GET(
     }
 
     const { db } = await connectToDatabase();
+    
+    if (!db) {
+      return NextResponse.json(
+        { success: false, message: 'Error de conexión a la base de datos' },
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
     
     // Get the reservation to check if payment proof exists
     const reservation = await db.collection('reservations').findOne(

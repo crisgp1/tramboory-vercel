@@ -124,7 +124,6 @@ export default function ReservationBookingForm() {
           <FoodOptionsStepV2 
             {...commonProps}
             foodOptions={foodOptions}
-            packages={packages}
           />
         );
       case 'extras':

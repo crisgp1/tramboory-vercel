@@ -69,6 +69,7 @@ export interface FoodOption {
   _id: string;
   name: string;
   description?: string;
+  category?: 'main' | 'appetizer' | 'dessert' | 'beverage';
   basePrice: number;
   adultPrice?: number;
   kidsPrice?: number;

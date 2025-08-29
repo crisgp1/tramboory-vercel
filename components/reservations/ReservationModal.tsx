@@ -748,7 +748,7 @@ export default function ReservationModal({
                   {/* Payment Status Badge */}
                   <Group gap="md">
                     <Badge
-                      color={paymentStatusColorMap[reservation.paymentStatus]}
+                      color={paymentStatusColorMap[reservation.paymentStatus || 'pending']}
                       variant="light"
                       size="lg"
                       leftSection={
@@ -758,7 +758,7 @@ export default function ReservationModal({
                         <IconCreditCard size={14} />
                       }
                     >
-                      {paymentStatusLabels[reservation.paymentStatus]}
+                      {paymentStatusLabels[reservation.paymentStatus || 'pending']}
                     </Badge>
                     {reservation.amountPaid && (
                       <Stack gap={4}>
@@ -878,7 +878,7 @@ export default function ReservationModal({
                         )}
 
                         {/* Payment Status Actions - Always available for pending payments */}
-                        {['pending', 'verifying', 'verified'].includes(reservation.paymentStatus) && reservation.paymentStatus !== 'paid' && (
+                        {reservation.paymentStatus && ['pending', 'verifying', 'verified'].includes(reservation.paymentStatus) && reservation.paymentStatus !== 'paid' && (
                           <div style={{ marginTop: 'var(--mantine-spacing-md)', paddingTop: 'var(--mantine-spacing-md)', borderTop: '1px solid var(--mantine-color-blue-3)' }}>
                             <Text size="sm" fw={600} mb="md" c="blue">Marcar Estado del Pago</Text>
                             <Group gap="sm">

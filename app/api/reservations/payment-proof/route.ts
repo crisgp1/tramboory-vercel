@@ -29,6 +29,16 @@ export async function POST(request: NextRequest) {
     console.log('Connecting to database...');
     const { db } = await connectToDatabase();
     
+    if (!db) {
+      return NextResponse.json(
+        { success: false, message: 'Error de conexión a la base de datos' },
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     // Upload file to Vercel Blob storage
     console.log('Uploading file to Vercel Blob...');
     const blob = await put(`payment-proofs/${reservationId}-${paymentProof.name}`, paymentProof, {

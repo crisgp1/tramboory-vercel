@@ -22,13 +22,13 @@ export async function GET() {
       adultDishImages: food.adultDishImages || [],
       kidsDishImages: food.kidsDishImages || [],
       upgrades: {
-        adult: (food.upgrades || []).filter(u => u.category === 'adult').map(u => ({
+        adult: (food.upgrades || []).filter((u: any) => u.category === 'adult').map((u: any) => ({
           fromDish: u.fromDish,
           toDish: u.toDish,
           additionalPrice: u.additionalPrice,
           image: u.image
         })),
-        kids: (food.upgrades || []).filter(u => u.category === 'kids').map(u => ({
+        kids: (food.upgrades || []).filter((u: any) => u.category === 'kids').map((u: any) => ({
           fromDish: u.fromDish,
           toDish: u.toDish,
           additionalPrice: u.additionalPrice,

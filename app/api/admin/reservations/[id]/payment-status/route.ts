@@ -4,11 +4,11 @@ import { ObjectId } from 'mongodb';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { paymentStatus, amountPaid, paymentDate, paymentMethod, paymentNotes } = await request.json();
-    const reservationId = params.id;
+    const { id: reservationId } = await params;
 
     console.log('Payment status update request:', { 
       reservationId, 
@@ -40,6 +40,16 @@ export async function POST(
 
     console.log('Connecting to database...');
     const { db } = await connectToDatabase();
+    
+    if (!db) {
+      return NextResponse.json(
+        { success: false, message: 'Error de conexión a la base de datos' },
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
     
     console.log('Updating payment status:', { reservationId, paymentStatus, amountPaid });
     
