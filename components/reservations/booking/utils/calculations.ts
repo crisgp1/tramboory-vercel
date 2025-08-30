@@ -72,7 +72,22 @@ export const calculatePricing = (
   }, 0);
   
   const subtotal = basePrice + foodPrice + upgradesPrice + themePrice + extrasPrice;
-  const discount = 0; // TODO: Implement discount logic based on coupon
+  
+  // Calculate cash discount if applicable
+  let discount = 0;
+  let cashDiscountAmount = 0;
+  if (formData.paymentMethod === 'cash' && formData.cashDiscountSettings) {
+    const { enabled, percentage, appliesTo } = formData.cashDiscountSettings;
+    if (enabled && appliesTo === 'remaining') {
+      // For cash discounts on remaining payment, we don't apply it to the total here
+      // It will be applied later during payment processing
+      discount = 0;
+    } else if (enabled && appliesTo === 'total') {
+      cashDiscountAmount = (subtotal * percentage) / 100;
+      discount = cashDiscountAmount;
+    }
+  }
+  
   const total = subtotal - discount;
   
   return {
@@ -83,6 +98,7 @@ export const calculatePricing = (
     extrasPrice,
     subtotal,
     discount,
+    cashDiscountAmount,
     total
   };
 };

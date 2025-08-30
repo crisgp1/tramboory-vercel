@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Card, Text, Group, Button, Badge, Stack, Center } from '@mantine/core';
+import { Card, Text, Group, Button, Badge, Stack, Center, Image } from '@mantine/core';
 import { useRouter } from 'next/navigation';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { FormData } from '../types';
@@ -12,6 +12,19 @@ const scaleIn = {
   animate: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.9 }
 };
+
+interface EventTheme {
+  _id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  packages: {
+    name: string;
+    pieces: number;
+    price: number;
+  }[];
+  themes: string[];
+}
 
 interface ConfirmationStepProps {
   reservationId: string | null;
@@ -23,6 +36,29 @@ export default function ConfirmationStep({
   formData
 }: ConfirmationStepProps) {
   const router = useRouter();
+  const [selectedTheme, setSelectedTheme] = useState<EventTheme | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchThemeData = async () => {
+      if (!formData.eventThemeId) return;
+      
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/admin/event-themes/${formData.eventThemeId}`);
+        if (response.ok) {
+          const theme = await response.json();
+          setSelectedTheme(theme);
+        }
+      } catch (error) {
+        console.error('Error fetching theme data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchThemeData();
+  }, [formData.eventThemeId]);
 
   return (
     <motion.div
@@ -85,6 +121,34 @@ export default function ConfirmationStep({
                 </Text>
               </Group>
             </Stack>
+          </Card>
+        )}
+
+        {/* Selected Theme Display */}
+        {selectedTheme && selectedTheme.imageUrl && (
+          <Card shadow="xs" p="md" radius="sm" mb="xl">
+            <Text size="sm" fw={600} mb="sm" ta="center" c="purple">
+              Temática Seleccionada
+            </Text>
+            <Center mb="sm">
+              <Image
+                src={selectedTheme.imageUrl}
+                alt={selectedTheme.name}
+                w={200}
+                h={150}
+                radius="md"
+                fit="cover"
+                fallbackSrc="/api/placeholder/200/150"
+              />
+            </Center>
+            <Text size="sm" fw={500} ta="center" mb="xs">
+              {selectedTheme.name}
+            </Text>
+            {selectedTheme.description && (
+              <Text size="xs" c="dimmed" ta="center">
+                {selectedTheme.description}
+              </Text>
+            )}
           </Card>
         )}
 

@@ -27,7 +27,8 @@ import {
   IconEye,
   IconUsers,
   IconCurrencyDollar,
-  IconClock
+  IconClock,
+  IconCopy
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 
@@ -212,6 +213,55 @@ export default function PackageManager() {
     } catch (error) {
       console.error('Error deleting package:', error);
       notifications.show({ title: 'Error', message: 'Error al eliminar el paquete', color: 'red' });
+    }
+  };
+
+  const handleDuplicate = async (pkg: Package) => {
+    if (!confirm(`¿Duplicar el paquete "${pkg.name}"?`)) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      // Create the duplicated package data
+      const duplicatedPackage = {
+        name: `${pkg.name} - Copia`,
+        description: pkg.description,
+        pricing: {
+          weekday: pkg.pricing.weekday,
+          weekend: pkg.pricing.weekend,
+          holiday: pkg.pricing.holiday
+        },
+        duration: pkg.duration,
+        maxGuests: pkg.maxGuests,
+        features: pkg.features,
+        isActive: pkg.isActive
+      };
+
+      const response = await fetch('/api/admin/packages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicatedPackage),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        notifications.show({ 
+          title: 'Éxito', 
+          message: `Paquete "${pkg.name}" duplicado correctamente`, 
+          color: 'green' 
+        });
+        fetchPackages();
+      } else {
+        notifications.show({ title: 'Error', message: 'Error al duplicar el paquete', color: 'red' });
+      }
+    } catch (error) {
+      console.error('Error duplicating package:', error);
+      notifications.show({ title: 'Error', message: 'Error al duplicar el paquete', color: 'red' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -426,6 +476,16 @@ export default function PackageManager() {
                           onClick={() => handleEdit(pkg)}
                         >
                           <IconPencil size={16} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="light"
+                          size="sm"
+                          color="teal"
+                          onClick={() => handleDuplicate(pkg)}
+                          disabled={submitting}
+                          title="Duplicar paquete"
+                        >
+                          <IconCopy size={16} />
                         </ActionIcon>
                         <ActionIcon
                           variant="light"

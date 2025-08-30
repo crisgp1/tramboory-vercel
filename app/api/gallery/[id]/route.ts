@@ -6,12 +6,15 @@ import GalleryItem from '@/models/GalleryItem'
 // GET - Obtener item específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  
+    
+    
+    const { id } = await params;const { id } = await params;const { id } = await params;try {
     await dbConnect()
     
-    const item = await GalleryItem.findById(params.id).lean()
+    const item = await GalleryItem.findById(id).lean()
     
     if (!item) {
       return NextResponse.json(
@@ -33,9 +36,12 @@ export async function GET(
 // PUT - Actualizar item
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  
+    
+    
+    const { id } = await params;const { id } = await params;const { id } = await params;try {
     const { userId } = await auth()
     
     if (!userId) {
@@ -47,7 +53,7 @@ export async function PUT(
     const body = await request.json()
     
     const updatedItem = await GalleryItem.findByIdAndUpdate(
-      params.id,
+      id,
       body,
       { new: true, runValidators: true }
     )
@@ -72,9 +78,12 @@ export async function PUT(
 // DELETE - Eliminar item (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  
+    
+    
+    const { id } = await params;const { id } = await params;const { id } = await params;try {
     const { userId } = await auth()
     
     if (!userId) {
@@ -84,7 +93,7 @@ export async function DELETE(
     await dbConnect()
     
     const deletedItem = await GalleryItem.findByIdAndUpdate(
-      params.id,
+      id,
       { active: false },
       { new: true }
     )

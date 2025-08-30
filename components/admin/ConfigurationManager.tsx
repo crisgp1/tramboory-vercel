@@ -19,7 +19,8 @@ import {
   IconSettings,
   IconBuildingStore,
   IconAlertTriangle,
-  IconPhone
+  IconPhone,
+  IconPhoto
 } from '@tabler/icons-react';
 import PackageManager from './PackageManager';
 import FoodOptionsManager from './FoodOptionsManager';
@@ -27,6 +28,7 @@ import ExtraServicesManager from './ExtraServicesManager';
 import EventThemeManager from './EventThemeManager';
 import SystemConfigManager from './SystemConfigManager';
 import { ContactSettingsManager } from './ContactSettingsManager';
+import FaviconManager from './FaviconManager';
 
 const configTabs = [
   {
@@ -64,6 +66,12 @@ const configTabs = [
     label: 'Sistema',
     icon: IconSettings,
     description: 'Configuración general del sistema'
+  },
+  {
+    id: 'favicon',
+    label: 'Favicon',
+    icon: IconPhoto,
+    description: 'Personalizar el icono del navegador'
   }
 ];
 
@@ -115,6 +123,8 @@ export default function ConfigurationManager() {
         return <ContactSettingsManager />;
       case 'system':
         return <SystemConfigManager />;
+      case 'favicon':
+        return <FaviconManager />;
       default:
         return <PackageManager />;
     }

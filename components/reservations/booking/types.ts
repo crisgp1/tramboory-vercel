@@ -18,6 +18,11 @@ export interface FormData {
   couponCode: string;
   termsAccepted: boolean;
   expandedOptions?: { [key: string]: boolean };
+  cashDiscountSettings?: {
+    enabled: boolean;
+    percentage: number;
+    appliesTo: string;
+  };
 }
 
 export interface FoodUpgrade {
@@ -149,5 +154,6 @@ export interface PricingBreakdown {
   extrasPrice: number;
   subtotal: number;
   discount: number;
+  cashDiscountAmount?: number;
   total: number;
 }

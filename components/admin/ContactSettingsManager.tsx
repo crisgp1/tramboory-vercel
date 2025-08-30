@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Button, TextInput, Textarea, Switch, Group, Text, Tabs, Stack, ActionIcon, Divider, Select } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
-import { IconPhone, IconMail, IconMapPin, IconClock, IconTrash, IconPlus, IconBrandWhatsapp, IconBrandInstagram, IconBrandFacebook, IconDeviceFloppy } from '@tabler/icons-react'
+import { IconPhone, IconMail, IconMapPin, IconClock, IconTrash, IconPlus, IconBrandWhatsapp, IconBrandInstagram, IconBrandFacebook, IconDeviceFloppy, IconCreditCard, IconDiscount } from '@tabler/icons-react'
 
 interface ContactSettings {
   _id?: string
@@ -43,6 +43,23 @@ interface ContactSettings {
     googleMaps: string
     waze: string
     embedUrl?: string
+  }
+  bankingInfo?: {
+    bankName: string
+    accountHolder: string
+    clabe: string
+    accountNumber?: string
+    paymentAddress: string
+    paymentInstructions: string
+    enabled: boolean
+  }
+  discountSettings?: {
+    cashDiscount: {
+      enabled: boolean
+      percentage: number
+      description: string
+      appliesTo: string
+    }
   }
 }
 
@@ -96,6 +113,23 @@ export function ContactSettingsManager() {
         googleMaps: '',
         waze: '',
         embedUrl: ''
+      },
+      bankingInfo: {
+        bankName: 'BBVA México',
+        accountHolder: 'Tramboory S.A. de C.V.',
+        clabe: '',
+        accountNumber: '',
+        paymentAddress: '',
+        paymentInstructions: 'Realiza tu transferencia y envía el comprobante por WhatsApp para confirmar tu reservación.',
+        enabled: true
+      },
+      discountSettings: {
+        cashDiscount: {
+          enabled: false,
+          percentage: 0,
+          description: 'Descuento por pago en efectivo',
+          appliesTo: 'remaining'
+        }
       }
     }
   })
@@ -197,6 +231,12 @@ export function ContactSettingsManager() {
             </Tabs.Tab>
             <Tabs.Tab value="social" leftSection={<IconBrandInstagram size={16} />}>
               Redes Sociales
+            </Tabs.Tab>
+            <Tabs.Tab value="banking" leftSection={<IconCreditCard size={16} />}>
+              Información Bancaria
+            </Tabs.Tab>
+            <Tabs.Tab value="discounts" leftSection={<IconDiscount size={16} />}>
+              Descuentos
             </Tabs.Tab>
           </Tabs.List>
 
@@ -476,6 +516,199 @@ export function ContactSettingsManager() {
                 placeholder="https://youtube.com/@tramboory"
                 {...form.getInputProps('socialMedia.youtube')}
               />
+            </Stack>
+          </Tabs.Panel>
+
+          {/* Información Bancaria */}
+          <Tabs.Panel value="banking" className="pt-6">
+            <Stack gap="md">
+              <Switch
+                label="Habilitar información bancaria"
+                description="Mostrar datos bancarios cuando se seleccione transferencia"
+                {...form.getInputProps('bankingInfo.enabled', { type: 'checkbox' })}
+              />
+              
+              {form.values.bankingInfo?.enabled && (
+                <>
+                  <TextInput
+                    label="Nombre del Banco"
+                    placeholder="BBVA México"
+                    {...form.getInputProps('bankingInfo.bankName')}
+                    maxLength={100}
+                    description="Solo letras, números, espacios y caracteres especiales básicos"
+                    required
+                    onInput={(e) => {
+                      // Permitir solo letras, números, espacios y algunos caracteres especiales
+                      const value = e.currentTarget.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s\-\.\,]/g, '');
+                      e.currentTarget.value = value;
+                      form.setFieldValue('bankingInfo.bankName', value);
+                    }}
+                  />
+                  
+                  <TextInput
+                    label="Titular de la Cuenta"
+                    placeholder="Tramboory S.A. de C.V."
+                    {...form.getInputProps('bankingInfo.accountHolder')}
+                    maxLength={150}
+                    description="Nombre completo del titular según documentos oficiales"
+                    required
+                    onInput={(e) => {
+                      // Permitir solo letras, espacios y algunos caracteres especiales para nombres de empresas
+                      const value = e.currentTarget.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-\.\,\&]/g, '');
+                      e.currentTarget.value = value;
+                      form.setFieldValue('bankingInfo.accountHolder', value);
+                    }}
+                  />
+                  
+                  <TextInput
+                    label="CLABE Interbancaria"
+                    placeholder="012345678901234567"
+                    {...form.getInputProps('bankingInfo.clabe')}
+                    maxLength={18}
+                    minLength={18}
+                    description="Exactamente 18 dígitos (solo números)"
+                    pattern="[0-9]{18}"
+                    required
+                    onInput={(e) => {
+                      // Solo permitir números y exactamente 18 dígitos
+                      const value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 18);
+                      e.currentTarget.value = value;
+                      form.setFieldValue('bankingInfo.clabe', value);
+                    }}
+                    error={
+                      form.values.bankingInfo?.clabe && 
+                      (form.values.bankingInfo.clabe.length !== 18 || !/^[0-9]{18}$/.test(form.values.bankingInfo.clabe))
+                        ? 'La CLABE debe tener exactamente 18 dígitos'
+                        : null
+                    }
+                  />
+                  
+                  <TextInput
+                    label="Número de Cuenta (opcional)"
+                    placeholder="1234567890"
+                    {...form.getInputProps('bankingInfo.accountNumber')}
+                    maxLength={20}
+                    description="Número de cuenta tradicional (solo números, máximo 20 dígitos)"
+                    onInput={(e) => {
+                      // Solo permitir números
+                      const value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 20);
+                      e.currentTarget.value = value;
+                      form.setFieldValue('bankingInfo.accountNumber', value);
+                    }}
+                  />
+                  
+                  <TextInput
+                    label="Dirección de Pago"
+                    placeholder="Sucursal Centro, Zapopan, Jalisco"
+                    {...form.getInputProps('bankingInfo.paymentAddress')}
+                    maxLength={200}
+                    description="Dirección completa de la sucursal o ubicación de pago"
+                    onInput={(e) => {
+                      // Permitir caracteres para direcciones
+                      const value = e.currentTarget.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s\-\.\,\#]/g, '').slice(0, 200);
+                      e.currentTarget.value = value;
+                      form.setFieldValue('bankingInfo.paymentAddress', value);
+                    }}
+                  />
+                  
+                  <Textarea
+                    label="Instrucciones de Pago"
+                    placeholder="Realiza tu transferencia y envía el comprobante por WhatsApp..."
+                    {...form.getInputProps('bankingInfo.paymentInstructions')}
+                    minRows={3}
+                    maxRows={6}
+                    maxLength={500}
+                    description="Instrucciones detalladas para el cliente (máximo 500 caracteres)"
+                    onInput={(e) => {
+                      // Limitar longitud pero permitir todos los caracteres para instrucciones
+                      const value = e.currentTarget.value.slice(0, 500);
+                      e.currentTarget.value = value;
+                      form.setFieldValue('bankingInfo.paymentInstructions', value);
+                    }}
+                  />
+                </>
+              )}
+            </Stack>
+          </Tabs.Panel>
+
+          {/* Configuración de Descuentos */}
+          <Tabs.Panel value="discounts" className="pt-6">
+            <Stack gap="md">
+              <Text size="sm" c="dimmed">
+                Configura los descuentos disponibles para diferentes métodos de pago
+              </Text>
+              
+              <Divider label="Descuento por Pago en Efectivo" />
+              
+              <Switch
+                label="Habilitar descuento en efectivo"
+                description="Aplicar descuento cuando el cliente paga en efectivo"
+                {...form.getInputProps('discountSettings.cashDiscount.enabled', { type: 'checkbox' })}
+              />
+              
+              {form.values.discountSettings?.cashDiscount.enabled && (
+                <>
+                  <TextInput
+                    label="Porcentaje de Descuento"
+                    placeholder="5"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    rightSection={<Text size="sm">%</Text>}
+                    {...form.getInputProps('discountSettings.cashDiscount.percentage')}
+                    description="Entre 0 y 100% (se permiten decimales)"
+                    required
+                    onInput={(e) => {
+                      // Validar rango y formato decimal
+                      let value = parseFloat(e.currentTarget.value);
+                      if (isNaN(value)) value = 0;
+                      if (value < 0) value = 0;
+                      if (value > 100) value = 100;
+                      
+                      // Redondear a 2 decimales
+                      value = Math.round(value * 100) / 100;
+                      
+                      e.currentTarget.value = value.toString();
+                      form.setFieldValue('discountSettings.cashDiscount.percentage', value);
+                    }}
+                    error={
+                      form.values.discountSettings?.cashDiscount.percentage !== undefined &&
+                      (form.values.discountSettings.cashDiscount.percentage < 0 || 
+                       form.values.discountSettings.cashDiscount.percentage > 100)
+                        ? 'El porcentaje debe estar entre 0 y 100'
+                        : null
+                    }
+                  />
+                  
+                  <TextInput
+                    label="Descripción del Descuento"
+                    placeholder="Descuento por pago en efectivo"
+                    {...form.getInputProps('discountSettings.cashDiscount.description')}
+                    maxLength={100}
+                    description="Texto que se mostrará al cliente (máximo 100 caracteres)"
+                    required
+                    onInput={(e) => {
+                      // Limpiar caracteres especiales problemáticos pero permitir tildes y básicos
+                      const value = e.currentTarget.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s\-\.\,\%]/g, '').slice(0, 100);
+                      e.currentTarget.value = value;
+                      form.setFieldValue('discountSettings.cashDiscount.description', value);
+                    }}
+                  />
+                  
+                  <Select
+                    label="Se Aplica A"
+                    placeholder="Selecciona cuándo aplicar el descuento"
+                    data={[
+                      { value: 'remaining', label: 'Solo al pago restante' },
+                      { value: 'total', label: 'Al total completo' }
+                    ]}
+                    {...form.getInputProps('discountSettings.cashDiscount.appliesTo')}
+                    description="El descuento al pago restante se aplica solo cuando se paga el resto en efectivo, no al anticipo"
+                    required
+                  />
+                </>
+              )}
             </Stack>
           </Tabs.Panel>
         </Tabs>

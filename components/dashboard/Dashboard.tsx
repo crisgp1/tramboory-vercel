@@ -34,7 +34,8 @@ import {
   IconSparkles,
   IconPhoto,
   IconCarouselVertical,
-  IconPhotoHeart
+  IconPhotoHeart,
+  IconCalendarEvent
 } from "@tabler/icons-react"
 import { useDisclosure } from "@mantine/hooks"
 import { notifications } from "@mantine/notifications"
@@ -49,6 +50,7 @@ import CouponManager from "@/components/admin/CouponManager"
 import HeroManager from "@/components/admin/HeroManager"
 import CarouselManager from "@/components/admin/CarouselManager"
 import { GalleryManager } from "@/components/admin/GalleryManager"
+import PostScheduler from "@/components/admin/PostScheduler"
 import AdminQuickNav from "@/components/navigation/AdminQuickNav"
 
 type MenuItem = {
@@ -118,6 +120,12 @@ const menuItems: MenuItem[] = [
     label: "Galería", 
     icon: IconPhotoHeart,
     description: "Gestión de la galería de fotos y videos"
+  },
+  { 
+    id: "posts", 
+    label: "Publicaciones", 
+    icon: IconCalendarEvent,
+    description: "Programación de publicaciones automáticas"
   }
 ]
 
@@ -158,6 +166,9 @@ export default function Dashboard() {
       case "reservas":
         // Todos los roles pueden ver reservas
         return true
+      case "posts":
+        // Solo admin y gerente pueden programar publicaciones
+        return isAdmin || isGerente
       default:
         return true
     }
@@ -236,6 +247,10 @@ export default function Dashboard() {
     // Si es la sección de galería, mostrar el componente específico
     if (activeMenuItem === 'galeria') {
       return <GalleryManager />
+    }
+    // Si es la sección de posts, mostrar el componente específico
+    if (activeMenuItem === 'posts') {
+      return <PostScheduler />
     }
 
     // Default content - redirect to analytics since that's the main dashboard view

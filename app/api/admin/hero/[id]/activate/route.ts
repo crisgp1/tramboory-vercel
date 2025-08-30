@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HeroContent } from '@/models/HeroContent';
-import { connectToDatabase } from '@/lib/mongodb';
+import dbConnect from '@/lib/mongodb';
 
 // POST - Activar un hero específico
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectToDatabase();
+    await dbConnect();
     
+    const { id } = await params;
     // Verificar que el hero existe
-    const hero = await HeroContent.findById(params.id);
+    const hero = await HeroContent.findById(id);
     
     if (!hero) {
       return NextResponse.json(
@@ -21,10 +22,10 @@ export async function POST(
     }
     
     // Usar el método estático para activar
-    await HeroContent.activate(params.id);
+    await HeroContent.activate(id);
     
     // Obtener el hero actualizado
-    const updatedHero = await HeroContent.findById(params.id);
+    const updatedHero = await HeroContent.findById(id);
     
     return NextResponse.json({
       success: true,

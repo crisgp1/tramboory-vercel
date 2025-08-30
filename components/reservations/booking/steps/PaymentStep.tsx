@@ -12,6 +12,7 @@ import {
 import { StepProps } from '../types';
 import { calculatePricing, formatCurrency } from '../utils/calculations';
 import TermsAndConditions from '../components/TermsAndConditions';
+import { useContactSettings } from '@/hooks/useContactSettings';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -43,10 +44,24 @@ export default function PaymentStep({
   extraServices,
   isLoading
 }: PaymentStepProps) {
-  const pricing = calculatePricing(formData, packages, foodOptions, eventThemes, extraServices);
+  const { getBankingInfo, formatCLABE, getCashDiscount, calculateCashDiscount, settings, loading } = useContactSettings();
+  const bankingInfo = getBankingInfo();
+  const cashDiscount = getCashDiscount();
+  
+  
+  
+  // Update form data with cash discount settings when cash discount is available
+  const updatedFormData = {
+    ...formData,
+    cashDiscountSettings: cashDiscount || undefined
+  };
+  
+  const pricing = calculatePricing(updatedFormData, packages, foodOptions, eventThemes, extraServices);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Pass the updated form data with discount settings
+    onUpdateFormData({ cashDiscountSettings: cashDiscount || undefined });
     onNext();
   };
 
@@ -96,6 +111,13 @@ export default function PaymentStep({
               )}
               
               <Divider my="xs" />
+              
+              {pricing.cashDiscountAmount && pricing.cashDiscountAmount > 0 && (
+                <Group justify="space-between">
+                  <Text size="sm" c="green">Descuento en efectivo:</Text>
+                  <Text size="sm" fw={500} c="green">-{formatCurrency(pricing.cashDiscountAmount)}</Text>
+                </Group>
+              )}
               
               <Group justify="space-between">
                 <Text fw={600}>Total:</Text>
@@ -151,6 +173,77 @@ export default function PaymentStep({
               />
             </Stack>
           </RadioGroup>
+
+          {/* Banking Information Display */}
+          {formData.paymentMethod === 'transfer' && settings?.bankingInfo?.enabled && (
+            <Card shadow="xs" p="md" radius="sm" mt="md" className="bg-blue-50 border-blue-200">
+              <Text size="sm" fw={600} mb="md" className="text-blue-800">
+                Información para Transferencia Bancaria
+              </Text>
+              {bankingInfo ? (
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>Banco:</Text>
+                    <Text size="sm">{bankingInfo.bankName}</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>Titular:</Text>
+                    <Text size="sm">{bankingInfo.accountHolder}</Text>
+                  </Group>
+                  {bankingInfo.clabe && (
+                    <Group justify="space-between">
+                      <Text size="sm" fw={500}>CLABE:</Text>
+                      <Text size="sm" fw={600} className="font-mono text-blue-600">
+                        {formatCLABE(bankingInfo.clabe)}
+                      </Text>
+                    </Group>
+                  )}
+                  {bankingInfo.accountNumber && (
+                    <Group justify="space-between">
+                      <Text size="sm" fw={500}>Cuenta:</Text>
+                      <Text size="sm" fw={600} className="font-mono">
+                        {bankingInfo.accountNumber}
+                      </Text>
+                    </Group>
+                  )}
+                  {bankingInfo.paymentAddress && (
+                    <Group justify="space-between" align="flex-start">
+                      <Text size="sm" fw={500}>Dirección:</Text>
+                      <Text size="sm" className="text-right">{bankingInfo.paymentAddress}</Text>
+                    </Group>
+                  )}
+                  {bankingInfo.paymentInstructions && (
+                    <Card shadow="xs" p="sm" radius="xs" className="bg-blue-100 mt-2">
+                      <Text size="xs" className="text-blue-700">
+                        <strong>Instrucciones:</strong> {bankingInfo.paymentInstructions}
+                      </Text>
+                    </Card>
+                  )}
+                </Stack>
+              ) : (
+                <Text size="sm" c="dimmed">
+                  Los datos bancarios se enviarán por correo electrónico después de confirmar tu reservación.
+                </Text>
+              )}
+            </Card>
+          )}
+
+          {/* Cash Discount Information */}
+          {formData.paymentMethod === 'cash' && cashDiscount && (
+            <Card shadow="xs" p="md" radius="sm" mt="md" className="bg-green-50 border-green-200">
+              <Text size="sm" fw={600} mb="sm" className="text-green-800">
+                💰 ¡Descuento por Pago en Efectivo!
+              </Text>
+              <Text size="sm" className="text-green-700">
+                {cashDiscount.description} - {cashDiscount.percentage}% de descuento
+              </Text>
+              <Text size="xs" className="text-green-600 mt-1">
+                * {cashDiscount.appliesTo === 'remaining' 
+                    ? 'Aplica solo al pago restante en el día del evento'
+                    : 'Aplica al total de la reservación'}
+              </Text>
+            </Card>
+          )}
 
           <Space h="xl" />
 

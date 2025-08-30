@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HeroContent } from '@/models/HeroContent';
-import { connectToDatabase } from '@/lib/mongodb';
+import dbConnect from '@/lib/mongodb';
 
 // GET - Obtener un hero específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    await connectToDatabase();
+  
     
-    const hero = await HeroContent.findById(params.id).lean();
+    
+    const { id } = await params;const { id } = await params;const { id } = await params;try {
+    await dbConnect();
+    
+    const hero = await HeroContent.findById(id).lean();
     
     if (!hero) {
       return NextResponse.json(
@@ -35,10 +38,13 @@ export async function GET(
 // PUT - Actualizar un hero
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    await connectToDatabase();
+  
+    
+    
+    const { id } = await params;const { id } = await params;const { id } = await params;try {
+    await dbConnect();
     
     const body = await request.json();
     
@@ -62,7 +68,7 @@ export async function PUT(
     };
     
     const hero = await HeroContent.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true, runValidators: true }
     );
@@ -90,12 +96,15 @@ export async function PUT(
 // DELETE - Eliminar un hero
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    await connectToDatabase();
+  
     
-    const hero = await HeroContent.findById(params.id);
+    
+    const { id } = await params;const { id } = await params;const { id } = await params;try {
+    await dbConnect();
+    
+    const hero = await HeroContent.findById(id);
     
     if (!hero) {
       return NextResponse.json(
@@ -117,7 +126,7 @@ export async function DELETE(
       }
     }
     
-    await HeroContent.findByIdAndDelete(params.id);
+    await HeroContent.findByIdAndDelete(id);
     
     return NextResponse.json({
       success: true,

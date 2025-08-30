@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
+import dbConnect from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  
+    const { id } = await params;try {
     const { id: reservationId } = await params;
 
     if (!reservationId) {
@@ -19,7 +20,7 @@ export async function GET(
       );
     }
 
-    const { db } = await connectToDatabase();
+    const { db } = await dbConnect();
     
     if (!db) {
       return NextResponse.json(

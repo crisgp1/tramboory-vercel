@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CarouselCard } from '@/models/CarouselCard';
-import { connectToDatabase } from '@/lib/mongodb';
+import dbConnect from '@/lib/mongodb';
 
 // GET - Obtener tarjeta específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectToDatabase();
+    await dbConnect();
     
-    const card = await CarouselCard.findById(params.id).lean();
+    const { id } = await params;
+    const card = await CarouselCard.findById(id).lean();
     
     if (!card) {
       return NextResponse.json(
@@ -38,11 +39,12 @@ export async function GET(
 // PUT - Actualizar tarjeta
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectToDatabase();
+    await dbConnect();
     
+    const { id } = await params;
     const body = await request.json();
     
     // Validar campos requeridos
@@ -65,7 +67,7 @@ export async function PUT(
     };
     
     const card = await CarouselCard.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true, runValidators: true }
     );
@@ -97,12 +99,13 @@ export async function PUT(
 // DELETE - Eliminar tarjeta
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectToDatabase();
+    await dbConnect();
     
-    const card = await CarouselCard.findById(params.id);
+    const { id } = await params;
+    const card = await CarouselCard.findById(id);
     
     if (!card) {
       return NextResponse.json(
@@ -111,7 +114,7 @@ export async function DELETE(
       );
     }
     
-    await CarouselCard.findByIdAndDelete(params.id);
+    await CarouselCard.findByIdAndDelete(id);
     
     return NextResponse.json({
       success: true,

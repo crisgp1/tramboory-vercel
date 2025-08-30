@@ -37,6 +37,23 @@ interface ContactSettings {
     waze: string
     embedUrl?: string
   }
+  bankingInfo?: {
+    bankName: string
+    accountHolder: string
+    clabe: string
+    accountNumber?: string
+    paymentAddress: string
+    paymentInstructions: string
+    enabled: boolean
+  }
+  discountSettings?: {
+    cashDiscount: {
+      enabled: boolean
+      percentage: number
+      description: string
+      appliesTo: string
+    }
+  }
 }
 
 export function useContactSettings() {
@@ -111,6 +128,30 @@ export function useContactSettings() {
     return `https://wa.me/${settings.whatsapp.number}?text=${encodeURIComponent(message)}`
   }
 
+  // Banking helper functions
+  const getBankingInfo = () => {
+    return settings?.bankingInfo?.enabled ? settings.bankingInfo : null
+  }
+
+  const formatCLABE = (clabe: string) => {
+    if (!clabe) return ''
+    return clabe.replace(/(\d{4})(\d{4})(\d{4})(\d{4})(\d{2})/, '$1 $2 $3 $4 $5')
+  }
+
+  // Discount helper functions
+  const getCashDiscount = () => {
+    return settings?.discountSettings?.cashDiscount?.enabled 
+      ? settings.discountSettings.cashDiscount 
+      : null
+  }
+
+  const calculateCashDiscount = (amount: number, paymentType: 'remaining' | 'total' = 'remaining') => {
+    const discount = getCashDiscount()
+    if (!discount || discount.appliesTo !== paymentType) return 0
+    
+    return (amount * discount.percentage) / 100
+  }
+
   return {
     settings,
     loading,
@@ -120,6 +161,12 @@ export function useContactSettings() {
     getPrimaryEmail,
     getFullAddress,
     getFormattedSchedules,
-    getWhatsAppUrl
+    getWhatsAppUrl,
+    // Banking functions
+    getBankingInfo,
+    formatCLABE,
+    // Discount functions
+    getCashDiscount,
+    calculateCashDiscount
   }
 }

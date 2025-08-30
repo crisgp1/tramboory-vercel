@@ -51,8 +51,65 @@ export async function GET() {
         maps: {
           googleMaps: 'https://maps.app.goo.gl/VVE54ydTWC3HgyB5A',
           waze: 'https://waze.com/ul?q=P.º%20Solares%201639%20Solares%20Residencial%20Zapopan&navigate=yes'
+        },
+        bankingInfo: {
+          bankName: 'BBVA México',
+          accountHolder: 'Tramboory S.A. de C.V.',
+          clabe: '',
+          accountNumber: '',
+          paymentAddress: '',
+          paymentInstructions: 'Realiza tu transferencia y envía el comprobante por WhatsApp para confirmar tu reservación.',
+          enabled: true
+        },
+        discountSettings: {
+          cashDiscount: {
+            enabled: false,
+            percentage: 0,
+            description: 'Descuento por pago en efectivo',
+            appliesTo: 'remaining'
+          }
         }
       })
+    } else {
+      // Si ya existe pero le faltan campos bancarios, agregarlos
+      let needsUpdate = false;
+      
+      if (!settings.bankingInfo) {
+        settings.bankingInfo = {
+          bankName: 'BBVA México',
+          accountHolder: 'Tramboory S.A. de C.V.',
+          clabe: '',
+          accountNumber: '',
+          paymentAddress: '',
+          paymentInstructions: 'Realiza tu transferencia y envía el comprobante por WhatsApp para confirmar tu reservación.',
+          enabled: true
+        };
+        needsUpdate = true;
+      }
+      
+      if (!settings.discountSettings) {
+        settings.discountSettings = {
+          cashDiscount: {
+            enabled: false,
+            percentage: 0,
+            description: 'Descuento por pago en efectivo',
+            appliesTo: 'remaining'
+          }
+        };
+        needsUpdate = true;
+      }
+      
+      // Actualizar en la base de datos si hubo cambios
+      if (needsUpdate) {
+        await ContactSettings.findOneAndUpdate(
+          { isActive: true },
+          {
+            bankingInfo: settings.bankingInfo,
+            discountSettings: settings.discountSettings,
+            updatedAt: new Date()
+          }
+        );
+      }
     }
     
     return NextResponse.json(settings)
