@@ -164,8 +164,8 @@ export function InfiniteCarousel() {
   const [isDragging, setIsDragging] = useState(false)
   const [windowWidth, setWindowWidth] = useState(0)
   const carouselRef = useRef<HTMLDivElement>(null)
-  const timelineRef = useRef<gsap.core.Timeline>()
-  const draggableRef = useRef<Draggable>()
+  const timelineRef = useRef<gsap.core.Timeline | null>(null)
+  const draggableRef = useRef<Draggable | null>(null)
   
   // Detectar cambios de tamaño de ventana
   useEffect(() => {

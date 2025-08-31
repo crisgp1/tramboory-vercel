@@ -17,7 +17,8 @@ import {
   ActionIcon,
   ScrollArea,
   NumberInput,
-  Center
+  Center,
+  Radio
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -49,7 +50,6 @@ interface TimeBlock {
   maxEventsPerBlock: number;
   multipleTimeSlots?: boolean;
   timeSlots?: TimeSlot[];
-  oneReservationPerDay?: boolean;
 }
 
 interface RestDay {
@@ -92,13 +92,10 @@ const to12HourFormat = (time24: string): string => {
   }
 };
 
-const timeOptions = Array.from({ length: 48 }, (_, i) => {
-  const hour = Math.floor(i / 2);
-  const minute = i % 2 === 0 ? '00' : '30';
-  const time24 = `${hour.toString().padStart(2, '0')}:${minute}`;
-  const time12 = to12HourFormat(time24);
-  return { key: time24, label: time12 };
-});
+// Función para validar formato de hora HH:MM
+const isValidTimeFormat = (time: string): boolean => {
+  return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
+};
 
 const durationOptions = [
   { key: '0.5', label: '30 minutos' },
@@ -136,8 +133,7 @@ export default function TimeBlocksManager({
     halfHourBreak: true,
     maxEventsPerBlock: 1,
     multipleTimeSlots: false,
-    timeSlots: [],
-    oneReservationPerDay: false
+    timeSlots: []
   });
   
   // Auto-calculate end time when start time or duration changes
@@ -248,8 +244,7 @@ export default function TimeBlocksManager({
       halfHourBreak: defaultHalfHourBreak,
       maxEventsPerBlock: 1,
       multipleTimeSlots: false,
-      timeSlots: [],
-      oneReservationPerDay: false
+      timeSlots: []
     });
     setEditingBlock(null);
     setEditingBlockIndex(null);
@@ -336,10 +331,6 @@ export default function TimeBlocksManager({
     }
 
     // Check for overlaps with other blocks
-    // Special rules for oneReservationPerDay blocks:
-    // - Blocks with oneReservationPerDay=true CAN overlap with each other
-    // - Normal blocks CANNOT overlap with any other normal blocks
-    // - Normal blocks CAN overlap with oneReservationPerDay blocks
     for (let i = 0; i < timeBlocks.length; i++) {
       if (editingBlockIndex !== null && i === editingBlockIndex) continue;
       
@@ -347,12 +338,6 @@ export default function TimeBlocksManager({
       const hasCommonDay = block.days.some(day => otherBlock.days.includes(day));
       
       if (hasCommonDay) {
-        // Skip overlap check if both blocks have oneReservationPerDay enabled
-        // or if one has it enabled (they can coexist)
-        if (block.oneReservationPerDay || otherBlock.oneReservationPerDay) {
-          continue;
-        }
-        
         const otherStartMinutes = timeToMinutes(otherBlock.startTime);
         const otherEndMinutes = timeToMinutes(otherBlock.endTime);
         
@@ -360,7 +345,7 @@ export default function TimeBlocksManager({
         if ((startMinutes < otherEndMinutes && endMinutes > otherStartMinutes)) {
           return {
             valid: false,
-            error: `Este horario se superpone con el bloque "${otherBlock.name}" en días compartidos. Para permitir horarios superpuestos, activa "Una reserva por día" en uno de los bloques.`
+            error: `Este horario se superpone con el bloque "${otherBlock.name}" en días compartidos.`
           };
         }
       }
@@ -401,14 +386,10 @@ export default function TimeBlocksManager({
   // Calculate summary stats
   const totalCapacity = timeBlocks.reduce((total, block) => {
     const daysCount = block.days.length;
-    if (block.oneReservationPerDay) {
-      return total + daysCount; // One per day
-    }
     return total + (block.maxEventsPerBlock * daysCount);
   }, 0);
 
   const activeDays = new Set(timeBlocks.flatMap(block => block.days));
-  const hasOverlappingBlocks = timeBlocks.some(block => block.oneReservationPerDay);
 
   return (
     <>
@@ -443,11 +424,6 @@ export default function TimeBlocksManager({
                 </Stack>
               </Group>
             </Stack>
-            {hasOverlappingBlocks && (
-              <Badge size="lg" color="yellow" variant="filled">
-                Horarios Flexibles Activos
-              </Badge>
-            )}
           </Group>
         </Card>
       )}
@@ -532,11 +508,6 @@ export default function TimeBlocksManager({
                       <Group gap="xs">
                         <IconClock size={18} color="#1971c2" />
                         <Title order={5}>{block.name}</Title>
-                        {block.oneReservationPerDay && (
-                          <Badge size="sm" color="orange" variant="light">
-                            1 por día
-                          </Badge>
-                        )}
                       </Group>
                       <Stack gap={6}>
                         <Group gap="xl">
@@ -562,9 +533,7 @@ export default function TimeBlocksManager({
                           <Stack gap={2}>
                             <Text size="xs" c="dimmed" fw={500}>CAPACIDAD</Text>
                             <Text size="sm">
-                              {block.oneReservationPerDay 
-                                ? 'Una reserva total' 
-                                : `${block.maxEventsPerBlock} ${block.maxEventsPerBlock === 1 ? 'evento' : 'eventos'}`}
+                              {block.maxEventsPerBlock} {block.maxEventsPerBlock === 1 ? 'evento' : 'eventos'}
                             </Text>
                           </Stack>
                         </Group>
@@ -863,70 +832,106 @@ export default function TimeBlocksManager({
                 </Group>
               </Card>
                 <Group grow>
-                  <Select
+                  <TextInput
                     label="Hora de inicio"
-                    placeholder="Selecciona hora de inicio"
+                    placeholder="14:30"
+                    description="Formato: HH:MM (24 horas)"
                     value={blockForm.startTime}
-                    onChange={(value) => {
-                      if (value) {
+                    onChange={(event) => {
+                      let value = event.currentTarget.value;
+                      
+                      // Auto-formato mientras escribes
+                      value = value.replace(/[^0-9:]/g, ''); // Solo números y :
+                      if (value.length === 2 && !value.includes(':')) {
+                        value += ':';
+                      }
+                      
+                      if (value && isValidTimeFormat(value)) {
+                        if (!isEndTimeManual) {
+                          // Calcular la duración actual del evento (sin tiempo de despedida)
+                          const startMinutes = timeToMinutes(blockForm.startTime);
+                          const endMinutes = timeToMinutes(blockForm.endTime);
+                          const totalMinutes = endMinutes - startMinutes;
+                          const despedidaMinutes = blockForm.halfHourBreak ? (isCustomFarewell ? customFarewellMinutes : 30) : 0;
+                          const currentEventDuration = (totalMinutes - despedidaMinutes) / 60; // en horas
+                          
+                          // Usar la duración actual o una por defecto
+                          const duration = currentEventDuration > 0 ? currentEventDuration : 3.5;
+                          
+                          const newEndTime = calculateEndTime(
+                            value, 
+                            duration, 
+                            blockForm.halfHourBreak,
+                            isCustomFarewell ? customFarewellMinutes : 30
+                          );
+                          setBlockForm({ 
+                            ...blockForm, 
+                            startTime: value,
+                            endTime: newEndTime,
+                            duration: duration
+                          });
+                        } else {
+                          setBlockForm({ 
+                            ...blockForm, 
+                            startTime: value
+                          });
+                        }
+                      } else {
+                        // Actualizar el valor para mostrar el auto-formato
+                        setBlockForm({ 
+                          ...blockForm, 
+                          startTime: value
+                        });
+                      }
+                    }}
+                    error={blockForm.startTime && !isValidTimeFormat(blockForm.startTime) ? "Formato inválido. Use HH:MM" : null}
+                    withAsterisk
+                  />
+                  <Group align="flex-end" grow>
+                    <TextInput
+                      label="Hora de fin"
+                      description={isEndTimeManual ? "Hora personalizada" : "Calculada automáticamente"}
+                      placeholder="18:00"
+                      value={blockForm.endTime}
+                      onChange={(event) => {
+                        let value = event.currentTarget.value;
+                        
+                        // Auto-formato mientras escribes
+                        value = value.replace(/[^0-9:]/g, ''); // Solo números y :
+                        if (value.length === 2 && !value.includes(':')) {
+                          value += ':';
+                        }
+                        
+                        if (value && isValidTimeFormat(value)) {
+                          setBlockForm({ ...blockForm, endTime: value });
+                          setIsEndTimeManual(true);
+                        } else {
+                          // Actualizar el valor para mostrar el auto-formato
+                          setBlockForm({ ...blockForm, endTime: value });
+                        }
+                      }}
+                      error={blockForm.endTime && !isValidTimeFormat(blockForm.endTime) ? "Formato inválido. Use HH:MM" : null}
+                    />
+                    <Button
+                      variant={isEndTimeManual ? "filled" : "light"}
+                      color={isEndTimeManual ? "orange" : "blue"}
+                      size="sm"
+                      leftSection={<IconRefresh size={14} />}
+                      onClick={() => {
+                        const defaultDuration = 3.5; // 3 horas 30 minutos por defecto
                         const newEndTime = calculateEndTime(
-                          value, 
-                          blockForm.duration, 
+                          blockForm.startTime, 
+                          defaultDuration, 
                           blockForm.halfHourBreak,
                           isCustomFarewell ? customFarewellMinutes : 30
                         );
-                        setBlockForm({ 
-                          ...blockForm, 
-                          startTime: value,
-                          endTime: newEndTime
-                        });
+                        setBlockForm({ ...blockForm, endTime: newEndTime, duration: defaultDuration });
                         setIsEndTimeManual(false);
-                      }
-                    }}
-                    data={timeOptions.map(t => ({ value: t.key, label: t.label }))}
-                    withAsterisk
-                  />
-                  <Stack gap="xs">
-                    <Select
-                      label="Hora de fin (calculada automáticamente)"
-                      placeholder="Se calcula automáticamente"
-                      value={blockForm.endTime}
-                      onChange={(value) => {
-                        if (value) {
-                          setBlockForm({ ...blockForm, endTime: value });
-                          setIsEndTimeManual(true);
-                        }
                       }}
-                      data={timeOptions.map(t => ({ value: t.key, label: t.label }))}
-                      disabled={!isEndTimeManual}
-                      rightSection={
-                        isEndTimeManual ? (
-                          <ActionIcon
-                            size="sm"
-                            variant="subtle"
-                            onClick={() => {
-                              const newEndTime = calculateEndTime(
-                                blockForm.startTime, 
-                                blockForm.duration, 
-                                blockForm.halfHourBreak,
-                                isCustomFarewell ? customFarewellMinutes : 30
-                              );
-                              setBlockForm({ ...blockForm, endTime: newEndTime });
-                              setIsEndTimeManual(false);
-                            }}
-                            title="Restaurar cálculo automático"
-                          >
-                            <IconRefresh size={14} />
-                          </ActionIcon>
-                        ) : null
-                      }
-                    />
-                    {isEndTimeManual && (
-                      <Text size="xs" c="orange">
-                        ⚠️ Hora de fin modificada manualmente
-                      </Text>
-                    )}
-                  </Stack>
+                    >
+                      {isEndTimeManual ? "Reactivar Auto" : "Recalcular"}
+                    </Button>
+                  </Group>
                 </Group>
                 
                 {/* Time Summary Display */}
@@ -944,9 +949,11 @@ export default function TimeBlocksManager({
                         const startMinutes = timeToMinutes(blockForm.startTime);
                         const endMinutes = timeToMinutes(blockForm.endTime);
                         const totalMinutes = endMinutes - startMinutes;
-                        const hours = Math.floor(totalMinutes / 60);
-                        const minutes = totalMinutes % 60;
-                        return `${hours}h ${minutes > 0 ? `${minutes}min` : ''} total`;
+                        const despedidaMinutes = blockForm.halfHourBreak ? (isCustomFarewell ? customFarewellMinutes : 30) : 0;
+                        const eventoMinutes = totalMinutes - despedidaMinutes;
+                        const eventoHours = Math.floor(eventoMinutes / 60);
+                        const eventoMins = eventoMinutes % 60;
+                        return `${eventoHours}h ${eventoMins > 0 ? `${eventoMins}min` : ''} evento`;
                       })()}
                     </Badge>
                     {blockForm.halfHourBreak && (
@@ -959,40 +966,16 @@ export default function TimeBlocksManager({
               </Stack>
             </Card>
           
-          <Group grow>
-            <Select
-              label="Duración del evento"
-              placeholder="Selecciona duración"
-              value={blockForm.duration.toString()}
-              onChange={(value) => {
-                const duration = parseFloat(value || '3.5');
-                if (!isEndTimeManual) {
-                  const newEndTime = calculateEndTime(
-                    blockForm.startTime, 
-                    duration, 
-                    blockForm.halfHourBreak,
-                    isCustomFarewell ? customFarewellMinutes : 30
-                  );
-                  setBlockForm({ 
-                    ...blockForm, 
-                    duration,
-                    endTime: newEndTime
-                  });
-                } else {
-                  setBlockForm({ ...blockForm, duration });
-                }
-              }}
-              data={durationOptions.map(d => ({ value: d.key, label: d.label }))}
-              withAsterisk
-            />
-            <NumberInput
-              label="Máximo de eventos por bloque"
-              placeholder="1"
-              value={blockForm.maxEventsPerBlock}
-              onChange={(value) => setBlockForm({ ...blockForm, maxEventsPerBlock: typeof value === 'number' ? value : 1 })}
-              min={1}
-            />
-          </Group>
+          
+          <NumberInput
+            label="Capacidad del horario"
+            description="Número máximo de eventos que pueden ocurrir en este horario"
+            placeholder="1"
+            value={blockForm.maxEventsPerBlock}
+            onChange={(value) => setBlockForm({ ...blockForm, maxEventsPerBlock: typeof value === 'number' ? value : 1 })}
+            min={1}
+            max={10}
+          />
           
           <Card withBorder p="md">
             <Stack gap="md">
@@ -1006,16 +989,25 @@ export default function TimeBlocksManager({
                   onChange={(e) => {
                     const halfHourBreak = e.currentTarget.checked;
                     if (!isEndTimeManual) {
+                      // Calcular la duración actual del evento
+                      const startMinutes = timeToMinutes(blockForm.startTime);
+                      const endMinutes = timeToMinutes(blockForm.endTime);
+                      const totalMinutes = endMinutes - startMinutes;
+                      const oldDespedidaMinutes = blockForm.halfHourBreak ? (isCustomFarewell ? customFarewellMinutes : 30) : 0;
+                      const currentEventDuration = (totalMinutes - oldDespedidaMinutes) / 60;
+                      const duration = currentEventDuration > 0 ? currentEventDuration : 3.5;
+                      
                       const newEndTime = calculateEndTime(
                         blockForm.startTime, 
-                        blockForm.duration, 
+                        duration, 
                         halfHourBreak,
                         isCustomFarewell ? customFarewellMinutes : 30
                       );
                       setBlockForm({ 
                         ...blockForm, 
                         halfHourBreak,
-                        endTime: newEndTime
+                        endTime: newEndTime,
+                        duration: duration
                       });
                     } else {
                       setBlockForm({ ...blockForm, halfHourBreak });
@@ -1056,19 +1048,28 @@ export default function TimeBlocksManager({
                     <Group grow align="flex-end">
                       <NumberInput
                         label="Minutos de despedida"
+                        description={!isEndTimeManual ? "La hora de fin se actualizará automáticamente" : "Cambia a modo automático para recalcular"}
                         placeholder="30"
                         value={customFarewellMinutes}
                         onChange={(value) => {
                           const minutes = typeof value === 'number' ? value : 30;
                           setCustomFarewellMinutes(minutes);
                           if (!isEndTimeManual) {
+                            // Calcular la duración actual del evento
+                            const startMinutes = timeToMinutes(blockForm.startTime);
+                            const endMinutes = timeToMinutes(blockForm.endTime);
+                            const totalMinutes = endMinutes - startMinutes;
+                            const oldDespedidaMinutes = blockForm.halfHourBreak ? (isCustomFarewell ? customFarewellMinutes : 30) : 0;
+                            const currentEventDuration = (totalMinutes - oldDespedidaMinutes) / 60;
+                            const duration = currentEventDuration > 0 ? currentEventDuration : 3.5;
+                            
                             const newEndTime = calculateEndTime(
                               blockForm.startTime,
-                              blockForm.duration,
+                              duration,
                               blockForm.halfHourBreak,
                               minutes
                             );
-                            setBlockForm({ ...blockForm, endTime: newEndTime });
+                            setBlockForm({ ...blockForm, endTime: newEndTime, duration: duration });
                           }
                         }}
                         min={5}
@@ -1081,13 +1082,20 @@ export default function TimeBlocksManager({
                         size="sm"
                         leftSection={<IconRefresh size={14} />}
                         onClick={() => {
+                          const startMinutes = timeToMinutes(blockForm.startTime);
+                          const endMinutes = timeToMinutes(blockForm.endTime);
+                          const totalMinutes = endMinutes - startMinutes;
+                          const oldDespedidaMinutes = blockForm.halfHourBreak ? (isCustomFarewell ? customFarewellMinutes : 30) : 0;
+                          const currentEventDuration = (totalMinutes - oldDespedidaMinutes) / 60;
+                          const duration = currentEventDuration > 0 ? currentEventDuration : 3.5;
+                          
                           const newEndTime = calculateEndTime(
                             blockForm.startTime,
-                            blockForm.duration,
+                            duration,
                             blockForm.halfHourBreak,
                             customFarewellMinutes
                           );
-                          setBlockForm({ ...blockForm, endTime: newEndTime });
+                          setBlockForm({ ...blockForm, endTime: newEndTime, duration: duration });
                           setIsEndTimeManual(false);
                         }}
                       >
@@ -1100,67 +1108,6 @@ export default function TimeBlocksManager({
             </Stack>
           </Card>
 
-          <Card 
-            withBorder 
-            p="md" 
-            style={{ 
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-            }}>
-            <Stack gap="md">
-              <Group justify="space-between">
-                <Stack gap={4}>
-                  <Group gap="xs">
-                    <IconCalendar size={18} color="white" />
-                    <Text size="sm" fw={600} c="white">Modo Especial: Una Reserva por Día</Text>
-                  </Group>
-                  <Text size="xs" c="white" opacity={0.9}>
-                    Permite mostrar múltiples horarios pero solo aceptar una reserva
-                  </Text>
-                </Stack>
-                <Switch
-                  size="lg"
-                  checked={blockForm.oneReservationPerDay}
-                  onChange={(e) => {
-                    const onePerDay = e.currentTarget.checked;
-                    setBlockForm({ 
-                      ...blockForm, 
-                      oneReservationPerDay: onePerDay,
-                      maxEventsPerBlock: onePerDay ? 1 : blockForm.maxEventsPerBlock
-                    });
-                  }}
-                  styles={{
-                    track: {
-                      backgroundColor: blockForm.oneReservationPerDay ? '#40c057' : 'rgba(255,255,255,0.3)'
-                    }
-                  }}
-                />
-              </Group>
-              
-              {blockForm.oneReservationPerDay && (
-                <Card p="sm" style={{ backgroundColor: 'rgba(255,255,255,0.95)' }}>
-                  <Stack gap="xs">
-                    <Group gap="xs">
-                      <div style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        backgroundColor: '#40c057'
-                      }} />
-                      <Text size="sm" fw={500}>Funcionalidad Activada</Text>
-                    </Group>
-                    <Text size="xs" c="dimmed">
-                      Perfecto para cuando quieres ofrecer flexibilidad de horarios pero solo 
-                      puedes atender un evento por día. Los clientes verán todos los horarios 
-                      disponibles, pero al reservar uno, el día completo se bloquea.
-                    </Text>
-                    <Text size="xs" c="blue" fw={500}>
-                      ✓ Permite horarios superpuestos con otros bloques
-                    </Text>
-                  </Stack>
-                </Card>
-              )}
-            </Stack>
-          </Card>
           
           <Group justify="flex-end" mt="lg">
             <Button variant="light" onClick={closeBlock}>

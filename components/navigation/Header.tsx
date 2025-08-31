@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { FiMenu, FiX } from 'react-icons/fi'
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs'
 import { usePathname } from 'next/navigation'
+import { Button } from '@mantine/core'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)

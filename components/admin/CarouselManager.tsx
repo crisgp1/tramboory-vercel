@@ -34,8 +34,11 @@ import {
   IconSparkles,
   IconInfoCircle,
   IconUpload,
-  IconGripVertical
+  IconGripVertical,
+  IconCalendar,
+  IconClock
 } from "@tabler/icons-react"
+import { DateTimePicker } from '@mantine/dates';
 import { useDisclosure } from "@mantine/hooks"
 import { notifications } from "@mantine/notifications"
 import { CarouselCard } from "@/types/carousel"
@@ -79,7 +82,14 @@ export default function CarouselManager() {
     backgroundMedia: { type: "gradient" },
     gradientColors: "from-pink-500 to-purple-600",
     isActive: true,
-    order: 0
+    order: 0,
+    // Campos de programación
+    scheduling: {
+      enabled: false,
+      publishDate: null,
+      expireDate: null,
+      autoActivate: false
+    }
   })
 
   const handleEdit = (card: CarouselCard) => {
@@ -89,6 +99,12 @@ export default function CarouselManager() {
       ...card,
       backgroundMedia: {
         ...card.backgroundMedia
+      },
+      scheduling: card.scheduling || {
+        enabled: false,
+        publishDate: null,
+        expireDate: null,
+        autoActivate: false
       }
     })
     open()
@@ -106,7 +122,13 @@ export default function CarouselManager() {
       backgroundMedia: { type: "gradient" },
       gradientColors: "from-pink-500 to-purple-600",
       isActive: true,
-      order: nextOrder
+      order: nextOrder,
+      scheduling: {
+        enabled: false,
+        publishDate: null,
+        expireDate: null,
+        autoActivate: false
+      }
     })
     open()
   }
@@ -269,18 +291,39 @@ export default function CarouselManager() {
                     </Group>
                     <Text size="sm" c="dimmed">Orden: {card.order}</Text>
                   </div>
-                  <Group gap="xs">
+                  <Stack gap="xs" align="flex-end">
                     {card.isActive ? (
                       <Badge color="green" variant="filled">Activo</Badge>
                     ) : (
                       <Badge color="gray" variant="outline">Inactivo</Badge>
                     )}
-                  </Group>
+                    {card.scheduling?.enabled && (
+                      <Badge 
+                        color="blue" 
+                        variant="light" 
+                        leftSection={<IconCalendar size={12} />}
+                      >
+                        Programada
+                      </Badge>
+                    )}
+                  </Stack>
                 </Group>
 
                 <Text size="sm" c="dimmed" lineClamp={2}>
                   {card.description}
                 </Text>
+
+                {card.scheduling?.enabled && card.scheduling.publishDate && (
+                  <Text size="xs" c="blue" fw={500}>
+                    📅 Se activará: {new Date(card.scheduling.publishDate).toLocaleDateString('es-MX', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </Text>
+                )}
 
                 <Group justify="space-between" mt="sm">
                   <Group gap="xs">
@@ -366,7 +409,7 @@ export default function CarouselManager() {
                 label="Orden"
                 placeholder="0"
                 value={formData.order}
-                onChange={(value) => setFormData(prev => ({ ...prev, order: value || 0 }))}
+                onChange={(value) => setFormData(prev => ({ ...prev, order: Number(value) || 0 }))}
                 min={0}
               />
             </Grid.Col>
@@ -450,6 +493,100 @@ export default function CarouselManager() {
             checked={formData.isActive}
             onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.currentTarget.checked }))}
           />
+
+          <Divider label="Programación de Publicación" />
+
+          <Switch
+            label="Programar publicación"
+            description="Activa esta tarjeta automáticamente en una fecha específica"
+            checked={formData.scheduling?.enabled || false}
+            onChange={(e) => setFormData(prev => ({ 
+              ...prev, 
+              scheduling: { 
+                ...prev.scheduling, 
+                enabled: e.currentTarget?.checked || false,
+                publishDate: prev.scheduling?.publishDate || null,
+                expireDate: prev.scheduling?.expireDate || null,
+                autoActivate: prev.scheduling?.autoActivate || false
+              }
+            }))}
+          />
+
+          {formData.scheduling?.enabled && (
+            <Stack gap="md" p="md" style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderRadius: 8 }}>
+              <Group gap="sm">
+                <IconCalendar size={20} color="var(--mantine-color-blue-6)" />
+                <Text fw={500} c="blue">Configuración de Programación</Text>
+              </Group>
+
+              <Grid>
+                <Grid.Col span={6}>
+                  <DateTimePicker
+                    label="Fecha de publicación"
+                    description="Cuándo se activará esta tarjeta automáticamente"
+                    placeholder="Selecciona fecha y hora"
+                    value={formData.scheduling?.publishDate}
+                    onChange={(date) => setFormData(prev => ({ 
+                      ...prev, 
+                      scheduling: { 
+                        ...prev.scheduling!, 
+                        publishDate: date ? new Date(date) : null
+                      }
+                    }))}
+                    minDate={new Date()}
+                    clearable
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <DateTimePicker
+                    label="Fecha de expiración (opcional)"
+                    description="Cuándo se desactivará automáticamente"
+                    placeholder="Selecciona fecha y hora"
+                    value={formData.scheduling?.expireDate}
+                    onChange={(date) => setFormData(prev => ({ 
+                      ...prev, 
+                      scheduling: { 
+                        ...prev.scheduling!, 
+                        expireDate: date ? new Date(date) : null
+                      }
+                    }))}
+                    minDate={formData.scheduling?.publishDate ? new Date(formData.scheduling.publishDate) : new Date()}
+                    clearable
+                  />
+                </Grid.Col>
+              </Grid>
+
+              <Switch
+                label="Activación automática"
+                description="Desactiva otras tarjetas cuando se active esta"
+                checked={formData.scheduling?.autoActivate || false}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  scheduling: { 
+                    ...prev.scheduling!, 
+                    autoActivate: e.currentTarget?.checked || false
+                  }
+                }))}
+              />
+
+              <Alert icon={<IconClock size={16} />} color="blue" variant="light">
+                <Text size="sm">
+                  Las publicaciones programadas se procesan automáticamente cada hora. 
+                  {formData.scheduling?.publishDate && (
+                    <><br />Esta tarjeta se activará el <strong>{new Date(formData.scheduling.publishDate).toLocaleDateString('es-MX', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    })}</strong></>
+                  )}
+                </Text>
+              </Alert>
+            </Stack>
+          )}
 
           <Group justify="flex-end" mt="md">
             <Button 

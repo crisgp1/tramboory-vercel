@@ -106,12 +106,25 @@ export async function GET(request: NextRequest) {
         block.days.includes(dayOfWeek)
       ) || [];
       
-      // Calculate total capacity for the day based on time blocks
-      let totalDayCapacity = dayTimeBlocks.reduce((total: number, block: TimeBlock) => {
-        return total + block.maxEventsPerBlock;
-      }, 0);
+      // Calculate capacity based on system configuration
+      let totalDayCapacity = 0;
       
-      // If it's a rest day that can be released and no blocks configured, add default capacity
+      if (dayTimeBlocks.length > 0) {
+        // Check if system has global oneEventPerDay policy
+        const oneEventPerDay = systemConfig.oneEventPerDay ?? true;
+        
+        if (oneEventPerDay) {
+          // ONE EVENT PER DAY LOGIC: Set capacity to 1
+          totalDayCapacity = 1;
+        } else {
+          // Calculate total capacity based on individual block capacities
+          totalDayCapacity = dayTimeBlocks.reduce((total: number, block: TimeBlock) => {
+            return total + block.maxEventsPerBlock;
+          }, 0);
+        }
+      }
+      
+      // If it's a rest day that can be released and no blocks configured
       const isRestDay = !!restDay;
       if (isRestDay && restDay && restDay.canBeReleased && dayTimeBlocks.length === 0) {
         totalDayCapacity = 2; // Default capacity for rest days

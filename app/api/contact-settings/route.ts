@@ -74,8 +74,8 @@ export async function GET() {
       // Si ya existe pero le faltan campos bancarios, agregarlos
       let needsUpdate = false;
       
-      if (!settings.bankingInfo) {
-        settings.bankingInfo = {
+      if (!(settings as any).bankingInfo) {
+        (settings as any).bankingInfo = {
           bankName: 'BBVA México',
           accountHolder: 'Tramboory S.A. de C.V.',
           clabe: '',
@@ -87,8 +87,8 @@ export async function GET() {
         needsUpdate = true;
       }
       
-      if (!settings.discountSettings) {
-        settings.discountSettings = {
+      if (!(settings as any).discountSettings) {
+        (settings as any).discountSettings = {
           cashDiscount: {
             enabled: false,
             percentage: 0,
@@ -104,8 +104,8 @@ export async function GET() {
         await ContactSettings.findOneAndUpdate(
           { isActive: true },
           {
-            bankingInfo: settings.bankingInfo,
-            discountSettings: settings.discountSettings,
+            bankingInfo: (settings as any).bankingInfo,
+            discountSettings: (settings as any).discountSettings,
             updatedAt: new Date()
           }
         );

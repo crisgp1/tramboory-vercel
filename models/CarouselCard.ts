@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ICarouselCard extends Document {
   // Contenido de la tarjeta
@@ -26,6 +26,10 @@ export interface ICarouselCard extends Document {
   createdBy?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ICarouselCardModel extends Model<ICarouselCard> {
+  getActiveCards(): Promise<ICarouselCard[]>;
 }
 
 const carouselCardSchema = new Schema<ICarouselCard>({
@@ -101,4 +105,4 @@ carouselCardSchema.statics.getActiveCards = function() {
   return this.find({ isActive: true }).sort({ order: 1, createdAt: 1 });
 };
 
-export const CarouselCard = mongoose.models.CarouselCard || mongoose.model<ICarouselCard>('CarouselCard', carouselCardSchema);
+export const CarouselCard = (mongoose.models.CarouselCard || mongoose.model<ICarouselCard, ICarouselCardModel>('CarouselCard', carouselCardSchema)) as ICarouselCardModel;

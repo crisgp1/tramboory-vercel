@@ -249,39 +249,53 @@ export async function POST(request: NextRequest) {
       return (eventStartMinutes < resEndMinutesCalc && resStartMinutes < eventEndMinutesCalc);
     });
     
-    // Verificar capacidad del bloque de tiempo
-    if (validBlock) {
-      // Special handling for oneReservationPerDay blocks
-      if (validBlock.oneReservationPerDay) {
-        // Check if there's ANY reservation on this day (regardless of time)
-        if (existingReservations.length > 0) {
-          console.error('One reservation per day block - day already has reservation:', {
-            blockName: validBlock.name,
-            eventDate,
-            existingReservationsCount: existingReservations.length,
-            existingTimes: existingReservations.map(r => r.eventTime)
-          });
-          return NextResponse.json(
-            { success: false, error: 'Ya existe una reserva para este día. Este bloque de horario solo permite una reserva por día.' },
-            { status: 400 }
-          );
-        }
-      } else {
-        // Normal capacity check for regular blocks
-        const maxEventsInBlock = validBlock.maxEventsPerBlock || 1;
-        if (conflictingReservations.length >= maxEventsInBlock) {
-          console.error('Block capacity exceeded:', {
-            blockName: validBlock.name,
-            maxEventsInBlock,
-            conflictingReservations: conflictingReservations.length,
-            eventTime,
-            existingTimes: conflictingReservations.map(r => r.eventTime)
-          });
-          return NextResponse.json(
-            { success: false, error: 'Este horario ya está completo. Por favor selecciona otro horario disponible.' },
-            { status: 400 }
-          );
-        }
+    // Check if system has global oneEventPerDay policy
+    const oneEventPerDay = systemConfig.oneEventPerDay ?? true;
+    
+    if (oneEventPerDay) {
+      // Check if there's ANY reservation on this day (regardless of time)
+      if (existingReservations.length > 0) {
+        console.error('One event per day policy - day already has reservation:', {
+          eventDate,
+          existingReservationsCount: existingReservations.length,
+          existingTimes: existingReservations.map(r => r.eventTime)
+        });
+        return NextResponse.json(
+          { success: false, error: 'Ya existe una reserva para este día. Solo se permite un evento por día.' },
+          { status: 400 }
+        );
+      }
+    } else if (validBlock) {
+      // Normal capacity check for blocks without oneReservationPerDay
+      const conflictingReservations = existingReservations.filter(res => {
+        const resStartTime = res.eventTime;
+        const resDuration = res.eventDuration || systemConfig.defaultEventDuration;
+        const [resHour, resMin] = resStartTime.split(':').map(Number);
+        const resEndMinutes = (resHour * 60 + resMin) + (resDuration * 60);
+        
+        // Convertir todo a minutos para comparación
+        const [eventHour, eventMin] = eventTime.split(':').map(Number);
+        const eventStartMinutes = eventHour * 60 + eventMin;
+        const eventEndMinutes = eventStartMinutes + (eventDuration * 60);
+        const resStartMinutes = resHour * 60 + resMin;
+        
+        // Verificar solapamiento
+        return (eventStartMinutes < resEndMinutes && resStartMinutes < eventEndMinutes);
+      });
+      
+      const maxEventsInBlock = validBlock.maxEventsPerBlock || 1;
+      if (conflictingReservations.length >= maxEventsInBlock) {
+        console.error('Block capacity exceeded:', {
+          blockName: validBlock.name,
+          maxEventsInBlock,
+          conflictingReservations: conflictingReservations.length,
+          eventTime,
+          existingTimes: conflictingReservations.map(r => r.eventTime)
+        });
+        return NextResponse.json(
+          { success: false, error: 'Este horario ya está completo. Por favor selecciona otro horario disponible.' },
+          { status: 400 }
+        );
       }
     }
     

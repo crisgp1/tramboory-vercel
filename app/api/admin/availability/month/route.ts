@@ -96,36 +96,62 @@ export async function GET(request: NextRequest) {
         block.days.includes(dayOfWeek)
       ) || [];
       
-      // Calculate total slots and available slots
+      // Calculate total slots and available slots based on block configurations
       let totalSlots = 0;
       let availableSlots = 0;
       
       if (dayBlocks.length > 0) {
-        for (const block of dayBlocks) {
-          const blockSlots = generateBlockSlots(
-            block.startTime,
-            block.endTime,
-            block.duration,
-            block.halfHourBreak
-          );
+        // Check if system has global oneEventPerDay policy
+        const oneEventPerDay = systemConfig.oneEventPerDay ?? true;
+        
+        if (oneEventPerDay) {
+          // ONE EVENT PER DAY LOGIC
+          // Count total available time slots for display purposes
+          for (const block of dayBlocks) {
+            const blockSlots = generateBlockSlots(
+              block.startTime,
+              block.endTime,
+              block.duration,
+              block.halfHourBreak
+            );
+            totalSlots += blockSlots.length;
+          }
           
-          for (const slot of blockSlots) {
-            totalSlots++;
+          // If there's ANY reservation on this day, all slots are unavailable
+          if (dayReservations.length > 0) {
+            availableSlots = 0;
+          } else {
+            // Otherwise, all slots are available (but only one can be booked)
+            availableSlots = totalSlots;
+          }
+        } else {
+          // MULTIPLE EVENTS LOGIC - calculate based on individual block capacities
+          for (const block of dayBlocks) {
+            const blockSlots = generateBlockSlots(
+              block.startTime,
+              block.endTime,
+              block.duration,
+              block.halfHourBreak
+            );
             
-            // Check if this slot is available
-            const slotReservations = dayReservations.filter(res => {
-              const resTime = res.eventTime;
-              const resEndTime = calculateEndTime(resTime, res.eventDuration || systemConfig.defaultEventDuration);
-              const slotEndTime = calculateEndTime(slot.time, block.duration);
+            for (const slot of blockSlots) {
+              totalSlots++;
               
-              return isTimeOverlap(
-                { start: resTime, end: resEndTime },
-                { start: slot.time, end: slotEndTime }
-              );
-            });
-            
-            if (slotReservations.length < block.maxEventsPerBlock) {
-              availableSlots++;
+              // Check if this slot is available
+              const slotReservations = dayReservations.filter(res => {
+                const resTime = res.eventTime;
+                const resEndTime = calculateEndTime(resTime, res.eventDuration || systemConfig.defaultEventDuration);
+                const slotEndTime = calculateEndTime(slot.time, block.duration);
+                
+                return isTimeOverlap(
+                  { start: resTime, end: resEndTime },
+                  { start: slot.time, end: slotEndTime }
+                );
+              });
+              
+              if (slotReservations.length < block.maxEventsPerBlock) {
+                availableSlots++;
+              }
             }
           }
         }

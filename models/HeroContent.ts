@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IHeroContent extends Document {
   // Texto principal
@@ -41,6 +41,11 @@ export interface IHeroContent extends Document {
   createdBy?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface IHeroContentModel extends Model<IHeroContent> {
+  getActive(): Promise<IHeroContent | null>;
+  activate(id: string): Promise<any>;
 }
 
 const heroContentSchema = new Schema<IHeroContent>({
@@ -174,4 +179,4 @@ heroContentSchema.statics.activate = function(id: string) {
   ]);
 };
 
-export const HeroContent = mongoose.models.HeroContent || mongoose.model<IHeroContent>('HeroContent', heroContentSchema);
+export const HeroContent = (mongoose.models.HeroContent || mongoose.model<IHeroContent, IHeroContentModel>('HeroContent', heroContentSchema)) as IHeroContentModel;

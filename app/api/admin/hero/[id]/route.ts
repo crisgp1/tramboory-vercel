@@ -7,10 +7,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  
-    
-    
-    const { id } = await params;const { id } = await params;const { id } = await params;try {
+  try {
+    const { id } = await params;
     await dbConnect();
     
     const hero = await HeroContent.findById(id).lean();
@@ -40,10 +38,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  
-    
-    
-    const { id } = await params;const { id } = await params;const { id } = await params;try {
+  try {
+    const { id } = await params;
     await dbConnect();
     
     const body = await request.json();
@@ -98,10 +94,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  
-    
-    
-    const { id } = await params;const { id } = await params;const { id } = await params;try {
+  try {
+    const { id } = await params;
     await dbConnect();
     
     const hero = await HeroContent.findById(id);

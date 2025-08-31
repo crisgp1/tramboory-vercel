@@ -73,8 +73,32 @@ export async function GET(request: NextRequest) {
       status: { $ne: 'cancelled' }
     });
     
+    // Check if system has oneEventPerDay policy globally
+    const oneEventPerDay = systemConfig.oneEventPerDay ?? true;
+    
     // Check availability for each time slot
     const availableSlots = dayTimeBlocks.map((block: any) => {
+      // If system has oneEventPerDay policy
+      if (oneEventPerDay) {
+        // Check if there's ANY reservation on this day
+        if (existingReservations.length > 0) {
+          return {
+            time: block.startTime,
+            available: false,
+            remainingCapacity: 0,
+            totalCapacity: 1
+          };
+        }
+        // Otherwise, the slot is available (only one event per day allowed)
+        return {
+          time: block.startTime,
+          available: true,
+          remainingCapacity: 1,
+          totalCapacity: 1
+        };
+      }
+      
+      // For systems without oneEventPerDay, check capacity normally
       const reservationsAtTime = existingReservations.filter(res => 
         res.eventTime === block.startTime
       );

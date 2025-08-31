@@ -461,7 +461,7 @@ export default function PostScheduler() {
             label="Fecha y Hora de Publicación *"
             placeholder="Selecciona cuándo publicar"
             value={formData.scheduledDate}
-            onChange={(date) => setFormData(prev => ({ ...prev, scheduledDate: date }))}
+            onChange={(date) => setFormData(prev => ({ ...prev, scheduledDate: date ? new Date(date) : null }))}
             minDate={new Date()}
             required
           />
@@ -489,12 +489,6 @@ export default function PostScheduler() {
             value={formData.tags}
             onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
             searchable
-            creatable
-            getCreateLabel={(query) => `+ Crear "${query}"`}
-            onCreate={(query) => {
-              const item = { value: query, label: query };
-              return item;
-            }}
           />
 
           {formData.platform === 'social' || formData.platform === 'all' && (

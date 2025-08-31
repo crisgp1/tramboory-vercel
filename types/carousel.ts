@@ -22,6 +22,15 @@ export interface CarouselCard {
   // Configuración
   isActive: boolean
   order: number // Para ordenar las tarjetas
+
+  // Programación de publicación (opcional)
+  scheduling?: {
+    enabled: boolean
+    publishDate: Date | null
+    expireDate: Date | null
+    autoActivate: boolean
+    status?: 'pending' | 'published' | 'expired'
+  }
   
   // Metadata
   createdAt?: Date

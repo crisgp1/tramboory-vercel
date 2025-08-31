@@ -12,8 +12,8 @@ export async function GET() {
     // Mapear _id a id para compatibilidad con el frontend
     const mappedCards = cards.map(card => ({
       ...card,
-      id: card._id.toString(),
-      _id: card._id.toString()
+      id: (card as any)._id.toString(),
+      _id: (card as any)._id.toString()
     }));
     
     return NextResponse.json({
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         ...card.toObject(),
-        id: card._id.toString()
+        id: (card as any)._id.toString()
       },
       message: 'Tarjeta creada correctamente'
     });

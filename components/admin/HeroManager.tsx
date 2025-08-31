@@ -35,8 +35,11 @@ import {
   IconVideo,
   IconSparkles,
   IconInfoCircle,
-  IconUpload
+  IconUpload,
+  IconCalendar,
+  IconClock
 } from "@tabler/icons-react"
+import { DateTimePicker } from '@mantine/dates';
 import { useDisclosure } from "@mantine/hooks"
 import { notifications } from "@mantine/notifications"
 import { HeroContent } from "@/types/hero"
@@ -65,6 +68,13 @@ export default function HeroManager() {
       show: false,
       text: "",
       highlightColor: "yellow"
+    },
+    // Campos de programación
+    scheduling: {
+      enabled: false,
+      publishDate: null,
+      expireDate: null,
+      autoActivate: false
     }
   })
 
@@ -82,6 +92,12 @@ export default function HeroManager() {
         show: false,
         text: "",
         highlightColor: "yellow"
+      },
+      scheduling: hero.scheduling || {
+        enabled: false,
+        publishDate: null,
+        expireDate: null,
+        autoActivate: false
       }
     })
     open()
@@ -103,6 +119,12 @@ export default function HeroManager() {
         show: false,
         text: "",
         highlightColor: "yellow"
+      },
+      scheduling: {
+        enabled: false,
+        publishDate: null,
+        expireDate: null,
+        autoActivate: false
       }
     })
     open()
@@ -275,14 +297,37 @@ export default function HeroManager() {
                     <Text fw={500} lineClamp={1}>{hero.mainTitle}</Text>
                     <Text fw={700} size="lg" c="blue" lineClamp={1}>{hero.brandTitle}</Text>
                   </div>
-                  {hero.isActive && (
-                    <Badge color="green" variant="filled">Activo</Badge>
-                  )}
+                  <Stack gap="xs" align="flex-end">
+                    {hero.isActive && (
+                      <Badge color="green" variant="filled">Activo</Badge>
+                    )}
+                    {hero.scheduling?.enabled && (
+                      <Badge 
+                        color="blue" 
+                        variant="light" 
+                        leftSection={<IconCalendar size={12} />}
+                      >
+                        Programado
+                      </Badge>
+                    )}
+                  </Stack>
                 </Group>
 
                 <Text size="sm" c="dimmed" lineClamp={2}>
                   {hero.subtitle}
                 </Text>
+
+                {hero.scheduling?.enabled && hero.scheduling.publishDate && (
+                  <Text size="xs" c="blue" fw={500}>
+                    📅 Se activará: {new Date(hero.scheduling.publishDate).toLocaleDateString('es-MX', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </Text>
+                )}
 
                 {hero.promotion?.show && (
                   <Badge color={hero.promotion.highlightColor} variant="light">
@@ -616,6 +661,100 @@ export default function HeroManager() {
                 />
               </Grid.Col>
             </Grid>
+          )}
+
+          <Divider label="Programación de Publicación" />
+
+          <Switch
+            label="Programar publicación"
+            description="Activa este hero automáticamente en una fecha específica"
+            checked={formData.scheduling?.enabled || false}
+            onChange={(e) => setFormData(prev => ({ 
+              ...prev, 
+              scheduling: { 
+                ...prev.scheduling, 
+                enabled: e.currentTarget?.checked || false,
+                publishDate: prev.scheduling?.publishDate || null,
+                expireDate: prev.scheduling?.expireDate || null,
+                autoActivate: prev.scheduling?.autoActivate || false
+              }
+            }))}
+          />
+
+          {formData.scheduling?.enabled && (
+            <Stack gap="md" p="md" style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderRadius: 8 }}>
+              <Group gap="sm">
+                <IconCalendar size={20} color="var(--mantine-color-blue-6)" />
+                <Text fw={500} c="blue">Configuración de Programación</Text>
+              </Group>
+
+              <Grid>
+                <Grid.Col span={6}>
+                  <DateTimePicker
+                    label="Fecha de publicación"
+                    description="Cuándo se activará este hero automáticamente"
+                    placeholder="Selecciona fecha y hora"
+                    value={formData.scheduling?.publishDate}
+                    onChange={(date) => setFormData(prev => ({ 
+                      ...prev, 
+                      scheduling: { 
+                        ...prev.scheduling!, 
+                        publishDate: date ? new Date(date) : null
+                      }
+                    }))}
+                    minDate={new Date()}
+                    clearable
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <DateTimePicker
+                    label="Fecha de expiración (opcional)"
+                    description="Cuándo se desactivará automáticamente"
+                    placeholder="Selecciona fecha y hora"
+                    value={formData.scheduling?.expireDate}
+                    onChange={(date) => setFormData(prev => ({ 
+                      ...prev, 
+                      scheduling: { 
+                        ...prev.scheduling!, 
+                        expireDate: date ? new Date(date) : null
+                      }
+                    }))}
+                    minDate={formData.scheduling?.publishDate ? new Date(formData.scheduling.publishDate) : new Date()}
+                    clearable
+                  />
+                </Grid.Col>
+              </Grid>
+
+              <Switch
+                label="Activación automática"
+                description="Desactiva el hero actualmente activo cuando se active este"
+                checked={formData.scheduling?.autoActivate || false}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  scheduling: { 
+                    ...prev.scheduling!, 
+                    autoActivate: e.currentTarget?.checked || false
+                  }
+                }))}
+              />
+
+              <Alert icon={<IconClock size={16} />} color="blue" variant="light">
+                <Text size="sm">
+                  Las publicaciones programadas se procesan automáticamente cada hora. 
+                  {formData.scheduling?.publishDate && (
+                    <><br />Este hero se activará el <strong>{new Date(formData.scheduling.publishDate).toLocaleDateString('es-MX', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    })}</strong></>
+                  )}
+                </Text>
+              </Alert>
+            </Stack>
           )}
 
           <Group justify="flex-end" mt="md">

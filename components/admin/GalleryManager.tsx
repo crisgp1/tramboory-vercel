@@ -90,8 +90,8 @@ export function GalleryManager() {
   }, [])
 
   // Manejar subida de archivos
-  const handleFileUpload = async (file: File) => {
-    if (!file) return
+  const handleFileUpload = async (file: File | null) => {
+    if (!file) return;
 
     setUploading(true)
     try {
@@ -346,7 +346,6 @@ export function GalleryManager() {
             placeholder="Selecciona un archivo"
             accept="image/*,video/*"
             onChange={handleFileUpload}
-            loading={uploading}
           />
 
           {form.values.src && (

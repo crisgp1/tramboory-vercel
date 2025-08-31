@@ -24,7 +24,7 @@ export async function GET(
       success: true,
       data: {
         ...card,
-        id: card._id.toString()
+        id: (card as any)._id.toString()
       }
     });
   } catch (error) {
@@ -83,7 +83,7 @@ export async function PUT(
       success: true,
       data: {
         ...card.toObject(),
-        id: card._id.toString()
+        id: (card as any)._id.toString()
       },
       message: 'Tarjeta actualizada correctamente'
     });

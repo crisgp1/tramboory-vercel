@@ -20,7 +20,8 @@ import {
   Alert,
   Center,
   ThemeIcon,
-  Divider
+  Divider,
+  Radio
 } from '@mantine/core';
 import {
   IconSettings,
@@ -39,6 +40,7 @@ interface SystemConfig {
   minAdvanceBookingDays: number;
   maxConcurrentEvents: number;
   defaultEventDuration: number;
+  oneEventPerDay: boolean;
   timeBlocks?: {
     name: string;
     days: number[];
@@ -80,6 +82,7 @@ export default function SystemConfigManager() {
     minAdvanceBookingDays: 7,
     maxConcurrentEvents: 3,
     defaultEventDuration: 4,
+    oneEventPerDay: true,
     timeBlocks: [],
     restDays: [],
     isActive: true
@@ -105,6 +108,7 @@ export default function SystemConfigManager() {
           minAdvanceBookingDays: data.data.minAdvanceBookingDays ?? 7,
           maxConcurrentEvents: data.data.maxConcurrentEvents ?? 3,
           defaultEventDuration: data.data.defaultEventDuration ?? 4,
+          oneEventPerDay: data.data.oneEventPerDay ?? true,
           timeBlocks: data.data.timeBlocks || [],
           restDays: data.data.restDays || [],
           isActive: data.data.isActive ?? true,
@@ -121,6 +125,7 @@ export default function SystemConfigManager() {
           minAdvanceBookingDays: 7,
           maxConcurrentEvents: 3,
           defaultEventDuration: 4,
+          oneEventPerDay: true,
           timeBlocks: [],
           restDays: [],
           isActive: true
@@ -279,24 +284,86 @@ export default function SystemConfigManager() {
                       placeholder="30"
                     />
 
-                    <NumberInput
-                      label="Máximo de eventos simultáneos"
-                      description={`Máximo ${config.maxConcurrentEvents || 3} eventos al mismo tiempo`}
-                      value={config.maxConcurrentEvents || 3}
-                      onChange={(value) => handleConfigChange('maxConcurrentEvents', typeof value === 'number' ? value : 1)}
-                      min={1}
-                      placeholder="3"
-                    />
+                    {/* CONFIGURACIÓN GLOBAL DE EVENTOS POR DÍA */}
+                    <Card withBorder p="md" bg="orange.0">
+                      <Stack gap="md">
+                        <Group gap="xs">
+                          <IconCalendar size={20} color="#f08c00" />
+                          <Text size="md" fw={600} c="orange.9">
+                            Política de Eventos por Día
+                          </Text>
+                        </Group>
+                        
+                        <Radio.Group
+                          value={config.oneEventPerDay ? 'one' : 'multiple'}
+                          onChange={(value) => {
+                            const isOnePerDay = value === 'one';
+                            handleConfigChange('oneEventPerDay', isOnePerDay);
+                            if (isOnePerDay) {
+                              handleConfigChange('maxConcurrentEvents', 1);
+                            }
+                          }}
+                        >
+                          <Stack gap="md">
+                            <Radio 
+                              value="one" 
+                              label={
+                                <Stack gap="xs">
+                                  <Group gap="xs">
+                                    <Text fw={600}>Un evento por día</Text>
+                                    <Badge color="orange" size="sm">Recomendado</Badge>
+                                  </Group>
+                                  <Text size="sm" c="dimmed">
+                                    Solo se permite UNA reserva por día. Ideal para eventos exclusivos.
+                                  </Text>
+                                  <Alert icon={<IconCheck size={16} />} color="blue" p="xs">
+                                    <Text size="xs">
+                                      Cuando un cliente reserva cualquier horario, todos los demás horarios 
+                                      del mismo día se bloquean automáticamente.
+                                    </Text>
+                                  </Alert>
+                                </Stack>
+                              }
+                            />
+                            
+                            <Radio 
+                              value="multiple" 
+                              label={
+                                <Stack gap="xs">
+                                  <Text fw={600}>Múltiples eventos por día</Text>
+                                  <Text size="sm" c="dimmed">
+                                    Permite varios eventos en el mismo día según la capacidad.
+                                  </Text>
+                                  {!config.oneEventPerDay && (
+                                    <NumberInput
+                                      label="Máximo de eventos simultáneos"
+                                      description="Eventos que pueden ocurrir al mismo tiempo"
+                                      value={config.maxConcurrentEvents || 3}
+                                      onChange={(value) => handleConfigChange('maxConcurrentEvents', typeof value === 'number' ? value : 1)}
+                                      min={1}
+                                      max={10}
+                                      mt="sm"
+                                    />
+                                  )}
+                                </Stack>
+                              }
+                            />
+                          </Stack>
+                        </Radio.Group>
+                        
+                        <Badge 
+                          size="lg" 
+                          color={config.oneEventPerDay ? "orange" : "green"}
+                          variant="filled"
+                          fullWidth
+                        >
+                          {config.oneEventPerDay 
+                            ? "Sistema configurado: 1 evento máximo por día" 
+                            : `Sistema configurado: ${config.maxConcurrentEvents} eventos simultáneos`}
+                        </Badge>
+                      </Stack>
+                    </Card>
 
-                    <NumberInput
-                      label="Duración predeterminada del evento (horas)"
-                      description={`Duración estándar: ${config.defaultEventDuration || 4} horas`}
-                      value={config.defaultEventDuration || 4}
-                      onChange={(value) => handleConfigChange('defaultEventDuration', typeof value === 'number' ? value : 4)}
-                      min={1}
-                      max={12}
-                      placeholder="4"
-                    />
 
                     <Stack gap="sm">
                       <Text size="sm" fw={500}>Estado del sistema</Text>

@@ -5,6 +5,7 @@ export interface ISystemConfig extends Document {
   minAdvanceBookingDays: number;
   maxConcurrentEvents: number;
   defaultEventDuration: number;
+  oneEventPerDay: boolean;
   timeBlocks: {
     name: string;
     days: number[];
@@ -13,6 +14,7 @@ export interface ISystemConfig extends Document {
     duration: number;
     halfHourBreak: boolean;
     maxEventsPerBlock: number;
+    oneReservationPerDay?: boolean;
   }[];
   restDays: {
     day: number;
@@ -48,6 +50,11 @@ const SystemConfigSchema = new Schema<ISystemConfig>({
     min: [1, 'La duración mínima es 1 hora'],
     max: [24, 'La duración máxima es 24 horas']
   },
+  oneEventPerDay: {
+    type: Boolean,
+    default: true,
+    required: false
+  },
   timeBlocks: [{
     name: {
       type: String,
@@ -82,6 +89,11 @@ const SystemConfigSchema = new Schema<ISystemConfig>({
       type: Number,
       required: [true, 'El máximo de eventos por bloque es requerido'],
       min: [1, 'Debe permitir al menos 1 evento']
+    },
+    oneReservationPerDay: {
+      type: Boolean,
+      default: false,
+      required: false
     }
   }],
   restDays: [{
