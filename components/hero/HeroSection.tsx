@@ -193,7 +193,7 @@ export function HeroSection() {
                 </div>
               )}
               
-              <span className="font-funhouse bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 relative z-10 text-5xl sm:text-7xl md:text-8xl lg:text-8xl inline-block max-w-full break-words">
+              <span className="font-funhouse bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 relative z-10 text-4xl sm:text-6xl md:text-7xl lg:text-8xl inline-block max-w-full break-words">
                 {heroContent.brandTitle}
               </span>
             </span>
