@@ -199,8 +199,8 @@ export function InfiniteCarousel() {
           },
         }}
       >
-        {cards.map((card) => (
-          <SplideSlide key={card.id}>
+        {cards.map((card, index) => (
+          <SplideSlide key={card._id || card.id || `carousel-card-${index}`}>
             <CarouselCardComponent
               card={card}
               isActive={true}

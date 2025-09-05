@@ -138,7 +138,7 @@ export function HeroSection() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="container mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-28 text-center relative z-10"
+        className="container mx-auto px-6 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-28 text-center relative z-10 max-w-full"
       >
         <div className="max-w-4xl mx-auto">
           {/* Promoción especial (si está activa) */}
@@ -164,13 +164,13 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-6 leading-[0.88] tracking-tight"
+            className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white mb-6 leading-[0.88] tracking-tight"
           >
-            <span className="block">{heroContent.mainTitle}</span>
-            <span className="block relative">
+            <span className="block text-center">{heroContent.mainTitle}</span>
+            <span className="block relative inline-block max-w-full overflow-visible">
               {/* Glitter exterior para Tramboory - Solo si está habilitado */}
               {heroContent.showGlitter && (
-                <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
                   <div className="absolute -top-4 -left-8 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
                   <div className="absolute -top-6 left-12 w-1.5 h-1.5 bg-pink-400 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
                   <div className="absolute -top-2 left-32 w-1 h-1 bg-blue-400 rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
@@ -193,7 +193,7 @@ export function HeroSection() {
                 </div>
               )}
               
-              <span className="font-funhouse bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 relative z-10 text-6xl sm:text-7xl md:text-8xl lg:text-8xl">
+              <span className="font-funhouse bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 relative z-10 text-5xl sm:text-7xl md:text-8xl lg:text-8xl inline-block max-w-full break-words">
                 {heroContent.brandTitle}
               </span>
             </span>
