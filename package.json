@@ -13,6 +13,7 @@
     "@clerk/backend": "^2.9.3",
     "@clerk/localizations": "^3.24.0",
     "@clerk/nextjs": "^6.23.0",
+    "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.1.1",
     "@internationalized/date": "^3.8.2",

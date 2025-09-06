@@ -19,6 +19,7 @@ export function Header() {
 
   const navItems = [
     { href: '#content', label: 'Servicios' },
+    { href: '/tematicas', label: 'Temáticas' },
     { href: '/galeria', label: 'Galería' },
     { href: '/contacto', label: 'Contacto' },
   ]

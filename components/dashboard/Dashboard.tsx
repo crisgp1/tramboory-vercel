@@ -34,7 +34,8 @@ import {
   IconSparkles,
   IconPhoto,
   IconCarouselVertical,
-  IconPhotoHeart
+  IconPhotoHeart,
+  IconPalette
 } from "@tabler/icons-react"
 import { useDisclosure } from "@mantine/hooks"
 import { notifications } from "@mantine/notifications"
@@ -49,6 +50,7 @@ import CouponManager from "@/components/admin/CouponManager"
 import HeroManager from "@/components/admin/HeroManager"
 import CarouselManager from "@/components/admin/CarouselManager"
 import { GalleryManager } from "@/components/admin/GalleryManager"
+import ThematicsManager from "@/components/admin/ThematicsManager"
 import AdminQuickNav from "@/components/navigation/AdminQuickNav"
 
 type MenuItem = {
@@ -119,6 +121,12 @@ const menuItems: MenuItem[] = [
     icon: IconPhotoHeart,
     description: "Gestión de la galería de fotos y videos"
   },
+  { 
+    id: "tematicas", 
+    label: "Temáticas", 
+    icon: IconPalette,
+    description: "Gestión de temáticas con fotos"
+  },
 ]
 
 export default function Dashboard() {
@@ -154,6 +162,12 @@ export default function Dashboard() {
         return isAdmin
       case "carousel":
         // Solo admin puede gestionar el carousel
+        return isAdmin
+      case "galeria":
+        // Solo admin puede gestionar la galería
+        return isAdmin
+      case "tematicas":
+        // Solo admin puede gestionar las temáticas
         return isAdmin
       case "reservas":
         // Todos los roles pueden ver reservas
@@ -236,6 +250,11 @@ export default function Dashboard() {
     // Si es la sección de galería, mostrar el componente específico
     if (activeMenuItem === 'galeria') {
       return <GalleryManager />
+    }
+    
+    // Si es la sección de temáticas, mostrar el componente específico
+    if (activeMenuItem === 'tematicas') {
+      return <ThematicsManager />
     }
 
     // Default content - redirect to analytics since that's the main dashboard view
